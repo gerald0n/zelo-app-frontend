@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Receipt, Clock, Loader2 } from 'lucide-react';
+import { Receipt, Clock } from 'lucide-react';
 import OrderCard from '@/components/OrderCard';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useCart, type CartItem } from '@/modules/carts';
@@ -164,9 +165,23 @@ export default function PedidosPage() {
         )}
       >
         {loading ? (
-          <div className="flex items-center justify-center gap-2 px-8 pt-10 text-muted-foreground">
-            <Loader2 className="size-5 animate-spin" />
-            <p className="text-sm">Carregando pedidos…</p>
+          <div className="space-y-2 px-3 pt-1" aria-label="Carregando pedidos">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="space-y-2.5 rounded-lg border border-border bg-card p-3"
+              >
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-16 rounded-full" />
+                </div>
+                <Skeleton className="h-3 w-3/4" />
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-4 w-14" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : !user ? (
           <div className="flex flex-col items-center gap-2 px-8 pt-10 text-center">

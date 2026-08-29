@@ -18,9 +18,9 @@ import {
   Check,
   ChefHat,
   Soup,
-  Loader2,
 } from 'lucide-react';
 import { formatCatalogPrice } from '@/modules/catalog/types';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useCart } from '@/modules/carts';
 import { useShopExperience } from '@/contexts/ShopExperienceContext';
 import {
@@ -151,9 +151,24 @@ function AcompanhamentoContent({ id }: { id: string }) {
 
   if (loading && !order) {
     return (
-      <div className="flex min-h-dvh items-center justify-center gap-2 bg-background text-muted-foreground">
-        <Loader2 className="size-5 animate-spin" />
-        <p className="text-sm">Carregando pedido…</p>
+      <div
+        className="mx-auto w-full max-w-md space-y-3.5 px-4 py-5"
+        aria-label="Carregando pedido"
+      >
+        <div className="space-y-3 rounded-xl border border-border bg-card px-4 py-5 text-center">
+          <Skeleton className="mx-auto size-16 rounded-full" />
+          <Skeleton className="mx-auto h-6 w-40" />
+          <Skeleton className="mx-auto h-3 w-56" />
+        </div>
+        <div className="space-y-4 rounded-xl border border-border bg-card p-3.5">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3.5">
+              <Skeleton className="size-8 rounded-full" />
+              <Skeleton className="h-3.5 flex-1" />
+              <Skeleton className="h-3.5 w-10" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

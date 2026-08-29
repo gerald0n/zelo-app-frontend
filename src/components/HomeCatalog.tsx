@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { Search, Heart } from 'lucide-react';
 import { CatalogCartControls } from '@/components/CartQtyStepper';
@@ -264,8 +264,12 @@ export default function HomeCatalog({
                   'grid gap-3 sm:grid-cols-2 xl:grid-cols-3',
               )}
             >
-              {filtered.map((product) => (
-                <li key={product.id}>
+              {filtered.map((product, index) => (
+                <li
+                  key={product.id}
+                  className="reveal-rise"
+                  style={{ '--i': index } as CSSProperties}
+                >
                   <ProductCard
                     product={product}
                     categoryName={categoryNames[product.categoryId]}
