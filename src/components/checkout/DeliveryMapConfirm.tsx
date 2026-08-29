@@ -65,8 +65,8 @@ export function DeliveryMapConfirm({
   return (
     <div className="space-y-2.5">
       <div>
-        <p className="text-[15px] font-semibold">Confirme a localização</p>
-        <p className="mt-0.5 text-[13px] leading-snug text-muted-foreground">
+        <p className="text-base font-semibold">Confirme a localização</p>
+        <p className="mt-0.5 text-sm leading-snug text-muted-foreground">
           Arraste o mapa até o pin ficar em cima do seu endereço.
         </p>
       </div>
@@ -107,7 +107,7 @@ export function DeliveryMapConfirm({
       </div>
 
       {loadError ? (
-        <p className="text-[12px] text-muted-foreground">{loadError}</p>
+        <p className="text-xs text-muted-foreground">{loadError}</p>
       ) : null}
 
       <button

@@ -242,7 +242,7 @@ export default function CarrinhoPage() {
           <Link href="/" aria-label="Voltar ao cardápio">
             <ArrowLeft className="size-6" />
           </Link>
-          <h1 className="text-[17px] font-semibold">Carrinho</h1>
+          <h1 className="text-lg font-semibold">Carrinho</h1>
           <span className="w-6" />
         </header>
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2.5 px-10 text-center">
@@ -273,7 +273,7 @@ export default function CarrinhoPage() {
         <Link href="/" aria-label="Voltar ao cardápio">
           <ArrowLeft className="size-6" />
         </Link>
-        <h1 className="text-[17px] font-semibold">Carrinho · {totalItems}</h1>
+        <h1 className="text-lg font-semibold">Carrinho · {totalItems}</h1>
         <button
           type="button"
           onClick={() => void handleClear()}

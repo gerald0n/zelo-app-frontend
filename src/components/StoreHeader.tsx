@@ -301,7 +301,7 @@ function HeroContent({
           <p
             className={cn(
               'flex items-center gap-1 text-muted-foreground',
-              expanded ? 'mt-1 text-xs' : 'mt-0.5 text-[11px]',
+              expanded ? 'mt-1 text-xs' : 'mt-0.5 text-2xs',
             )}
           >
             <MapPin
@@ -316,7 +316,7 @@ function HeroContent({
               <p className="text-xs leading-snug text-muted-foreground">
                 Cookies, pudins e salgados artesanais
               </p>
-              <p className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-foreground/80">
+              <p className="mt-1 flex items-center gap-1.5 text-2xs font-medium text-foreground/80">
                 <Clock className="size-3 shrink-0" aria-hidden="true" />
                 {hoursLabel}
                 <span className="text-muted-foreground">·</span>
@@ -346,7 +346,7 @@ function StatusBadge({
         storeOpen
           ? 'bg-pistachio/60 text-pistachio-foreground'
           : 'bg-destructive/15 text-destructive',
-        compact ? 'px-1.5 py-0.5 text-[10px]' : 'px-1.5 py-0.5 text-[10px]',
+        compact ? 'px-1.5 py-0.5 text-2xs' : 'px-1.5 py-0.5 text-2xs',
       )}
     >
       <span
@@ -393,7 +393,7 @@ function HeaderActions({
       >
         <ShoppingBag className={iconSize} />
         {totalItems > 0 ? (
-          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-2xs font-bold text-primary-foreground">
             {totalItems}
           </span>
         ) : null}

@@ -158,7 +158,7 @@ function AppDialogModal({
         className="w-full max-w-sm rounded-xl border border-border bg-card p-4 shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <h2 id="app-dialog-title" className="text-[17px] font-semibold">
+        <h2 id="app-dialog-title" className="text-lg font-semibold">
           {title}
         </h2>
         {description ? (

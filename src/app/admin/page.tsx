@@ -100,7 +100,7 @@ export default function AdminDashboardPage() {
           type="button"
           onClick={() => toggleMutation.mutate(!acceptingOrders)}
           className={cn(
-            'flex w-full items-center gap-[11px] rounded-[11px] border p-[13px] text-left',
+            'flex w-full items-center gap-[11px] rounded-lg border p-[13px] text-left',
             acceptingOrders
               ? 'border-success/40 bg-success/10'
               : 'border-destructive/40 bg-destructive/10',
@@ -108,7 +108,7 @@ export default function AdminDashboardPage() {
         >
           <span
             className={cn(
-              'flex size-9 items-center justify-center rounded-[9px]',
+              'flex size-9 items-center justify-center rounded-lg',
               acceptingOrders ? 'bg-success' : 'bg-destructive',
             )}
           >
@@ -122,7 +122,7 @@ export default function AdminDashboardPage() {
             <p className="text-sm font-semibold">
               {acceptingOrders ? 'Loja recebendo pedidos' : 'Loja pausada'}
             </p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">
+            <p className="mt-0.5 text-2xs text-muted-foreground">
               Toque para {acceptingOrders ? 'pausar' : 'retomar'} a operação
             </p>
           </div>
@@ -132,20 +132,20 @@ export default function AdminDashboardPage() {
           {metrics.map((metric) => (
             <div
               key={metric.label}
-              className="rounded-[11px] border border-border bg-card p-3"
+              className="rounded-lg border border-border bg-card p-3"
             >
               <metric.icon className="size-4 text-primary" />
               <p className="mt-2 text-lg font-bold">{metric.value}</p>
-              <p className="text-[11px] text-muted-foreground">{metric.label}</p>
+              <p className="text-2xs text-muted-foreground">{metric.label}</p>
             </div>
           ))}
         </div>
 
         <div className="flex items-center justify-between">
-          <h2 className="text-[15px] font-bold">Pedidos ativos</h2>
+          <h2 className="text-base font-bold">Pedidos ativos</h2>
           <Link
             href="/admin/pedidos"
-            className="flex items-center gap-0.5 text-[12px] font-semibold text-primary"
+            className="flex items-center gap-0.5 text-xs font-semibold text-primary"
           >
             Ver todos <ChevronRight className="size-4" />
           </Link>

@@ -143,7 +143,7 @@ export default function OtpPage() {
         >
           <ArrowLeft className="size-6" />
         </Link>
-        <h1 className="text-[17px] font-semibold">Verificação</h1>
+        <h1 className="text-lg font-semibold">Verificação</h1>
         <span className="w-6" />
       </header>
 
@@ -189,7 +189,7 @@ export default function OtpPage() {
                     : 'border-border',
               )}
             >
-              <span className="text-[22px] font-bold">{otp[i] ?? ''}</span>
+              <span className="text-2xl font-bold">{otp[i] ?? ''}</span>
             </div>
           ))}
         </button>

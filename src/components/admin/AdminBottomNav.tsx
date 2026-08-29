@@ -58,7 +58,7 @@ export default function AdminBottomNav() {
               pathname={pathname}
               className="gap-0.5"
               itemClassName="rounded-[1.35rem] px-1 py-2"
-              labelClassName="max-w-full truncate text-[9px]"
+              labelClassName="max-w-full truncate text-2xs"
             />
           </div>
         </div>
@@ -82,7 +82,7 @@ export default function AdminBottomNav() {
                 className="size-[21px]"
                 strokeWidth={active ? 2.25 : 1.75}
               />
-              <span className="text-[13px] font-medium">{tab.label}</span>
+              <span className="text-sm font-medium">{tab.label}</span>
             </Link>
           );
         })}

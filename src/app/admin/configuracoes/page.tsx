@@ -312,7 +312,7 @@ export default function AdminConfiguracoesPage() {
           onSubmit={storeForm.handleSubmit((values) =>
             storeMutation.mutate(values),
           )}
-          className="space-y-3 rounded-[11px] border border-border bg-card p-3.5"
+          className="space-y-3 rounded-lg border border-border bg-card p-3.5"
         >
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-semibold">Dados da loja</p>
@@ -344,7 +344,7 @@ export default function AdminConfiguracoesPage() {
               ))}
             </div>
             {storeForm.formState.errors.acceptsPix?.message ? (
-              <p className="mt-2 text-[11px] text-destructive">
+              <p className="mt-2 text-2xs text-destructive">
                 {storeForm.formState.errors.acceptsPix.message}
               </p>
             ) : null}
@@ -406,7 +406,7 @@ export default function AdminConfiguracoesPage() {
           onSubmit={hoursForm.handleSubmit((values) =>
             hoursMutation.mutate(values),
           )}
-          className="space-y-3 rounded-[11px] border border-border bg-card p-3.5"
+          className="space-y-3 rounded-lg border border-border bg-card p-3.5"
         >
           <p className="text-sm font-semibold">Horários de funcionamento</p>
           <div className="space-y-2">
@@ -418,7 +418,7 @@ export default function AdminConfiguracoesPage() {
                 <p className="text-xs font-semibold">
                   {WEEKDAY_LABELS[hour.weekday]}
                 </p>
-                <Label className="inline-flex items-center gap-1.5 text-[11px]">
+                <Label className="inline-flex items-center gap-1.5 text-2xs">
                   <input
                     type="checkbox"
                     checked={hour.isClosed}
@@ -467,7 +467,7 @@ export default function AdminConfiguracoesPage() {
           </button>
         </form>
 
-        <section className="space-y-3 rounded-[11px] border border-border bg-card p-3.5">
+        <section className="space-y-3 rounded-lg border border-border bg-card p-3.5">
           <p className="text-sm font-semibold">Períodos bloqueados</p>
           <form
             onSubmit={blackoutForm.handleSubmit((values) =>
@@ -504,7 +504,7 @@ export default function AdminConfiguracoesPage() {
                 key={blackout.id}
                 className="flex items-center gap-2 rounded-md border border-border px-3 py-2"
               >
-                <div className="min-w-0 flex-1 text-[11px] text-muted-foreground">
+                <div className="min-w-0 flex-1 text-2xs text-muted-foreground">
                   <p className="font-semibold text-foreground">
                     {blackout.reason || 'Bloqueio'}
                   </p>
@@ -530,7 +530,7 @@ export default function AdminConfiguracoesPage() {
           </div>
         </section>
 
-        <section className="space-y-2 rounded-[11px] border border-border bg-card p-3.5">
+        <section className="space-y-2 rounded-lg border border-border bg-card p-3.5">
           <p className="text-sm font-semibold">Auditoria recente</p>
           {(auditQuery.data?.logs ?? []).map((log) => (
             <div
@@ -538,7 +538,7 @@ export default function AdminConfiguracoesPage() {
               className="border-t border-border py-2 first:border-t-0 first:pt-0"
             >
               <p className="text-xs font-semibold">{log.action}</p>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-2xs text-muted-foreground">
                 {log.entityType}
                 {log.entityId ? ` · ${log.entityId.slice(0, 8)}` : ''} ·{' '}
                 {new Date(log.createdAt).toLocaleString('pt-BR')}
@@ -550,7 +550,7 @@ export default function AdminConfiguracoesPage() {
           ) : null}
         </section>
 
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-2xs text-muted-foreground">
           Sessão: {admin?.displayName} ({admin?.email})
         </p>
 
@@ -569,7 +569,7 @@ export default function AdminConfiguracoesPage() {
             await logout();
             router.replace('/admin/login');
           }}
-          className="flex w-full items-center justify-center gap-2 rounded-[9px] border border-border py-3 text-sm font-semibold text-destructive"
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-border py-3 text-sm font-semibold text-destructive"
         >
           <LogOut className="size-4" />
           Sair do painel
@@ -618,13 +618,13 @@ function AdminPasswordForm() {
   };
 
   return (
-    <section className="space-y-2.5 rounded-[11px] border border-border bg-card p-3.5">
+    <section className="space-y-2.5 rounded-lg border border-border bg-card p-3.5">
       <p className="text-sm font-semibold">Alterar senha</p>
-      <p className="text-[12px] leading-4 text-muted-foreground">
+      <p className="text-xs leading-4 text-muted-foreground">
         Troque a senha inicial antes de publicar o painel.
       </p>
       <div>
-        <Label className="mb-1 block text-[11px] font-semibold">
+        <Label className="mb-1 block text-2xs font-semibold">
           Senha atual
         </Label>
         <Input
@@ -635,7 +635,7 @@ function AdminPasswordForm() {
         />
       </div>
       <div>
-        <Label className="mb-1 block text-[11px] font-semibold">
+        <Label className="mb-1 block text-2xs font-semibold">
           Nova senha
         </Label>
         <Input
@@ -650,7 +650,7 @@ function AdminPasswordForm() {
         type="button"
         disabled={!canSubmit}
         onClick={() => void submit()}
-        className="flex h-10 w-full items-center justify-center rounded-[9px] bg-primary text-sm font-semibold text-white disabled:opacity-60"
+        className="flex h-10 w-full items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white disabled:opacity-60"
       >
         {saving ? <Loader2 className="size-4 animate-spin" /> : 'Salvar senha'}
       </button>

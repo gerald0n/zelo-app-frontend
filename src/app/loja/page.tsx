@@ -57,14 +57,14 @@ export default async function LojaPage() {
                 storeOpen ? 'bg-pistachio-foreground' : 'bg-destructive',
               )}
             />
-            <span className="text-[13px] text-muted-foreground">
+            <span className="text-sm text-muted-foreground">
               {storeOpen ? 'Aberto agora' : 'Fechado'}
             </span>
           </div>
         </div>
 
         <section className="rounded-xl border border-border bg-card p-3.5">
-          <h3 className="mb-2.5 text-[15px] font-semibold">
+          <h3 className="mb-2.5 text-base font-semibold">
             Horário de funcionamento
           </h3>
           {store.businessHours.map((hour, index) => {
@@ -94,7 +94,7 @@ export default async function LojaPage() {
           <div className="flex gap-3">
             <MapPin className="mt-0.5 size-5 shrink-0 text-primary" />
             <div>
-              <h3 className="text-[15px] font-semibold">Endereço</h3>
+              <h3 className="text-base font-semibold">Endereço</h3>
               <p className="mt-2.5 text-sm leading-5 text-muted-foreground">
                 {store.addressLine}
                 <br />

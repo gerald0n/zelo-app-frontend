@@ -68,7 +68,7 @@ export default function ProductCard({
         />
         {!product.available && vertical ? (
           <div className="absolute inset-0 flex items-center justify-center bg-black/45">
-            <span className="text-[10px] font-semibold text-primary-foreground">
+            <span className="text-2xs font-semibold text-primary-foreground">
               Indisponível
             </span>
           </div>

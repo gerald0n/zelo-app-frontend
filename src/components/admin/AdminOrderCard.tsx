@@ -19,19 +19,19 @@ export default function AdminOrderCard({ order }: Props) {
   return (
     <Link
       href={`/admin/pedido/${order.id}`}
-      className="block space-y-2.5 rounded-[11px] border border-border bg-card p-3.5"
+      className="block space-y-2.5 rounded-lg border border-border bg-card p-3.5"
     >
       <div className="flex items-start justify-between">
         <div>
           <p className="text-base font-bold">{order.number}</p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
+          <p className="mt-0.5 text-2xs text-muted-foreground">
             {age < 60
               ? `há ${age} min`
               : new Date(order.createdAt).toLocaleDateString('pt-BR')}
             {order.customerName ? ` · ${order.customerName}` : ''}
           </p>
         </div>
-        <p className="text-[15px] font-bold">
+        <p className="text-base font-bold">
           {formatCatalogPrice(order.totalCents)}
         </p>
       </div>
@@ -41,10 +41,10 @@ export default function AdminOrderCard({ order }: Props) {
           .join(' · ')}
       </p>
       <div className="flex items-center justify-between">
-        <span className="rounded-md bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">
+        <span className="rounded-md bg-primary/10 px-2 py-1 text-2xs font-semibold text-primary">
           {statusLabel(order.status)}
         </span>
-        <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+        <div className="flex items-center gap-1 text-2xs text-muted-foreground">
           {order.deliveryMethod === 'delivery' ? (
             <Bike className="size-3.5" />
           ) : (

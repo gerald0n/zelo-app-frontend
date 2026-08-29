@@ -27,7 +27,7 @@ export function AccountAuthGate({
     return (
       <div className="flex flex-1 flex-col items-center gap-2 px-8 pt-10 text-center">
         <p className="text-base font-semibold">{title}</p>
-        <p className="text-[13px] leading-[18px] text-muted-foreground">
+        <p className="text-sm leading-[18px] text-muted-foreground">
           {description}
         </p>
         <Link

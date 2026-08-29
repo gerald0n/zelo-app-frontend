@@ -107,17 +107,17 @@ export default function NotificacoesPage() {
                 <BellOff className="mt-0.5 size-5 text-muted-foreground" />
               )}
               <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-semibold">
+                <p className="text-base font-semibold">
                   Avisos do pedido
                 </p>
-                <p className="mt-1 text-[13px] leading-[18px] text-muted-foreground">
+                <p className="mt-1 text-sm leading-[18px] text-muted-foreground">
                   Receba atualizações quando o pedido for para produção, ficar
                   pronto ou sair para entrega.
                 </p>
               </div>
             </div>
 
-            <p className="mt-3 text-[13px] text-muted-foreground">
+            <p className="mt-3 text-sm text-muted-foreground">
               {state === 'loading' || state === 'working'
                 ? 'Verificando permissão…'
                 : state === 'on'

@@ -163,19 +163,19 @@ export default function AdminPedidoPage({
       >
         <div className="flex flex-wrap">
           <div className="w-full space-y-3 px-0 lg:w-2/3 lg:pr-3">
-            <section className="space-y-[13px] rounded-[11px] border border-border p-3.5">
+            <section className="space-y-[13px] rounded-lg border border-border p-3.5">
               <h2 className="text-sm font-bold">Itens</h2>
               {order.items.map((item) => (
                 <div key={item.id} className="flex items-start gap-2.5">
-                  <span className="flex size-[31px] items-center justify-center rounded-md bg-muted text-[11px] font-bold">
+                  <span className="flex size-[31px] items-center justify-center rounded-md bg-muted text-2xs font-bold">
                     {item.quantity}×
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-semibold">{item.name}</p>
+                    <p className="text-sm font-semibold">{item.name}</p>
                     {item.addOns.map((addon) => (
                       <p
                         key={`${addon.id}-${addon.name}`}
-                        className="mt-0.5 text-[10px] text-muted-foreground"
+                        className="mt-0.5 text-2xs text-muted-foreground"
                       >
                         + {addon.name}
                       </p>
@@ -188,7 +188,7 @@ export default function AdminPedidoPage({
               ))}
             </section>
 
-            <section className="space-y-[13px] rounded-[11px] border border-border p-3.5">
+            <section className="space-y-[13px] rounded-lg border border-border p-3.5">
               <h2 className="text-sm font-bold">Recebimento</h2>
               <div className="flex gap-2.5">
                 {order.deliveryMethod === 'delivery' ? (
@@ -197,7 +197,7 @@ export default function AdminPedidoPage({
                   <ShoppingBag className="size-[18px] text-muted-foreground" />
                 )}
                 <div>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-2xs text-muted-foreground">
                     {order.deliveryMethod === 'delivery'
                       ? 'Entrega'
                       : 'Retirada'}
@@ -210,7 +210,7 @@ export default function AdminPedidoPage({
               <div className="flex gap-2.5">
                 <CreditCard className="size-[18px] text-muted-foreground" />
                 <div>
-                  <p className="text-[10px] text-muted-foreground">Pagamento</p>
+                  <p className="text-2xs text-muted-foreground">Pagamento</p>
                   <p className="mt-0.5 text-xs">
                     {order.paymentMethod === 'pix'
                       ? 'Pix'
@@ -228,7 +228,7 @@ export default function AdminPedidoPage({
             </section>
 
             {order.internalNote ? (
-              <section className="rounded-[11px] border border-amber-200 bg-amber-50 p-3.5">
+              <section className="rounded-lg border border-amber-200 bg-amber-50 p-3.5">
                 <h2 className="text-sm font-bold text-amber-900">
                   Nota interna
                 </h2>
@@ -240,7 +240,7 @@ export default function AdminPedidoPage({
           </div>
 
           <div className="mt-3 w-full space-y-3 lg:mt-0 lg:w-1/3 lg:pl-3">
-            <section className="space-y-2 rounded-[11px] border border-border p-3.5">
+            <section className="space-y-2 rounded-lg border border-border p-3.5">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
                 <span>{formatCatalogPrice(order.subtotalCents)}</span>
@@ -268,7 +268,7 @@ export default function AdminPedidoPage({
                 type="button"
                 disabled={busy}
                 onClick={() => void advance()}
-                className="flex w-full items-center justify-center gap-2 rounded-[9px] bg-primary py-3.5 text-sm font-semibold text-white disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3.5 text-sm font-semibold text-white disabled:opacity-60"
               >
                 {busy ? <Loader2 className="size-4 animate-spin" /> : null}
                 Avançar para &quot;{statusLabel(next as OrderStatus)}&quot;
@@ -281,7 +281,7 @@ export default function AdminPedidoPage({
                 type="button"
                 disabled={busy}
                 onClick={() => void cancel()}
-                className="w-full rounded-[9px] border border-destructive/40 py-3 text-sm font-semibold text-destructive disabled:opacity-60"
+                className="w-full rounded-lg border border-destructive/40 py-3 text-sm font-semibold text-destructive disabled:opacity-60"
               >
                 Cancelar pedido
               </button>

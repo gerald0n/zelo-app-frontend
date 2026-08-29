@@ -229,21 +229,21 @@ export function AccountAddressForm({
       </label>
 
       {quoting ? (
-        <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
           Calculando rota…
         </div>
       ) : null}
 
       {quoteError || error ? (
-        <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-2.5 text-[13px] text-destructive">
+        <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-2.5 text-sm text-destructive">
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <p>{error || quoteError}</p>
         </div>
       ) : null}
 
       {quote?.inServiceArea === false ? (
-        <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-2.5 text-[13px] text-amber-800">
+        <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-2.5 text-sm text-amber-800">
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <p>
             {quote.message ??
@@ -255,7 +255,7 @@ export function AccountAddressForm({
       {quote?.inServiceArea ? (
         <>
           {quote.routeDistanceMeters > 0 ? (
-            <div className="flex items-start gap-2 rounded-md bg-muted p-2.5 text-[13px] text-muted-foreground">
+            <div className="flex items-start gap-2 rounded-md bg-muted p-2.5 text-sm text-muted-foreground">
               <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
               <p>
                 Distância por rota:{' '}

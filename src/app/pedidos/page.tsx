@@ -145,7 +145,7 @@ export default function PedidosPage() {
               type="button"
               onClick={() => setTab(t)}
               className={cn(
-                'flex-1 rounded-sm py-1.5 text-center text-[13px]',
+                'flex-1 rounded-sm py-1.5 text-center text-sm',
                 tab === t
                   ? 'bg-white font-semibold text-foreground'
                   : 'text-muted-foreground',
@@ -172,7 +172,7 @@ export default function PedidosPage() {
           <div className="flex flex-col items-center gap-2 px-8 pt-10 text-center">
             <Receipt className="size-10 text-muted-foreground" />
             <p className="mt-1 text-base font-semibold">Entre para ver pedidos</p>
-            <p className="text-[13px] leading-[18px] text-muted-foreground">
+            <p className="text-sm leading-[18px] text-muted-foreground">
               Faça login para acompanhar seus pedidos e histórico.
             </p>
             <Link
@@ -208,7 +208,7 @@ export default function PedidosPage() {
               <p className="mt-1 text-base font-semibold">
                 Nenhum pedido ativo
               </p>
-              <p className="text-[13px] leading-[18px] text-muted-foreground">
+              <p className="text-sm leading-[18px] text-muted-foreground">
                 Seus pedidos em andamento aparecem aqui.
               </p>
               <Link
@@ -234,7 +234,7 @@ export default function PedidosPage() {
             <p className="mt-1 text-base font-semibold">
               Nenhum pedido anterior
             </p>
-            <p className="text-[13px] leading-[18px] text-muted-foreground">
+            <p className="text-sm leading-[18px] text-muted-foreground">
               Seu histórico de pedidos aparece aqui.
             </p>
           </div>

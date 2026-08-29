@@ -113,11 +113,11 @@ export default function ProdutoClient({
             {product.name}
           </h1>
           {product.weight ? (
-            <p className="text-[13px] text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {product.weight}
             </p>
           ) : null}
-          <p className="mt-1 text-[15px] leading-[22px] text-muted-foreground">
+          <p className="mt-1 text-base leading-[22px] text-muted-foreground">
             {product.description}
           </p>
           <p className="mt-1.5 text-xl font-bold">
@@ -127,17 +127,17 @@ export default function ProdutoClient({
           {quantityInCart > 0 ? (
             <Link
               href="/carrinho"
-              className="mt-3 flex items-center gap-2.5 rounded-[10px] border border-primary/30 bg-primary/[0.05] p-3"
+              className="mt-3 flex items-center gap-2.5 rounded-lg border border-primary/30 bg-primary/[0.05] p-3"
             >
               <span className="flex size-7 items-center justify-center rounded-full bg-primary">
                 <Check className="size-[15px] text-white" />
               </span>
               <div className="flex-1">
-                <p className="text-[13px] font-semibold">
+                <p className="text-sm font-semibold">
                   {quantityInCart}{' '}
                   {quantityInCart === 1 ? 'unidade' : 'unidades'} no carrinho
                 </p>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                <p className="mt-0.5 text-2xs text-muted-foreground">
                   Total deste produto: {formatCatalogPrice(valueInCart)}
                 </p>
               </div>
@@ -201,9 +201,9 @@ export default function ProdutoClient({
               onChange={(e) => setNote(e.target.value.slice(0, 180))}
               placeholder="Ex.: retirar embalagem de presente"
               rows={3}
-              className="min-h-[88px] w-full resize-none rounded-[10px] border border-border bg-card p-3 text-sm outline-none focus:border-primary"
+              className="min-h-[88px] w-full resize-none rounded-lg border border-border bg-card p-3 text-sm outline-none focus:border-primary"
             />
-            <p className="text-right text-[10px] text-muted-foreground">
+            <p className="text-right text-2xs text-muted-foreground">
               {note.length}/180
             </p>
           </div>

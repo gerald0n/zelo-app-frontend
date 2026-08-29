@@ -135,24 +135,24 @@ export default function ContaPage() {
           isDesktop && 'mx-auto w-full max-w-[1120px] p-8',
         )}
       >
-        <div className="flex items-center gap-3 rounded-[10px] border border-border bg-white p-3">
+        <div className="flex items-center gap-3 rounded-lg border border-border bg-white p-3">
           <div className="flex size-11 items-center justify-center rounded-full bg-muted">
             <span className="text-base font-bold text-primary">{initials}</span>
           </div>
           <div className="flex-1">
             {user ? (
               <>
-                <p className="text-[15px] font-semibold">{user.name}</p>
+                <p className="text-base font-semibold">{user.name}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {user.phone}
                 </p>
               </>
             ) : (
               <>
-                <p className="text-[15px] font-semibold">Visitante</p>
+                <p className="text-base font-semibold">Visitante</p>
                 <Link
                   href="/checkout/identificacao"
-                  className="mt-0.5 text-[13px] font-medium text-primary"
+                  className="mt-0.5 text-sm font-medium text-primary"
                 >
                   Entrar ou criar conta
                 </Link>
@@ -161,7 +161,7 @@ export default function ContaPage() {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-[10px] border border-border bg-white">
+        <div className="overflow-hidden rounded-lg border border-border bg-white">
           {menuItems.map((item, index) => {
             const Icon = item.icon;
             const content = (
@@ -211,7 +211,7 @@ export default function ContaPage() {
           })}
         </div>
 
-        <p className="mt-1 text-center text-[11px] text-muted-foreground">
+        <p className="mt-1 text-center text-2xs text-muted-foreground">
           Zelo Confeitaria · v1.0.0
         </p>
       </div>

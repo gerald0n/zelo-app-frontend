@@ -28,7 +28,7 @@ export default function OrderCard({ order, href, onReorder }: Props) {
         <span className="text-sm font-bold">{order.number}</span>
         <span
           className={cn(
-            'rounded-md px-2 py-0.5 text-[11px] font-semibold',
+            'rounded-md px-2 py-0.5 text-2xs font-semibold',
             STATUS_COLORS[order.status],
           )}
         >
@@ -55,7 +55,7 @@ export default function OrderCard({ order, href, onReorder }: Props) {
   );
 
   return (
-    <div className="mx-3 mb-2 space-y-1.5 rounded-[10px] border border-border bg-white p-3">
+    <div className="mx-3 mb-2 space-y-1.5 rounded-lg border border-border bg-white p-3">
       {href ? (
         <Link href={href} className="block space-y-1.5">
           {content}

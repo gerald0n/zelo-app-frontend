@@ -112,10 +112,10 @@ export default function MenuHeroCarousel() {
                 aria-hidden="true"
                 className="pointer-events-none absolute -bottom-16 -left-8 size-40 rounded-full bg-pistachio/20 blur-2xl"
               />
-              <p className="relative text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-foreground/70">
+              <p className="relative text-2xs font-semibold uppercase tracking-[0.18em] text-primary-foreground/70">
                 {slide.eyebrow}
               </p>
-              <h2 className="relative mt-2 max-w-[16ch] text-balance font-serif text-[22px] font-semibold leading-tight">
+              <h2 className="relative mt-2 max-w-[16ch] text-balance font-serif text-2xl font-semibold leading-tight">
                 {slide.title}
               </h2>
             </article>

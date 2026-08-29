@@ -41,7 +41,7 @@ export default function CheckoutProgress({
               </div>
               <span
                 className={cn(
-                  'max-w-[4.5rem] truncate text-center text-[11px]',
+                  'max-w-[4.5rem] truncate text-center text-2xs',
                   done || active ? 'text-foreground' : 'text-muted-foreground',
                   active && 'font-semibold',
                 )}

@@ -64,7 +64,7 @@ export default function CheckoutNomePage() {
         <Link href="/carrinho" aria-label="Voltar ao carrinho">
           <ArrowLeft className="size-6" />
         </Link>
-        <h1 className="text-[17px] font-semibold">Seu nome</h1>
+        <h1 className="text-lg font-semibold">Seu nome</h1>
         <span className="w-6" />
       </header>
 
@@ -87,7 +87,7 @@ export default function CheckoutNomePage() {
           </div>
 
           <div>
-            <Label className="mb-1.5 block text-[13px] font-medium">
+            <Label className="mb-1.5 block text-sm font-medium">
               Seu nome
             </Label>
             <Input

@@ -91,7 +91,7 @@ export default function HomeCatalog({
           >
             <Search className="size-4" aria-hidden="true" /> Buscar
           </Link>
-          <p className="px-2.5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="px-2.5 pb-1 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
             Categorias
           </p>
           {categoryFilters.map((filter) => (
@@ -171,7 +171,7 @@ export default function HomeCatalog({
                       <button
                         type="button"
                         onClick={() => addProduct(product)}
-                        className="inline-flex h-7 w-full items-center justify-center rounded-md bg-primary/10 px-2 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/20"
+                        className="inline-flex h-7 w-full items-center justify-center rounded-md bg-primary/10 px-2 text-2xs font-semibold text-primary transition-colors hover:bg-primary/20"
                       >
                         Adicionar
                       </button>
