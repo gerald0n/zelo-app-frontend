@@ -1,0 +1,66 @@
+{
+  "name": "zelo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:lan": "node scripts/dev-lan.mjs",
+    "dev:https": "next dev --experimental-https",
+    "lan:info": "node scripts/dev-lan.mjs --info-only",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:status": "supabase status",
+    "gen:types": "supabase gen types typescript --local > src/types/database.ts",
+    "gen:icons": "node scripts/generate-pwa-icons.mjs"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.7.1",
+    "@sentry/nextjs": "^10.69.0",
+    "@supabase/ssr": "^0.12.4",
+    "@supabase/supabase-js": "^2.112.2",
+    "@tanstack/react-query": "^5.101.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^1.29.0",
+    "next": "16.3.0",
+    "radix-ui": "^1.6.7",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-hook-form": "^7.85.0",
+    "tailwind-merge": "^3.6.0",
+    "web-push": "^3.6.7",
+    "zod": "^4.4.3",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@tanstack/react-query-devtools": "^5.101.4",
+    "@types/leaflet": "^1.9.22",
+    "@types/node": "^20.19.43",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6",
+    "sharp": "^0.35.3",
+    "supabase": "^2.113.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  },
+  "packageManager": "pnpm@8.15.6",
+  "pnpm": {
+    "overrides": {
+      "nanoid": ">=3.3.18"
+    }
+  }
+}

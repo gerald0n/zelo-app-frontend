@@ -1,0 +1,18 @@
+export { calcDeliveryFeeCents } from '@/modules/delivery/fee';
+export {
+  PEREIRO_URBAN_NEIGHBORHOODS,
+  findPereiroNeighborhood,
+  isPereiroUrbanNeighborhood,
+} from '@/modules/delivery/pereiro';
+export {
+  quoteDelivery,
+  type DeliveryAddressInput,
+  type DeliveryQuote,
+  type DeliveryQuoteSource,
+  type StoreOrigin,
+} from '@/modules/delivery/quote';
+export {
+  geocodeAddress,
+  getDrivingDistanceMeters,
+  hasGoogleMapsServerKey,
+} from '@/modules/delivery/maps';

@@ -1,0 +1,260 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: light;
+  --background: oklch(0.975 0.014 78);
+  --foreground: oklch(0.29 0.035 40);
+  --card: oklch(0.995 0.008 85);
+  --card-foreground: oklch(0.29 0.035 40);
+  --popover: oklch(0.995 0.008 85);
+  --popover-foreground: oklch(0.29 0.035 40);
+  --primary: oklch(0.42 0.15 8);
+  --primary-foreground: oklch(0.98 0.012 80);
+  --secondary: oklch(0.93 0.03 75);
+  --secondary-foreground: oklch(0.38 0.05 45);
+  --muted: oklch(0.94 0.02 78);
+  --muted-foreground: oklch(0.52 0.04 50);
+  --accent: oklch(0.9 0.05 70);
+  --accent-foreground: oklch(0.38 0.06 45);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.9 0.025 70);
+  --input: oklch(0.9 0.025 70);
+  --ring: oklch(0.42 0.15 8);
+  --caramel: oklch(0.74 0.12 62);
+  --caramel-foreground: oklch(0.3 0.05 45);
+  --pistachio: oklch(0.83 0.08 128);
+  --pistachio-foreground: oklch(0.35 0.06 130);
+  --success: oklch(0.45 0.12 130);
+  --success-foreground: oklch(0.98 0.012 80);
+  --whatsapp: #25d366;
+  --whatsapp-foreground: oklch(0.98 0.012 80);
+  --chart-1: oklch(0.42 0.15 8);
+  --chart-2: oklch(0.74 0.12 62);
+  --chart-3: oklch(0.83 0.08 128);
+  --chart-4: oklch(0.6 0.12 30);
+  --chart-5: oklch(0.5 0.1 350);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.995 0.008 85);
+  --sidebar-foreground: oklch(0.29 0.035 40);
+  --sidebar-primary: oklch(0.42 0.15 8);
+  --sidebar-primary-foreground: oklch(0.98 0.012 80);
+  --sidebar-accent: oklch(0.9 0.05 70);
+  --sidebar-accent-foreground: oklch(0.38 0.06 45);
+  --sidebar-border: oklch(0.9 0.025 70);
+  --sidebar-ring: oklch(0.42 0.15 8);
+}
+
+@theme inline {
+  --font-sans: var(--font-nunito);
+  --font-serif: var(--font-fraunces);
+  --color-caramel: var(--caramel);
+  --color-caramel-foreground: var(--caramel-foreground);
+  --color-pistachio: var(--pistachio);
+  --color-pistachio-foreground: var(--pistachio-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-whatsapp: var(--whatsapp);
+  --color-whatsapp-foreground: var(--whatsapp-foreground);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/*
+ * Mobile in-browser: lock document scroll so the URL/action bar stays put.
+ * Scrolling happens inside .app-shell-scroll (see Providers AppShell).
+ * Desktop (lg+) keeps normal document scroll.
+ */
+@media (max-width: 1023px) {
+  html,
+  body {
+    height: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    overflow-x: clip;
+    overscroll-behavior: none;
+    /* Pan only: bloqueia pinch e double-tap zoom (comportamento de app). */
+    touch-action: pan-x pan-y;
+  }
+
+  .app-shell-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Leaflet dentro de containers com borda arredondada */
+.leaflet-container {
+  width: 100%;
+  max-width: 100%;
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes zelo-toast-drawer-in {
+  from {
+    transform: translate3d(0, 100%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes zelo-toast-drawer-out {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 100%, 0);
+  }
+}
+
+.zelo-toast-drawer-in,
+.zelo-toast-drawer-out {
+  will-change: transform;
+}
+
+.zelo-toast-drawer-in {
+  animation: zelo-toast-drawer-in 520ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.zelo-toast-drawer-out {
+  animation: zelo-toast-drawer-out 440ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zelo-toast-drawer-in,
+  .zelo-toast-drawer-out {
+    animation: none;
+  }
+}
+
+/* iOS-inspired liquid glass */
+.liquid-glass {
+  overflow: hidden;
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.78) 0%,
+    rgba(255, 255, 255, 0.58) 45%,
+    rgba(255, 255, 255, 0.7) 100%
+  );
+  backdrop-filter: blur(120px) saturate(240%);
+  -webkit-backdrop-filter: blur(120px) saturate(240%);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow:
+    0 10px 36px rgba(45, 28, 18, 0.14),
+    0 2px 10px rgba(45, 28, 18, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -0.5px 0 rgba(255, 255, 255, 0.25);
+}
+
+/* Soft blur veil behind the floating navbar */
+.liquid-glass-veil {
+  pointer-events: none;
+  isolation: isolate;
+}
+
+.liquid-glass-veil::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(64px) saturate(180%);
+  -webkit-backdrop-filter: blur(64px) saturate(180%);
+  mask-image: linear-gradient(to top, black 55%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to top, black 55%, transparent 100%);
+}
+
+.liquid-glass-veil::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(255, 248, 240, 0.88) 0%,
+    rgba(255, 248, 240, 0.42) 55%,
+    transparent 100%
+  );
+}
+
+.liquid-glass-item {
+  transition:
+    color 280ms ease,
+    transform 180ms ease;
+}
+
+.liquid-glass-bubble {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.94) 0%,
+    rgba(255, 255, 255, 0.7) 100%
+  );
+  box-shadow:
+    0 4px 14px rgba(45, 28, 18, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  will-change: transform, width, height;
+}
+
+.liquid-glass-bubble-animate {
+  transition:
+    transform 480ms cubic-bezier(0.34, 1.45, 0.64, 1),
+    width 480ms cubic-bezier(0.34, 1.45, 0.64, 1),
+    height 480ms cubic-bezier(0.34, 1.45, 0.64, 1);
+}

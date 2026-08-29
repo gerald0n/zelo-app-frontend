@@ -1,0 +1,32 @@
+# Inventário de Arquivos
+
+- `00-produto-e-dominio/00 - Produto.md`
+- `00-produto-e-dominio/00.5 - Domain.md`
+- `10-funcional/01 - Personas.md`
+- `10-funcional/02 - Jornadas do Usuário.md`
+- `10-funcional/03 - Requisitos Funcionais.md`
+- `10-funcional/04 - Regras de Negócio.md`
+- `10-funcional/05 - Ciclo de Vida do Pedido.md`
+- `10-funcional/06 - Catálogo e Produtos.md`
+- `10-funcional/07 - Carrinho e Checkout.md`
+- `10-funcional/08 - Entrega e Retirada.md`
+- `10-funcional/09 - Pagamentos.md`
+- `10-funcional/10 - Agendamento e Funcionamento.md`
+- `10-funcional/11 - Painel Administrativo.md`
+- `10-funcional/12 - Notificações e Tempo Real.md`
+- `100-planejamento/100 - Roadmap de Desenvolvimento.md`
+- `100-planejamento/101 - Plano Mestre de Desenvolvimento.md`
+- `20-tecnico/20 - Arquitetura.md`
+- `20-tecnico/21 - Stack Tecnológica.md`
+- `20-tecnico/22 - Acesso a Dados e Integrações.md`
+- `20-tecnico/23 - Autenticação e Segurança.md`
+- `20-tecnico/24 - Banco de Dados.md`
+- `20-tecnico/25 - Contratos de API.md`
+- `20-tecnico/26 - Estrutura de Pastas.md`
+- `20-tecnico/27 - Padrões de Código.md`
+- `20-tecnico/28 - Observabilidade e Tratamento de Erros.md`
+- `20-tecnico/29 - Deploy e Ambientes.md`
+- `20-tecnico/30 - Definition of Done.md`
+- `90-agentes/90 - Instruções para Agentes de IA.md`
+- `90-agentes/99 - Constituição do Projeto.md`
+- `README.md`
