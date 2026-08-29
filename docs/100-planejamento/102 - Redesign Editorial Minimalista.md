@@ -10,7 +10,16 @@ Regras: mexer só em apresentação (`app/`, `components/`, `globals.css`). **N�
 
 Todas as 7 fases implementadas na branch `feat/redesign-editorial-minimalista` (10 commits). `pnpm build` verde, `pnpm typecheck` limpo, `pnpm lint` sem regressão (mesmos 11 erros pré-existentes). Exceção de escopo: `STATUS_COLORS` em `modules/orders/types.ts` foi remapeado para os tokens `tone-*` (é só um mapa de classes de apresentação) e o bug de prerender do `CartSync` foi corrigido para destravar o build.
 
-Pendências deixadas para depois: migração Lucide → Phosphor/Radix (42 arquivos, mecânica, opcional); skeletons por rota (só o primitivo `Skeleton` foi criado); polimento fino de `tracking`/`leading` avulsos remanescentes; redesign profundo de `admin/catalogo` (997 ln) e `admin/configuracoes` (659 ln), que receberam só o passe de tokens/press-feedback.
+### Polimento adicional (feito após as 7 fases)
+
+- `tracking-[]` / `leading-[]` avulsos → utilitários da escala (17 arquivos).
+- Skeleton loaders reais em `/pedidos` e `/acompanhamento/[id]` (substituem spinner `Loader2`).
+- Stagger sutil de entrada no grid do catálogo (`.reveal-rise`, `motion-safe`, cortado em 8 itens).
+
+### Deixado de fora — por decisão, não por falta de tempo
+
+- **Migração Lucide → Phosphor/Radix**: 64 ícones distintos em 42 arquivos, sem mapeamento 1:1 (nomes e prop de peso diferem), adiciona dependência. Alto risco de deriva semântica para ganho visual marginal — Lucide é um set consistente e adequado. **Não recomendado.**
+- **Redesign profundo de `admin/catalogo` (997 ln) e `admin/configuracoes` (659 ln)**: ferramentas internas usadas por uma pessoa; já receberam tokens + press-feedback + paleta. Reestruturar 1.6k linhas de formulários CRUD é esforço/risco alto para benefício restrito. **Melhor parar no passe leve.**
 
 ---
 
