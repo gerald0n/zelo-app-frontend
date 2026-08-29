@@ -1,17 +1,26 @@
 import type { Metadata, Viewport } from 'next';
-import { Fraunces, Nunito } from 'next/font/google';
+import { Fraunces, Geist, Geist_Mono } from 'next/font/google';
 import Providers from '@/components/Providers';
 import './globals.css';
 
+/** Display serif — títulos, preços, marca. */
 const fraunces = Fraunces({
   subsets: ['latin'],
   variable: '--font-fraunces',
   display: 'swap',
 });
 
-const nunito = Nunito({
+/** Sans de corpo e UI. */
+const geist = Geist({
   subsets: ['latin'],
-  variable: '--font-nunito',
+  variable: '--font-geist',
+  display: 'swap',
+});
+
+/** Mono — dados tabulares (totais, horários, códigos). */
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-geist-mono',
   display: 'swap',
 });
 
@@ -55,7 +64,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`bg-background ${fraunces.variable} ${nunito.variable}`}
+      className={`bg-background ${fraunces.variable} ${geist.variable} ${geistMono.variable}`}
       // Chromium (e.g. Chrome autofill) may inject __gcrremoteframetoken before hydration.
       suppressHydrationWarning
     >
