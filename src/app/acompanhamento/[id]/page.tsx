@@ -281,7 +281,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
           {!isCancelled ? (
             <section
               aria-label="Andamento do pedido"
-              className="rounded-2xl border border-border bg-card p-3.5 shadow-sm"
+              className="rounded-xl border border-border bg-card p-3.5"
             >
               <ol className="flex flex-col">
                 {steps.map((step, i) => {
@@ -367,7 +367,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
           ) : null}
 
           {order.history.length > 0 ? (
-            <section className="rounded-3xl border border-border bg-card p-4 shadow-sm">
+            <section className="rounded-xl border border-border bg-card p-4">
               <h2 className="font-serif text-lg font-semibold text-foreground">
                 Histórico
               </h2>
@@ -398,7 +398,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
         </div>
 
         <div className="flex flex-col gap-3.5 lg:sticky lg:top-4 lg:col-span-1">
-          <section className="rounded-3xl border border-border bg-card p-4 shadow-sm">
+          <section className="rounded-xl border border-border bg-card p-4">
             <h2 className="font-serif text-lg font-semibold text-foreground">
               Itens do pedido
             </h2>
@@ -416,7 +416,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
                         : ''}
                     </p>
                   </div>
-                  <span className="text-sm font-semibold text-foreground">
+                  <span className="text-sm font-semibold tabular-nums text-foreground">
                     {formatCatalogPrice(item.lineTotalCents)}
                   </span>
                 </li>
@@ -426,7 +426,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
             <div className="mt-4 space-y-2 border-t border-border pt-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span className="font-medium text-foreground">
+                <span className="font-medium tabular-nums text-foreground">
                   {formatCatalogPrice(order.subtotalCents)}
                 </span>
               </div>
@@ -434,9 +434,9 @@ function AcompanhamentoContent({ id }: { id: string }) {
                 <span className="text-muted-foreground">Entrega</span>
                 <span
                   className={cn(
-                    'font-medium',
+                    'font-medium tabular-nums',
                     order.deliveryFeeCents === 0
-                      ? 'text-pistachio-foreground'
+                      ? 'text-success'
                       : 'text-foreground',
                   )}
                 >
@@ -449,7 +449,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
                 <span className="text-sm font-semibold text-foreground">
                   Total
                 </span>
-                <span className="font-serif text-lg font-semibold text-primary">
+                <span className="font-serif text-lg font-semibold tabular-nums text-primary">
                   {formatCatalogPrice(order.totalCents)}
                 </span>
               </div>
@@ -459,7 +459,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
           {order.deliveryMethod === 'delivery' && order.address ? (
             <Link
               href="/loja"
-              className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 shadow-sm transition-colors hover:bg-accent"
+              className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3.5 transition-[background-color,transform] duration-100 hover:bg-accent active:scale-[0.99]"
             >
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <MapPin className="size-[18px]" />
@@ -480,7 +480,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
               <button
                 type="button"
                 onClick={() => void handleReorder()}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card px-4 py-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3.5 text-sm font-semibold text-foreground transition-[background-color,transform] duration-100 hover:bg-accent active:scale-[0.99]"
               >
                 <RefreshCw className="size-[18px]" aria-hidden="true" />
                 Pedir novamente
@@ -489,7 +489,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
             {order.canCancel ? (
               <Link
                 href={`/cancelar-pedido?orderId=${order.id}&orderNumber=${encodeURIComponent(order.number)}`}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-primary/40 bg-card px-4 py-3.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary/40 bg-card px-4 py-3.5 text-sm font-semibold text-primary transition-[background-color,transform] duration-100 hover:bg-primary/5 active:scale-[0.99]"
               >
                 <XCircle className="size-[18px]" aria-hidden="true" />
                 Cancelar pedido

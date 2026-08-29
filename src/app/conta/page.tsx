@@ -135,7 +135,7 @@ export default function ContaPage() {
           isDesktop && 'mx-auto w-full max-w-[1120px] p-8',
         )}
       >
-        <div className="flex items-center gap-3 rounded-lg border border-border bg-white p-3">
+        <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
           <div className="flex size-11 items-center justify-center rounded-full bg-muted">
             <span className="text-base font-bold text-primary">{initials}</span>
           </div>
@@ -161,7 +161,7 @@ export default function ContaPage() {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-border bg-white">
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
           {menuItems.map((item, index) => {
             const Icon = item.icon;
             const content = (

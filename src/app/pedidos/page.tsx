@@ -147,7 +147,7 @@ export default function PedidosPage() {
               className={cn(
                 'flex-1 rounded-sm py-1.5 text-center text-sm',
                 tab === t
-                  ? 'bg-white font-semibold text-foreground'
+                  ? 'bg-card font-semibold text-foreground shadow-sm'
                   : 'text-muted-foreground',
               )}
             >

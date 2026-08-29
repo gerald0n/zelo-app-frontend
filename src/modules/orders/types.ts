@@ -118,14 +118,14 @@ export function statusLabel(status: OrderStatus): string {
 }
 
 export const STATUS_COLORS: Record<OrderStatus, string> = {
-  received: 'bg-muted text-muted-foreground',
-  confirmed: 'bg-caramel/30 text-caramel-foreground',
-  in_production: 'bg-primary/10 text-primary',
-  ready_for_delivery: 'bg-pistachio/50 text-pistachio-foreground',
-  ready_for_pickup: 'bg-pistachio/50 text-pistachio-foreground',
-  out_for_delivery: 'bg-pistachio/50 text-pistachio-foreground',
-  delivered: 'bg-muted text-muted-foreground',
-  cancelled: 'bg-destructive/10 text-destructive',
+  received: 'bg-tone-neutral text-tone-neutral-foreground',
+  confirmed: 'bg-tone-info text-tone-info-foreground',
+  in_production: 'bg-tone-warning text-tone-warning-foreground',
+  ready_for_delivery: 'bg-tone-positive text-tone-positive-foreground',
+  ready_for_pickup: 'bg-tone-positive text-tone-positive-foreground',
+  out_for_delivery: 'bg-tone-positive text-tone-positive-foreground',
+  delivered: 'bg-tone-neutral text-tone-neutral-foreground',
+  cancelled: 'bg-tone-critical text-tone-critical-foreground',
 };
 
 export function canCustomerCancel(status: OrderStatus): boolean {
