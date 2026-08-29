@@ -6,6 +6,12 @@ Branch: `feat/redesign-editorial-minimalista`.
 
 Regras: mexer só em apresentação (`app/`, `components/`, `globals.css`). **Não tocar em `modules/`, rotas de API, migrations.** Buildar entre fases.
 
+## Status: fases 1–7 concluídas (2026-08-29)
+
+Todas as 7 fases implementadas na branch `feat/redesign-editorial-minimalista` (10 commits). `pnpm build` verde, `pnpm typecheck` limpo, `pnpm lint` sem regressão (mesmos 11 erros pré-existentes). Exceção de escopo: `STATUS_COLORS` em `modules/orders/types.ts` foi remapeado para os tokens `tone-*` (é só um mapa de classes de apresentação) e o bug de prerender do `CartSync` foi corrigido para destravar o build.
+
+Pendências deixadas para depois: migração Lucide → Phosphor/Radix (42 arquivos, mecânica, opcional); skeletons por rota (só o primitivo `Skeleton` foi criado); polimento fino de `tracking`/`leading` avulsos remanescentes; redesign profundo de `admin/catalogo` (997 ln) e `admin/configuracoes` (659 ln), que receberam só o passe de tokens/press-feedback.
+
 ---
 
 ## 1. Diagnóstico do estado atual
