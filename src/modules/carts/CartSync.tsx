@@ -39,13 +39,17 @@ export function CartSync() {
   const items = useCartStore((state) => state.items);
   const updatedAt = useCartStore((state) => state.updatedAt);
   const replaceItems = useCartStore((state) => state.replaceItems);
-  const [hydrated, setHydrated] = useState(() =>
-    useCartStore.persist.hasHydrated(),
+  const [hydrated, setHydrated] = useState(
+    () => useCartStore.persist?.hasHydrated() ?? false,
   );
   const reconciledForUser = useRef<string | null>(null);
   const skipPush = useRef(false);
 
   useEffect(() => {
+    // Durante o prerender não há `localStorage`; o middleware persist fica
+    // inativo e `useCartStore.persist` é undefined até o cliente montar.
+    if (!useCartStore.persist) return;
+    if (useCartStore.persist.hasHydrated()) setHydrated(true);
     const unsub = useCartStore.persist.onFinishHydration(() => {
       setHydrated(true);
     });
