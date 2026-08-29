@@ -112,6 +112,26 @@ Cada ambiente deve possuir configuração correspondente.
 
 Nunca apontar preview ou desenvolvimento para produção sem decisão explícita.
 
+## Administrador em produção
+
+O `seed.sql` cria o admin de desenvolvimento (`admin@zeloconfeitaria.com.br`
+/ `admin123`) e **não roda em produção** (`db push` / `migration up` ignoram
+o seed). Em produção, criar o admin manualmente:
+
+1. Supabase Studio → Authentication → Add user → e-mail real + senha forte
+   (ou `supabase.auth.admin.createUser` via script com service role).
+2. Inserir a linha correspondente:
+
+   ```sql
+   insert into public.admin_profiles (id, display_name, is_active)
+   values ('<uuid-do-auth-user>', 'Nome do admin', true);
+   ```
+
+3. Guardar a senha em cofre; trocar no primeiro acesso pelo painel
+   (Configurações → Senha).
+
+Nunca usar `admin123` fora do ambiente local.
+
 ---
 
 # Migrations
