@@ -240,7 +240,7 @@ export default function StoreHeader({ onHeightChange }: Props) {
     <div>
       <div
         ref={heroRef}
-        className="border-b border-border/50 bg-background/88 px-4 pb-2.5 pt-3 backdrop-blur-xl"
+        className="border-b border-border/50 bg-background/90 px-4 pb-2.5 pt-3 backdrop-blur-md"
       >
         <HeroContent
           storeOpen={storeOpen}
@@ -271,7 +271,7 @@ function HeroContent({
       <div className="flex min-w-0 items-start gap-2.5">
         <div
           className={cn(
-            'flex shrink-0 items-center justify-center bg-primary text-primary-foreground shadow-sm',
+            'flex shrink-0 items-center justify-center bg-primary text-primary-foreground',
             expanded ? 'size-11 rounded-xl' : 'size-8 rounded-lg',
           )}
         >

@@ -100,7 +100,7 @@ export default function HomeCatalog({
               type="button"
               onClick={() => setActive(filter.id)}
               className={cn(
-                'flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold transition-colors',
+                'flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold transition-colors active:scale-[0.98]',
                 active === filter.id
                   ? 'bg-primary text-primary-foreground'
                   : 'text-foreground hover:bg-accent',
@@ -171,7 +171,7 @@ export default function HomeCatalog({
                       <button
                         type="button"
                         onClick={() => addProduct(product)}
-                        className="inline-flex h-7 w-full items-center justify-center rounded-md bg-primary/10 px-2 text-2xs font-semibold text-primary transition-colors hover:bg-primary/20"
+                        className="inline-flex h-7 w-full items-center justify-center rounded-md bg-primary/10 px-2 text-2xs font-semibold text-primary transition-[background-color,transform] duration-100 hover:bg-primary/20 active:scale-[0.97]"
                       >
                         Adicionar
                       </button>
@@ -200,7 +200,7 @@ export default function HomeCatalog({
                 type="button"
                 onClick={() => setActive('Favoritos')}
                 className={cn(
-                  'inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
+                  'inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-[color,background-color,transform] duration-100 active:scale-95',
                   active === 'Favoritos'
                     ? 'bg-primary text-primary-foreground'
                     : 'border border-border bg-card text-foreground hover:bg-accent',
@@ -212,7 +212,7 @@ export default function HomeCatalog({
                 type="button"
                 onClick={() => setActive('Todos')}
                 className={cn(
-                  'shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
+                  'shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-[color,background-color,transform] duration-100 active:scale-95',
                   active === 'Todos'
                     ? 'bg-primary text-primary-foreground'
                     : 'border border-border bg-card text-foreground hover:bg-accent',
@@ -226,7 +226,7 @@ export default function HomeCatalog({
                   type="button"
                   onClick={() => setActive(category.id)}
                   className={cn(
-                    'shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
+                    'shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-[color,background-color,transform] duration-100 active:scale-95',
                     active === category.id
                       ? 'bg-primary text-primary-foreground'
                       : 'border border-border bg-card text-foreground hover:bg-accent',

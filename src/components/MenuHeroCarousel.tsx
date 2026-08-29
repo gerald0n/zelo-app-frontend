@@ -102,15 +102,15 @@ export default function MenuHeroCarousel() {
           {SLIDES.map((slide) => (
             <article
               key={slide.id}
-              className="relative min-w-full shrink-0 snap-center overflow-hidden bg-primary px-4 pb-10 pt-5 text-primary-foreground shadow-md"
+              className="relative min-w-full shrink-0 snap-center overflow-hidden bg-primary px-4 pb-10 pt-5 text-primary-foreground"
             >
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-caramel/30 blur-2xl"
+                className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-caramel/20 blur-2xl"
               />
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute -bottom-16 -left-8 size-40 rounded-full bg-pistachio/20 blur-2xl"
+                className="pointer-events-none absolute -bottom-16 -left-8 size-40 rounded-full bg-pistachio/15 blur-2xl"
               />
               <p className="relative text-2xs font-semibold uppercase tracking-[0.18em] text-primary-foreground/70">
                 {slide.eyebrow}
