@@ -416,7 +416,7 @@ export default function RecebimentoPage() {
               disabled={!allowImmediate}
               onClick={() => allowImmediate && setScheduleType('now')}
               className={cn(
-                'flex flex-1 flex-col items-center gap-1.5 rounded-md border-[1.5px] py-3.5',
+                'flex flex-1 flex-col items-center gap-1.5 rounded-md border-[1.5px] py-3.5 transition-[background-color,border-color,transform] duration-100 active:scale-[0.98]',
                 checkout.scheduleType === 'now'
                   ? 'border-primary bg-primary/[0.07]'
                   : 'border-border bg-card',
@@ -452,7 +452,7 @@ export default function RecebimentoPage() {
               type="button"
               onClick={() => setScheduleType('scheduled')}
               className={cn(
-                'flex flex-1 flex-col items-center gap-1.5 rounded-md border-[1.5px] py-3.5',
+                'flex flex-1 flex-col items-center gap-1.5 rounded-md border-[1.5px] py-3.5 transition-[background-color,border-color,transform] duration-100 active:scale-[0.98]',
                 checkout.scheduleType === 'scheduled'
                   ? 'border-primary bg-primary/[0.07]'
                   : 'border-border bg-card',
@@ -539,7 +539,7 @@ export default function RecebimentoPage() {
                 type="button"
                 onClick={() => setDeliveryType(t)}
                 className={cn(
-                  'flex flex-1 flex-col items-center gap-1.5 rounded-md border-[1.5px] py-3.5',
+                  'flex flex-1 flex-col items-center gap-1.5 rounded-md border-[1.5px] py-3.5 transition-[background-color,border-color,transform] duration-100 active:scale-[0.98]',
                   checkout.deliveryType === t
                     ? 'border-primary bg-primary/[0.07]'
                     : 'border-border bg-card',
@@ -709,7 +709,7 @@ export default function RecebimentoPage() {
               ) : null}
 
               {checkout.deliveryInServiceArea === false ? (
-                <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-2.5 text-sm text-amber-800">
+                <div className="flex items-start gap-2 rounded-md border border-transparent bg-tone-warning p-2.5 text-sm text-tone-warning-foreground">
                   <AlertCircle className="mt-0.5 size-4 shrink-0" />
                   <p>
                     {quoteMessage ??

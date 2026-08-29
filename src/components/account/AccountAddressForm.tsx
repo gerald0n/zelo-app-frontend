@@ -243,7 +243,7 @@ export function AccountAddressForm({
       ) : null}
 
       {quote?.inServiceArea === false ? (
-        <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-2.5 text-sm text-amber-800">
+        <div className="flex items-start gap-2 rounded-md border border-transparent bg-tone-warning p-2.5 text-sm text-tone-warning-foreground">
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <p>
             {quote.message ??

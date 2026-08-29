@@ -65,7 +65,7 @@ function CartItemRow({ item }: { item: CartItem }) {
             <button
               type="button"
               aria-label="Diminuir"
-              className="p-1.5"
+              className="p-1.5 transition-transform duration-100 active:scale-90"
               onClick={() => {
                 updateQuantity(item.id, item.quantity - 1);
                 notify(`${item.name} removido do carrinho.`);
@@ -73,13 +73,13 @@ function CartItemRow({ item }: { item: CartItem }) {
             >
               <Minus className="size-4" />
             </button>
-            <span className="px-2.5 text-sm font-semibold">
+            <span className="px-2.5 text-sm font-semibold tabular-nums">
               {item.quantity}
             </span>
             <button
               type="button"
               aria-label="Aumentar"
-              className="p-1.5"
+              className="p-1.5 transition-transform duration-100 active:scale-90"
               onClick={() => {
                 updateQuantity(item.id, item.quantity + 1);
                 notify('Quantidade atualizada.');
@@ -88,7 +88,7 @@ function CartItemRow({ item }: { item: CartItem }) {
               <Plus className="size-4" />
             </button>
           </div>
-          <span className="text-sm font-bold">
+          <span className="text-sm font-bold tabular-nums">
             {formatCatalogPrice(item.price * item.quantity)}
           </span>
         </div>
@@ -207,7 +207,7 @@ export default function CarrinhoPage() {
     <>
       <div className="flex items-center justify-between">
         <span className="text-base font-semibold">Total</span>
-        <span className="text-xl font-bold">
+        <span className="font-serif text-xl font-bold tabular-nums">
           {formatCatalogPrice(subtotal)}
         </span>
       </div>
@@ -253,7 +253,7 @@ export default function CarrinhoPage() {
           </p>
           <Link
             href="/"
-            className="mt-3 rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-white"
+            className="mt-3 rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-transform duration-150 active:scale-[0.98]"
           >
             Ver cardápio
           </Link>
@@ -293,19 +293,19 @@ export default function CarrinhoPage() {
         <div className="mt-2 space-y-2 rounded-xl border border-border bg-card p-3 lg:sticky lg:top-6 lg:col-span-1 lg:mt-0">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Produtos</span>
-            <span className="text-sm font-medium">
+            <span className="text-sm font-medium tabular-nums">
               {formatCatalogPrice(productsSubtotal)}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Adicionais</span>
-            <span className="text-sm font-medium">
+            <span className="text-sm font-medium tabular-nums">
               {formatCatalogPrice(addonsTotal)}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Subtotal</span>
-            <span className="text-sm font-medium">
+            <span className="text-sm font-medium tabular-nums">
               {formatCatalogPrice(subtotal)}
             </span>
           </div>

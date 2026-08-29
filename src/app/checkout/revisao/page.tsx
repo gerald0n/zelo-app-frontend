@@ -212,7 +212,7 @@ export default function RevisaoPage() {
                   {item.quantity}×
                 </span>
                 <span className="min-w-0 flex-1 text-sm">{item.name}</span>
-                <span className="text-sm font-medium">
+                <span className="text-sm font-medium tabular-nums">
                   {formatCatalogPrice(item.price * item.quantity)}
                 </span>
               </div>
@@ -264,7 +264,7 @@ export default function RevisaoPage() {
           <div className="space-y-2 rounded-xl border border-border bg-card p-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Subtotal</span>
-              <span className="text-sm font-medium">
+              <span className="text-sm font-medium tabular-nums">
                 {formatCatalogPrice(subtotal)}
               </span>
             </div>
@@ -272,7 +272,7 @@ export default function RevisaoPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Entrega</span>
               <span
-                className={`text-sm font-medium ${checkout.deliveryType === 'pickup' || deliveryFee === 0 ? 'text-success' : ''}`}
+                className={`text-sm font-medium tabular-nums ${checkout.deliveryType === 'pickup' || deliveryFee === 0 ? 'text-success' : ''}`}
               >
                 {checkout.deliveryType === 'pickup' || deliveryFee === 0
                   ? 'Grátis'
@@ -282,7 +282,7 @@ export default function RevisaoPage() {
             <Separator />
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold">Total</span>
-              <span className="text-base font-bold">
+              <span className="text-base font-bold tabular-nums">
                 {formatCatalogPrice(total)}
               </span>
             </div>
@@ -297,7 +297,7 @@ export default function RevisaoPage() {
           <div className={cn(checkoutFooterClass, 'space-y-3')}>
             <div className="flex items-center justify-between">
               <span className="text-base font-semibold">Total</span>
-              <span className="text-xl font-bold">
+              <span className="font-serif text-xl font-bold tabular-nums">
                 {formatCatalogPrice(total)}
               </span>
             </div>

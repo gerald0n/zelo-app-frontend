@@ -233,7 +233,7 @@ export default function PagamentoPage() {
                   setNeedsChange(null);
                 }}
                 className={cn(
-                  'flex w-full items-center gap-3.5 rounded-md border-[1.5px] p-4 text-left',
+                  'flex w-full items-center gap-3.5 rounded-md border-[1.5px] p-4 text-left transition-[background-color,border-color,transform] duration-100 active:scale-[0.99]',
                   selected
                     ? 'border-primary bg-primary/10'
                     : 'border-border bg-card',

@@ -181,7 +181,7 @@ export default function OtpPage() {
             <div
               key={i}
               className={cn(
-                'flex h-12 w-10 items-center justify-center rounded-md border-[1.5px] bg-card',
+                'flex h-12 w-10 items-center justify-center rounded-md border-[1.5px] bg-card transition-colors duration-150',
                 i === otp.length
                   ? 'border-primary'
                   : otp[i]
@@ -189,7 +189,9 @@ export default function OtpPage() {
                     : 'border-border',
               )}
             >
-              <span className="text-2xl font-bold">{otp[i] ?? ''}</span>
+              <span className="font-mono text-2xl font-bold tabular-nums">
+                {otp[i] ?? ''}
+              </span>
             </div>
           ))}
         </button>
