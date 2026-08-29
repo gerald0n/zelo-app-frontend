@@ -521,7 +521,7 @@ export default function AdminCatalogoPage() {
               <button
                 type="button"
                 onClick={() => openProductForm()}
-                className="inline-flex shrink-0 items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white"
+                className="inline-flex shrink-0 items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:active:scale-100"
               >
                 <Plus className="size-3.5" />
                 Novo
@@ -639,7 +639,7 @@ export default function AdminCatalogoPage() {
                   <button
                     type="submit"
                     disabled={productMutation.isPending}
-                    className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                    className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:active:scale-100 disabled:opacity-60"
                   >
                     {productMutation.isPending ? 'Salvando…' : 'Salvar'}
                   </button>
@@ -761,7 +761,7 @@ export default function AdminCatalogoPage() {
               <button
                 type="button"
                 onClick={() => openCategoryForm()}
-                className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white"
+                className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:active:scale-100"
               >
                 <Plus className="size-3.5" />
                 Nova categoria
@@ -805,7 +805,7 @@ export default function AdminCatalogoPage() {
                 <div className="flex gap-2">
                   <button
                     type="submit"
-                    className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white"
+                    className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:active:scale-100"
                   >
                     Salvar
                   </button>
@@ -872,7 +872,7 @@ export default function AdminCatalogoPage() {
               <button
                 type="button"
                 onClick={() => openAddonForm()}
-                className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white"
+                className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:active:scale-100"
               >
                 <Plus className="size-3.5" />
                 Novo adicional
@@ -926,7 +926,7 @@ export default function AdminCatalogoPage() {
                 <div className="flex gap-2">
                   <button
                     type="submit"
-                    className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white"
+                    className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:active:scale-100"
                   >
                     Salvar
                   </button>

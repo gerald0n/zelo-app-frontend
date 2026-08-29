@@ -396,7 +396,7 @@ export default function AdminConfiguracoesPage() {
           <button
             type="submit"
             disabled={storeMutation.isPending}
-            className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+            className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:active:scale-100 disabled:opacity-60"
           >
             {storeMutation.isPending ? 'Salvando…' : 'Salvar loja'}
           </button>
@@ -461,7 +461,7 @@ export default function AdminConfiguracoesPage() {
           <button
             type="submit"
             disabled={hoursMutation.isPending}
-            className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+            className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:active:scale-100 disabled:opacity-60"
           >
             {hoursMutation.isPending ? 'Salvando…' : 'Salvar horários'}
           </button>
@@ -492,7 +492,7 @@ export default function AdminConfiguracoesPage() {
             />
             <button
               type="submit"
-              className="inline-flex items-center justify-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white"
+              className="inline-flex items-center justify-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:active:scale-100"
             >
               <Plus className="size-3.5" />
               Add

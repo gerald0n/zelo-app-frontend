@@ -228,13 +228,9 @@ export default function AdminPedidoPage({
             </section>
 
             {order.internalNote ? (
-              <section className="rounded-lg border border-amber-200 bg-amber-50 p-3.5">
-                <h2 className="text-sm font-bold text-amber-900">
-                  Nota interna
-                </h2>
-                <p className="mt-1 text-xs text-amber-900/80">
-                  {order.internalNote}
-                </p>
+              <section className="rounded-lg border border-transparent bg-tone-warning p-3.5 text-tone-warning-foreground">
+                <h2 className="text-sm font-bold">Nota interna</h2>
+                <p className="mt-1 text-xs opacity-80">{order.internalNote}</p>
               </section>
             ) : null}
           </div>
