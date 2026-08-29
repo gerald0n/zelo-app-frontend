@@ -36,7 +36,7 @@ export default function AdminOrderCard({ order }: Props) {
           {formatCatalogPrice(order.totalCents)}
         </p>
       </div>
-      <p className="line-clamp-2 text-xs leading-[17px] text-muted-foreground">
+      <p className="line-clamp-2 text-xs leading-snug text-muted-foreground">
         {order.items
           .map((item) => `${item.quantity}× ${item.name}`)
           .join(' · ')}

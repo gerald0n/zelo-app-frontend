@@ -110,7 +110,7 @@ export default function NotificacoesPage() {
                 <p className="text-base font-semibold">
                   Avisos do pedido
                 </p>
-                <p className="mt-1 text-sm leading-[18px] text-muted-foreground">
+                <p className="mt-1 text-sm leading-snug text-muted-foreground">
                   Receba atualizações quando o pedido for para produção, ficar
                   pronto ou sair para entrega.
                 </p>

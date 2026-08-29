@@ -12,7 +12,7 @@ export default function DesktopCartPanel() {
     <aside className="sticky top-0 flex h-dvh w-[320px] shrink-0 flex-col border-l border-border bg-card pt-4">
       <div className="flex items-center justify-between px-4">
         <div>
-          <p className="text-2xs font-semibold tracking-[1.2px] text-muted-foreground">
+          <p className="text-2xs font-semibold tracking-widest text-muted-foreground">
             SEU PEDIDO
           </p>
           <h2 className="mt-0.5 text-lg font-bold">Carrinho</h2>

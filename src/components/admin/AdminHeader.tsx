@@ -22,12 +22,12 @@ export default function AdminHeader({ title, subtitle, backTo }: Props) {
         </Link>
       ) : null}
       <div className="flex-1">
-        <h1 className="text-lg font-bold tracking-[-0.3px]">{title}</h1>
+        <h1 className="text-lg font-bold tracking-tight">{title}</h1>
         {subtitle ? (
           <p className="mt-0.5 text-2xs text-muted-foreground">{subtitle}</p>
         ) : null}
       </div>
-      <span className="rounded-md bg-primary/10 px-2 py-1.5 text-2xs font-bold tracking-[1px] text-primary">
+      <span className="rounded-md bg-primary/10 px-2 py-1.5 text-2xs font-bold tracking-widest text-primary">
         ADMIN
       </span>
     </header>

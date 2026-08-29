@@ -71,12 +71,12 @@ export default function AdminLoginPage() {
 
       <div className="mx-auto my-auto w-full max-w-[420px]">
         <div className="mb-5 flex items-center gap-2">
-          <span className="text-2xl font-bold tracking-[-0.7px]">Zelo</span>
-          <Badge className="rounded-md px-2 py-1 text-2xs font-bold tracking-[1px]">
+          <span className="text-2xl font-bold tracking-tight">Zelo</span>
+          <Badge className="rounded-md px-2 py-1 text-2xs font-bold tracking-widest">
             ADMIN
           </Badge>
         </div>
-        <h1 className="text-xl font-bold tracking-[-0.5px]">
+        <h1 className="text-xl font-bold tracking-tight">
           Painel da confeitaria
         </h1>
         <p className="mt-1 text-sm leading-5 text-muted-foreground">

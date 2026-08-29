@@ -727,7 +727,7 @@ export default function RecebimentoPage() {
                     ) : (
                       <Bike className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                     )}
-                    <p className="min-w-0 flex-1 text-sm leading-[18px] break-words text-muted-foreground">
+                    <p className="min-w-0 flex-1 text-sm leading-snug break-words text-muted-foreground">
                       Taxa de entrega:{' '}
                       <span className="font-semibold text-foreground">
                         {deliveryFee === 0

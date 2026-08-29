@@ -155,7 +155,7 @@ export default function OtpPage() {
         )}
       >
         <div>
-          <h2 className="text-xl font-bold tracking-[-0.3px]">
+          <h2 className="text-xl font-bold tracking-tight">
             Código de verificação
           </h2>
           <p className="mt-2 text-sm leading-5 text-muted-foreground">

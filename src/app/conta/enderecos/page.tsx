@@ -120,7 +120,7 @@ export default function EnderecosPage() {
                           </span>
                         ) : null}
                       </p>
-                      <p className="mt-1 text-sm leading-[18px] text-muted-foreground">
+                      <p className="mt-1 text-sm leading-snug text-muted-foreground">
                         {address.street}, {address.number}
                         {address.complement ? ` · ${address.complement}` : ''}
                         <br />

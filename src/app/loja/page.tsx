@@ -47,7 +47,7 @@ export default async function LojaPage() {
           <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
             <Coffee className="size-8 text-primary" />
           </div>
-          <h2 className="font-serif text-xl font-semibold tracking-[-0.3px]">
+          <h2 className="font-serif text-xl font-semibold tracking-tight">
             {store.name}
           </h2>
           <div className="flex items-center gap-1.5">

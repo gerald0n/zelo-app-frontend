@@ -25,10 +25,10 @@ export default function DesktopNavigation() {
   return (
     <header className="sticky top-0 z-[100] flex h-14 items-center justify-between border-b border-border bg-background px-6">
       <Link href="/" className="flex items-baseline gap-[7px]">
-        <span className="font-serif text-2xl font-semibold tracking-[-0.5px]">
+        <span className="font-serif text-2xl font-semibold tracking-tight">
           Zelo
         </span>
-        <span className="text-2xs font-medium uppercase tracking-[1.2px] text-muted-foreground">
+        <span className="text-2xs font-medium uppercase tracking-widest text-muted-foreground">
           Confeitaria
         </span>
       </Link>

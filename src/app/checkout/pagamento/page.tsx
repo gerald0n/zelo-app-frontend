@@ -360,7 +360,7 @@ export default function PagamentoPage() {
 
               {needsChange === true ? (
                 <div className="space-y-1.5">
-                  <p className="text-sm leading-[18px] text-muted-foreground">
+                  <p className="text-sm leading-snug text-muted-foreground">
                     Troco para quanto? (total: {formatCatalogPrice(total)})
                   </p>
                   <Input
@@ -383,7 +383,7 @@ export default function PagamentoPage() {
               ) : null}
 
               {needsChange === false ? (
-                <p className="text-sm leading-[18px] text-muted-foreground">
+                <p className="text-sm leading-snug text-muted-foreground">
                   Tenha o valor exato de {formatCatalogPrice(total)}.
                 </p>
               ) : null}

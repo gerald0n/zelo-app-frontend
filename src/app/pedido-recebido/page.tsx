@@ -61,7 +61,7 @@ function PedidoRecebidoContent() {
         <CheckCircle2 className="size-12 text-primary" />
       </div>
 
-      <h1 className="mb-2 text-center text-xl font-bold tracking-[-0.3px]">
+      <h1 className="mb-2 text-center text-xl font-bold tracking-tight">
         Pedido {displayNumber} recebido!
       </h1>
       <p className="mb-5 text-center text-sm leading-5 text-muted-foreground">

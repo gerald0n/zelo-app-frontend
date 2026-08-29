@@ -106,7 +106,7 @@ export default function IdentificacaoPage() {
           )}
         >
           <div>
-            <h2 className="text-xl font-bold tracking-[-0.3px]">
+            <h2 className="text-xl font-bold tracking-tight">
               Entrar ou criar conta
             </h2>
             <p className="mt-1.5 text-sm leading-5 text-muted-foreground">

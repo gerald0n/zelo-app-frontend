@@ -135,7 +135,7 @@ export default function PedidosPage() {
   return (
     <div className={cn('flex min-h-dvh flex-col bg-background', mobilePageColumnClass)}>
       <header className="space-y-2 border-b border-border px-3 pb-2 pt-3 max-lg:sticky max-lg:top-0 max-lg:z-30 max-lg:bg-background">
-        <h1 className="text-lg font-bold tracking-[-0.4px]">
+        <h1 className="text-lg font-bold tracking-tight">
           Meus pedidos
         </h1>
         <div className="flex rounded-md bg-muted p-0.5">
@@ -172,7 +172,7 @@ export default function PedidosPage() {
           <div className="flex flex-col items-center gap-2 px-8 pt-10 text-center">
             <Receipt className="size-10 text-muted-foreground" />
             <p className="mt-1 text-base font-semibold">Entre para ver pedidos</p>
-            <p className="text-sm leading-[18px] text-muted-foreground">
+            <p className="text-sm leading-snug text-muted-foreground">
               Faça login para acompanhar seus pedidos e histórico.
             </p>
             <Link
@@ -208,7 +208,7 @@ export default function PedidosPage() {
               <p className="mt-1 text-base font-semibold">
                 Nenhum pedido ativo
               </p>
-              <p className="text-sm leading-[18px] text-muted-foreground">
+              <p className="text-sm leading-snug text-muted-foreground">
                 Seus pedidos em andamento aparecem aqui.
               </p>
               <Link
@@ -234,7 +234,7 @@ export default function PedidosPage() {
             <p className="mt-1 text-base font-semibold">
               Nenhum pedido anterior
             </p>
-            <p className="text-sm leading-[18px] text-muted-foreground">
+            <p className="text-sm leading-snug text-muted-foreground">
               Seu histórico de pedidos aparece aqui.
             </p>
           </div>
