@@ -48,11 +48,13 @@ export function CartSync() {
   useEffect(() => {
     // Durante o prerender não há `localStorage`; o middleware persist fica
     // inativo e `useCartStore.persist` é undefined até o cliente montar.
-    if (!useCartStore.persist) return;
-    if (useCartStore.persist.hasHydrated()) setHydrated(true);
-    const unsub = useCartStore.persist.onFinishHydration(() => {
-      setHydrated(true);
-    });
+    const persist = useCartStore.persist;
+    if (!persist) return;
+    const markHydrated = () => setHydrated(true);
+    const unsub = persist.onFinishHydration(markHydrated);
+    // A reidratação do localStorage é síncrona: se já ocorreu antes deste
+    // efeito, `onFinishHydration` não dispara — acertamos fora do corpo.
+    if (persist.hasHydrated()) queueMicrotask(markHydrated);
     return unsub;
   }, []);
 
