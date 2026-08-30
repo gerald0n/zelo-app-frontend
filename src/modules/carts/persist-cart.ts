@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { z } from 'zod';
 import { err, ok, type Result } from '@/lib/errors';
 import { logger } from '@/lib/logger';

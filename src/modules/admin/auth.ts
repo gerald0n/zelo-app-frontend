@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { err, ok, type Result } from '@/lib/errors';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';

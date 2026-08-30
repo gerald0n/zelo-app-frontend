@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { err, ok, type Result } from '@/lib/errors';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/modules/admin/auth';

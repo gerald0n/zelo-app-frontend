@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { err, ok, type Result } from '@/lib/errors';
 import { productImagePublicUrl } from '@/lib/constants';
 import { logger } from '@/lib/logger';

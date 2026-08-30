@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { z } from 'zod';
 import { hasCustomerName } from '@/modules/auth/customer-name';
 import { err, ok, type AppError, type Result } from '@/lib/errors';
