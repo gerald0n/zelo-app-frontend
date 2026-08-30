@@ -14,11 +14,15 @@ Utilizado para desenvolvimento.
 
 Deve possuir:
 
+- Node.js 22+ (`.nvmrc`; `nvm use`). O `@supabase/supabase-js` e a CLI
+  avisam em versões abaixo de 22;
 - Next.js local;
 - Supabase local quando aplicável;
 - variáveis de ambiente próprias;
 - dados fictícios;
 - integrações externas em modo controlado.
+
+Vercel e CI usam Node 22 (`engines.node` no `package.json` / `.nvmrc`).
 
 ## Preview
 
