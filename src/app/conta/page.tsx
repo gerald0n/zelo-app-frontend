@@ -14,12 +14,12 @@ import {
   Smartphone,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { ADMIN_PHONE_E164 } from '@/config/admin';
 import { usePwaInstall } from '@/contexts/PwaInstallContext';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/cn';
-import { mobilePageColumnClass } from '@/lib/layout';
 
 type MenuItem = {
   icon: React.ElementType;
@@ -76,11 +76,15 @@ export default function ContaPage() {
       label: 'Meus pedidos',
       href: '/pedidos',
     },
-    {
-      icon: ShieldCheck,
-      label: 'Painel administrativo',
-      href: '/admin/login',
-    },
+    ...(user?.phone === ADMIN_PHONE_E164
+      ? [
+          {
+            icon: ShieldCheck,
+            label: 'Painel administrativo',
+            href: '/admin/login',
+          } satisfies MenuItem,
+        ]
+      : []),
     {
       icon: User,
       label: 'Dados pessoais',
@@ -128,7 +132,7 @@ export default function ContaPage() {
   ];
 
   return (
-    <div className={cn('flex min-h-dvh flex-col bg-background', mobilePageColumnClass)}>
+    <div className="flex min-h-dvh flex-col bg-background">
       <div
         className={cn(
           'min-h-0 flex-1 space-y-2.5 overflow-y-auto p-3',
