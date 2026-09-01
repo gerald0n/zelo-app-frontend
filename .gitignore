@@ -30,6 +30,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
 
 # env files
 .env
@@ -52,10 +53,23 @@ next-env.d.ts
 
 certificates
 
-# AI agent skills (instaladas via `npx skills` / `impeccable` — não são código do projeto)
+# Ferramentas de IA (instaladas localmente via `npx skills` / `impeccable` /
+# codex — não são código do projeto). skills-lock.json fica versionado: é só o
+# manifesto para reinstalar as skills.
 /.claude/skills/
-/.agents/skills/
+/.claude/settings.local.json
+/.agents/
 /.impeccable/
-# skills-lock.json fica versionado: é só o manifesto para reinstalar as skills
+/.codex/
+/.github/skills/
+/.github/agents/
+/.github/hooks/
+
 # npm lockfile — o projeto usa pnpm
 package-lock.json
+.env*
+
+# Seed operacional de produção: dados reais de um tenant (endereço, contato,
+# Pix, coordenadas). Não vai pro repo. `seed-operacional.sql` (com placeholders
+# <<<PREENCHA>>>) fica versionado como modelo.
+/supabase/seed-operacional.prod.sql
