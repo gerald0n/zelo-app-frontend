@@ -50,13 +50,13 @@ function SummaryBlock({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icon className="size-[18px] text-primary" />
-          <h3 className="text-[15px] font-semibold">{title}</h3>
+          <h3 className="text-base font-semibold">{title}</h3>
         </div>
         {onEdit ? (
           <button
             type="button"
             onClick={onEdit}
-            className="text-[13px] font-medium text-primary"
+            className="text-sm font-medium text-primary"
           >
             Editar
           </button>
@@ -190,7 +190,7 @@ export default function RevisaoPage() {
         <Link href="/checkout/pagamento" aria-label="Voltar ao pagamento">
           <ArrowLeft className="size-6" />
         </Link>
-        <h1 className="text-[17px] font-semibold">Revisão</h1>
+        <h1 className="text-lg font-semibold">Revisão</h1>
         <span className="w-6" />
       </header>
 
@@ -212,7 +212,7 @@ export default function RevisaoPage() {
                   {item.quantity}×
                 </span>
                 <span className="min-w-0 flex-1 text-sm">{item.name}</span>
-                <span className="text-sm font-medium">
+                <span className="text-sm font-medium tabular-nums">
                   {formatCatalogPrice(item.price * item.quantity)}
                 </span>
               </div>
@@ -264,7 +264,7 @@ export default function RevisaoPage() {
           <div className="space-y-2 rounded-xl border border-border bg-card p-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Subtotal</span>
-              <span className="text-sm font-medium">
+              <span className="text-sm font-medium tabular-nums">
                 {formatCatalogPrice(subtotal)}
               </span>
             </div>
@@ -272,7 +272,7 @@ export default function RevisaoPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Entrega</span>
               <span
-                className={`text-sm font-medium ${checkout.deliveryType === 'pickup' || deliveryFee === 0 ? 'text-success' : ''}`}
+                className={`text-sm font-medium tabular-nums ${checkout.deliveryType === 'pickup' || deliveryFee === 0 ? 'text-success' : ''}`}
               >
                 {checkout.deliveryType === 'pickup' || deliveryFee === 0
                   ? 'Grátis'
@@ -282,7 +282,7 @@ export default function RevisaoPage() {
             <Separator />
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold">Total</span>
-              <span className="text-base font-bold">
+              <span className="text-base font-bold tabular-nums">
                 {formatCatalogPrice(total)}
               </span>
             </div>
@@ -296,8 +296,8 @@ export default function RevisaoPage() {
 
           <div className={cn(checkoutFooterClass, 'space-y-3')}>
             <div className="flex items-center justify-between">
-              <span className="text-[15px] font-semibold">Total</span>
-              <span className="text-xl font-bold">
+              <span className="text-base font-semibold">Total</span>
+              <span className="font-serif text-xl font-bold tabular-nums">
                 {formatCatalogPrice(total)}
               </span>
             </div>

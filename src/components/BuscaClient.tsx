@@ -45,7 +45,7 @@ export default function BuscaClient({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Buscar produtos..."
-          className="h-10 flex-1 rounded-md border border-border bg-card px-3.5 text-[15px] outline-none placeholder:text-muted-foreground focus:border-primary"
+          className="h-11 flex-1"
         />
       </header>
 
@@ -67,7 +67,7 @@ export default function BuscaClient({
           </div>
         ) : (
           <>
-            <p className="mb-2 px-4 text-[13px] text-muted-foreground lg:px-0">
+            <p className="mb-2 px-4 text-sm text-muted-foreground lg:px-0">
               {results.length}{' '}
               {results.length === 1 ? 'resultado' : 'resultados'}
             </p>

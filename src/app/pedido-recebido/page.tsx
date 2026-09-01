@@ -61,7 +61,7 @@ function PedidoRecebidoContent() {
         <CheckCircle2 className="size-12 text-primary" />
       </div>
 
-      <h1 className="mb-2 text-center text-xl font-bold tracking-[-0.3px]">
+      <h1 className="mb-2 text-center text-xl font-bold tracking-tight">
         Pedido {displayNumber} recebido!
       </h1>
       <p className="mb-5 text-center text-sm leading-5 text-muted-foreground">
@@ -103,7 +103,7 @@ function PedidoRecebidoContent() {
             <Bell className="mt-0.5 size-5 shrink-0 text-primary" />
             <div className="flex-1">
               <p className="text-sm font-semibold">Receba atualizações</p>
-              <p className="mt-1 text-[12px] leading-4 text-muted-foreground">
+              <p className="mt-1 text-xs leading-4 text-muted-foreground">
                 Ative as notificações para receber atualizações sobre o andamento
                 do seu pedido.
               </p>
@@ -112,7 +112,7 @@ function PedidoRecebidoContent() {
                   type="button"
                   disabled={pushState === 'loading'}
                   onClick={() => void enablePush()}
-                  className="rounded-md bg-primary px-3 py-2 text-[12px] font-semibold text-white disabled:opacity-60"
+                  className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
                 >
                   {pushState === 'loading' ? 'Ativando…' : 'Ativar notificações'}
                 </button>
@@ -120,7 +120,7 @@ function PedidoRecebidoContent() {
                   type="button"
                   disabled={pushState === 'loading'}
                   onClick={() => setPushState('dismissed')}
-                  className="rounded-md px-3 py-2 text-[12px] font-medium text-muted-foreground"
+                  className="rounded-md px-3 py-2 text-xs font-medium text-muted-foreground"
                 >
                   Agora não
                 </button>
@@ -131,7 +131,7 @@ function PedidoRecebidoContent() {
       ) : null}
 
       {pushState === 'enabled' ? (
-        <p className="mb-6 text-center text-[12px] text-muted-foreground">
+        <p className="mb-6 text-center text-xs text-muted-foreground">
           Notificações ativadas para este dispositivo.
         </p>
       ) : null}
@@ -145,7 +145,7 @@ function PedidoRecebidoContent() {
         </Link>
         <Link
           href="/"
-          className="block w-full py-3 text-center text-[15px] font-medium text-primary"
+          className="block w-full py-3 text-center text-base font-medium text-primary"
         >
           Voltar ao cardápio
         </Link>

@@ -463,7 +463,7 @@ export default function AdminCatalogoPage() {
               type="button"
               onClick={() => setTab(item.id)}
               className={cn(
-                'rounded-md border px-3 py-1.5 text-[11px] font-semibold',
+                'rounded-md border px-3 py-1.5 text-2xs font-semibold',
                 tab === item.id
                   ? 'border-primary bg-primary text-white'
                   : 'border-border bg-card',
@@ -494,7 +494,7 @@ export default function AdminCatalogoPage() {
                   type="button"
                   onClick={() => setCategoryFilter(null)}
                   className={cn(
-                    'shrink-0 rounded-md border px-3 py-1.5 text-[11px] font-semibold',
+                    'shrink-0 rounded-md border px-3 py-1.5 text-2xs font-semibold',
                     categoryFilter === null
                       ? 'border-primary bg-primary text-white'
                       : 'border-border bg-card',
@@ -508,7 +508,7 @@ export default function AdminCatalogoPage() {
                     type="button"
                     onClick={() => setCategoryFilter(item.id)}
                     className={cn(
-                      'shrink-0 rounded-md border px-3 py-1.5 text-[11px] font-semibold',
+                      'shrink-0 rounded-md border px-3 py-1.5 text-2xs font-semibold',
                       categoryFilter === item.id
                         ? 'border-primary bg-primary text-white'
                         : 'border-border bg-card',
@@ -521,7 +521,7 @@ export default function AdminCatalogoPage() {
               <button
                 type="button"
                 onClick={() => openProductForm()}
-                className="inline-flex shrink-0 items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white"
+                className="inline-flex shrink-0 items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:active:scale-100"
               >
                 <Plus className="size-3.5" />
                 Novo
@@ -533,7 +533,7 @@ export default function AdminCatalogoPage() {
                 onSubmit={productForm.handleSubmit((values) =>
                   productMutation.mutate(values),
                 )}
-                className="space-y-3 rounded-[11px] border border-border bg-card p-3.5"
+                className="space-y-3 rounded-lg border border-border bg-card p-3.5"
               >
                 <p className="text-sm font-semibold">
                   {editingProduct ? 'Editar produto' : 'Novo produto'}
@@ -622,7 +622,7 @@ export default function AdminCatalogoPage() {
                               );
                             }}
                             className={cn(
-                              'rounded-md border px-2.5 py-1 text-[11px] font-semibold',
+                              'rounded-md border px-2.5 py-1 text-2xs font-semibold',
                               selected
                                 ? 'border-primary bg-primary/10 text-primary'
                                 : 'border-border',
@@ -639,7 +639,7 @@ export default function AdminCatalogoPage() {
                   <button
                     type="submit"
                     disabled={productMutation.isPending}
-                    className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                    className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:active:scale-100 disabled:opacity-60"
                   >
                     {productMutation.isPending ? 'Salvando…' : 'Salvar'}
                   </button>
@@ -661,7 +661,7 @@ export default function AdminCatalogoPage() {
               {visibleProducts.map((product) => (
                 <div
                   key={product.id}
-                  className="flex items-center gap-3 rounded-[11px] border border-border bg-card p-3"
+                  className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
                 >
                   <span className="flex size-10 items-center justify-center overflow-hidden rounded-md bg-muted">
                     {product.images[0] ? (
@@ -677,7 +677,7 @@ export default function AdminCatalogoPage() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold">{product.name}</p>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-2xs text-muted-foreground">
                       {product.categoryName} ·{' '}
                       {formatCatalogPrice(product.priceCents)}
                     </p>
@@ -761,7 +761,7 @@ export default function AdminCatalogoPage() {
               <button
                 type="button"
                 onClick={() => openCategoryForm()}
-                className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white"
+                className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:active:scale-100"
               >
                 <Plus className="size-3.5" />
                 Nova categoria
@@ -772,7 +772,7 @@ export default function AdminCatalogoPage() {
                 onSubmit={categoryForm.handleSubmit((values) =>
                   categoryMutation.mutate(values),
                 )}
-                className="space-y-3 rounded-[11px] border border-border bg-card p-3.5"
+                className="space-y-3 rounded-lg border border-border bg-card p-3.5"
               >
                 <Label className="block text-xs font-semibold">
                   Nome
@@ -805,7 +805,7 @@ export default function AdminCatalogoPage() {
                 <div className="flex gap-2">
                   <button
                     type="submit"
-                    className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white"
+                    className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:active:scale-100"
                   >
                     Salvar
                   </button>
@@ -823,11 +823,11 @@ export default function AdminCatalogoPage() {
               {categories.map((category) => (
                 <div
                   key={category.id}
-                  className="flex items-center gap-3 rounded-[11px] border border-border bg-card p-3"
+                  className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold">{category.name}</p>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-2xs text-muted-foreground">
                       Ordem {category.sortOrder} ·{' '}
                       {category.isActive ? 'Ativa' : 'Inativa'}
                     </p>
@@ -872,7 +872,7 @@ export default function AdminCatalogoPage() {
               <button
                 type="button"
                 onClick={() => openAddonForm()}
-                className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white"
+                className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:active:scale-100"
               >
                 <Plus className="size-3.5" />
                 Novo adicional
@@ -883,7 +883,7 @@ export default function AdminCatalogoPage() {
                 onSubmit={addonForm.handleSubmit((values) =>
                   addonMutation.mutate(values),
                 )}
-                className="space-y-3 rounded-[11px] border border-border bg-card p-3.5"
+                className="space-y-3 rounded-lg border border-border bg-card p-3.5"
               >
                 <Label className="block text-xs font-semibold">
                   Nome
@@ -926,7 +926,7 @@ export default function AdminCatalogoPage() {
                 <div className="flex gap-2">
                   <button
                     type="submit"
-                    className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white"
+                    className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:active:scale-100"
                   >
                     Salvar
                   </button>
@@ -944,11 +944,11 @@ export default function AdminCatalogoPage() {
               {addons.map((addon) => (
                 <div
                   key={addon.id}
-                  className="flex items-center gap-3 rounded-[11px] border border-border bg-card p-3"
+                  className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold">{addon.name}</p>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-2xs text-muted-foreground">
                       {formatCatalogPrice(addon.priceCents)} ·{' '}
                       {addon.isAvailable ? 'Disponível' : 'Indisponível'}
                     </p>

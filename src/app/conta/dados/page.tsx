@@ -83,7 +83,7 @@ export default function DadosPessoaisPage() {
                 readOnly
                 className={cn(checkoutFieldClass, 'bg-muted')}
               />
-              <p className="mt-1.5 text-[12px] leading-4 text-muted-foreground">
+              <p className="mt-1.5 text-xs leading-4 text-muted-foreground">
                 O celular é a chave da conta. Para usar outro número, saia e
                 identifique-se de novo.
               </p>

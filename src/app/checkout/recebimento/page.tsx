@@ -383,7 +383,7 @@ export default function RecebimentoPage() {
         <Link href="/carrinho" aria-label="Voltar ao carrinho">
           <ArrowLeft className="size-6" />
         </Link>
-        <h1 className="text-[17px] font-semibold">Recebimento</h1>
+        <h1 className="text-lg font-semibold">Recebimento</h1>
         <span className="w-6" />
       </header>
 
@@ -409,14 +409,14 @@ export default function RecebimentoPage() {
             </div>
           ) : null}
 
-          <p className="text-[15px] font-semibold">Quando?</p>
+          <p className="text-base font-semibold">Quando?</p>
           <div className="flex min-w-0 gap-2.5">
             <button
               type="button"
               disabled={!allowImmediate}
               onClick={() => allowImmediate && setScheduleType('now')}
               className={cn(
-                'flex flex-1 flex-col items-center gap-1.5 rounded-md border-[1.5px] py-3.5',
+                'flex flex-1 flex-col items-center gap-1.5 rounded-md border-[1.5px] py-3.5 transition-[background-color,border-color,transform] duration-100 active:scale-[0.98]',
                 checkout.scheduleType === 'now'
                   ? 'border-primary bg-primary/[0.07]'
                   : 'border-border bg-card',
@@ -442,7 +442,7 @@ export default function RecebimentoPage() {
                 Agora
               </span>
               {!allowImmediate ? (
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-2xs text-muted-foreground">
                   Loja fechada
                 </span>
               ) : null}
@@ -452,7 +452,7 @@ export default function RecebimentoPage() {
               type="button"
               onClick={() => setScheduleType('scheduled')}
               className={cn(
-                'flex flex-1 flex-col items-center gap-1.5 rounded-md border-[1.5px] py-3.5',
+                'flex flex-1 flex-col items-center gap-1.5 rounded-md border-[1.5px] py-3.5 transition-[background-color,border-color,transform] duration-100 active:scale-[0.98]',
                 checkout.scheduleType === 'scheduled'
                   ? 'border-primary bg-primary/[0.07]'
                   : 'border-border bg-card',
@@ -481,7 +481,7 @@ export default function RecebimentoPage() {
 
           {checkout.scheduleType === 'scheduled' ? (
             <div className="mt-1 space-y-2.5">
-              <p className="text-[13px] font-semibold">Data</p>
+              <p className="text-sm font-semibold">Data</p>
               <div className="no-scrollbar -mx-1 min-w-0 overflow-x-auto px-1">
                 {availableDates.map((key) => {
                   const selected = checkout.scheduledDate === key;
@@ -491,7 +491,7 @@ export default function RecebimentoPage() {
                       type="button"
                       onClick={() => setScheduledDate(key)}
                       className={cn(
-                        'mr-2 inline-flex shrink-0 rounded-[10px] border px-3.5 py-2 text-[13px] font-medium last:mr-0',
+                        'mr-2 inline-flex shrink-0 rounded-lg border px-3.5 py-2 text-sm font-medium last:mr-0',
                         selected
                           ? 'border-primary bg-primary text-white'
                           : 'border-border bg-card',
@@ -502,7 +502,7 @@ export default function RecebimentoPage() {
                   );
                 })}
               </div>
-              <p className="mt-1 text-[13px] font-semibold">Horário</p>
+              <p className="mt-1 text-sm font-semibold">Horário</p>
               <div className="flex flex-wrap gap-2">
                 {availableTimes.map((time) => {
                   const selected = checkout.scheduledTime === time;
@@ -523,7 +523,7 @@ export default function RecebimentoPage() {
                   );
                 })}
                 {availableTimes.length === 0 ? (
-                  <p className="text-[13px] text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     Nenhum horário disponível nesta data.
                   </p>
                 ) : null}
@@ -531,7 +531,7 @@ export default function RecebimentoPage() {
             </div>
           ) : null}
 
-          <p className="mt-2 text-[15px] font-semibold">Como?</p>
+          <p className="mt-2 text-base font-semibold">Como?</p>
           <div className="flex min-w-0 gap-2.5">
             {(['delivery', 'pickup'] as const).map((t) => (
               <button
@@ -539,7 +539,7 @@ export default function RecebimentoPage() {
                 type="button"
                 onClick={() => setDeliveryType(t)}
                 className={cn(
-                  'flex flex-1 flex-col items-center gap-1.5 rounded-md border-[1.5px] py-3.5',
+                  'flex flex-1 flex-col items-center gap-1.5 rounded-md border-[1.5px] py-3.5 transition-[background-color,border-color,transform] duration-100 active:scale-[0.98]',
                   checkout.deliveryType === t
                     ? 'border-primary bg-primary/[0.07]'
                     : 'border-border bg-card',
@@ -574,7 +574,7 @@ export default function RecebimentoPage() {
                 >
                   {t === 'delivery' ? 'Entrega' : 'Retirada'}
                 </span>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-2xs text-muted-foreground">
                   {t === 'delivery'
                     ? checkout.routeDistanceMeters != null
                       ? deliveryFee === 0
@@ -588,7 +588,7 @@ export default function RecebimentoPage() {
           </div>
 
           {checkout.deliveryType === 'pickup' && options ? (
-            <div className="rounded-md bg-muted p-3 text-[13px] leading-5 text-muted-foreground">
+            <div className="rounded-md bg-muted p-3 text-sm leading-5 text-muted-foreground">
               Retire em {options.store.name} · {options.store.addressLine},{' '}
               {options.store.city}/{options.store.state}
             </div>
@@ -596,7 +596,7 @@ export default function RecebimentoPage() {
 
           {checkout.deliveryType === 'delivery' ? (
             <div className="mt-2 min-w-0 space-y-2.5">
-              <p className="text-[15px] font-semibold">Endereço de entrega</p>
+              <p className="text-base font-semibold">Endereço de entrega</p>
               {savedAddresses.length > 0 ? (
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {savedAddresses.map((address) => (
@@ -619,7 +619,7 @@ export default function RecebimentoPage() {
                         });
                       }}
                       className={cn(
-                        'shrink-0 rounded-md border px-3 py-2 text-left text-[12px] leading-4',
+                        'shrink-0 rounded-md border px-3 py-2 text-left text-xs leading-4',
                         selectedSavedId === address.id
                           ? 'border-primary bg-primary/[0.07] font-semibold text-primary'
                           : 'border-border bg-card text-foreground',
@@ -695,21 +695,21 @@ export default function RecebimentoPage() {
               />
 
               {quoting ? (
-                <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="size-4 animate-spin" />
                   Calculando rota…
                 </div>
               ) : null}
 
               {quoteError ? (
-                <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-2.5 text-[13px] text-destructive">
+                <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-2.5 text-sm text-destructive">
                   <AlertCircle className="mt-0.5 size-4 shrink-0" />
                   <p>{quoteError}</p>
                 </div>
               ) : null}
 
               {checkout.deliveryInServiceArea === false ? (
-                <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-2.5 text-[13px] text-amber-800">
+                <div className="flex items-start gap-2 rounded-md border border-transparent bg-tone-warning p-2.5 text-sm text-tone-warning-foreground">
                   <AlertCircle className="mt-0.5 size-4 shrink-0" />
                   <p>
                     {quoteMessage ??
@@ -727,7 +727,7 @@ export default function RecebimentoPage() {
                     ) : (
                       <Bike className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                     )}
-                    <p className="min-w-0 flex-1 text-[13px] leading-[18px] break-words text-muted-foreground">
+                    <p className="min-w-0 flex-1 text-sm leading-snug break-words text-muted-foreground">
                       Taxa de entrega:{' '}
                       <span className="font-semibold text-foreground">
                         {deliveryFee === 0

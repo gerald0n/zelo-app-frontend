@@ -98,7 +98,7 @@ export default function EnderecosPage() {
             <div className="flex flex-col items-center gap-2 pt-8 text-center">
               <MapPin className="size-10 text-muted-foreground" />
               <p className="text-base font-semibold">Nenhum endereço ainda</p>
-              <p className="text-[13px] text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Cadastre um endereço de Pereiro para agilizar a entrega.
               </p>
             </div>
@@ -107,20 +107,20 @@ export default function EnderecosPage() {
               {addresses.map((address) => (
                 <div
                   key={address.id}
-                  className="rounded-[10px] border border-border bg-card p-3.5"
+                  className="rounded-lg border border-border bg-card p-3.5"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="flex items-center gap-1.5 text-sm font-semibold">
                         {address.label || 'Endereço'}
                         {address.isDefault ? (
-                          <span className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-2xs font-semibold text-primary">
                             <Star className="size-2.5" />
                             Padrão
                           </span>
                         ) : null}
                       </p>
-                      <p className="mt-1 text-[13px] leading-[18px] text-muted-foreground">
+                      <p className="mt-1 text-sm leading-snug text-muted-foreground">
                         {address.street}, {address.number}
                         {address.complement ? ` · ${address.complement}` : ''}
                         <br />

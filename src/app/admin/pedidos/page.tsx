@@ -56,7 +56,7 @@ export default function AdminPedidosPage() {
           isTablet && 'mx-auto w-full max-w-[920px] pt-5',
         )}
       >
-        <div className="flex h-11 items-center gap-2 rounded-[9px] border border-border px-3">
+        <div className="flex h-11 items-center gap-2 rounded-lg border border-border px-3">
           <Search className="size-[18px] text-muted-foreground" />
           <Input
             value={query}
@@ -72,7 +72,7 @@ export default function AdminPedidosPage() {
               type="button"
               onClick={() => setFilter(item)}
               className={cn(
-                'shrink-0 rounded-md border px-[13px] py-1.5 text-[11px] font-semibold',
+                'shrink-0 rounded-md border px-[13px] py-1.5 text-2xs font-semibold',
                 filter === item
                   ? 'border-primary bg-primary text-white'
                   : 'border-border bg-card',

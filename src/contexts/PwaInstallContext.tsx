@@ -77,7 +77,7 @@ function PwaInstallDialog({
         aria-describedby="pwa-install-desc"
         className={cn(
           'relative z-10 mx-3 mb-[max(0.75rem,env(safe-area-inset-bottom))] w-full max-w-md',
-          'rounded-[18px] border border-border bg-card p-5 shadow-xl',
+          'rounded-2xl border border-border bg-card p-5 shadow-xl',
           'sm:mb-0',
         )}
       >
@@ -91,11 +91,11 @@ function PwaInstallDialog({
         </button>
 
         <div className="flex items-start gap-3 pr-8">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-[12px] bg-caramel/40 text-caramel-foreground">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-caramel/40 text-caramel-foreground">
             <Download className="size-6" strokeWidth={2.25} />
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            <p className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               App instalável
             </p>
             <h2
@@ -116,7 +116,7 @@ function PwaInstallDialog({
         </p>
 
         {mode === 'ios' ? (
-          <ol className="mt-4 space-y-2.5 rounded-[12px] border border-border bg-secondary/60 p-3.5 text-sm text-foreground">
+          <ol className="mt-4 space-y-2.5 rounded-xl border border-border bg-secondary/60 p-3.5 text-sm text-foreground">
             <li className="flex items-start gap-2.5">
               <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-card text-xs font-bold text-primary">
                 1
@@ -147,7 +147,7 @@ function PwaInstallDialog({
         ) : null}
 
         {mode === 'android-manual' ? (
-          <ol className="mt-4 space-y-2.5 rounded-[12px] border border-border bg-secondary/60 p-3.5 text-sm text-foreground">
+          <ol className="mt-4 space-y-2.5 rounded-xl border border-border bg-secondary/60 p-3.5 text-sm text-foreground">
             <li className="flex items-start gap-2.5">
               <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-card text-xs font-bold text-primary">
                 1
@@ -175,7 +175,7 @@ function PwaInstallDialog({
         ) : null}
 
         {mode === 'generic-manual' ? (
-          <ol className="mt-4 space-y-2.5 rounded-[12px] border border-border bg-secondary/60 p-3.5 text-sm text-foreground">
+          <ol className="mt-4 space-y-2.5 rounded-xl border border-border bg-secondary/60 p-3.5 text-sm text-foreground">
             <li className="flex items-start gap-2.5">
               <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-card text-xs font-bold text-primary">
                 1
@@ -206,7 +206,7 @@ function PwaInstallDialog({
           {mode === 'native' ? (
             <Button
               type="button"
-              className="h-11 w-full rounded-[10px] text-sm font-semibold"
+              className="h-11 w-full rounded-lg text-sm font-semibold"
               disabled={installing || !canNativeInstall}
               onClick={onInstall}
             >
@@ -217,7 +217,7 @@ function PwaInstallDialog({
             type="button"
             variant={manualMode ? 'default' : 'ghost'}
             className={cn(
-              'h-11 w-full rounded-[10px] text-sm font-semibold',
+              'h-11 w-full rounded-lg text-sm font-semibold',
               !manualMode && 'text-muted-foreground',
             )}
             onClick={onDismiss}

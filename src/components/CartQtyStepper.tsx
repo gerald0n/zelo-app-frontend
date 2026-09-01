@@ -42,7 +42,7 @@ export function CartQtyStepper({
           onDecrease();
         }}
         className={cn(
-          'flex items-center justify-center text-foreground',
+          'flex items-center justify-center text-foreground transition-transform duration-100 active:scale-90',
           hit,
         )}
       >
@@ -60,7 +60,7 @@ export function CartQtyStepper({
           onIncrease();
         }}
         className={cn(
-          'flex items-center justify-center text-foreground',
+          'flex items-center justify-center text-foreground transition-transform duration-100 active:scale-90',
           hit,
         )}
       >
@@ -133,7 +133,7 @@ export function CatalogCartControls({
         aria-label={`Excluir ${productName} do carrinho`}
         onClick={(event) => void handleRemoveAll(event)}
         className={cn(
-          'flex items-center justify-center rounded-md border border-border text-destructive',
+          'flex items-center justify-center rounded-md border border-border text-destructive transition-transform duration-100 active:scale-90',
           hit,
         )}
       >
@@ -186,7 +186,7 @@ export function CatalogItemActions({
         onAdd();
       }}
       className={cn(
-        'flex shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm hover:bg-primary/90',
+        'flex shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground transition-transform duration-100 hover:bg-primary/90 active:scale-90',
         hit,
       )}
     >

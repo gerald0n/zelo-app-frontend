@@ -86,7 +86,7 @@ export default function ProdutoClient({
         <Link
           href="/"
           aria-label="Voltar ao cardápio"
-          className="absolute left-3 top-3 flex size-9 items-center justify-center rounded-full bg-background shadow-md"
+          className="absolute left-3 top-3 flex size-9 items-center justify-center rounded-full bg-background shadow-sm transition-transform duration-150 active:scale-90"
         >
           <ArrowLeft className="size-[22px]" />
         </Link>
@@ -96,7 +96,7 @@ export default function ProdutoClient({
             isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'
           }
           onClick={() => toggleFavorite(product.id, product.name)}
-          className="absolute right-3 top-3 flex size-9 items-center justify-center rounded-full bg-background shadow-md"
+          className="absolute right-3 top-3 flex size-9 items-center justify-center rounded-full bg-background shadow-sm transition-transform duration-150 active:scale-90"
         >
           <Heart
             className={cn(
@@ -109,35 +109,35 @@ export default function ProdutoClient({
 
       <div className="flex min-h-0 flex-1 flex-col lg:min-w-0">
         <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-4 pb-24 lg:overflow-visible lg:p-0 lg:pb-0">
-          <h1 className="text-xl font-bold tracking-[-0.4px]">
+          <h1 className="text-xl font-bold tracking-tight">
             {product.name}
           </h1>
           {product.weight ? (
-            <p className="text-[13px] text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {product.weight}
             </p>
           ) : null}
-          <p className="mt-1 text-[15px] leading-[22px] text-muted-foreground">
+          <p className="mt-1 text-base text-muted-foreground">
             {product.description}
           </p>
-          <p className="mt-1.5 text-xl font-bold">
+          <p className="mt-1.5 text-xl font-bold tabular-nums">
             {formatCatalogPrice(product.price)}
           </p>
 
           {quantityInCart > 0 ? (
             <Link
               href="/carrinho"
-              className="mt-3 flex items-center gap-2.5 rounded-[10px] border border-primary/30 bg-primary/[0.05] p-3"
+              className="mt-3 flex items-center gap-2.5 rounded-lg border border-primary/30 bg-primary/[0.05] p-3"
             >
               <span className="flex size-7 items-center justify-center rounded-full bg-primary">
                 <Check className="size-[15px] text-white" />
               </span>
               <div className="flex-1">
-                <p className="text-[13px] font-semibold">
+                <p className="text-sm font-semibold">
                   {quantityInCart}{' '}
                   {quantityInCart === 1 ? 'unidade' : 'unidades'} no carrinho
                 </p>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                <p className="mt-0.5 text-2xs text-muted-foreground">
                   Total deste produto: {formatCatalogPrice(valueInCart)}
                 </p>
               </div>
@@ -158,11 +158,11 @@ export default function ProdutoClient({
                     disabled={disabled}
                     onClick={() => toggleAddon(addon)}
                     className={cn(
-                      'flex w-full items-center gap-3 rounded-xl border p-3 text-left',
+                      'flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-[background-color,border-color,transform] duration-100 active:scale-[0.99]',
                       checked
                         ? 'border-primary bg-primary/10'
                         : 'border-border bg-card',
-                      disabled && 'opacity-45',
+                      disabled && 'opacity-45 active:scale-100',
                     )}
                   >
                     <span
@@ -201,9 +201,9 @@ export default function ProdutoClient({
               onChange={(e) => setNote(e.target.value.slice(0, 180))}
               placeholder="Ex.: retirar embalagem de presente"
               rows={3}
-              className="min-h-[88px] w-full resize-none rounded-[10px] border border-border bg-card p-3 text-sm outline-none focus:border-primary"
+              className="min-h-[88px] w-full resize-none text-sm"
             />
-            <p className="text-right text-[10px] text-muted-foreground">
+            <p className="text-right text-2xs text-muted-foreground">
               {note.length}/180
             </p>
           </div>
@@ -214,16 +214,18 @@ export default function ProdutoClient({
             <button
               type="button"
               aria-label="Diminuir"
-              className="p-2"
+              className="p-2 transition-transform duration-100 active:scale-90"
               onClick={() => setQuantity((q) => Math.max(1, q - 1))}
             >
               <Minus className="size-5" />
             </button>
-            <span className="px-3.5 text-base font-semibold">{quantity}</span>
+            <span className="px-3.5 text-base font-semibold tabular-nums">
+              {quantity}
+            </span>
             <button
               type="button"
               aria-label="Aumentar"
-              className="p-2"
+              className="p-2 transition-transform duration-100 active:scale-90"
               onClick={() => setQuantity((q) => q + 1)}
             >
               <Plus className="size-5" />
@@ -234,7 +236,7 @@ export default function ProdutoClient({
             disabled={!product.available}
             onClick={handleAdd}
             className={cn(
-              'flex-1 rounded-md py-2.5 text-center text-sm font-semibold',
+              'flex-1 rounded-md py-2.5 text-center text-sm font-semibold tabular-nums transition-transform duration-100 active:scale-[0.99] disabled:active:scale-100',
               product.available
                 ? 'bg-primary text-white'
                 : 'bg-muted text-muted-foreground',

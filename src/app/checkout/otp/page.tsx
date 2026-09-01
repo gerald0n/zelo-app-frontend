@@ -143,7 +143,7 @@ export default function OtpPage() {
         >
           <ArrowLeft className="size-6" />
         </Link>
-        <h1 className="text-[17px] font-semibold">Verificação</h1>
+        <h1 className="text-lg font-semibold">Verificação</h1>
         <span className="w-6" />
       </header>
 
@@ -155,7 +155,7 @@ export default function OtpPage() {
         )}
       >
         <div>
-          <h2 className="text-xl font-bold tracking-[-0.3px]">
+          <h2 className="text-xl font-bold tracking-tight">
             Código de verificação
           </h2>
           <p className="mt-2 text-sm leading-5 text-muted-foreground">
@@ -181,7 +181,7 @@ export default function OtpPage() {
             <div
               key={i}
               className={cn(
-                'flex h-12 w-10 items-center justify-center rounded-md border-[1.5px] bg-card',
+                'flex h-12 w-10 items-center justify-center rounded-md border-[1.5px] bg-card transition-colors duration-150',
                 i === otp.length
                   ? 'border-primary'
                   : otp[i]
@@ -189,7 +189,9 @@ export default function OtpPage() {
                     : 'border-border',
               )}
             >
-              <span className="text-[22px] font-bold">{otp[i] ?? ''}</span>
+              <span className="font-mono text-2xl font-bold tabular-nums">
+                {otp[i] ?? ''}
+              </span>
             </div>
           ))}
         </button>

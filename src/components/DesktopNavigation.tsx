@@ -25,10 +25,10 @@ export default function DesktopNavigation() {
   return (
     <header className="sticky top-0 z-[100] flex h-14 items-center justify-between border-b border-border bg-background px-6">
       <Link href="/" className="flex items-baseline gap-[7px]">
-        <span className="font-serif text-[23px] font-semibold tracking-[-0.5px]">
+        <span className="font-serif text-2xl font-semibold tracking-tight">
           Zelo
         </span>
-        <span className="text-[10px] font-medium uppercase tracking-[1.2px] text-muted-foreground">
+        <span className="text-2xs font-medium uppercase tracking-widest text-muted-foreground">
           Confeitaria
         </span>
       </Link>
@@ -40,7 +40,7 @@ export default function DesktopNavigation() {
               key={item.label}
               href={item.href}
               className={cn(
-                'rounded-md px-3 py-1.5 text-[13px] font-semibold',
+                'rounded-md px-3 py-1.5 text-sm font-semibold',
                 active ? 'bg-muted text-primary' : 'text-foreground',
               )}
             >
@@ -50,12 +50,12 @@ export default function DesktopNavigation() {
         })}
         <Link
           href="/carrinho"
-          className="ml-[5px] flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-[13px] font-semibold"
+          className="ml-[5px] flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-sm font-semibold"
         >
           <ShoppingBag className="size-[18px]" />
           Carrinho
           {totalItems > 0 ? (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-[5px] text-[10px] font-bold text-primary-foreground">
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-[5px] text-2xs font-bold text-primary-foreground">
               {totalItems}
             </span>
           ) : null}

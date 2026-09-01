@@ -25,10 +25,10 @@ export default function OrderCard({ order, href, onReorder }: Props) {
   const content = (
     <>
       <div className="flex items-center justify-between">
-        <span className="text-sm font-bold">{order.number}</span>
+        <span className="text-sm font-bold tabular-nums">{order.number}</span>
         <span
           className={cn(
-            'rounded-md px-2 py-0.5 text-[11px] font-semibold',
+            'rounded-md px-2 py-0.5 text-2xs font-semibold',
             STATUS_COLORS[order.status],
           )}
         >
@@ -47,7 +47,7 @@ export default function OrderCard({ order, href, onReorder }: Props) {
           )}
           {order.deliveryMethod === 'delivery' ? 'Entrega' : 'Retirada'}
         </div>
-        <span className="text-sm font-bold">
+        <span className="text-sm font-bold tabular-nums">
           {formatCatalogPrice(order.totalCents)}
         </span>
       </div>
@@ -55,7 +55,7 @@ export default function OrderCard({ order, href, onReorder }: Props) {
   );
 
   return (
-    <div className="mx-3 mb-2 space-y-1.5 rounded-[10px] border border-border bg-white p-3">
+    <div className="mx-3 mb-2 space-y-1.5 rounded-lg border border-border bg-card p-3">
       {href ? (
         <Link href={href} className="block space-y-1.5">
           {content}
@@ -67,7 +67,7 @@ export default function OrderCard({ order, href, onReorder }: Props) {
         <button
           type="button"
           onClick={onReorder}
-          className="mt-1 flex w-full items-center justify-center gap-1 rounded-sm border border-border py-1.5 text-xs font-medium hover:bg-secondary"
+          className="mt-1 flex w-full items-center justify-center gap-1 rounded-sm border border-border py-1.5 text-xs font-medium transition-[background-color,transform] duration-100 hover:bg-secondary active:scale-[0.99]"
         >
           <RefreshCw className="size-[13px]" />
           Pedir novamente

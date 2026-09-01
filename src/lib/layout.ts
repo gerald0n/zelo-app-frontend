@@ -32,17 +32,20 @@ export const pageBodyPadClass = 'px-3 pb-6 pt-3';
 
 /** Inputs de formulário — `text-base` evita zoom horizontal no iOS. */
 export const checkoutFieldClass =
-  'min-w-0 max-w-full h-10 w-full rounded-md border border-border bg-card px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50';
+  'min-w-0 max-w-full h-10 w-full rounded-md border border-input bg-card px-3 text-base outline-none transition-[border-color,box-shadow] duration-150 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
 
 /** Rodapé do checkout no fluxo da página (após o conteúdo, rola junto). */
 export const checkoutFooterClass = 'mt-4 border-t border-border pt-3';
 
 /** Base dos CTAs das páginas internas (altura/padding unificados). */
 export const pageCtaBaseClass =
-  'flex h-11 w-full items-center justify-center rounded-md text-sm font-semibold';
+  'flex h-11 w-full select-none items-center justify-center rounded-md text-sm font-semibold transition-[background-color,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.99] disabled:pointer-events-none disabled:active:scale-100';
 
 /** CTA principal das páginas internas. */
-export const pagePrimaryButtonClass = `${pageCtaBaseClass} bg-primary text-primary-foreground disabled:opacity-60`;
+export const pagePrimaryButtonClass = `${pageCtaBaseClass} bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60`;
+
+/** CTA secundário (contorno) das páginas internas. */
+export const pageSecondaryButtonClass = `${pageCtaBaseClass} border border-border bg-card text-foreground hover:bg-accent`;
 
 /**
  * No desktop, o checkout continua em uma única coluna (fluxo de etapas),

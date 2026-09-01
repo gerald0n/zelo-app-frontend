@@ -71,12 +71,12 @@ export default function AdminLoginPage() {
 
       <div className="mx-auto my-auto w-full max-w-[420px]">
         <div className="mb-5 flex items-center gap-2">
-          <span className="text-2xl font-bold tracking-[-0.7px]">Zelo</span>
-          <Badge className="rounded-md px-2 py-1 text-[9px] font-bold tracking-[1px]">
+          <span className="text-2xl font-bold tracking-tight">Zelo</span>
+          <Badge className="rounded-md px-2 py-1 text-2xs font-bold tracking-widest">
             ADMIN
           </Badge>
         </div>
-        <h1 className="text-xl font-bold tracking-[-0.5px]">
+        <h1 className="text-xl font-bold tracking-tight">
           Painel da confeitaria
         </h1>
         <p className="mt-1 text-sm leading-5 text-muted-foreground">
@@ -90,7 +90,7 @@ export default function AdminLoginPage() {
               autoCapitalize="none"
               type="email"
               {...form.register('email')}
-              className="h-10 w-full rounded-md border border-border px-3 text-[15px] outline-none focus:border-primary"
+              className="h-10 w-full rounded-md border border-border px-3 text-base outline-none focus:border-primary"
             />
             {form.formState.errors.email ? (
               <p className="mt-1 text-xs text-destructive">
@@ -104,7 +104,7 @@ export default function AdminLoginPage() {
               <Input
                 type={showPassword ? 'text' : 'password'}
                 {...form.register('password')}
-                className="h-full flex-1 border-none bg-transparent p-0 text-[15px] shadow-none outline-none focus-visible:ring-0"
+                className="h-full flex-1 border-none bg-transparent p-0 text-base shadow-none outline-none focus-visible:ring-0"
               />
               <button
                 type="button"
