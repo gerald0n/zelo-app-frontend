@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, use, useEffect, useState } from 'react';
+import { Suspense, use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -18,9 +18,9 @@ import {
   Check,
   ChefHat,
   Soup,
-  Loader2,
 } from 'lucide-react';
 import { formatCatalogPrice } from '@/modules/catalog/types';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useCart } from '@/modules/carts';
 import { useShopExperience } from '@/contexts/ShopExperienceContext';
 import {
@@ -30,7 +30,6 @@ import {
   type OrderStatus,
 } from '@/modules/orders/types';
 import { useCustomerOrderRealtime } from '@/modules/realtime/hooks';
-import { mobilePageColumnClass } from '@/lib/layout';
 import { cn } from '@/lib/utils';
 
 type Step = {
@@ -88,16 +87,13 @@ function AcompanhamentoContent({ id }: { id: string }) {
   const [error, setError] = useState<string | null>(null);
   const { version: realtimeVersion } = useCustomerOrderRealtime(id, true);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async () => {
+  const loadOrder = useCallback(
+    async (opts?: { background?: boolean }) => {
       try {
         const response = await fetch(`/api/v1/orders/${id}`, {
           cache: 'no-store',
         });
         const json = await response.json();
-        if (cancelled) return;
         if (!response.ok) {
           setError(json?.error?.message ?? 'Pedido não encontrado.');
           setOrder(null);
@@ -106,26 +102,35 @@ function AcompanhamentoContent({ id }: { id: string }) {
         setOrder(json.order as CustomerOrder);
         setError(null);
       } catch {
-        if (!cancelled) setError('Falha de rede ao carregar o pedido.');
+        setError('Falha de rede ao carregar o pedido.');
       } finally {
-        if (!cancelled) setLoading(false);
+        // Só a carga inicial controla o skeleton; refetch em segundo plano
+        // nunca, senão uma oscilação do Realtime trava a tela.
+        if (!opts?.background) setLoading(false);
       }
-    };
+    },
+    [id],
+  );
 
-    const initial = window.setTimeout(() => {
-      void load();
-    }, 0);
-    // Fallback caso Realtime falhe/desconecte.
+  // Carga inicial: dona do `loading`, roda uma vez por pedido.
+  useEffect(() => {
+    setLoading(true);
+    void loadOrder();
+  }, [loadOrder]);
+
+  // Fallback periódico caso o Realtime falhe/desconecte — em segundo plano.
+  useEffect(() => {
     const fallback = window.setInterval(() => {
-      void load();
+      void loadOrder({ background: true });
     }, 45_000);
+    return () => window.clearInterval(fallback);
+  }, [loadOrder]);
 
-    return () => {
-      cancelled = true;
-      window.clearTimeout(initial);
-      window.clearInterval(fallback);
-    };
-  }, [id, realtimeVersion]);
+  // Sinal do Realtime: refetch em segundo plano, sem tocar no `loading`.
+  useEffect(() => {
+    if (realtimeVersion === 0) return;
+    void loadOrder({ background: true });
+  }, [realtimeVersion, loadOrder]);
 
   const handleReorder = async () => {
     try {
@@ -151,9 +156,24 @@ function AcompanhamentoContent({ id }: { id: string }) {
 
   if (loading && !order) {
     return (
-      <div className="flex min-h-dvh items-center justify-center gap-2 bg-background text-muted-foreground">
-        <Loader2 className="size-5 animate-spin" />
-        <p className="text-sm">Carregando pedido…</p>
+      <div
+        className="mx-auto w-full max-w-md space-y-3.5 px-4 py-5"
+        aria-label="Carregando pedido"
+      >
+        <div className="space-y-3 rounded-xl border border-border bg-card px-4 py-5 text-center">
+          <Skeleton className="mx-auto size-16 rounded-full" />
+          <Skeleton className="mx-auto h-6 w-40" />
+          <Skeleton className="mx-auto h-3 w-56" />
+        </div>
+        <div className="space-y-4 rounded-xl border border-border bg-card p-3.5">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3.5">
+              <Skeleton className="size-8 rounded-full" />
+              <Skeleton className="h-3.5 flex-1" />
+              <Skeleton className="h-3.5 w-10" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -180,12 +200,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
   const CurrentIcon = steps[Math.max(currentStep, 0)]?.icon ?? Receipt;
 
   return (
-    <div
-      className={cn(
-        'mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background lg:max-w-5xl',
-        mobilePageColumnClass,
-      )}
-    >
+    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background lg:max-w-5xl">
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background px-3 py-2.5 lg:px-0">
         <button
           type="button"
@@ -281,7 +296,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
           {!isCancelled ? (
             <section
               aria-label="Andamento do pedido"
-              className="rounded-2xl border border-border bg-card p-3.5 shadow-sm"
+              className="rounded-xl border border-border bg-card p-3.5"
             >
               <ol className="flex flex-col">
                 {steps.map((step, i) => {
@@ -367,7 +382,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
           ) : null}
 
           {order.history.length > 0 ? (
-            <section className="rounded-3xl border border-border bg-card p-4 shadow-sm">
+            <section className="rounded-xl border border-border bg-card p-4">
               <h2 className="font-serif text-lg font-semibold text-foreground">
                 Histórico
               </h2>
@@ -398,7 +413,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
         </div>
 
         <div className="flex flex-col gap-3.5 lg:sticky lg:top-4 lg:col-span-1">
-          <section className="rounded-3xl border border-border bg-card p-4 shadow-sm">
+          <section className="rounded-xl border border-border bg-card p-4">
             <h2 className="font-serif text-lg font-semibold text-foreground">
               Itens do pedido
             </h2>
@@ -416,7 +431,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
                         : ''}
                     </p>
                   </div>
-                  <span className="text-sm font-semibold text-foreground">
+                  <span className="text-sm font-semibold tabular-nums text-foreground">
                     {formatCatalogPrice(item.lineTotalCents)}
                   </span>
                 </li>
@@ -426,7 +441,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
             <div className="mt-4 space-y-2 border-t border-border pt-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span className="font-medium text-foreground">
+                <span className="font-medium tabular-nums text-foreground">
                   {formatCatalogPrice(order.subtotalCents)}
                 </span>
               </div>
@@ -434,9 +449,9 @@ function AcompanhamentoContent({ id }: { id: string }) {
                 <span className="text-muted-foreground">Entrega</span>
                 <span
                   className={cn(
-                    'font-medium',
+                    'font-medium tabular-nums',
                     order.deliveryFeeCents === 0
-                      ? 'text-pistachio-foreground'
+                      ? 'text-success'
                       : 'text-foreground',
                   )}
                 >
@@ -449,7 +464,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
                 <span className="text-sm font-semibold text-foreground">
                   Total
                 </span>
-                <span className="font-serif text-lg font-semibold text-primary">
+                <span className="font-serif text-lg font-semibold tabular-nums text-primary">
                   {formatCatalogPrice(order.totalCents)}
                 </span>
               </div>
@@ -459,7 +474,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
           {order.deliveryMethod === 'delivery' && order.address ? (
             <Link
               href="/loja"
-              className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 shadow-sm transition-colors hover:bg-accent"
+              className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3.5 transition-[background-color,transform] duration-100 hover:bg-accent active:scale-[0.99]"
             >
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <MapPin className="size-[18px]" />
@@ -480,7 +495,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
               <button
                 type="button"
                 onClick={() => void handleReorder()}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card px-4 py-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3.5 text-sm font-semibold text-foreground transition-[background-color,transform] duration-100 hover:bg-accent active:scale-[0.99]"
               >
                 <RefreshCw className="size-[18px]" aria-hidden="true" />
                 Pedir novamente
@@ -489,7 +504,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
             {order.canCancel ? (
               <Link
                 href={`/cancelar-pedido?orderId=${order.id}&orderNumber=${encodeURIComponent(order.number)}`}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-primary/40 bg-card px-4 py-3.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary/40 bg-card px-4 py-3.5 text-sm font-semibold text-primary transition-[background-color,transform] duration-100 hover:bg-primary/5 active:scale-[0.99]"
               >
                 <XCircle className="size-[18px]" aria-hidden="true" />
                 Cancelar pedido

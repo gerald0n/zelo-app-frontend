@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/cn';
 import { formatPhoneDisplay } from '@/lib/phone';
 import { BotTrap } from '@/components/BotTrap';
+import { checkoutContinuePath } from '@/modules/auth/checkout-path';
 import {
-  mobilePageColumnClass,
   checkoutDesktopContainerClass,
   pageHeaderBarClass,
   pageBodyPadClass,
@@ -40,7 +40,14 @@ function useSessionItem(key: string): string {
 
 export default function OtpPage() {
   const router = useRouter();
-  const { pendingPhone, setPendingPhone, requestOtp, verifyOtp } = useAuth();
+  const {
+    user,
+    identityReady,
+    pendingPhone,
+    setPendingPhone,
+    requestOtp,
+    verifyOtp,
+  } = useAuth();
   const [otp, setOtp] = useState('');
   const [countdown, setCountdown] = useState(60);
   const [error, setError] = useState('');
@@ -54,16 +61,33 @@ export default function OtpPage() {
   const storedDebug = useSessionItem(DEBUG_OTP_KEY);
   const [debugCode, setDebugCode] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  // Verdadeiro assim que o código é validado nesta tela: aí quem decide o
+  // próximo passo é o handleConfirm, não o guard de "já autenticado".
+  const verifiedHere = useRef(false);
   const resolvedPhone = pendingPhone || storedPhone;
   const visibleDebug = debugCode || storedDebug;
 
   useEffect(() => {
+    // Já autenticado antes de chegar aqui (ex.: voltou pela seta / histórico)
+    // → não deixa reabrir a verificação, segue o fluxo do checkout.
+    if (identityReady && user && !verifiedHere.current) {
+      router.replace(checkoutContinuePath(user));
+      return;
+    }
+    if (!identityReady) return;
     if (!resolvedPhone) {
       router.replace('/checkout/identificacao');
       return;
     }
     if (!pendingPhone) setPendingPhone(resolvedPhone);
-  }, [pendingPhone, resolvedPhone, router, setPendingPhone]);
+  }, [
+    identityReady,
+    user,
+    pendingPhone,
+    resolvedPhone,
+    router,
+    setPendingPhone,
+  ]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -79,17 +103,20 @@ export default function OtpPage() {
     setError('');
     setSubmitting(true);
     const result = await verifyOtp(resolvedPhone, code);
-    setSubmitting(false);
     if (!result.ok) {
+      setSubmitting(false);
       setError(result.message);
       return;
     }
+    verifiedHere.current = true;
     try {
       sessionStorage.removeItem(DEBUG_OTP_KEY);
     } catch {
       /* ignore */
     }
-    router.push(result.needsName ? '/checkout/nome' : '/checkout/recebimento');
+    router.replace(
+      result.needsName ? '/checkout/nome' : '/checkout/recebimento',
+    );
   };
 
   const handleInput = (text: string) => {
@@ -130,12 +157,7 @@ export default function OtpPage() {
   };
 
   return (
-    <div
-      className={cn(
-        'flex min-h-dvh min-w-0 flex-col bg-background',
-        mobilePageColumnClass,
-      )}
-    >
+    <div className="flex min-h-dvh min-w-0 flex-col bg-background">
       <header className={cn(pageHeaderBarClass, checkoutDesktopContainerClass)}>
         <Link
           href="/checkout/identificacao"
@@ -143,7 +165,7 @@ export default function OtpPage() {
         >
           <ArrowLeft className="size-6" />
         </Link>
-        <h1 className="text-[17px] font-semibold">Verificação</h1>
+        <h1 className="text-lg font-semibold">Verificação</h1>
         <span className="w-6" />
       </header>
 
@@ -155,7 +177,7 @@ export default function OtpPage() {
         )}
       >
         <div>
-          <h2 className="text-xl font-bold tracking-[-0.3px]">
+          <h2 className="text-xl font-bold tracking-tight">
             Código de verificação
           </h2>
           <p className="mt-2 text-sm leading-5 text-muted-foreground">
@@ -181,7 +203,7 @@ export default function OtpPage() {
             <div
               key={i}
               className={cn(
-                'flex h-12 w-10 items-center justify-center rounded-md border-[1.5px] bg-card',
+                'flex h-12 w-10 items-center justify-center rounded-md border-[1.5px] bg-card transition-colors duration-150',
                 i === otp.length
                   ? 'border-primary'
                   : otp[i]
@@ -189,7 +211,9 @@ export default function OtpPage() {
                     : 'border-border',
               )}
             >
-              <span className="text-[22px] font-bold">{otp[i] ?? ''}</span>
+              <span className="font-mono text-2xl font-bold tabular-nums">
+                {otp[i] ?? ''}
+              </span>
             </div>
           ))}
         </button>

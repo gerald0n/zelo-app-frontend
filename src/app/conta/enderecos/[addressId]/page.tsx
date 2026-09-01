@@ -11,8 +11,6 @@ import type { SavedAddress } from '@/modules/customers/addresses';
 import { cn } from '@/lib/cn';
 import {
   checkoutDesktopContainerClass,
-  mobilePageColumnClass,
-  mobilePageScrollClass,
   pageBodyPadClass,
 } from '@/lib/layout';
 
@@ -53,20 +51,9 @@ export default function EditarEnderecoPage({
   }, [addressId]);
 
   return (
-    <div
-      className={cn(
-        'flex min-h-dvh min-w-0 flex-col bg-background',
-        mobilePageColumnClass,
-      )}
-    >
+    <div className="flex min-h-dvh min-w-0 flex-col bg-background">
       <AccountPageHeader title="Editar endereço" backHref="/conta/enderecos" />
-      <div
-        className={cn(
-          mobilePageScrollClass,
-          pageBodyPadClass,
-          checkoutDesktopContainerClass,
-        )}
-      >
+      <div className={cn(pageBodyPadClass, checkoutDesktopContainerClass)}>
         <AccountAuthGate
           title="Entre para editar endereços"
           description="Identifique-se para alterar um local salvo."

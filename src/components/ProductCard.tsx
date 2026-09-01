@@ -49,10 +49,10 @@ export default function ProductCard({
   return (
     <article
       className={cn(
-        'relative overflow-hidden border border-border bg-card transition',
+        'relative overflow-hidden rounded-xl border border-border bg-card transition-colors duration-150 hover:border-foreground/15',
         vertical
-          ? 'flex min-h-[286px] flex-col rounded-xl p-0'
-          : 'flex items-center gap-3 rounded-xl p-2.5',
+          ? 'flex min-h-[286px] flex-col p-0'
+          : 'flex items-center gap-3 p-2.5',
         !product.available && 'opacity-60',
       )}
     >
@@ -68,7 +68,7 @@ export default function ProductCard({
         />
         {!product.available && vertical ? (
           <div className="absolute inset-0 flex items-center justify-center bg-black/45">
-            <span className="text-[10px] font-semibold text-primary-foreground">
+            <span className="text-2xs font-semibold text-primary-foreground">
               Indisponível
             </span>
           </div>
@@ -82,7 +82,7 @@ export default function ProductCard({
               : `Adicionar ${product.name} aos favoritos`
           }
           className={cn(
-            'absolute flex items-center justify-center rounded-full bg-card/90 shadow-sm backdrop-blur',
+            'absolute flex items-center justify-center rounded-full bg-card/80 backdrop-blur transition-transform duration-150 active:scale-90',
             vertical
               ? 'top-[7px] right-[7px] size-[30px]'
               : 'left-1.5 top-1.5 size-7',
@@ -127,7 +127,7 @@ export default function ProductCard({
             {product.description}
           </p>
           <div className="mt-1.5 flex min-w-0 items-baseline gap-1.5">
-            <span className="font-serif text-base font-semibold text-primary">
+            <span className="font-serif text-base font-semibold tabular-nums text-primary">
               {formatCatalogPrice(product.price)}
             </span>
             {product.weight ? (

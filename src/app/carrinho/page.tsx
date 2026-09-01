@@ -20,11 +20,7 @@ import { useAppDialog } from '@/contexts/AppDialogContext';
 import { checkoutContinuePath } from '@/modules/auth/checkout-path';
 import { ProductThumb } from '@/components/product-thumb';
 import { Separator } from '@/components/ui/separator';
-import {
-  mobilePageColumnClass,
-  pageHeaderBarClass,
-  pagePrimaryButtonClass,
-} from '@/lib/layout';
+import { pageHeaderBarClass, pagePrimaryButtonClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 
 function useCartHydrated() {
@@ -47,6 +43,7 @@ function CartItemRow({ item }: { item: CartItem }) {
         alt={item.name}
         className="size-14 shrink-0 rounded-lg"
         iconClassName="size-7"
+        width={160}
       />
       <div className="min-w-0 flex-1 space-y-1">
         <p className="line-clamp-2 text-sm font-semibold">{item.name}</p>
@@ -65,7 +62,7 @@ function CartItemRow({ item }: { item: CartItem }) {
             <button
               type="button"
               aria-label="Diminuir"
-              className="p-1.5"
+              className="p-1.5 transition-transform duration-100 active:scale-90"
               onClick={() => {
                 updateQuantity(item.id, item.quantity - 1);
                 notify(`${item.name} removido do carrinho.`);
@@ -73,13 +70,13 @@ function CartItemRow({ item }: { item: CartItem }) {
             >
               <Minus className="size-4" />
             </button>
-            <span className="px-2.5 text-sm font-semibold">
+            <span className="px-2.5 text-sm font-semibold tabular-nums">
               {item.quantity}
             </span>
             <button
               type="button"
               aria-label="Aumentar"
-              className="p-1.5"
+              className="p-1.5 transition-transform duration-100 active:scale-90"
               onClick={() => {
                 updateQuantity(item.id, item.quantity + 1);
                 notify('Quantidade atualizada.');
@@ -88,7 +85,7 @@ function CartItemRow({ item }: { item: CartItem }) {
               <Plus className="size-4" />
             </button>
           </div>
-          <span className="text-sm font-bold">
+          <span className="text-sm font-bold tabular-nums">
             {formatCatalogPrice(item.price * item.quantity)}
           </span>
         </div>
@@ -207,7 +204,7 @@ export default function CarrinhoPage() {
     <>
       <div className="flex items-center justify-between">
         <span className="text-base font-semibold">Total</span>
-        <span className="text-xl font-bold">
+        <span className="font-serif text-xl font-bold tabular-nums">
           {formatCatalogPrice(subtotal)}
         </span>
       </div>
@@ -232,17 +229,12 @@ export default function CarrinhoPage() {
 
   if (items.length === 0) {
     return (
-      <div
-        className={cn(
-          'flex min-h-dvh flex-col bg-background',
-          mobilePageColumnClass,
-        )}
-      >
+      <div className="flex min-h-dvh flex-col bg-background">
         <header className={pageHeaderBarClass}>
           <Link href="/" aria-label="Voltar ao cardápio">
             <ArrowLeft className="size-6" />
           </Link>
-          <h1 className="text-[17px] font-semibold">Carrinho</h1>
+          <h1 className="text-lg font-semibold">Carrinho</h1>
           <span className="w-6" />
         </header>
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2.5 px-10 text-center">
@@ -253,7 +245,7 @@ export default function CarrinhoPage() {
           </p>
           <Link
             href="/"
-            className="mt-3 rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-white"
+            className="mt-3 rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-transform duration-150 active:scale-[0.98]"
           >
             Ver cardápio
           </Link>
@@ -263,17 +255,12 @@ export default function CarrinhoPage() {
   }
 
   return (
-    <div
-      className={cn(
-        'mx-auto flex min-h-dvh w-full flex-col bg-background lg:max-w-5xl',
-        mobilePageColumnClass,
-      )}
-    >
+    <div className="mx-auto flex min-h-dvh w-full flex-col bg-background lg:max-w-5xl">
       <header className={cn(pageHeaderBarClass, 'lg:px-0')}>
         <Link href="/" aria-label="Voltar ao cardápio">
           <ArrowLeft className="size-6" />
         </Link>
-        <h1 className="text-[17px] font-semibold">Carrinho · {totalItems}</h1>
+        <h1 className="text-lg font-semibold">Carrinho · {totalItems}</h1>
         <button
           type="button"
           onClick={() => void handleClear()}
@@ -293,19 +280,19 @@ export default function CarrinhoPage() {
         <div className="mt-2 space-y-2 rounded-xl border border-border bg-card p-3 lg:sticky lg:top-6 lg:col-span-1 lg:mt-0">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Produtos</span>
-            <span className="text-sm font-medium">
+            <span className="text-sm font-medium tabular-nums">
               {formatCatalogPrice(productsSubtotal)}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Adicionais</span>
-            <span className="text-sm font-medium">
+            <span className="text-sm font-medium tabular-nums">
               {formatCatalogPrice(addonsTotal)}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Subtotal</span>
-            <span className="text-sm font-medium">
+            <span className="text-sm font-medium tabular-nums">
               {formatCatalogPrice(subtotal)}
             </span>
           </div>

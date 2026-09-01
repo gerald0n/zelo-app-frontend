@@ -3,15 +3,15 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Receipt, Clock, Loader2 } from 'lucide-react';
+import { Receipt, Clock } from 'lucide-react';
 import OrderCard from '@/components/OrderCard';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useCart, type CartItem } from '@/modules/carts';
 import { useShopExperience } from '@/contexts/ShopExperienceContext';
 import { type CustomerOrderListItem } from '@/modules/orders/types';
 import { cn } from '@/lib/cn';
-import { mobilePageColumnClass } from '@/lib/layout';
 
 type Tab = 'active' | 'history';
 
@@ -133,9 +133,9 @@ export default function PedidosPage() {
   };
 
   return (
-    <div className={cn('flex min-h-dvh flex-col bg-background', mobilePageColumnClass)}>
+    <div className="flex min-h-dvh flex-col bg-background">
       <header className="space-y-2 border-b border-border px-3 pb-2 pt-3 max-lg:sticky max-lg:top-0 max-lg:z-30 max-lg:bg-background">
-        <h1 className="text-lg font-bold tracking-[-0.4px]">
+        <h1 className="text-lg font-bold tracking-tight">
           Meus pedidos
         </h1>
         <div className="flex rounded-md bg-muted p-0.5">
@@ -145,9 +145,9 @@ export default function PedidosPage() {
               type="button"
               onClick={() => setTab(t)}
               className={cn(
-                'flex-1 rounded-sm py-1.5 text-center text-[13px]',
+                'flex-1 rounded-sm py-1.5 text-center text-sm',
                 tab === t
-                  ? 'bg-white font-semibold text-foreground'
+                  ? 'bg-card font-semibold text-foreground shadow-sm'
                   : 'text-muted-foreground',
               )}
             >
@@ -164,15 +164,29 @@ export default function PedidosPage() {
         )}
       >
         {loading ? (
-          <div className="flex items-center justify-center gap-2 px-8 pt-10 text-muted-foreground">
-            <Loader2 className="size-5 animate-spin" />
-            <p className="text-sm">Carregando pedidos…</p>
+          <div className="space-y-2 px-3 pt-1" aria-label="Carregando pedidos">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="space-y-2.5 rounded-lg border border-border bg-card p-3"
+              >
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-16 rounded-full" />
+                </div>
+                <Skeleton className="h-3 w-3/4" />
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-4 w-14" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : !user ? (
           <div className="flex flex-col items-center gap-2 px-8 pt-10 text-center">
             <Receipt className="size-10 text-muted-foreground" />
             <p className="mt-1 text-base font-semibold">Entre para ver pedidos</p>
-            <p className="text-[13px] leading-[18px] text-muted-foreground">
+            <p className="text-sm leading-snug text-muted-foreground">
               Faça login para acompanhar seus pedidos e histórico.
             </p>
             <Link
@@ -208,7 +222,7 @@ export default function PedidosPage() {
               <p className="mt-1 text-base font-semibold">
                 Nenhum pedido ativo
               </p>
-              <p className="text-[13px] leading-[18px] text-muted-foreground">
+              <p className="text-sm leading-snug text-muted-foreground">
                 Seus pedidos em andamento aparecem aqui.
               </p>
               <Link
@@ -234,7 +248,7 @@ export default function PedidosPage() {
             <p className="mt-1 text-base font-semibold">
               Nenhum pedido anterior
             </p>
-            <p className="text-[13px] leading-[18px] text-muted-foreground">
+            <p className="text-sm leading-snug text-muted-foreground">
               Seu histórico de pedidos aparece aqui.
             </p>
           </div>

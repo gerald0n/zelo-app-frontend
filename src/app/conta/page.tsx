@@ -14,12 +14,12 @@ import {
   Smartphone,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { ADMIN_PHONE_E164 } from '@/config/admin';
 import { usePwaInstall } from '@/contexts/PwaInstallContext';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/cn';
-import { mobilePageColumnClass } from '@/lib/layout';
 
 type MenuItem = {
   icon: React.ElementType;
@@ -76,11 +76,15 @@ export default function ContaPage() {
       label: 'Meus pedidos',
       href: '/pedidos',
     },
-    {
-      icon: ShieldCheck,
-      label: 'Painel administrativo',
-      href: '/admin/login',
-    },
+    ...(user?.phone === ADMIN_PHONE_E164
+      ? [
+          {
+            icon: ShieldCheck,
+            label: 'Painel administrativo',
+            href: '/admin/login',
+          } satisfies MenuItem,
+        ]
+      : []),
     {
       icon: User,
       label: 'Dados pessoais',
@@ -128,31 +132,31 @@ export default function ContaPage() {
   ];
 
   return (
-    <div className={cn('flex min-h-dvh flex-col bg-background', mobilePageColumnClass)}>
+    <div className="flex min-h-dvh flex-col bg-background">
       <div
         className={cn(
           'min-h-0 flex-1 space-y-2.5 overflow-y-auto p-3',
           isDesktop && 'mx-auto w-full max-w-[1120px] p-8',
         )}
       >
-        <div className="flex items-center gap-3 rounded-[10px] border border-border bg-white p-3">
+        <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
           <div className="flex size-11 items-center justify-center rounded-full bg-muted">
             <span className="text-base font-bold text-primary">{initials}</span>
           </div>
           <div className="flex-1">
             {user ? (
               <>
-                <p className="text-[15px] font-semibold">{user.name}</p>
+                <p className="text-base font-semibold">{user.name}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {user.phone}
                 </p>
               </>
             ) : (
               <>
-                <p className="text-[15px] font-semibold">Visitante</p>
+                <p className="text-base font-semibold">Visitante</p>
                 <Link
                   href="/checkout/identificacao"
-                  className="mt-0.5 text-[13px] font-medium text-primary"
+                  className="mt-0.5 text-sm font-medium text-primary"
                 >
                   Entrar ou criar conta
                 </Link>
@@ -161,7 +165,7 @@ export default function ContaPage() {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-[10px] border border-border bg-white">
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
           {menuItems.map((item, index) => {
             const Icon = item.icon;
             const content = (
@@ -211,7 +215,7 @@ export default function ContaPage() {
           })}
         </div>
 
-        <p className="mt-1 text-center text-[11px] text-muted-foreground">
+        <p className="mt-1 text-center text-2xs text-muted-foreground">
           Zelo Confeitaria · v1.0.0
         </p>
       </div>

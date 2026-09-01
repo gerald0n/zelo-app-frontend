@@ -5,7 +5,7 @@ import { getPublicStore } from '@/modules/catalog/catalog-repository';
 import { canPlaceImmediateOrder } from '@/modules/scheduling/schedule';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/cn';
-import { mobilePageColumnClass, pageHeaderBarClass, pagePrimaryButtonClass } from '@/lib/layout';
+import { pageHeaderBarClass, pagePrimaryButtonClass } from '@/lib/layout';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,12 +30,7 @@ export default async function LojaPage() {
   const whatsappHref = `https://wa.me/${store.whatsappE164.replace(/\D/g, '')}`;
 
   return (
-    <div
-      className={cn(
-        'mx-auto flex min-h-dvh w-full flex-col bg-background lg:max-w-2xl',
-        mobilePageColumnClass,
-      )}
-    >
+    <div className="mx-auto flex min-h-dvh w-full flex-col bg-background lg:max-w-2xl">
       <div className={cn(pageHeaderBarClass, 'border-b-0 lg:px-0')}>
         <Link href="/" aria-label="Voltar ao cardápio">
           <ArrowLeft className="size-6" />
@@ -47,7 +42,7 @@ export default async function LojaPage() {
           <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
             <Coffee className="size-8 text-primary" />
           </div>
-          <h2 className="font-serif text-xl font-semibold tracking-[-0.3px]">
+          <h2 className="font-serif text-xl font-semibold tracking-tight">
             {store.name}
           </h2>
           <div className="flex items-center gap-1.5">
@@ -57,14 +52,14 @@ export default async function LojaPage() {
                 storeOpen ? 'bg-pistachio-foreground' : 'bg-destructive',
               )}
             />
-            <span className="text-[13px] text-muted-foreground">
+            <span className="text-sm text-muted-foreground">
               {storeOpen ? 'Aberto agora' : 'Fechado'}
             </span>
           </div>
         </div>
 
         <section className="rounded-xl border border-border bg-card p-3.5">
-          <h3 className="mb-2.5 text-[15px] font-semibold">
+          <h3 className="mb-2.5 text-base font-semibold">
             Horário de funcionamento
           </h3>
           {store.businessHours.map((hour, index) => {
@@ -94,7 +89,7 @@ export default async function LojaPage() {
           <div className="flex gap-3">
             <MapPin className="mt-0.5 size-5 shrink-0 text-primary" />
             <div>
-              <h3 className="text-[15px] font-semibold">Endereço</h3>
+              <h3 className="text-base font-semibold">Endereço</h3>
               <p className="mt-2.5 text-sm leading-5 text-muted-foreground">
                 {store.addressLine}
                 <br />

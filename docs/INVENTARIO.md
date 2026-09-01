@@ -16,6 +16,7 @@
 - `10-funcional/12 - Notificações e Tempo Real.md`
 - `100-planejamento/100 - Roadmap de Desenvolvimento.md`
 - `100-planejamento/101 - Plano Mestre de Desenvolvimento.md`
+- `100-planejamento/102 - Redesign Editorial Minimalista.md`
 - `20-tecnico/20 - Arquitetura.md`
 - `20-tecnico/21 - Stack Tecnológica.md`
 - `20-tecnico/22 - Acesso a Dados e Integrações.md`

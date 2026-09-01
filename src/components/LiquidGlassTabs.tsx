@@ -125,7 +125,7 @@ export default function LiquidGlassTabs({
               />
               <span
                 className={cn(
-                  'text-[10px] tracking-wide',
+                  'text-2xs tracking-wide',
                   active ? 'font-semibold' : 'font-medium',
                   labelClassName,
                 )}

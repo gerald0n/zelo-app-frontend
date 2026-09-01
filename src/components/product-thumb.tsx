@@ -27,6 +27,7 @@ export function ProductThumb({
   iconClassName,
   src,
   alt,
+  width = 640,
 }: {
   tone?: 'cookie' | 'pudim' | 'salgado';
   categoryId?: string;
@@ -34,6 +35,8 @@ export function ProductThumb({
   iconClassName?: string;
   src?: string | null;
   alt?: string | null;
+  /** Largura-alvo para a transformação de imagem (produção). */
+  width?: number;
 }) {
   const resolvedTone =
     tone ??
@@ -43,7 +46,7 @@ export function ProductThumb({
         ? 'pudim'
         : 'salgado');
   const { bg, fg, Icon } = toneMap[resolvedTone];
-  const imageUrl = src ? productImagePublicUrl(src) : null;
+  const imageUrl = src ? productImagePublicUrl(src, { width }) : null;
 
   return (
     <div

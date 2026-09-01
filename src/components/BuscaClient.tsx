@@ -7,7 +7,7 @@ import type { CatalogProduct } from '@/modules/catalog/types';
 import ProductCard from '@/components/ProductCard';
 import { Input } from '@/components/ui/input';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { mobilePageColumnClass, pageHeaderBarClass } from '@/lib/layout';
+import { pageHeaderBarClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 
 export default function BuscaClient({
@@ -30,12 +30,7 @@ export default function BuscaClient({
   }, [products, query]);
 
   return (
-    <div
-      className={cn(
-        'mx-auto flex min-h-dvh w-full flex-col bg-background lg:max-w-4xl',
-        mobilePageColumnClass,
-      )}
-    >
+    <div className="mx-auto flex min-h-dvh w-full flex-col bg-background lg:max-w-4xl">
       <header className={cn(pageHeaderBarClass, 'gap-3 lg:px-0')}>
         <Link href="/" aria-label="Voltar ao cardápio" className="lg:hidden">
           <ArrowLeft className="size-6" />
@@ -45,7 +40,7 @@ export default function BuscaClient({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Buscar produtos..."
-          className="h-10 flex-1 rounded-md border border-border bg-card px-3.5 text-[15px] outline-none placeholder:text-muted-foreground focus:border-primary"
+          className="h-11 flex-1"
         />
       </header>
 
@@ -67,7 +62,7 @@ export default function BuscaClient({
           </div>
         ) : (
           <>
-            <p className="mb-2 px-4 text-[13px] text-muted-foreground lg:px-0">
+            <p className="mb-2 px-4 text-sm text-muted-foreground lg:px-0">
               {results.length}{' '}
               {results.length === 1 ? 'resultado' : 'resultados'}
             </p>

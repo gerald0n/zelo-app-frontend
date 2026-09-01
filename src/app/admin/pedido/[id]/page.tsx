@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Bike,
@@ -39,17 +39,13 @@ export default function AdminPedidoPage({
     ready && isAuthenticated,
   );
 
-  useEffect(() => {
-    if (!ready || !isAuthenticated) return;
-
-    let cancelled = false;
-    const timer = window.setTimeout(async () => {
+  const loadOrder = useCallback(
+    async (opts?: { background?: boolean }) => {
       try {
         const response = await fetch(`/api/v1/admin/orders/${id}`, {
           cache: 'no-store',
         });
         const json = await response.json();
-        if (cancelled) return;
         if (!response.ok) {
           setError(json?.error?.message ?? 'Pedido não encontrado.');
           setOrder(null);
@@ -58,17 +54,28 @@ export default function AdminPedidoPage({
         setOrder(json.order as AdminOrderDetail);
         setError(null);
       } catch {
-        if (!cancelled) setError('Falha de rede.');
+        setError('Falha de rede.');
       } finally {
-        if (!cancelled) setLoading(false);
+        // Só a carga inicial controla o spinner; refetch de Realtime nunca,
+        // senão uma reconexão do socket trava a tela em "carregando".
+        if (!opts?.background) setLoading(false);
       }
-    }, 0);
+    },
+    [id],
+  );
 
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [ready, isAuthenticated, id, realtimeVersion]);
+  // Carga inicial: dona do `loading`, roda ao ficar pronto e ao trocar de pedido.
+  useEffect(() => {
+    if (!ready || !isAuthenticated) return;
+    setLoading(true);
+    void loadOrder();
+  }, [ready, isAuthenticated, loadOrder]);
+
+  // Atualização via Realtime: refetch em segundo plano, sem tocar no `loading`.
+  useEffect(() => {
+    if (!ready || !isAuthenticated || realtimeVersion === 0) return;
+    void loadOrder({ background: true });
+  }, [ready, isAuthenticated, realtimeVersion, loadOrder]);
 
 
   const advance = async () => {
@@ -163,19 +170,19 @@ export default function AdminPedidoPage({
       >
         <div className="flex flex-wrap">
           <div className="w-full space-y-3 px-0 lg:w-2/3 lg:pr-3">
-            <section className="space-y-[13px] rounded-[11px] border border-border p-3.5">
+            <section className="space-y-[13px] rounded-lg border border-border p-3.5">
               <h2 className="text-sm font-bold">Itens</h2>
               {order.items.map((item) => (
                 <div key={item.id} className="flex items-start gap-2.5">
-                  <span className="flex size-[31px] items-center justify-center rounded-md bg-muted text-[11px] font-bold">
+                  <span className="flex size-[31px] items-center justify-center rounded-md bg-muted text-2xs font-bold">
                     {item.quantity}×
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-semibold">{item.name}</p>
+                    <p className="text-sm font-semibold">{item.name}</p>
                     {item.addOns.map((addon) => (
                       <p
                         key={`${addon.id}-${addon.name}`}
-                        className="mt-0.5 text-[10px] text-muted-foreground"
+                        className="mt-0.5 text-2xs text-muted-foreground"
                       >
                         + {addon.name}
                       </p>
@@ -188,7 +195,7 @@ export default function AdminPedidoPage({
               ))}
             </section>
 
-            <section className="space-y-[13px] rounded-[11px] border border-border p-3.5">
+            <section className="space-y-[13px] rounded-lg border border-border p-3.5">
               <h2 className="text-sm font-bold">Recebimento</h2>
               <div className="flex gap-2.5">
                 {order.deliveryMethod === 'delivery' ? (
@@ -197,7 +204,7 @@ export default function AdminPedidoPage({
                   <ShoppingBag className="size-[18px] text-muted-foreground" />
                 )}
                 <div>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-2xs text-muted-foreground">
                     {order.deliveryMethod === 'delivery'
                       ? 'Entrega'
                       : 'Retirada'}
@@ -210,7 +217,7 @@ export default function AdminPedidoPage({
               <div className="flex gap-2.5">
                 <CreditCard className="size-[18px] text-muted-foreground" />
                 <div>
-                  <p className="text-[10px] text-muted-foreground">Pagamento</p>
+                  <p className="text-2xs text-muted-foreground">Pagamento</p>
                   <p className="mt-0.5 text-xs">
                     {order.paymentMethod === 'pix'
                       ? 'Pix'
@@ -228,19 +235,15 @@ export default function AdminPedidoPage({
             </section>
 
             {order.internalNote ? (
-              <section className="rounded-[11px] border border-amber-200 bg-amber-50 p-3.5">
-                <h2 className="text-sm font-bold text-amber-900">
-                  Nota interna
-                </h2>
-                <p className="mt-1 text-xs text-amber-900/80">
-                  {order.internalNote}
-                </p>
+              <section className="rounded-lg border border-transparent bg-tone-warning p-3.5 text-tone-warning-foreground">
+                <h2 className="text-sm font-bold">Nota interna</h2>
+                <p className="mt-1 text-xs opacity-80">{order.internalNote}</p>
               </section>
             ) : null}
           </div>
 
           <div className="mt-3 w-full space-y-3 lg:mt-0 lg:w-1/3 lg:pl-3">
-            <section className="space-y-2 rounded-[11px] border border-border p-3.5">
+            <section className="space-y-2 rounded-lg border border-border p-3.5">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
                 <span>{formatCatalogPrice(order.subtotalCents)}</span>
@@ -268,7 +271,7 @@ export default function AdminPedidoPage({
                 type="button"
                 disabled={busy}
                 onClick={() => void advance()}
-                className="flex w-full items-center justify-center gap-2 rounded-[9px] bg-primary py-3.5 text-sm font-semibold text-white disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3.5 text-sm font-semibold text-white disabled:opacity-60"
               >
                 {busy ? <Loader2 className="size-4 animate-spin" /> : null}
                 Avançar para &quot;{statusLabel(next as OrderStatus)}&quot;
@@ -281,7 +284,7 @@ export default function AdminPedidoPage({
                 type="button"
                 disabled={busy}
                 onClick={() => void cancel()}
-                className="w-full rounded-[9px] border border-destructive/40 py-3 text-sm font-semibold text-destructive disabled:opacity-60"
+                className="w-full rounded-lg border border-destructive/40 py-3 text-sm font-semibold text-destructive disabled:opacity-60"
               >
                 Cancelar pedido
               </button>

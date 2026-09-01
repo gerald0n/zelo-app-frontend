@@ -21,8 +21,6 @@ import CheckoutProgress from '@/components/CheckoutProgress';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import { cn } from '@/lib/cn';
 import {
-  mobilePageColumnClass,
-  mobilePageScrollClass,
   checkoutFieldClass,
   checkoutFooterClass,
   checkoutDesktopContainerClass,
@@ -175,12 +173,7 @@ export default function PagamentoPage() {
   };
 
   return (
-    <div
-      className={cn(
-        'flex min-h-dvh min-w-0 flex-col bg-background',
-        mobilePageColumnClass,
-      )}
-    >
+    <div className="flex min-h-dvh min-w-0 flex-col bg-background">
       <header
         className={cn(
           pageHeaderBarClass,
@@ -190,7 +183,7 @@ export default function PagamentoPage() {
         <Link href="/checkout/recebimento" aria-label="Voltar ao recebimento">
           <ArrowLeft className="size-6" />
         </Link>
-        <h1 className="text-[17px] font-semibold">Pagamento</h1>
+        <h1 className="text-lg font-semibold">Pagamento</h1>
         <span className="w-6" />
       </header>
 
@@ -201,7 +194,7 @@ export default function PagamentoPage() {
         className={checkoutDesktopContainerClass}
       />
 
-      <div className={mobilePageScrollClass}>
+      <div>
         <div
           className={cn('space-y-3', pageBodyPadClass, checkoutDesktopContainerClass)}
         >
@@ -212,7 +205,7 @@ export default function PagamentoPage() {
             </span>
           </div>
 
-          <p className="mt-1 text-[15px] font-semibold">Forma de pagamento</p>
+          <p className="mt-1 text-base font-semibold">Forma de pagamento</p>
 
           {availableMethods.length === 0 ? (
             <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -233,7 +226,7 @@ export default function PagamentoPage() {
                   setNeedsChange(null);
                 }}
                 className={cn(
-                  'flex w-full items-center gap-3.5 rounded-md border-[1.5px] p-4 text-left',
+                  'flex w-full items-center gap-3.5 rounded-md border-[1.5px] p-4 text-left transition-[background-color,border-color,transform] duration-100 active:scale-[0.99]',
                   selected
                     ? 'border-primary bg-primary/10'
                     : 'border-border bg-card',
@@ -241,7 +234,7 @@ export default function PagamentoPage() {
               >
                 <span
                   className={cn(
-                    'flex size-12 items-center justify-center rounded-[10px]',
+                    'flex size-12 items-center justify-center rounded-lg',
                     selected ? 'bg-primary/20' : 'bg-muted',
                   )}
                 >
@@ -255,13 +248,13 @@ export default function PagamentoPage() {
                 <div className="min-w-0 flex-1">
                   <p
                     className={cn(
-                      'text-[15px]',
+                      'text-base',
                       selected ? 'font-semibold' : 'font-normal',
                     )}
                   >
                     {method.label}
                   </p>
-                  <p className="mt-0.5 text-[13px] text-muted-foreground">
+                  <p className="mt-0.5 text-sm text-muted-foreground">
                     {method.desc}
                   </p>
                 </div>
@@ -285,7 +278,7 @@ export default function PagamentoPage() {
                 <Info className="size-[18px] text-primary" />
                 <p className="text-sm font-semibold">Como pagar com Pix</p>
               </div>
-              <p className="text-[13px] leading-5 text-muted-foreground">
+              <p className="text-sm leading-5 text-muted-foreground">
                 1. Copie o código abaixo
                 <br />
                 2. Abra seu banco e cole em &quot;Pix copia e cola&quot;
@@ -333,7 +326,7 @@ export default function PagamentoPage() {
 
           {activePaymentMethod === 'cash' && acceptsPayments.cash ? (
             <div className="space-y-2.5">
-              <p className="text-[15px] font-semibold">Precisa de troco?</p>
+              <p className="text-base font-semibold">Precisa de troco?</p>
               <div className="flex min-w-0 gap-2.5">
                 {([false, true] as const).map((val) => {
                   const active = needsChange === val;
@@ -346,7 +339,7 @@ export default function PagamentoPage() {
                         if (!val) setChangeFor('');
                       }}
                       className={cn(
-                        'flex-1 rounded-md border-[1.5px] py-3.5 text-center text-[15px]',
+                        'flex-1 rounded-md border-[1.5px] py-3.5 text-center text-base',
                         active
                           ? 'border-primary bg-primary/[0.07] font-semibold text-primary'
                           : 'border-border bg-card',
@@ -360,7 +353,7 @@ export default function PagamentoPage() {
 
               {needsChange === true ? (
                 <div className="space-y-1.5">
-                  <p className="text-[13px] leading-[18px] text-muted-foreground">
+                  <p className="text-sm leading-snug text-muted-foreground">
                     Troco para quanto? (total: {formatCatalogPrice(total)})
                   </p>
                   <Input
@@ -383,7 +376,7 @@ export default function PagamentoPage() {
               ) : null}
 
               {needsChange === false ? (
-                <p className="text-[13px] leading-[18px] text-muted-foreground">
+                <p className="text-sm leading-snug text-muted-foreground">
                   Tenha o valor exato de {formatCatalogPrice(total)}.
                 </p>
               ) : null}

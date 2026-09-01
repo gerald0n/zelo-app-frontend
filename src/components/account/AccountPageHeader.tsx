@@ -25,7 +25,7 @@ export function AccountPageHeader({
       <Link href={backHref} aria-label="Voltar">
         <ArrowLeft className="size-6" />
       </Link>
-      <h1 className="text-[17px] font-semibold">{title}</h1>
+      <h1 className="text-lg font-semibold">{title}</h1>
       <span className="size-6" aria-hidden />
     </header>
   );

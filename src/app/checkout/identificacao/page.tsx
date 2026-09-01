@@ -12,8 +12,6 @@ import { Label } from '@/components/ui/label';
 import { BotTrap } from '@/components/BotTrap';
 import { checkoutContinuePath } from '@/modules/auth/checkout-path';
 import {
-  mobilePageColumnClass,
-  mobilePageScrollClass,
   checkoutFieldClass,
   checkoutFooterClass,
   checkoutDesktopContainerClass,
@@ -83,21 +81,16 @@ export default function IdentificacaoPage() {
   };
 
   return (
-    <div
-      className={cn(
-        'flex min-h-dvh min-w-0 flex-col bg-background',
-        mobilePageColumnClass,
-      )}
-    >
+    <div className="flex min-h-dvh min-w-0 flex-col bg-background">
       <header className={cn(pageHeaderBarClass, checkoutDesktopContainerClass)}>
         <Link href="/carrinho" aria-label="Voltar ao carrinho">
           <ArrowLeft className="size-6" />
         </Link>
-        <h1 className="text-[17px] font-semibold">Identificação</h1>
+        <h1 className="text-lg font-semibold">Identificação</h1>
         <span className="w-6" />
       </header>
 
-      <div className={mobilePageScrollClass}>
+      <div>
         <div
           className={cn(
             'space-y-4',
@@ -106,7 +99,7 @@ export default function IdentificacaoPage() {
           )}
         >
           <div>
-            <h2 className="text-xl font-bold tracking-[-0.3px]">
+            <h2 className="text-xl font-bold tracking-tight">
               Entrar ou criar conta
             </h2>
             <p className="mt-1.5 text-sm leading-5 text-muted-foreground">
@@ -115,7 +108,7 @@ export default function IdentificacaoPage() {
           </div>
 
           <div>
-            <Label className="mb-1.5 block text-[13px] font-medium">
+            <Label className="mb-1.5 block text-sm font-medium">
               Celular
             </Label>
             <Input

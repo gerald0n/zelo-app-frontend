@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import { Bike, ShoppingBag } from 'lucide-react';
 import { formatCatalogPrice } from '@/modules/catalog/types';
-import { statusLabel } from '@/modules/orders/types';
+import { statusLabel, STATUS_COLORS } from '@/modules/orders/types';
 import type { AdminOrderListItem } from '@/modules/admin/types';
 import { useNow } from '@/hooks/useNow';
+import { cn } from '@/lib/cn';
 
 type Props = {
   order: AdminOrderListItem;
@@ -19,32 +20,37 @@ export default function AdminOrderCard({ order }: Props) {
   return (
     <Link
       href={`/admin/pedido/${order.id}`}
-      className="block space-y-2.5 rounded-[11px] border border-border bg-card p-3.5"
+      className="block space-y-2.5 rounded-lg border border-border bg-card p-3.5 transition-colors duration-150 hover:border-foreground/15"
     >
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-base font-bold">{order.number}</p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
+          <p className="text-base font-bold tabular-nums">{order.number}</p>
+          <p className="mt-0.5 text-2xs tabular-nums text-muted-foreground">
             {age < 60
               ? `há ${age} min`
               : new Date(order.createdAt).toLocaleDateString('pt-BR')}
             {order.customerName ? ` · ${order.customerName}` : ''}
           </p>
         </div>
-        <p className="text-[15px] font-bold">
+        <p className="text-base font-bold tabular-nums">
           {formatCatalogPrice(order.totalCents)}
         </p>
       </div>
-      <p className="line-clamp-2 text-xs leading-[17px] text-muted-foreground">
+      <p className="line-clamp-2 text-xs leading-snug text-muted-foreground">
         {order.items
           .map((item) => `${item.quantity}× ${item.name}`)
           .join(' · ')}
       </p>
       <div className="flex items-center justify-between">
-        <span className="rounded-md bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">
+        <span
+          className={cn(
+            'rounded-full px-2 py-0.5 text-2xs font-semibold',
+            STATUS_COLORS[order.status],
+          )}
+        >
           {statusLabel(order.status)}
         </span>
-        <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+        <div className="flex items-center gap-1 text-2xs text-muted-foreground">
           {order.deliveryMethod === 'delivery' ? (
             <Bike className="size-3.5" />
           ) : (

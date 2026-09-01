@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { Clock, Info, MapPin, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useStoreHoursLabel, useStoreOpen } from '@/hooks/useStoreOpen';
-import { getAppScrollContainer, getAppScrollTop } from '@/lib/app-scroll';
+import { getAppScroller, getAppScrollTop } from '@/lib/layout';
 import { cn } from '@/lib/utils';
 
 const DRAWER_MS = 320;
@@ -59,14 +59,10 @@ export default function StoreHeader({ onHeightChange }: Props) {
   }, []);
 
   useEffect(() => {
-    const hero = heroRef.current;
-    if (!hero) return;
-
-    const syncContainer = () => getAppScrollContainer(hero);
-    let container: HTMLElement | Window = syncContainer();
+    if (!heroRef.current) return;
 
     scrollSampleRef.current = {
-      y: getAppScrollTop(container),
+      y: getAppScrollTop(getAppScroller()),
       t: performance.now(),
     };
 
@@ -87,7 +83,7 @@ export default function StoreHeader({ onHeightChange }: Props) {
     };
 
     const onScroll = () => {
-      const y = getAppScrollTop(container);
+      const y = getAppScrollTop(getAppScroller());
       const t = performance.now();
       const { y: prevY, t: prevT } = scrollSampleRef.current;
       const dt = Math.max(t - prevT, 1);
@@ -105,24 +101,15 @@ export default function StoreHeader({ onHeightChange }: Props) {
     };
 
     onScroll();
-    container.addEventListener('scroll', onScroll, { passive: true });
-
-    const mq = window.matchMedia('(min-width: 1024px)');
-    const onBreakpoint = () => {
-      container.removeEventListener('scroll', onScroll);
-      container = syncContainer();
-      scrollSampleRef.current = {
-        y: getAppScrollTop(container),
-        t: performance.now(),
-      };
-      container.addEventListener('scroll', onScroll, { passive: true });
-      onScroll();
-    };
-    mq.addEventListener('change', onBreakpoint);
+    // Desktop rola em `window`; mobile no container `[data-app-scroll]`.
+    // Ouve os dois — o que não rola simplesmente nunca dispara.
+    window.addEventListener('scroll', onScroll, { passive: true });
+    const shellScroller = document.querySelector('[data-app-scroll]');
+    shellScroller?.addEventListener('scroll', onScroll, { passive: true });
 
     return () => {
-      container.removeEventListener('scroll', onScroll);
-      mq.removeEventListener('change', onBreakpoint);
+      window.removeEventListener('scroll', onScroll);
+      shellScroller?.removeEventListener('scroll', onScroll);
     };
   }, []);
 
@@ -240,7 +227,7 @@ export default function StoreHeader({ onHeightChange }: Props) {
     <div>
       <div
         ref={heroRef}
-        className="border-b border-border/50 bg-background/88 px-4 pb-2.5 pt-3 backdrop-blur-xl"
+        className="border-b border-border/50 bg-background/90 px-4 pb-2.5 pt-3 backdrop-blur-md"
       >
         <HeroContent
           storeOpen={storeOpen}
@@ -271,7 +258,7 @@ function HeroContent({
       <div className="flex min-w-0 items-start gap-2.5">
         <div
           className={cn(
-            'flex shrink-0 items-center justify-center bg-primary text-primary-foreground shadow-sm',
+            'flex shrink-0 items-center justify-center bg-primary text-primary-foreground',
             expanded ? 'size-11 rounded-xl' : 'size-8 rounded-lg',
           )}
         >
@@ -301,7 +288,7 @@ function HeroContent({
           <p
             className={cn(
               'flex items-center gap-1 text-muted-foreground',
-              expanded ? 'mt-1 text-xs' : 'mt-0.5 text-[11px]',
+              expanded ? 'mt-1 text-xs' : 'mt-0.5 text-2xs',
             )}
           >
             <MapPin
@@ -316,7 +303,7 @@ function HeroContent({
               <p className="text-xs leading-snug text-muted-foreground">
                 Cookies, pudins e salgados artesanais
               </p>
-              <p className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-foreground/80">
+              <p className="mt-1 flex items-center gap-1.5 text-2xs font-medium text-foreground/80">
                 <Clock className="size-3 shrink-0" aria-hidden="true" />
                 {hoursLabel}
                 <span className="text-muted-foreground">·</span>
@@ -346,7 +333,7 @@ function StatusBadge({
         storeOpen
           ? 'bg-pistachio/60 text-pistachio-foreground'
           : 'bg-destructive/15 text-destructive',
-        compact ? 'px-1.5 py-0.5 text-[10px]' : 'px-1.5 py-0.5 text-[10px]',
+        compact ? 'px-1.5 py-0.5 text-2xs' : 'px-1.5 py-0.5 text-2xs',
       )}
     >
       <span
@@ -393,7 +380,7 @@ function HeaderActions({
       >
         <ShoppingBag className={iconSize} />
         {totalItems > 0 ? (
-          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-2xs font-bold text-primary-foreground">
             {totalItems}
           </span>
         ) : null}

@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import { createCustomerSupabaseClient } from '@/lib/supabase/customer-client';
 import { resetCustomerRealtimeAuth } from '@/modules/realtime/ensure-customer-auth';
+import { clearReconciledMarker } from '@/modules/carts/reconcile-marker';
 import { hasCustomerName } from '@/modules/auth/customer-name';
 
 export type AuthUser = {
@@ -198,6 +199,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       /* ignore */
     }
     resetCustomerRealtimeAuth();
+    clearReconciledMarker();
     setUser(null);
     setPendingPhone('');
   }, []);

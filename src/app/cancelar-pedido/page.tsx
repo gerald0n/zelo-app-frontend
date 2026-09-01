@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, AlertTriangle, Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/cn';
-import { mobilePageColumnClass, pageCtaBaseClass, pageHeaderBarClass } from '@/lib/layout';
+import { pageCtaBaseClass, pageHeaderBarClass } from '@/lib/layout';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 
 const REASON_SUGGESTIONS = [
@@ -59,7 +59,7 @@ function CancelarPedidoContent() {
   };
 
   return (
-    <div className={cn('flex min-h-dvh flex-col bg-background', mobilePageColumnClass)}>
+    <div className="flex min-h-dvh flex-col bg-background">
       <header className={pageHeaderBarClass}>
         <Link
           href={orderId ? `/acompanhamento/${orderId}` : '/pedidos'}
@@ -67,7 +67,7 @@ function CancelarPedidoContent() {
         >
           <ArrowLeft className="size-6" />
         </Link>
-        <h1 className="text-[17px] font-semibold">Cancelar pedido</h1>
+        <h1 className="text-lg font-semibold">Cancelar pedido</h1>
         <span className="w-6" />
       </header>
 
@@ -86,7 +86,7 @@ function CancelarPedidoContent() {
           </p>
         ) : null}
 
-        <p className="text-[15px] font-semibold">
+        <p className="text-base font-semibold">
           Motivo do cancelamento <span className="text-destructive">*</span>
         </p>
 
@@ -99,7 +99,7 @@ function CancelarPedidoContent() {
                 type="button"
                 onClick={() => setReason(s)}
                 className={cn(
-                  'rounded-md border px-3.5 py-2 text-[13px]',
+                  'rounded-md border px-3.5 py-2 text-sm',
                   active
                     ? 'border-destructive bg-destructive/10 font-semibold text-destructive'
                     : 'border-border bg-card',
@@ -116,7 +116,7 @@ function CancelarPedidoContent() {
           onChange={(e) => setReason(e.target.value)}
           placeholder="Descreva o motivo"
           rows={3}
-          className="min-h-[88px] w-full resize-none rounded-md border border-border bg-card p-3.5 text-[15px] outline-none focus:border-primary"
+          className="min-h-[88px] w-full resize-none rounded-md border border-border bg-card p-3.5 text-base outline-none focus:border-primary"
         />
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}

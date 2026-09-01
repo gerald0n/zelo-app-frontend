@@ -8,7 +8,7 @@
   --card-foreground: oklch(0.29 0.035 40);
   --popover: oklch(0.995 0.008 85);
   --popover-foreground: oklch(0.29 0.035 40);
-  --primary: oklch(0.42 0.15 8);
+  --primary: oklch(0.43 0.135 10);
   --primary-foreground: oklch(0.98 0.012 80);
   --secondary: oklch(0.93 0.03 75);
   --secondary-foreground: oklch(0.38 0.05 45);
@@ -26,6 +26,17 @@
   --pistachio-foreground: oklch(0.35 0.06 130);
   --success: oklch(0.45 0.12 130);
   --success-foreground: oklch(0.98 0.012 80);
+  /* Superfícies pastel dessaturadas para status/badges (fundo + texto). */
+  --tone-neutral: oklch(0.95 0.006 80);
+  --tone-neutral-foreground: oklch(0.44 0.02 60);
+  --tone-positive: oklch(0.94 0.03 145);
+  --tone-positive-foreground: oklch(0.42 0.07 145);
+  --tone-warning: oklch(0.95 0.05 85);
+  --tone-warning-foreground: oklch(0.46 0.08 70);
+  --tone-critical: oklch(0.95 0.03 25);
+  --tone-critical-foreground: oklch(0.48 0.13 25);
+  --tone-info: oklch(0.94 0.03 240);
+  --tone-info-foreground: oklch(0.45 0.08 245);
   --whatsapp: #25d366;
   --whatsapp-foreground: oklch(0.98 0.012 80);
   --chart-1: oklch(0.42 0.15 8);
@@ -33,7 +44,7 @@
   --chart-3: oklch(0.83 0.08 128);
   --chart-4: oklch(0.6 0.12 30);
   --chart-5: oklch(0.5 0.1 350);
-  --radius: 0.625rem;
+  --radius: 0.5rem;
   --sidebar: oklch(0.995 0.008 85);
   --sidebar-foreground: oklch(0.29 0.035 40);
   --sidebar-primary: oklch(0.42 0.15 8);
@@ -45,8 +56,55 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-nunito);
+  --font-sans: var(--font-geist);
   --font-serif: var(--font-fraunces);
+  --font-mono: var(--font-geist-mono);
+
+  /* Escala tipográfica editorial. Base 15px (mobile-first).
+     Tracking negativo cresce com o tamanho; leading aperta no display. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+  --text-2xs--letter-spacing: 0.005em;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.1rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.0625rem;
+  --text-lg--line-height: 1.4rem;
+  --text-lg--letter-spacing: -0.006em;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.55rem;
+  --text-xl--letter-spacing: -0.014em;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.7rem;
+  --text-2xl--letter-spacing: -0.02em;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.05rem;
+  --text-3xl--letter-spacing: -0.025em;
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 2.35rem;
+  --text-4xl--letter-spacing: -0.03em;
+
+  /* Sombras quase invisíveis, tingidas de quente (hue 40). */
+  --shadow-2xs: 0 1px 2px oklch(0.28 0.04 40 / 0.04);
+  --shadow-xs: 0 1px 2px oklch(0.28 0.04 40 / 0.04);
+  --shadow-sm: 0 1px 3px oklch(0.28 0.04 40 / 0.05);
+  --shadow-md: 0 2px 8px oklch(0.28 0.04 40 / 0.05);
+  --shadow-lg: 0 6px 20px oklch(0.28 0.04 40 / 0.06);
+  --shadow-xl: 0 10px 32px oklch(0.28 0.04 40 / 0.07);
+
+  --color-tone-neutral: var(--tone-neutral);
+  --color-tone-neutral-foreground: var(--tone-neutral-foreground);
+  --color-tone-positive: var(--tone-positive);
+  --color-tone-positive-foreground: var(--tone-positive-foreground);
+  --color-tone-warning: var(--tone-warning);
+  --color-tone-warning-foreground: var(--tone-warning-foreground);
+  --color-tone-critical: var(--tone-critical);
+  --color-tone-critical-foreground: var(--tone-critical-foreground);
+  --color-tone-info: var(--tone-info);
+  --color-tone-info-foreground: var(--tone-info-foreground);
   --color-caramel: var(--caramel);
   --color-caramel-foreground: var(--caramel-foreground);
   --color-pistachio: var(--pistachio);
@@ -105,26 +163,62 @@ body {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+@layer base {
+  /* Serif de display já vem com tracking apertado pela escala; aqui só
+     garantimos quebra de linha decente e sem órfãs. */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Números alinhados em qualquer lugar que peça `tabular-nums`. */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 22%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 /*
- * Mobile in-browser: lock document scroll so the URL/action bar stays put.
- * Scrolling happens inside .app-shell-scroll (see Providers AppShell).
- * Desktop (lg+) keeps normal document scroll.
+ * App shell mobile (<1024px): o documento não rola — a barra de URL do
+ * navegador fica estável, como num app. O scroll vive em [data-app-scroll]
+ * (ver `mobileAppShellClass` / `mobileAppShellScrollClass` em lib/layout.ts).
+ *
+ * Sem `position: fixed` e sem `height:100%`/`vh` — só `svh`. O shell é
+ * dimensionado em `100svh` (small viewport, barra de URL visível), que é
+ * bem-definido já no 1º paint do Chrome iOS. Isso evita a "faixa morta"
+ * da 1ª versão, que usava `fixed inset-0` sobre `height:100%`.
+ *
+ * O bloqueio de zoom fica no <meta viewport> (Chrome iOS) + LockMobileZoom
+ * (Safari iOS). Nada de `touch-action` aqui — restringir o ancestral também
+ * mataria o pinch-zoom do mapa Leaflet.
  */
 @media (max-width: 1023px) {
   html,
   body {
-    height: 100%;
-    max-width: 100%;
+    height: 100svh;
     overflow: hidden;
-    overflow-x: clip;
     overscroll-behavior: none;
-    /* Pan only: bloqueia pinch e double-tap zoom (comportamento de app). */
-    touch-action: pan-x pan-y;
   }
 
-  .app-shell-scroll {
+  [data-app-scroll] {
     -webkit-overflow-scrolling: touch;
   }
 }
@@ -187,23 +281,36 @@ a {
   }
 }
 
-/* iOS-inspired liquid glass */
+/* Entrada em cascata de listas — sutil, cortada em 8 itens, respeita
+   reduced-motion. Use com style={{ '--i': index }}. */
+@keyframes zelo-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .reveal-rise {
+    animation: zelo-rise-in 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(min(var(--i, 0), 8) * 42ms);
+  }
+}
+
+/* Vidro fosco discreto — assinatura da navbar, sem o "liquid" pesado */
 .liquid-glass {
   overflow: hidden;
-  background: linear-gradient(
-    165deg,
-    rgba(255, 255, 255, 0.78) 0%,
-    rgba(255, 255, 255, 0.58) 45%,
-    rgba(255, 255, 255, 0.7) 100%
-  );
-  backdrop-filter: blur(120px) saturate(240%);
-  -webkit-backdrop-filter: blur(120px) saturate(240%);
-  border: 1px solid rgba(255, 255, 255, 0.75);
+  background: rgba(255, 253, 250, 0.82);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   box-shadow:
-    0 10px 36px rgba(45, 28, 18, 0.14),
-    0 2px 10px rgba(45, 28, 18, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    inset 0 -0.5px 0 rgba(255, 255, 255, 0.25);
+    0 6px 20px oklch(0.28 0.04 40 / 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 /* Soft blur veil behind the floating navbar */
@@ -216,8 +323,8 @@ a {
   content: '';
   position: absolute;
   inset: 0;
-  backdrop-filter: blur(64px) saturate(180%);
-  -webkit-backdrop-filter: blur(64px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(130%);
+  -webkit-backdrop-filter: blur(24px) saturate(130%);
   mask-image: linear-gradient(to top, black 55%, transparent 100%);
   -webkit-mask-image: linear-gradient(to top, black 55%, transparent 100%);
 }
@@ -241,14 +348,8 @@ a {
 }
 
 .liquid-glass-bubble {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.94) 0%,
-    rgba(255, 255, 255, 0.7) 100%
-  );
-  box-shadow:
-    0 4px 14px rgba(45, 28, 18, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 8px oklch(0.28 0.04 40 / 0.08);
   will-change: transform, width, height;
 }
 

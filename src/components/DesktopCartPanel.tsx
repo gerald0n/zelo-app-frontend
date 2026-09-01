@@ -12,7 +12,7 @@ export default function DesktopCartPanel() {
     <aside className="sticky top-0 flex h-dvh w-[320px] shrink-0 flex-col border-l border-border bg-card pt-4">
       <div className="flex items-center justify-between px-4">
         <div>
-          <p className="text-[10px] font-semibold tracking-[1.2px] text-muted-foreground">
+          <p className="text-2xs font-semibold tracking-widest text-muted-foreground">
             SEU PEDIDO
           </p>
           <h2 className="mt-0.5 text-lg font-bold">Carrinho</h2>
@@ -38,14 +38,14 @@ export default function DesktopCartPanel() {
               className="space-y-2 border-b border-border py-3"
             >
               <div className="flex justify-between gap-3">
-                <p className="line-clamp-2 flex-1 text-[13px] font-semibold">
+                <p className="line-clamp-2 flex-1 text-sm font-semibold">
                   {item.name}
                 </p>
-                <p className="text-[13px] font-bold">
+                <p className="text-sm font-bold">
                   {formatCatalogPrice(item.price * item.quantity)}
                 </p>
               </div>
-              <div className="inline-flex items-center rounded-[7px] border border-border">
+              <div className="inline-flex items-center rounded-md border border-border">
                 <button
                   type="button"
                   className="flex size-7 items-center justify-center"
@@ -71,7 +71,7 @@ export default function DesktopCartPanel() {
 
       <div className="space-y-3 border-t border-border p-4">
         <div className="flex items-center justify-between">
-          <span className="text-[13px] text-muted-foreground">Subtotal</span>
+          <span className="text-sm text-muted-foreground">Subtotal</span>
           <span className="text-lg font-bold">
             {formatCatalogPrice(subtotal)}
           </span>
