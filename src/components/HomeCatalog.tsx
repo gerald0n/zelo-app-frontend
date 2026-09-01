@@ -149,6 +149,7 @@ export default function HomeCatalog({
                       alt={product.imageAlt ?? product.name}
                       className="size-12 shrink-0 rounded-lg"
                       iconClassName="size-5"
+                      width={160}
                     />
                     <p className="text-sm font-semibold leading-tight text-card-foreground">
                       {product.name}

@@ -70,7 +70,7 @@ function mapAdminImages(
       altText: image.alt_text,
       sortOrder: image.sort_order,
       isPrimary: image.is_primary,
-      url: productImagePublicUrl(image.storage_path),
+      url: productImagePublicUrl(image.storage_path, { width: 400 }),
     }));
 }
 
@@ -649,7 +649,7 @@ export async function uploadProductImage(options: {
     altText: data.alt_text,
     sortOrder: data.sort_order,
     isPrimary: data.is_primary,
-    url: productImagePublicUrl(data.storage_path),
+    url: productImagePublicUrl(data.storage_path, { width: 400 }),
   });
 }
 
