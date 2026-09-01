@@ -5,12 +5,15 @@ import { useEffect } from 'react';
 const MOBILE_QUERY = '(max-width: 1023px)';
 
 function isMapTarget(target: EventTarget | null) {
-  return target instanceof Element && Boolean(target.closest('.leaflet-container'));
+  return (
+    target instanceof Element && Boolean(target.closest('.leaflet-container'))
+  );
 }
 
 /**
- * Reforça o lock de zoom só no mobile (Safari ainda ignora user-scalable=no).
- * Desktop permanece com zoom normal. O mapa de entrega continua com pinch-zoom.
+ * Reforça o bloqueio de zoom só no mobile — o Safari iOS ignora
+ * `user-scalable=no` do <meta viewport>. Desktop mantém zoom normal.
+ * O mapa de entrega (Leaflet) continua com pinch-zoom próprio.
  */
 export default function LockMobileZoom() {
   useEffect(() => {
@@ -22,7 +25,11 @@ export default function LockMobileZoom() {
     };
 
     const preventMultiTouch = (event: TouchEvent) => {
-      if (!media.matches || event.touches.length < 2 || isMapTarget(event.target)) {
+      if (
+        !media.matches ||
+        event.touches.length < 2 ||
+        isMapTarget(event.target)
+      ) {
         return;
       }
       event.preventDefault();

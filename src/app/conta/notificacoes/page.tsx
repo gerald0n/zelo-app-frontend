@@ -13,8 +13,6 @@ import {
 import { cn } from '@/lib/cn';
 import {
   checkoutDesktopContainerClass,
-  mobilePageColumnClass,
-  mobilePageScrollClass,
   pageBodyPadClass,
 } from '@/lib/layout';
 
@@ -81,20 +79,9 @@ export default function NotificacoesPage() {
   };
 
   return (
-    <div
-      className={cn(
-        'flex min-h-dvh min-w-0 flex-col bg-background',
-        mobilePageColumnClass,
-      )}
-    >
+    <div className="flex min-h-dvh min-w-0 flex-col bg-background">
       <AccountPageHeader title="Notificações" />
-      <div
-        className={cn(
-          mobilePageScrollClass,
-          pageBodyPadClass,
-          checkoutDesktopContainerClass,
-        )}
-      >
+      <div className={cn(pageBodyPadClass, checkoutDesktopContainerClass)}>
         <AccountAuthGate
           title="Entre para gerenciar notificações"
           description="As atualizações de pedido são enviadas para o aparelho em que você autorizar."

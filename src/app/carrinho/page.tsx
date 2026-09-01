@@ -20,11 +20,7 @@ import { useAppDialog } from '@/contexts/AppDialogContext';
 import { checkoutContinuePath } from '@/modules/auth/checkout-path';
 import { ProductThumb } from '@/components/product-thumb';
 import { Separator } from '@/components/ui/separator';
-import {
-  mobilePageColumnClass,
-  pageHeaderBarClass,
-  pagePrimaryButtonClass,
-} from '@/lib/layout';
+import { pageHeaderBarClass, pagePrimaryButtonClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 
 function useCartHydrated() {
@@ -47,6 +43,7 @@ function CartItemRow({ item }: { item: CartItem }) {
         alt={item.name}
         className="size-14 shrink-0 rounded-lg"
         iconClassName="size-7"
+        width={160}
       />
       <div className="min-w-0 flex-1 space-y-1">
         <p className="line-clamp-2 text-sm font-semibold">{item.name}</p>
@@ -232,12 +229,7 @@ export default function CarrinhoPage() {
 
   if (items.length === 0) {
     return (
-      <div
-        className={cn(
-          'flex min-h-dvh flex-col bg-background',
-          mobilePageColumnClass,
-        )}
-      >
+      <div className="flex min-h-dvh flex-col bg-background">
         <header className={pageHeaderBarClass}>
           <Link href="/" aria-label="Voltar ao cardápio">
             <ArrowLeft className="size-6" />
@@ -263,12 +255,7 @@ export default function CarrinhoPage() {
   }
 
   return (
-    <div
-      className={cn(
-        'mx-auto flex min-h-dvh w-full flex-col bg-background lg:max-w-5xl',
-        mobilePageColumnClass,
-      )}
-    >
+    <div className="mx-auto flex min-h-dvh w-full flex-col bg-background lg:max-w-5xl">
       <header className={cn(pageHeaderBarClass, 'lg:px-0')}>
         <Link href="/" aria-label="Voltar ao cardápio">
           <ArrowLeft className="size-6" />

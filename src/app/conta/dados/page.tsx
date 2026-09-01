@@ -12,8 +12,6 @@ import { cn } from '@/lib/cn';
 import {
   checkoutDesktopContainerClass,
   checkoutFieldClass,
-  mobilePageColumnClass,
-  mobilePageScrollClass,
   pageBodyPadClass,
   pagePrimaryButtonClass,
 } from '@/lib/layout';
@@ -47,20 +45,9 @@ export default function DadosPessoaisPage() {
   };
 
   return (
-    <div
-      className={cn(
-        'flex min-h-dvh min-w-0 flex-col bg-background',
-        mobilePageColumnClass,
-      )}
-    >
+    <div className="flex min-h-dvh min-w-0 flex-col bg-background">
       <AccountPageHeader title="Dados pessoais" />
-      <div
-        className={cn(
-          mobilePageScrollClass,
-          pageBodyPadClass,
-          checkoutDesktopContainerClass,
-        )}
-      >
+      <div className={cn(pageBodyPadClass, checkoutDesktopContainerClass)}>
         <AccountAuthGate
           title="Entre para ver seus dados"
           description="Seu nome e celular ficam vinculados à conta identificada por código no celular."

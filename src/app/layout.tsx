@@ -49,7 +49,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  minimumScale: 1,
+  // Comportamento de app: sem pinch/double-tap zoom. Chrome (inclusive iOS)
+  // respeita; Safari iOS ignora e é tratado por LockMobileZoom.
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',

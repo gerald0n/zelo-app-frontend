@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { Clock, Info, MapPin, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useStoreHoursLabel, useStoreOpen } from '@/hooks/useStoreOpen';
-import { getAppScrollContainer, getAppScrollTop } from '@/lib/app-scroll';
+import { getAppScroller, getAppScrollTop } from '@/lib/layout';
 import { cn } from '@/lib/utils';
 
 const DRAWER_MS = 320;
@@ -59,14 +59,10 @@ export default function StoreHeader({ onHeightChange }: Props) {
   }, []);
 
   useEffect(() => {
-    const hero = heroRef.current;
-    if (!hero) return;
-
-    const syncContainer = () => getAppScrollContainer(hero);
-    let container: HTMLElement | Window = syncContainer();
+    if (!heroRef.current) return;
 
     scrollSampleRef.current = {
-      y: getAppScrollTop(container),
+      y: getAppScrollTop(getAppScroller()),
       t: performance.now(),
     };
 
@@ -87,7 +83,7 @@ export default function StoreHeader({ onHeightChange }: Props) {
     };
 
     const onScroll = () => {
-      const y = getAppScrollTop(container);
+      const y = getAppScrollTop(getAppScroller());
       const t = performance.now();
       const { y: prevY, t: prevT } = scrollSampleRef.current;
       const dt = Math.max(t - prevT, 1);
@@ -105,24 +101,15 @@ export default function StoreHeader({ onHeightChange }: Props) {
     };
 
     onScroll();
-    container.addEventListener('scroll', onScroll, { passive: true });
-
-    const mq = window.matchMedia('(min-width: 1024px)');
-    const onBreakpoint = () => {
-      container.removeEventListener('scroll', onScroll);
-      container = syncContainer();
-      scrollSampleRef.current = {
-        y: getAppScrollTop(container),
-        t: performance.now(),
-      };
-      container.addEventListener('scroll', onScroll, { passive: true });
-      onScroll();
-    };
-    mq.addEventListener('change', onBreakpoint);
+    // Desktop rola em `window`; mobile no container `[data-app-scroll]`.
+    // Ouve os dois — o que não rola simplesmente nunca dispara.
+    window.addEventListener('scroll', onScroll, { passive: true });
+    const shellScroller = document.querySelector('[data-app-scroll]');
+    shellScroller?.addEventListener('scroll', onScroll, { passive: true });
 
     return () => {
-      container.removeEventListener('scroll', onScroll);
-      mq.removeEventListener('change', onBreakpoint);
+      window.removeEventListener('scroll', onScroll);
+      shellScroller?.removeEventListener('scroll', onScroll);
     };
   }, []);
 

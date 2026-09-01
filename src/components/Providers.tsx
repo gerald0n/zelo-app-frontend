@@ -33,6 +33,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
       <DesktopNavigation />
       <div className={cn('lg:min-h-dvh', mobileAppShellClass)}>
         <div
+          data-app-scroll
           className={cn(
             mobileAppShellScrollClass,
             !hideCustomerNav && 'max-lg:pb-[84px]',

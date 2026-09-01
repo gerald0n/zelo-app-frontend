@@ -17,8 +17,6 @@ import CheckoutProgress from '@/components/CheckoutProgress';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import { cn } from '@/lib/cn';
 import {
-  mobilePageColumnClass,
-  mobilePageScrollClass,
   checkoutFooterClass,
   checkoutDesktopContainerClass,
   pageHeaderBarClass,
@@ -175,18 +173,8 @@ export default function RevisaoPage() {
   };
 
   return (
-    <div
-      className={cn(
-        'flex min-h-dvh min-w-0 flex-col bg-background',
-        mobilePageColumnClass,
-      )}
-    >
-      <header
-        className={cn(
-          pageHeaderBarClass,
-          checkoutDesktopContainerClass,
-        )}
-      >
+    <div className="flex min-h-dvh min-w-0 flex-col bg-background">
+      <header className={cn(pageHeaderBarClass, checkoutDesktopContainerClass)}>
         <Link href="/checkout/pagamento" aria-label="Voltar ao pagamento">
           <ArrowLeft className="size-6" />
         </Link>
@@ -201,7 +189,7 @@ export default function RevisaoPage() {
         className={checkoutDesktopContainerClass}
       />
 
-      <div className={mobilePageScrollClass}>
+      <div>
         <div
           className={cn('space-y-3', pageBodyPadClass, checkoutDesktopContainerClass)}
         >

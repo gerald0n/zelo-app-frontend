@@ -21,7 +21,6 @@ import { ProductThumb } from '@/components/product-thumb';
 import { Textarea } from '@/components/ui/textarea';
 import { useCart } from '@/contexts/CartContext';
 import { useShopExperience } from '@/contexts/ShopExperienceContext';
-import { mobilePageColumnClass } from '@/lib/layout';
 import { cn } from '@/lib/utils';
 
 export default function ProdutoClient({
@@ -69,12 +68,7 @@ export default function ProdutoClient({
   };
 
   return (
-    <div
-      className={cn(
-        'mx-auto flex min-h-dvh flex-col bg-background lg:max-w-5xl lg:flex-row lg:gap-6 lg:px-5 lg:py-5',
-        mobilePageColumnClass,
-      )}
-    >
+    <div className="mx-auto flex min-h-dvh flex-col bg-background lg:max-w-5xl lg:flex-row lg:gap-6 lg:px-5 lg:py-5">
       <div className="relative h-[220px] shrink-0 lg:sticky lg:top-6 lg:h-[380px] lg:w-[380px] lg:self-start lg:overflow-hidden lg:rounded-2xl">
         <ProductThumb
           tone={categoryTone(product.slug)}
@@ -82,6 +76,7 @@ export default function ProdutoClient({
           alt={product.imageAlt ?? product.name}
           className="h-full w-full rounded-none"
           iconClassName="size-16"
+          width={860}
         />
         <Link
           href="/"

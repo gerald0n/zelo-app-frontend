@@ -12,7 +12,6 @@ import { useCart, type CartItem } from '@/modules/carts';
 import { useShopExperience } from '@/contexts/ShopExperienceContext';
 import { type CustomerOrderListItem } from '@/modules/orders/types';
 import { cn } from '@/lib/cn';
-import { mobilePageColumnClass } from '@/lib/layout';
 
 type Tab = 'active' | 'history';
 
@@ -134,7 +133,7 @@ export default function PedidosPage() {
   };
 
   return (
-    <div className={cn('flex min-h-dvh flex-col bg-background', mobilePageColumnClass)}>
+    <div className="flex min-h-dvh flex-col bg-background">
       <header className="space-y-2 border-b border-border px-3 pb-2 pt-3 max-lg:sticky max-lg:top-0 max-lg:z-30 max-lg:bg-background">
         <h1 className="text-lg font-bold tracking-tight">
           Meus pedidos

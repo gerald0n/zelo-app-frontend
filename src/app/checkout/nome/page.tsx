@@ -10,8 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { hasCustomerName } from '@/modules/auth/customer-name';
 import {
-  mobilePageColumnClass,
-  mobilePageScrollClass,
   checkoutFieldClass,
   checkoutFooterClass,
   checkoutDesktopContainerClass,
@@ -54,12 +52,7 @@ export default function CheckoutNomePage() {
   };
 
   return (
-    <div
-      className={cn(
-        'flex min-h-dvh min-w-0 flex-col bg-background',
-        mobilePageColumnClass,
-      )}
-    >
+    <div className="flex min-h-dvh min-w-0 flex-col bg-background">
       <header className={cn(pageHeaderBarClass, checkoutDesktopContainerClass)}>
         <Link href="/carrinho" aria-label="Voltar ao carrinho">
           <ArrowLeft className="size-6" />
@@ -68,7 +61,7 @@ export default function CheckoutNomePage() {
         <span className="w-6" />
       </header>
 
-      <div className={mobilePageScrollClass}>
+      <div>
         <div
           className={cn(
             'space-y-4',

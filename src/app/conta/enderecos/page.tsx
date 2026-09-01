@@ -11,8 +11,6 @@ import type { SavedAddress } from '@/modules/customers/addresses';
 import { cn } from '@/lib/cn';
 import {
   checkoutDesktopContainerClass,
-  mobilePageColumnClass,
-  mobilePageScrollClass,
   pageBodyPadClass,
   pagePrimaryButtonClass,
 } from '@/lib/layout';
@@ -70,20 +68,9 @@ export default function EnderecosPage() {
   };
 
   return (
-    <div
-      className={cn(
-        'flex min-h-dvh min-w-0 flex-col bg-background',
-        mobilePageColumnClass,
-      )}
-    >
+    <div className="flex min-h-dvh min-w-0 flex-col bg-background">
       <AccountPageHeader title="Meus endereços" />
-      <div
-        className={cn(
-          mobilePageScrollClass,
-          pageBodyPadClass,
-          checkoutDesktopContainerClass,
-        )}
-      >
+      <div className={cn(pageBodyPadClass, checkoutDesktopContainerClass)}>
         <AccountAuthGate
           title="Entre para salvar endereços"
           description="Com a conta identificada, você reutiliza o endereço no próximo pedido."

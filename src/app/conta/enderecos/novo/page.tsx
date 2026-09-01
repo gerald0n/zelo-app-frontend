@@ -9,8 +9,6 @@ import { useShopExperience } from '@/contexts/ShopExperienceContext';
 import { cn } from '@/lib/cn';
 import {
   checkoutDesktopContainerClass,
-  mobilePageColumnClass,
-  mobilePageScrollClass,
   pageBodyPadClass,
 } from '@/lib/layout';
 
@@ -21,20 +19,9 @@ export default function NovoEnderecoPage() {
   const [error, setError] = useState('');
 
   return (
-    <div
-      className={cn(
-        'flex min-h-dvh min-w-0 flex-col bg-background',
-        mobilePageColumnClass,
-      )}
-    >
+    <div className="flex min-h-dvh min-w-0 flex-col bg-background">
       <AccountPageHeader title="Novo endereço" backHref="/conta/enderecos" />
-      <div
-        className={cn(
-          mobilePageScrollClass,
-          pageBodyPadClass,
-          checkoutDesktopContainerClass,
-        )}
-      >
+      <div className={cn(pageBodyPadClass, checkoutDesktopContainerClass)}>
         <AccountAuthGate
           title="Entre para salvar um endereço"
           description="Identifique-se para cadastrar um local de entrega."

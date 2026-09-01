@@ -21,8 +21,6 @@ import CheckoutProgress from '@/components/CheckoutProgress';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import { cn } from '@/lib/cn';
 import {
-  mobilePageColumnClass,
-  mobilePageScrollClass,
   checkoutFieldClass,
   checkoutFooterClass,
   checkoutDesktopContainerClass,
@@ -175,12 +173,7 @@ export default function PagamentoPage() {
   };
 
   return (
-    <div
-      className={cn(
-        'flex min-h-dvh min-w-0 flex-col bg-background',
-        mobilePageColumnClass,
-      )}
-    >
+    <div className="flex min-h-dvh min-w-0 flex-col bg-background">
       <header
         className={cn(
           pageHeaderBarClass,
@@ -201,7 +194,7 @@ export default function PagamentoPage() {
         className={checkoutDesktopContainerClass}
       />
 
-      <div className={mobilePageScrollClass}>
+      <div>
         <div
           className={cn('space-y-3', pageBodyPadClass, checkoutDesktopContainerClass)}
         >

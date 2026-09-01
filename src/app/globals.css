@@ -197,23 +197,28 @@ body {
 }
 
 /*
- * Mobile in-browser: lock document scroll so the URL/action bar stays put.
- * Scrolling happens inside .app-shell-scroll (see Providers AppShell).
- * Desktop (lg+) keeps normal document scroll.
+ * App shell mobile (<1024px): o documento não rola — a barra de URL do
+ * navegador fica estável, como num app. O scroll vive em [data-app-scroll]
+ * (ver `mobileAppShellClass` / `mobileAppShellScrollClass` em lib/layout.ts).
+ *
+ * Sem `position: fixed` e sem `height:100%`/`vh` — só `svh`. O shell é
+ * dimensionado em `100svh` (small viewport, barra de URL visível), que é
+ * bem-definido já no 1º paint do Chrome iOS. Isso evita a "faixa morta"
+ * da 1ª versão, que usava `fixed inset-0` sobre `height:100%`.
+ *
+ * O bloqueio de zoom fica no <meta viewport> (Chrome iOS) + LockMobileZoom
+ * (Safari iOS). Nada de `touch-action` aqui — restringir o ancestral também
+ * mataria o pinch-zoom do mapa Leaflet.
  */
 @media (max-width: 1023px) {
   html,
   body {
-    height: 100%;
-    max-width: 100%;
+    height: 100svh;
     overflow: hidden;
-    overflow-x: clip;
     overscroll-behavior: none;
-    /* Pan only: bloqueia pinch e double-tap zoom (comportamento de app). */
-    touch-action: pan-x pan-y;
   }
 
-  .app-shell-scroll {
+  [data-app-scroll] {
     -webkit-overflow-scrolling: touch;
   }
 }

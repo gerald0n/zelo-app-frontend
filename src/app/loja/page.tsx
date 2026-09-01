@@ -5,7 +5,7 @@ import { getPublicStore } from '@/modules/catalog/catalog-repository';
 import { canPlaceImmediateOrder } from '@/modules/scheduling/schedule';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/cn';
-import { mobilePageColumnClass, pageHeaderBarClass, pagePrimaryButtonClass } from '@/lib/layout';
+import { pageHeaderBarClass, pagePrimaryButtonClass } from '@/lib/layout';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,12 +30,7 @@ export default async function LojaPage() {
   const whatsappHref = `https://wa.me/${store.whatsappE164.replace(/\D/g, '')}`;
 
   return (
-    <div
-      className={cn(
-        'mx-auto flex min-h-dvh w-full flex-col bg-background lg:max-w-2xl',
-        mobilePageColumnClass,
-      )}
-    >
+    <div className="mx-auto flex min-h-dvh w-full flex-col bg-background lg:max-w-2xl">
       <div className={cn(pageHeaderBarClass, 'border-b-0 lg:px-0')}>
         <Link href="/" aria-label="Voltar ao cardápio">
           <ArrowLeft className="size-6" />
