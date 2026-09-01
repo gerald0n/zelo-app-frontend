@@ -57,3 +57,5 @@ certificates
 /.agents/skills/
 /.impeccable/
 # skills-lock.json fica versionado: é só o manifesto para reinstalar as skills
+# npm lockfile — o projeto usa pnpm
+package-lock.json

@@ -334,27 +334,30 @@ export default function RecebimentoPage() {
     details.postalCode,
   ]);
 
-  const coordsValidateTimerRef = useRef<number | null>(null);
+  const pendingCoordsRef = useRef<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [coordsRevalidateNonce, setCoordsRevalidateNonce] = useState(0);
 
   const revalidateWithCoords = (latitude: number, longitude: number) => {
     setAddressDetails({ latitude, longitude });
     setLocationConfirmed(false);
-
-    if (coordsValidateTimerRef.current != null) {
-      window.clearTimeout(coordsValidateTimerRef.current);
-    }
-    coordsValidateTimerRef.current = window.setTimeout(() => {
-      void runValidation({ latitude, longitude });
-    }, 450);
+    pendingCoordsRef.current = { latitude, longitude };
+    setCoordsRevalidateNonce((nonce) => nonce + 1);
   };
 
+  // Dispara a validação a partir de coordenadas do mapa. Passa por um nonce
+  // para que `runValidation` (useEffectEvent) só seja chamado de dentro de
+  // um Effect — nunca direto do handler.
   useEffect(() => {
-    return () => {
-      if (coordsValidateTimerRef.current != null) {
-        window.clearTimeout(coordsValidateTimerRef.current);
-      }
-    };
-  }, []);
+    if (coordsRevalidateNonce === 0) return;
+    const timer = window.setTimeout(() => {
+      const coords = pendingCoordsRef.current;
+      if (coords) void runValidation(coords);
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [coordsRevalidateNonce]);
 
   const deliveryFee =
     checkout.deliveryType === 'delivery' ? checkout.deliveryFeeCents : 0;

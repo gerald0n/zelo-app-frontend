@@ -143,7 +143,11 @@ Reinicie o Next. Em production o Twilio Verify é obrigatório.
 
 ### Painel administrativo (Fase I)
 
-Login: `admin@zeloconfeitaria.com.br` / `admin123`
+Login **local** (criado pelo `seed.sql`, nunca vai para produção):
+`admin@zeloconfeitaria.com.br` / `admin123`
+
+Em produção o admin é criado manualmente com senha forte — ver
+`docs/20-tecnico/29 - Deploy e Ambientes.md`.
 
 - Pedidos: fila, detalhe, status e cancelamento
 - Catálogo: CRUD de categorias, produtos e adicionais

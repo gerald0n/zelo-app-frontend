@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { createHash, randomInt } from 'node:crypto';
 import {
   getAppEnv,

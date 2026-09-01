@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { hasWebPushConfig } from '@/config/env';
 import { logger } from '@/lib/logger';
 import { sendWebPushNotification } from '@/lib/push/web-push';
