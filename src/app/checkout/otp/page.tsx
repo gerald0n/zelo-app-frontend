@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/cn';
 import { formatPhoneDisplay } from '@/lib/phone';
 import { BotTrap } from '@/components/BotTrap';
+import { checkoutContinuePath } from '@/modules/auth/checkout-path';
 import {
-  mobilePageColumnClass,
   checkoutDesktopContainerClass,
   pageHeaderBarClass,
   pageBodyPadClass,
@@ -40,7 +40,14 @@ function useSessionItem(key: string): string {
 
 export default function OtpPage() {
   const router = useRouter();
-  const { pendingPhone, setPendingPhone, requestOtp, verifyOtp } = useAuth();
+  const {
+    user,
+    identityReady,
+    pendingPhone,
+    setPendingPhone,
+    requestOtp,
+    verifyOtp,
+  } = useAuth();
   const [otp, setOtp] = useState('');
   const [countdown, setCountdown] = useState(60);
   const [error, setError] = useState('');
@@ -54,16 +61,33 @@ export default function OtpPage() {
   const storedDebug = useSessionItem(DEBUG_OTP_KEY);
   const [debugCode, setDebugCode] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  // Verdadeiro assim que o código é validado nesta tela: aí quem decide o
+  // próximo passo é o handleConfirm, não o guard de "já autenticado".
+  const verifiedHere = useRef(false);
   const resolvedPhone = pendingPhone || storedPhone;
   const visibleDebug = debugCode || storedDebug;
 
   useEffect(() => {
+    // Já autenticado antes de chegar aqui (ex.: voltou pela seta / histórico)
+    // → não deixa reabrir a verificação, segue o fluxo do checkout.
+    if (identityReady && user && !verifiedHere.current) {
+      router.replace(checkoutContinuePath(user));
+      return;
+    }
+    if (!identityReady) return;
     if (!resolvedPhone) {
       router.replace('/checkout/identificacao');
       return;
     }
     if (!pendingPhone) setPendingPhone(resolvedPhone);
-  }, [pendingPhone, resolvedPhone, router, setPendingPhone]);
+  }, [
+    identityReady,
+    user,
+    pendingPhone,
+    resolvedPhone,
+    router,
+    setPendingPhone,
+  ]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -79,17 +103,20 @@ export default function OtpPage() {
     setError('');
     setSubmitting(true);
     const result = await verifyOtp(resolvedPhone, code);
-    setSubmitting(false);
     if (!result.ok) {
+      setSubmitting(false);
       setError(result.message);
       return;
     }
+    verifiedHere.current = true;
     try {
       sessionStorage.removeItem(DEBUG_OTP_KEY);
     } catch {
       /* ignore */
     }
-    router.push(result.needsName ? '/checkout/nome' : '/checkout/recebimento');
+    router.replace(
+      result.needsName ? '/checkout/nome' : '/checkout/recebimento',
+    );
   };
 
   const handleInput = (text: string) => {
@@ -130,12 +157,7 @@ export default function OtpPage() {
   };
 
   return (
-    <div
-      className={cn(
-        'flex min-h-dvh min-w-0 flex-col bg-background',
-        mobilePageColumnClass,
-      )}
-    >
+    <div className="flex min-h-dvh min-w-0 flex-col bg-background">
       <header className={cn(pageHeaderBarClass, checkoutDesktopContainerClass)}>
         <Link
           href="/checkout/identificacao"
