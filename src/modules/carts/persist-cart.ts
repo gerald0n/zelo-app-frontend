@@ -307,6 +307,32 @@ export async function replaceCustomerCart(
   return persistAndHydrate(customerId.data, lines);
 }
 
+function lineKey(line: CartSyncLine): string {
+  return `${line.productId}|${[...line.addOnIds].sort().join(',')}|${
+    line.customerNote?.trim() || ''
+  }`;
+}
+
+/**
+ * O carrinho local não acrescenta nada ao que já está no servidor quando toda
+ * linha local já existe lá com quantidade igual ou maior. É o caso de um
+ * carrinho já reconciliado sendo reenviado (recarga da página, reabertura do
+ * PWA) — somar de novo dobraria as quantidades.
+ */
+function localAddsNothing(
+  localLines: CartSyncLine[],
+  storedLines: CartSyncLine[],
+): boolean {
+  if (localLines.length === 0) return true;
+  const storedByKey = new Map(
+    storedLines.map((line) => [lineKey(line), line.quantity]),
+  );
+  return localLines.every((line) => {
+    const storedQty = storedByKey.get(lineKey(line));
+    return storedQty !== undefined && storedQty >= line.quantity;
+  });
+}
+
 export async function reconcileCustomerCart(
   localLines: CartSyncLine[],
 ): Promise<Result<{ items: CartItem[] }>> {
@@ -319,7 +345,9 @@ export async function reconcileCustomerCart(
   const stored = await loadStoredLines(cart.data.id);
   if (!stored.ok) return stored;
 
-  const merged = mergeCartSyncLines(localLines, stored.data);
+  const merged = localAddsNothing(localLines, stored.data)
+    ? stored.data
+    : mergeCartSyncLines(localLines, stored.data);
   return persistAndHydrate(customerId.data, merged);
 }
 
