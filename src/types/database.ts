@@ -7,31 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never;
-    };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json;
-          operationName?: string;
-          query?: string;
-          variables?: Json;
-        };
-        Returns: Json;
-      };
-    };
-    Enums: {
-      [_ in never]: never;
-    };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
   public: {
     Tables: {
       add_ons: {
@@ -246,7 +221,7 @@ export type Database = {
           {
             foreignKeyName: 'carts_customer_id_fkey';
             columns: ['customer_id'];
-            isOneToOne: true;
+            isOneToOne: false;
             referencedRelation: 'customers';
             referencedColumns: ['id'];
           },
@@ -381,7 +356,7 @@ export type Database = {
           created_at?: string;
           expires_at: string;
           id?: string;
-          name: string;
+          name?: string;
           phone_e164: string;
         };
         Update: {
@@ -435,14 +410,55 @@ export type Database = {
         Insert: {
           bucket: string;
           created_at?: string;
-          id?: number;
+          id?: never;
         };
         Update: {
           bucket?: string;
           created_at?: string;
-          id?: number;
+          id?: never;
         };
         Relationships: [];
+      };
+      idempotency_keys: {
+        Row: {
+          created_at: string;
+          customer_id: string | null;
+          id: string;
+          key: string;
+          request_hash: string;
+          response_body: Json;
+          response_status: number;
+          scope: string;
+        };
+        Insert: {
+          created_at?: string;
+          customer_id?: string | null;
+          id?: string;
+          key: string;
+          request_hash: string;
+          response_body: Json;
+          response_status: number;
+          scope: string;
+        };
+        Update: {
+          created_at?: string;
+          customer_id?: string | null;
+          id?: string;
+          key?: string;
+          request_hash?: string;
+          response_body?: Json;
+          response_status?: number;
+          scope?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'idempotency_keys_customer_id_fkey';
+            columns: ['customer_id'];
+            isOneToOne: false;
+            referencedRelation: 'customers';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       order_addresses: {
         Row: {
@@ -651,47 +667,6 @@ export type Database = {
             columns: ['order_id'];
             isOneToOne: false;
             referencedRelation: 'orders';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      idempotency_keys: {
-        Row: {
-          id: string;
-          scope: string;
-          key: string;
-          customer_id: string | null;
-          request_hash: string;
-          response_status: number;
-          response_body: Json;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          scope: string;
-          key: string;
-          customer_id?: string | null;
-          request_hash: string;
-          response_status: number;
-          response_body: Json;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          scope?: string;
-          key?: string;
-          customer_id?: string | null;
-          request_hash?: string;
-          response_status?: number;
-          response_body?: Json;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'idempotency_keys_customer_id_fkey';
-            columns: ['customer_id'];
-            isOneToOne: false;
-            referencedRelation: 'customers';
             referencedColumns: ['id'];
           },
         ];
@@ -1125,17 +1100,22 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      consume_rate_limit: {
+        Args: { p_bucket: string; p_limit: number; p_window_seconds: number };
+        Returns: boolean;
+      };
       create_order: { Args: { payload: Json }; Returns: string };
       create_order_as_customer: {
         Args: { p_customer_id: string; payload: Json };
         Returns: string;
       };
-      is_admin: { Args: Record<string, never>; Returns: boolean };
-      transition_order_status_as_customer: {
+      is_admin: { Args: never; Returns: boolean };
+      purge_rate_limits: { Args: { p_older_than?: string }; Returns: number };
+      transition_order_status: {
         Args: {
-          p_customer_id: string;
-          p_order_id: string;
+          p_actor_type: Database['public']['Enums']['status_change_actor_type'];
           p_new_status: Database['public']['Enums']['order_status'];
+          p_order_id: string;
           p_reason?: string;
         };
         Returns: {
@@ -1170,9 +1150,9 @@ export type Database = {
           isSetofReturn: false;
         };
       };
-      transition_order_status: {
+      transition_order_status_as_customer: {
         Args: {
-          p_actor_type: Database['public']['Enums']['status_change_actor_type'];
+          p_customer_id: string;
           p_new_status: Database['public']['Enums']['order_status'];
           p_order_id: string;
           p_reason?: string;
@@ -1350,9 +1330,6 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       delivery_method: ['delivery', 'pickup'],

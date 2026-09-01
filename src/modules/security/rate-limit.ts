@@ -30,6 +30,8 @@ function memoryAllow(bucket: string, limit: number, windowMs: number): boolean {
   return true;
 }
 
+const TOO_MANY = 'Muitas tentativas. Aguarde alguns minutos.';
+
 export async function enforceIpRateLimit(options: {
   kind: string;
   ip: string;
@@ -37,44 +39,32 @@ export async function enforceIpRateLimit(options: {
   windowMs: number;
 }): Promise<Result<true>> {
   const bucket = hashBucket(options.kind, options.ip);
-  const sinceIso = new Date(Date.now() - options.windowMs).toISOString();
 
   try {
     const admin = createAdminSupabaseClient();
-    const counted = await admin
-      .from('http_rate_limits')
-      .select('id', { count: 'exact', head: true })
-      .eq('bucket', bucket)
-      .gte('created_at', sinceIso);
+    const { data, error } = await admin.rpc('consume_rate_limit', {
+      p_bucket: bucket,
+      p_limit: options.limit,
+      p_window_seconds: Math.max(1, Math.ceil(options.windowMs / 1000)),
+    });
 
-    if (!counted.error && (counted.count ?? 0) >= options.limit) {
-      return err(
-        'VALIDATION_ERROR',
-        'Muitas tentativas. Aguarde alguns minutos.',
-      );
+    if (!error) {
+      return data === false ? err('VALIDATION_ERROR', TOO_MANY) : ok(true);
     }
 
-    if (!counted.error) {
-      await admin.from('http_rate_limits').insert({ bucket });
-      if (Math.random() < 0.05) {
-        await admin
-          .from('http_rate_limits')
-          .delete()
-          .lt('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
-      }
-      return ok(true);
-    }
+    logger.warn('Rate limit em memória (RPC indisponível)', {
+      message: error.message,
+    });
   } catch (cause) {
-    logger.warn('Rate limit em memória (tabela indisponível)', {
+    logger.warn('Rate limit em memória (RPC indisponível)', {
       message: cause instanceof Error ? cause.message : 'unknown',
     });
   }
 
+  // Fallback local: só útil se o Postgres estiver fora do ar. Em serverless
+  // o Map não sobrevive entre invocações — é o melhor que dá sem o banco.
   if (!memoryAllow(bucket, options.limit, options.windowMs)) {
-    return err(
-      'VALIDATION_ERROR',
-      'Muitas tentativas. Aguarde alguns minutos.',
-    );
+    return err('VALIDATION_ERROR', TOO_MANY);
   }
   return ok(true);
 }
