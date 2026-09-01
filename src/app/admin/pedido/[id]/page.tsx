@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Bike,
@@ -39,17 +39,13 @@ export default function AdminPedidoPage({
     ready && isAuthenticated,
   );
 
-  useEffect(() => {
-    if (!ready || !isAuthenticated) return;
-
-    let cancelled = false;
-    const timer = window.setTimeout(async () => {
+  const loadOrder = useCallback(
+    async (opts?: { background?: boolean }) => {
       try {
         const response = await fetch(`/api/v1/admin/orders/${id}`, {
           cache: 'no-store',
         });
         const json = await response.json();
-        if (cancelled) return;
         if (!response.ok) {
           setError(json?.error?.message ?? 'Pedido não encontrado.');
           setOrder(null);
@@ -58,17 +54,28 @@ export default function AdminPedidoPage({
         setOrder(json.order as AdminOrderDetail);
         setError(null);
       } catch {
-        if (!cancelled) setError('Falha de rede.');
+        setError('Falha de rede.');
       } finally {
-        if (!cancelled) setLoading(false);
+        // Só a carga inicial controla o spinner; refetch de Realtime nunca,
+        // senão uma reconexão do socket trava a tela em "carregando".
+        if (!opts?.background) setLoading(false);
       }
-    }, 0);
+    },
+    [id],
+  );
 
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [ready, isAuthenticated, id, realtimeVersion]);
+  // Carga inicial: dona do `loading`, roda ao ficar pronto e ao trocar de pedido.
+  useEffect(() => {
+    if (!ready || !isAuthenticated) return;
+    setLoading(true);
+    void loadOrder();
+  }, [ready, isAuthenticated, loadOrder]);
+
+  // Atualização via Realtime: refetch em segundo plano, sem tocar no `loading`.
+  useEffect(() => {
+    if (!ready || !isAuthenticated || realtimeVersion === 0) return;
+    void loadOrder({ background: true });
+  }, [ready, isAuthenticated, realtimeVersion, loadOrder]);
 
 
   const advance = async () => {

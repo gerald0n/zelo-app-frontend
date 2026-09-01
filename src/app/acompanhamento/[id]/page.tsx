@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, use, useEffect, useState } from 'react';
+import { Suspense, use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -30,7 +30,6 @@ import {
   type OrderStatus,
 } from '@/modules/orders/types';
 import { useCustomerOrderRealtime } from '@/modules/realtime/hooks';
-import { mobilePageColumnClass } from '@/lib/layout';
 import { cn } from '@/lib/utils';
 
 type Step = {
@@ -88,16 +87,13 @@ function AcompanhamentoContent({ id }: { id: string }) {
   const [error, setError] = useState<string | null>(null);
   const { version: realtimeVersion } = useCustomerOrderRealtime(id, true);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async () => {
+  const loadOrder = useCallback(
+    async (opts?: { background?: boolean }) => {
       try {
         const response = await fetch(`/api/v1/orders/${id}`, {
           cache: 'no-store',
         });
         const json = await response.json();
-        if (cancelled) return;
         if (!response.ok) {
           setError(json?.error?.message ?? 'Pedido não encontrado.');
           setOrder(null);
@@ -106,26 +102,35 @@ function AcompanhamentoContent({ id }: { id: string }) {
         setOrder(json.order as CustomerOrder);
         setError(null);
       } catch {
-        if (!cancelled) setError('Falha de rede ao carregar o pedido.');
+        setError('Falha de rede ao carregar o pedido.');
       } finally {
-        if (!cancelled) setLoading(false);
+        // Só a carga inicial controla o skeleton; refetch em segundo plano
+        // nunca, senão uma oscilação do Realtime trava a tela.
+        if (!opts?.background) setLoading(false);
       }
-    };
+    },
+    [id],
+  );
 
-    const initial = window.setTimeout(() => {
-      void load();
-    }, 0);
-    // Fallback caso Realtime falhe/desconecte.
+  // Carga inicial: dona do `loading`, roda uma vez por pedido.
+  useEffect(() => {
+    setLoading(true);
+    void loadOrder();
+  }, [loadOrder]);
+
+  // Fallback periódico caso o Realtime falhe/desconecte — em segundo plano.
+  useEffect(() => {
     const fallback = window.setInterval(() => {
-      void load();
+      void loadOrder({ background: true });
     }, 45_000);
+    return () => window.clearInterval(fallback);
+  }, [loadOrder]);
 
-    return () => {
-      cancelled = true;
-      window.clearTimeout(initial);
-      window.clearInterval(fallback);
-    };
-  }, [id, realtimeVersion]);
+  // Sinal do Realtime: refetch em segundo plano, sem tocar no `loading`.
+  useEffect(() => {
+    if (realtimeVersion === 0) return;
+    void loadOrder({ background: true });
+  }, [realtimeVersion, loadOrder]);
 
   const handleReorder = async () => {
     try {
@@ -195,12 +200,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
   const CurrentIcon = steps[Math.max(currentStep, 0)]?.icon ?? Receipt;
 
   return (
-    <div
-      className={cn(
-        'mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background lg:max-w-5xl',
-        mobilePageColumnClass,
-      )}
-    >
+    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background lg:max-w-5xl">
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background px-3 py-2.5 lg:px-0">
         <button
           type="button"
