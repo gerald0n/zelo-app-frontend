@@ -1,6 +1,6 @@
 import type { NextConfig } from 'next';
 import { networkInterfaces } from 'node:os';
-import { SECURITY_HEADERS } from './src/config/security-headers';
+import { buildSecurityHeaders } from './src/config/security-headers';
 
 function localLanHosts(): string[] {
   const hosts: string[] = [];
@@ -34,7 +34,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/:path*',
-        headers: SECURITY_HEADERS,
+        headers: buildSecurityHeaders(),
       },
       {
         source: '/sw.js',

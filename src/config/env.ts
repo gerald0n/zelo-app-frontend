@@ -4,6 +4,7 @@ const appEnvSchema = z.enum(['local', 'preview', 'production']);
 
 const envSchema = z.object({
   APP_ENV: appEnvSchema.default('local'),
+  NEXT_PUBLIC_APP_ENV: appEnvSchema.optional(),
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
     .default('development'),
@@ -35,6 +36,7 @@ export type AppEnv = z.infer<typeof appEnvSchema>;
 
 const parsed = envSchema.safeParse({
   APP_ENV: process.env.APP_ENV,
+  NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
   NODE_ENV: process.env.NODE_ENV,
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   SUPABASE_URL: process.env.SUPABASE_URL,
@@ -66,6 +68,66 @@ if (!parsed.success) {
 }
 
 const env = parsed.data;
+
+/**
+ * Em `APP_ENV=production` as integrações abaixo são obrigatórias (ver
+ * `docs/20-tecnico/29 - Deploy e Ambientes.md` e `23 - Autenticação e
+ * Segurança.md`). Falhar aqui, no boot, evita descobrir a falta de uma
+ * chave só no primeiro request que a usa.
+ */
+function assertProductionEnv(): void {
+  if (env.APP_ENV !== 'production') return;
+
+  const missing: string[] = [];
+
+  if (!env.NEXT_PUBLIC_SUPABASE_URL) missing.push('NEXT_PUBLIC_SUPABASE_URL');
+  if (
+    !env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+    !env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  ) {
+    missing.push(
+      'NEXT_PUBLIC_SUPABASE_ANON_KEY (ou NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)',
+    );
+  }
+  if (!env.SUPABASE_SERVICE_ROLE_KEY) missing.push('SUPABASE_SERVICE_ROLE_KEY');
+
+  const hasTwilio =
+    Boolean(env.TWILIO_ACCOUNT_SID) &&
+    Boolean(env.TWILIO_AUTH_TOKEN) &&
+    Boolean(env.TWILIO_VERIFY_SMS_SERVICE_SID || env.TWILIO_VERIFY_SERVICE_SID);
+  if (!hasTwilio) {
+    missing.push(
+      'Twilio Verify (TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN + TWILIO_VERIFY_SERVICE_SID)',
+    );
+  }
+
+  if (!env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || !env.TURNSTILE_SECRET_KEY) {
+    missing.push(
+      'Cloudflare Turnstile (NEXT_PUBLIC_TURNSTILE_SITE_KEY + TURNSTILE_SECRET_KEY)',
+    );
+  }
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Variáveis obrigatórias ausentes em produção: ${missing.join('; ')}.`,
+    );
+  }
+
+  const recommended: string[] = [];
+  if (!env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) {
+    recommended.push('Web Push (VAPID)');
+  }
+  if (!env.SENTRY_DSN && !env.NEXT_PUBLIC_SENTRY_DSN) {
+    recommended.push('Sentry (DSN)');
+  }
+  if (recommended.length > 0) {
+    console.warn(
+      `[env] Produção sem configuração recomendada: ${recommended.join('; ')}.`,
+    );
+  }
+}
+
+assertProductionEnv();
 
 export function getAppEnv(): AppEnv {
   return env.APP_ENV;
