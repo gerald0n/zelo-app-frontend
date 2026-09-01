@@ -287,15 +287,23 @@ function HeroContent({
 
           <p
             className={cn(
-              'flex items-center gap-1 text-muted-foreground',
+              'flex items-center gap-1 overflow-hidden whitespace-nowrap text-muted-foreground',
               expanded ? 'mt-1 text-xs' : 'mt-0.5 text-2xs',
             )}
           >
             <MapPin
-              className={cn(expanded ? 'size-3' : 'size-2.5')}
+              className={cn('shrink-0', expanded ? 'size-3' : 'size-2.5')}
               aria-hidden="true"
             />
-            Pereiro, CE
+            <span className="shrink-0">Pereiro, CE</span>
+            {expanded ? (
+              <>
+                <span className="shrink-0 text-muted-foreground/50" aria-hidden="true">
+                  ·
+                </span>
+                <span className="truncate">Entrega e retirada</span>
+              </>
+            ) : null}
           </p>
 
           {expanded ? (
@@ -303,11 +311,9 @@ function HeroContent({
               <p className="text-xs leading-snug text-muted-foreground">
                 Cookies, pudins e salgados artesanais
               </p>
-              <p className="mt-1 flex items-center gap-1.5 text-2xs font-medium text-foreground/80">
+              <p className="mt-1 flex items-center gap-1.5 overflow-hidden text-2xs font-medium whitespace-nowrap text-foreground/80">
                 <Clock className="size-3 shrink-0" aria-hidden="true" />
-                {hoursLabel}
-                <span className="text-muted-foreground">·</span>
-                Entrega e retirada
+                <span className="truncate">{hoursLabel}</span>
               </p>
             </div>
           ) : null}

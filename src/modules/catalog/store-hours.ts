@@ -23,7 +23,12 @@ export function isCatalogStoreOpenNow(
   );
 }
 
-/** Texto curto para o header (ex.: "Hoje até 18:00"). */
+const SHORT_WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+/**
+ * Texto curto para o header — cabe numa linha ao lado de "· Entrega e retirada"
+ * (ex.: "Hoje até 18:00", "Amanhã 08:00", "Sáb 08:00").
+ */
 export function getCatalogStoreHoursLabel(
   store: CatalogStore,
   now = new Date(),
@@ -38,10 +43,10 @@ export function getCatalogStoreHoursLabel(
     const day = (now.getDay() + offset) % 7;
     const hour = store.businessHours.find((item) => item.weekday === day);
     if (hour && !hour.isClosed && hour.opensAt) {
-      if (offset === 1) return `Abre amanhã às ${hour.opensAt.slice(0, 5)}`;
-      return `Próxima abertura ${hour.opensAt.slice(0, 5)}`;
+      const at = hour.opensAt.slice(0, 5);
+      return offset === 1 ? `Amanhã ${at}` : `${SHORT_WEEKDAYS[day]} ${at}`;
     }
   }
 
-  return 'Consulte horários';
+  return 'Ver horários';
 }
