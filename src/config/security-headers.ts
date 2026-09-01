@@ -70,8 +70,10 @@ export function buildSecurityHeaders(): Header[] {
     "font-src 'self' data:",
     connectSrc.join(' '),
     'frame-src https://challenges.cloudflare.com https://www.openstreetmap.org',
-    'upgrade-insecure-requests',
-  ];
+    // Só em produção: em `next dev` sobre http, esta diretiva quebra o
+    // carregamento dos chunks (`_next/static/*`) forçando https local inexistente.
+    production ? 'upgrade-insecure-requests' : null,
+  ].filter(Boolean);
 
   return [
     { key: 'X-Content-Type-Options', value: 'nosniff' },

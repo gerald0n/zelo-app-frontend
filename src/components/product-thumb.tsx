@@ -4,18 +4,18 @@ import { cn } from '@/lib/utils';
 
 const toneMap = {
   cookie: {
-    bg: 'bg-caramel/35',
-    fg: 'text-caramel-foreground/70',
+    bg: 'bg-secondary',
+    fg: 'text-muted-foreground/55',
     Icon: Cookie,
   },
   pudim: {
-    bg: 'bg-primary/12',
-    fg: 'text-primary/60',
+    bg: 'bg-secondary',
+    fg: 'text-muted-foreground/55',
     Icon: CakeSlice,
   },
   salgado: {
-    bg: 'bg-pistachio/40',
-    fg: 'text-pistachio-foreground/70',
+    bg: 'bg-secondary',
+    fg: 'text-muted-foreground/55',
     Icon: Croissant,
   },
 } as const;
