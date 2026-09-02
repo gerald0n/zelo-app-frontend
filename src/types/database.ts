@@ -1044,6 +1044,7 @@ export type Database = {
           phone_e164: string;
           pix_copy_paste: string | null;
           postal_code: string | null;
+          schedule_slot_times: string[];
           state: string;
           timezone: string;
           updated_at: string;
@@ -1066,6 +1067,7 @@ export type Database = {
           phone_e164: string;
           pix_copy_paste?: string | null;
           postal_code?: string | null;
+          schedule_slot_times?: string[];
           state: string;
           timezone?: string;
           updated_at?: string;
@@ -1088,6 +1090,7 @@ export type Database = {
           phone_e164?: string;
           pix_copy_paste?: string | null;
           postal_code?: string | null;
+          schedule_slot_times?: string[];
           state?: string;
           timezone?: string;
           updated_at?: string;

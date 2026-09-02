@@ -28,6 +28,11 @@ const patchSchema = z
     acceptsPix: z.boolean().optional(),
     acceptsCash: z.boolean().optional(),
     acceptsCard: z.boolean().optional(),
+    scheduleSlotTimes: z
+      .array(z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Horário inválido.'))
+      .min(1, 'Informe ao menos um horário de agendamento.')
+      .max(48)
+      .optional(),
   })
   .superRefine((value, ctx) => {
     const touched =
