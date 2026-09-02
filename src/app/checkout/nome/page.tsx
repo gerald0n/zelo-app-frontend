@@ -9,6 +9,7 @@ import { cn } from '@/lib/cn';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { hasCustomerName } from '@/modules/auth/customer-name';
+import { consumeAuthReturnTo } from '@/modules/auth/auth-return';
 import {
   checkoutFieldClass,
   checkoutFooterClass,
@@ -29,26 +30,30 @@ export default function CheckoutNomePage() {
 
   useEffect(() => {
     if (!identityReady) return;
+    // Enquanto o próprio submit está navegando, ele é quem decide o destino
+    // (e consome o `authReturnTo`). Sem esse guard, o efeito dispararia ao
+    // `user.name` chegar e consumiria o retorno de novo — caindo no checkout.
+    if (submitting) return;
     if (!user) {
       router.replace('/checkout/identificacao');
       return;
     }
     if (hasCustomerName(user.name)) {
-      router.replace('/checkout/recebimento');
+      router.replace(consumeAuthReturnTo() ?? '/checkout/recebimento');
     }
-  }, [identityReady, user, router]);
+  }, [identityReady, user, router, submitting]);
 
   const handleContinue = async () => {
     if (!isValid || submitting) return;
     setError('');
     setSubmitting(true);
     const result = await updateProfile(name.trim());
-    setSubmitting(false);
     if (!result.ok) {
+      setSubmitting(false);
       setError(result.message);
       return;
     }
-    router.push('/checkout/recebimento');
+    router.push(consumeAuthReturnTo() ?? '/checkout/recebimento');
   };
 
   return (

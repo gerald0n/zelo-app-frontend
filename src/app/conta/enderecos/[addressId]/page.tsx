@@ -92,17 +92,18 @@ export default function EditarEnderecoPage({
                   );
                   const json = await response.json().catch(() => null);
                   if (!response.ok) {
+                    setSubmitting(false);
                     setError(
                       json?.error?.message ?? 'Não foi possível salvar.',
                     );
                     return;
                   }
                   notify('Endereço atualizado.', 'success');
+                  // Sem resetar `submitting`: a navegação desmonta a tela.
                   router.replace('/conta/enderecos');
                 } catch {
-                  setError('Falha de rede ao salvar.');
-                } finally {
                   setSubmitting(false);
+                  setError('Falha de rede ao salvar.');
                 }
               }}
             />

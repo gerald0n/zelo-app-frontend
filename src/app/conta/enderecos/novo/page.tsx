@@ -41,17 +41,19 @@ export default function NovoEnderecoPage() {
                 });
                 const json = await response.json().catch(() => null);
                 if (!response.ok) {
+                  setSubmitting(false);
                   setError(
                     json?.error?.message ?? 'Não foi possível salvar.',
                   );
                   return;
                 }
                 notify('Endereço salvo.', 'success');
+                // Sem resetar `submitting`: a navegação desmonta a tela e o
+                // botão fica em loading até a próxima aparecer.
                 router.replace('/conta/enderecos');
               } catch {
-                setError('Falha de rede ao salvar.');
-              } finally {
                 setSubmitting(false);
+                setError('Falha de rede ao salvar.');
               }
             }}
           />

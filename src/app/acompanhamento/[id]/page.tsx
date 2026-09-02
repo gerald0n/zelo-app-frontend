@@ -14,6 +14,7 @@ import {
   MapPin,
   ChevronRight,
   RefreshCw,
+  Loader2,
   XCircle,
   Check,
   ChefHat,
@@ -84,6 +85,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
 
   const [order, setOrder] = useState<CustomerOrder | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reordering, setReordering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { version: realtimeVersion } = useCustomerOrderRealtime(id, true);
 
@@ -133,23 +135,30 @@ function AcompanhamentoContent({ id }: { id: string }) {
   }, [realtimeVersion, loadOrder]);
 
   const handleReorder = async () => {
+    if (reordering) return;
+    setReordering(true);
     try {
       const response = await fetch(`/api/v1/orders/${id}/reorder`, {
         method: 'POST',
       });
       const json = await response.json();
       if (!response.ok) {
+        setReordering(false);
         notify(json?.error?.message ?? 'Não foi possível pedir novamente.');
         return;
       }
       if (!json.items?.length) {
+        setReordering(false);
         notify('Nenhum item disponível para recompra.');
         return;
       }
       replaceItems(json.items);
       notify('Itens adicionados ao carrinho.');
+      // Sem resetar `reordering`: a navegação desmonta a tela e o botão
+      // segue em loading até o carrinho aparecer.
       router.push('/carrinho');
     } catch {
+      setReordering(false);
       notify('Falha de rede na recompra.');
     }
   };
@@ -495,9 +504,14 @@ function AcompanhamentoContent({ id }: { id: string }) {
               <button
                 type="button"
                 onClick={() => void handleReorder()}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3.5 text-sm font-semibold text-foreground transition-[background-color,transform] duration-100 hover:bg-accent active:scale-[0.99]"
+                disabled={reordering}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3.5 text-sm font-semibold text-foreground transition-[background-color,transform] duration-100 hover:bg-accent active:scale-[0.99] disabled:opacity-70 disabled:active:scale-100"
               >
-                <RefreshCw className="size-[18px]" aria-hidden="true" />
+                {reordering ? (
+                  <Loader2 className="size-[18px] animate-spin" aria-hidden="true" />
+                ) : (
+                  <RefreshCw className="size-[18px]" aria-hidden="true" />
+                )}
                 Pedir novamente
               </button>
             )}

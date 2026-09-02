@@ -1,8 +1,9 @@
 'use client';
 
-import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { setAuthReturnTo } from '@/modules/auth/auth-return';
 
 export function AccountAuthGate({
   children,
@@ -14,6 +15,8 @@ export function AccountAuthGate({
   description: string;
 }) {
   const { user, identityReady } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
 
   if (!identityReady) {
     return (
@@ -30,12 +33,16 @@ export function AccountAuthGate({
         <p className="text-sm leading-snug text-muted-foreground">
           {description}
         </p>
-        <Link
-          href="/checkout/identificacao"
+        <button
+          type="button"
+          onClick={() => {
+            setAuthReturnTo(pathname);
+            router.push('/checkout/identificacao');
+          }}
           className="mt-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white"
         >
           Entrar
-        </Link>
+        </button>
       </div>
     );
   }
