@@ -10,6 +10,7 @@ import { cn } from '@/lib/cn';
 import { formatPhoneDisplay } from '@/lib/phone';
 import { BotTrap } from '@/components/BotTrap';
 import { checkoutContinuePath } from '@/modules/auth/checkout-path';
+import { consumeAuthReturnTo } from '@/modules/auth/auth-return';
 import {
   checkoutDesktopContainerClass,
   pageHeaderBarClass,
@@ -71,7 +72,7 @@ export default function OtpPage() {
     // Já autenticado antes de chegar aqui (ex.: voltou pela seta / histórico)
     // → não deixa reabrir a verificação, segue o fluxo do checkout.
     if (identityReady && user && !verifiedHere.current) {
-      router.replace(checkoutContinuePath(user));
+      router.replace(consumeAuthReturnTo() ?? checkoutContinuePath(user));
       return;
     }
     if (!identityReady) return;
@@ -114,9 +115,12 @@ export default function OtpPage() {
     } catch {
       /* ignore */
     }
-    router.replace(
-      result.needsName ? '/checkout/nome' : '/checkout/recebimento',
-    );
+    if (result.needsName) {
+      // Falta o nome: segue pra /checkout/nome mantendo o destino de retorno.
+      router.replace('/checkout/nome');
+      return;
+    }
+    router.replace(consumeAuthReturnTo() ?? '/checkout/recebimento');
   };
 
   const handleInput = (text: string) => {
@@ -157,7 +161,7 @@ export default function OtpPage() {
   };
 
   return (
-    <div className="flex min-h-dvh min-w-0 flex-col bg-background">
+    <div className="flex min-h-dvh min-w-0 flex-col overflow-x-hidden bg-background">
       <header className={cn(pageHeaderBarClass, checkoutDesktopContainerClass)}>
         <Link
           href="/checkout/identificacao"
@@ -171,7 +175,7 @@ export default function OtpPage() {
 
       <div
         className={cn(
-          'flex flex-1 flex-col items-start gap-4',
+          'flex w-full min-w-0 flex-1 flex-col gap-4',
           pageBodyPadClass,
           checkoutDesktopContainerClass,
         )}

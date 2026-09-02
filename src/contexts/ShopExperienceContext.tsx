@@ -10,10 +10,8 @@ import React, {
   useState,
   useSyncExternalStore,
 } from 'react';
-import { usePathname } from 'next/navigation';
 import { CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { shouldHideCustomerMobileNav } from '@/lib/layout';
 import { randomUUID } from '@/lib/random-id';
 
 const TOAST_MS = 2800;
@@ -181,12 +179,6 @@ export function ShopExperienceProvider({
   const [visibleToasts, setVisibleToasts] = useState<ToastItem[]>([]);
   const toastsRef = useRef<ToastItem[]>([]);
   const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
-  const pathname = usePathname();
-  const isAdmin = pathname.startsWith('/admin');
-  const isAdminLogin = pathname === '/admin/login';
-  const liftForNav =
-    !shouldHideCustomerMobileNav(pathname) || (isAdmin && !isAdminLogin);
-
   useEffect(() => {
     toastsRef.current = toasts;
   }, [toasts]);
@@ -333,11 +325,10 @@ export function ShopExperienceProvider({
         <div className="pointer-events-none fixed inset-0 z-[1000] overflow-hidden">
           <div
             className={cn(
-              'absolute inset-x-0 bottom-0 flex justify-center px-5 lg:px-8',
+              // Fundo com folga: passa longe da bottom nav (~84px) e do rodapé
+              // de CTA fixo do checkout/carrinho/produto (~72px).
+              'absolute inset-x-0 bottom-0 flex justify-center px-5 pb-[max(6rem,calc(env(safe-area-inset-bottom,0px)+5.25rem))] lg:px-8 lg:pb-6',
               drawer === 'closing' ? 'zelo-toast-drawer-out' : 'zelo-toast-drawer-in',
-              liftForNav
-                ? 'max-lg:pb-[88px] lg:pb-6'
-                : 'pb-[max(1.25rem,calc(env(safe-area-inset-bottom)+0.75rem))] lg:pb-6',
             )}
           >
             <div className="flex w-[90%] max-w-md flex-col gap-1.5">

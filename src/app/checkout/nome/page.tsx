@@ -9,6 +9,7 @@ import { cn } from '@/lib/cn';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { hasCustomerName } from '@/modules/auth/customer-name';
+import { consumeAuthReturnTo } from '@/modules/auth/auth-return';
 import {
   checkoutFieldClass,
   checkoutFooterClass,
@@ -34,7 +35,7 @@ export default function CheckoutNomePage() {
       return;
     }
     if (hasCustomerName(user.name)) {
-      router.replace('/checkout/recebimento');
+      router.replace(consumeAuthReturnTo() ?? '/checkout/recebimento');
     }
   }, [identityReady, user, router]);
 
@@ -43,12 +44,12 @@ export default function CheckoutNomePage() {
     setError('');
     setSubmitting(true);
     const result = await updateProfile(name.trim());
-    setSubmitting(false);
     if (!result.ok) {
+      setSubmitting(false);
       setError(result.message);
       return;
     }
-    router.push('/checkout/recebimento');
+    router.push(consumeAuthReturnTo() ?? '/checkout/recebimento');
   };
 
   return (

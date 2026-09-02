@@ -83,5 +83,11 @@ export function TurnstileWidget({
 
   if (!siteKey) return null;
 
-  return <div ref={hostRef} className="mt-3" />;
+  // O iframe do Turnstile tem largura fixa (~300px). Numa tela estreita ele
+  // empurraria a página — aqui ele rola dentro da própria caixa.
+  return (
+    <div className="mt-3 w-full max-w-full overflow-x-auto">
+      <div ref={hostRef} className="mx-auto w-fit" />
+    </div>
+  );
 }

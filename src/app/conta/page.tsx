@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ChevronRight,
   ShieldCheck,
@@ -14,6 +15,7 @@ import {
   Smartphone,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { setAuthReturnTo } from '@/modules/auth/auth-return';
 import { ADMIN_PHONE_E164 } from '@/config/admin';
 import { usePwaInstall } from '@/contexts/PwaInstallContext';
 import { useAppDialog } from '@/contexts/AppDialogContext';
@@ -30,6 +32,7 @@ type MenuItem = {
 };
 
 export default function ContaPage() {
+  const router = useRouter();
   const { user, signOut } = useAuth();
   const { canOfferInstall, openInstallPrompt } = usePwaInstall();
   const { isDesktop } = useResponsiveLayout();
@@ -154,12 +157,16 @@ export default function ContaPage() {
             ) : (
               <>
                 <p className="text-base font-semibold">Visitante</p>
-                <Link
-                  href="/checkout/identificacao"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthReturnTo('/');
+                    router.push('/checkout/identificacao');
+                  }}
                   className="mt-0.5 text-sm font-medium text-primary"
                 >
                   Entrar ou criar conta
-                </Link>
+                </button>
               </>
             )}
           </div>

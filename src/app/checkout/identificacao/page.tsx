@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BotTrap } from '@/components/BotTrap';
 import { checkoutContinuePath } from '@/modules/auth/checkout-path';
+import { consumeAuthReturnTo } from '@/modules/auth/auth-return';
 import {
   checkoutFieldClass,
   checkoutFooterClass,
@@ -41,7 +42,9 @@ export default function IdentificacaoPage() {
 
   useEffect(() => {
     if (!identityReady) return;
-    if (user) router.replace(checkoutContinuePath(user));
+    if (user) {
+      router.replace(consumeAuthReturnTo() ?? checkoutContinuePath(user));
+    }
   }, [identityReady, user, router]);
 
   const handleContinue = async () => {
@@ -58,8 +61,8 @@ export default function IdentificacaoPage() {
       captchaToken,
       website,
     });
-    setSubmitting(false);
     if (!result.ok) {
+      setSubmitting(false);
       setError(result.message);
       return;
     }

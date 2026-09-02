@@ -28,6 +28,9 @@ export default function AdminLoginPage() {
   const { login } = useAdmin();
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  // Fica true no sucesso e não volta: mantém o botão em loading até o
+  // /admin carregar (senão `isSubmitting` zera e o botão "pisca").
+  const [redirecting, setRedirecting] = useState(false);
   const [website, setWebsite] = useState('');
   const [captchaToken, setCaptchaToken] = useState('');
   const onCaptchaToken = useCallback((token: string) => {
@@ -50,6 +53,7 @@ export default function AdminLoginPage() {
         website,
       });
       if (result.ok) {
+        setRedirecting(true);
         router.replace('/admin');
       } else {
         setError(result.message);
@@ -139,10 +143,10 @@ export default function AdminLoginPage() {
 
           <button
             type="submit"
-            disabled={form.formState.isSubmitting}
+            disabled={form.formState.isSubmitting || redirecting}
             className="flex h-11 w-full items-center justify-center rounded-md bg-primary text-sm font-semibold text-white disabled:opacity-60"
           >
-            {form.formState.isSubmitting ? (
+            {form.formState.isSubmitting || redirecting ? (
               <Loader2 className="size-5 animate-spin" />
             ) : (
               'Entrar'

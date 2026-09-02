@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useCart, type CartItem } from '@/modules/carts';
+import { setAuthReturnTo } from '@/modules/auth/auth-return';
 import { useShopExperience } from '@/contexts/ShopExperienceContext';
 import { type CustomerOrderListItem } from '@/modules/orders/types';
 import { cn } from '@/lib/cn';
@@ -19,6 +20,7 @@ export default function PedidosPage() {
   const [tab, setTab] = useState<Tab>('active');
   const [orders, setOrders] = useState<CustomerOrderListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reorderingId, setReorderingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { isDesktop } = useResponsiveLayout();
@@ -100,17 +102,21 @@ export default function PedidosPage() {
   };
 
   const handleReorder = async (orderId: string) => {
+    if (reorderingId) return;
+    setReorderingId(orderId);
     try {
       const response = await fetch(`/api/v1/orders/${orderId}/reorder`, {
         method: 'POST',
       });
       const json = await response.json();
       if (!response.ok) {
+        setReorderingId(null);
         notify(json?.error?.message ?? 'Não foi possível pedir novamente.');
         return;
       }
       const items = json.items as CartItem[];
       if (items.length === 0) {
+        setReorderingId(null);
         notify('Nenhum item disponível para recompra.');
         return;
       }
@@ -126,8 +132,10 @@ export default function PedidosPage() {
       } else {
         notify('Itens adicionados ao carrinho.');
       }
+      // Sem resetar `reorderingId`: a navegação desmonta a tela.
       router.push('/carrinho');
     } catch {
+      setReorderingId(null);
       notify('Falha de rede na recompra.');
     }
   };
@@ -189,12 +197,16 @@ export default function PedidosPage() {
             <p className="text-sm leading-snug text-muted-foreground">
               Faça login para acompanhar seus pedidos e histórico.
             </p>
-            <Link
-              href="/checkout/identificacao"
+            <button
+              type="button"
+              onClick={() => {
+                setAuthReturnTo('/pedidos');
+                router.push('/checkout/identificacao');
+              }}
               className="mt-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white"
             >
               Entrar
-            </Link>
+            </button>
           </div>
         ) : error ? (
           <div className="px-8 pt-10 text-center">
@@ -240,6 +252,7 @@ export default function PedidosPage() {
               order={order}
               href={`/acompanhamento/${order.id}`}
               onReorder={() => void handleReorder(order.id)}
+              reordering={reorderingId === order.id}
             />
           ))
         ) : (
