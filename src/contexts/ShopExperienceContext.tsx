@@ -325,9 +325,11 @@ export function ShopExperienceProvider({
         <div className="pointer-events-none fixed inset-0 z-[1000] overflow-hidden">
           <div
             className={cn(
-              // Fundo com folga: passa longe da bottom nav (~84px) e do rodapé
-              // de CTA fixo do checkout/carrinho/produto (~72px).
-              'absolute inset-x-0 bottom-0 flex justify-center px-5 pb-[max(6rem,calc(env(safe-area-inset-bottom,0px)+5.25rem))] lg:px-8 lg:pb-6',
+              // Sobe bem acima do mobiliário de rodapé: o véu de blur da
+              // bottom nav tem 96px de altura e os rodapés de CTA fixo
+              // (produto/carrinho) ~72px. 128px deixa os toasts claramente
+              // por cima, sem encostar em botão.
+              'absolute inset-x-0 bottom-0 flex justify-center px-5 pb-[max(8rem,calc(env(safe-area-inset-bottom,0px)+7rem))] lg:px-8 lg:pb-6',
               drawer === 'closing' ? 'zelo-toast-drawer-out' : 'zelo-toast-drawer-in',
             )}
           >

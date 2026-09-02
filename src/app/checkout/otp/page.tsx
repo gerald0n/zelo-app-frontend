@@ -222,16 +222,23 @@ export default function OtpPage() {
           ))}
         </button>
 
-        <Input
-          ref={inputRef}
-          value={otp}
-          onChange={(e) => handleInput(e.target.value)}
-          inputMode="numeric"
-          maxLength={OTP_LENGTH}
-          autoFocus
-          className="sr-only"
-          aria-label="Código OTP"
-        />
+        {/*
+          Input real escondido: o `sr-only` no wrapper garante que ele não
+          entre no layout (clip + 1px). Aplicado direto no <Input>, o `w-full`
+          do componente vencia e o campo vazava ~11px, criando scroll
+          horizontal na tela.
+        */}
+        <div className="sr-only">
+          <Input
+            ref={inputRef}
+            value={otp}
+            onChange={(e) => handleInput(e.target.value)}
+            inputMode="numeric"
+            maxLength={OTP_LENGTH}
+            autoFocus
+            aria-label="Código OTP"
+          />
+        </div>
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
 

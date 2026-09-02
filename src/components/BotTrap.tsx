@@ -13,9 +13,14 @@ export function BotTrap({
 }) {
   return (
     <>
+      {/*
+        Honeypot: invisível para humanos, mas presente no DOM para bots.
+        Sem deslocar o layout — `-left-[9999px]` criava área rolável e
+        forçava scroll horizontal/vertical na tela de OTP.
+      */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[9999px] h-px w-px overflow-hidden opacity-0"
+        className="pointer-events-none absolute left-0 top-0 h-px w-px overflow-hidden opacity-0"
       >
         <label>
           Website

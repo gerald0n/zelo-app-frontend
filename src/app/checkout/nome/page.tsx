@@ -30,6 +30,10 @@ export default function CheckoutNomePage() {
 
   useEffect(() => {
     if (!identityReady) return;
+    // Enquanto o próprio submit está navegando, ele é quem decide o destino
+    // (e consome o `authReturnTo`). Sem esse guard, o efeito dispararia ao
+    // `user.name` chegar e consumiria o retorno de novo — caindo no checkout.
+    if (submitting) return;
     if (!user) {
       router.replace('/checkout/identificacao');
       return;
@@ -37,7 +41,7 @@ export default function CheckoutNomePage() {
     if (hasCustomerName(user.name)) {
       router.replace(consumeAuthReturnTo() ?? '/checkout/recebimento');
     }
-  }, [identityReady, user, router]);
+  }, [identityReady, user, router, submitting]);
 
   const handleContinue = async () => {
     if (!isValid || submitting) return;

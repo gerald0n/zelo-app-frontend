@@ -87,6 +87,7 @@ export default function AdminConfiguracoesPage() {
   const { isAuthenticated, ready, logout, admin } = useRequireAdmin();
   const { confirm } = useAppDialog();
   const { isTablet } = useResponsiveLayout();
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const storeQuery = useQuery({
     queryKey: adminKeys.store(),
@@ -558,6 +559,7 @@ export default function AdminConfiguracoesPage() {
 
         <button
           type="button"
+          disabled={loggingOut}
           onClick={async () => {
             const ok = await confirm({
               title: 'Encerrar sessão',
@@ -566,12 +568,18 @@ export default function AdminConfiguracoesPage() {
               tone: 'destructive',
             });
             if (!ok) return;
+            setLoggingOut(true);
             await logout();
+            // Sem resetar `loggingOut`: a navegação desmonta a tela.
             router.replace('/admin/login');
           }}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-border py-3 text-sm font-semibold text-destructive"
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-border py-3 text-sm font-semibold text-destructive disabled:opacity-60"
         >
-          <LogOut className="size-4" />
+          {loggingOut ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <LogOut className="size-4" />
+          )}
           Sair do painel
         </button>
       </div>
