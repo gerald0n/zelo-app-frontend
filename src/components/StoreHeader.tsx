@@ -20,8 +20,12 @@ const SNAP_OPEN_SCROLL_Y = 36;
 
 export const STORE_HEADER_COMPACT_HEIGHT = 52;
 
-/** Mesmo vidro dos filtros sticky em HomeCatalog. */
-const STICKY_SURFACE_CLASS = 'bg-background/90 backdrop-blur';
+/**
+ * Superfície do cabeçalho: cor sólida, sem alpha e sem `backdrop-filter`.
+ * Ao rolar, o conteúdo tem que sumir por completo atrás dele — nada de
+ * "fantasma" borrado, inclusive na faixa da status bar/notch no PWA.
+ */
+const STICKY_SURFACE_CLASS = 'bg-background';
 
 type Props = {
   onHeightChange?: (height: number) => void;
@@ -190,7 +194,7 @@ export default function StoreHeader({ onHeightChange }: Props) {
   const compactBar =
     visible && portalReady ? (
       <div
-        className="pointer-events-none fixed inset-x-0 top-0 z-[45] pt-[env(safe-area-inset-top,0px)]"
+        className="pointer-events-none fixed inset-x-0 top-0 z-[45]"
         aria-hidden={!pinned}
       >
         <div className="pointer-events-none mx-auto w-full max-w-md lg:max-w-none">
@@ -198,12 +202,15 @@ export default function StoreHeader({ onHeightChange }: Props) {
             ref={panelRef}
             role="banner"
             className={cn(
-              'pointer-events-auto border-b border-border/50 px-4 py-1.5',
+              // O padding do topo cobre a área segura (status bar / notch) no
+              // PWA instalado — a cor sólida começa em y=0 e nada aparece por
+              // cima da barra ao rolar.
+              'border-b border-border/50 px-4 pb-1.5 pt-[max(0.375rem,env(safe-area-inset-top,0px))]',
               STICKY_SURFACE_CLASS,
               pinned ? 'pointer-events-auto' : 'pointer-events-none',
             )}
             style={{
-              transform: `translate3d(0, -${STORE_HEADER_COMPACT_HEIGHT}px, 0)`,
+              transform: 'translate3d(0, -100%, 0)',
               opacity: 0,
             }}
           >
@@ -222,7 +229,7 @@ export default function StoreHeader({ onHeightChange }: Props) {
     <div>
       <div
         ref={heroRef}
-        className="border-b border-border/50 bg-background/90 px-4 pb-2.5 pt-3 backdrop-blur-md"
+        className="border-b border-border/50 bg-background px-4 pb-2.5 pt-[max(0.75rem,env(safe-area-inset-top,0px))]"
       >
         <HeroContent
           storeOpen={storeOpen}
