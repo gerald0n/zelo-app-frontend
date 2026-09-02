@@ -37,6 +37,15 @@ const CONNECT_SRC_DEV = [
   'http://localhost:54321',
   'ws://localhost:54321',
   'ws://localhost:3000',
+  // Acesso pela LAN (`DEV_LAN_HOST=192.168.x.x pnpm dev`): o navegador do
+  // outro dispositivo fala com o Supabase e o HMR pelo IP da máquina.
+  ...(process.env.DEV_LAN_HOST
+    ? [
+        `http://${process.env.DEV_LAN_HOST}:54321`,
+        `ws://${process.env.DEV_LAN_HOST}:54321`,
+        `ws://${process.env.DEV_LAN_HOST}:3000`,
+      ]
+    : []),
 ];
 
 export function buildSecurityHeaders(): Header[] {
@@ -70,8 +79,10 @@ export function buildSecurityHeaders(): Header[] {
     "font-src 'self' data:",
     connectSrc.join(' '),
     'frame-src https://challenges.cloudflare.com https://www.openstreetmap.org',
-    'upgrade-insecure-requests',
-  ];
+    // Só em produção: em `next dev` sobre http, esta diretiva quebra o
+    // carregamento dos chunks (`_next/static/*`) forçando https local inexistente.
+    production ? 'upgrade-insecure-requests' : null,
+  ].filter(Boolean);
 
   return [
     { key: 'X-Content-Type-Options', value: 'nosniff' },
