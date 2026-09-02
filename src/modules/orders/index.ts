@@ -4,6 +4,7 @@ export {
   createOrderBodySchema,
   type CreateOrderBody,
   type CreatedOrderSummary,
+  type CreatedOrderPix,
 } from '@/modules/orders/create-order';
 export {
   resolveCustomerForCheckout,

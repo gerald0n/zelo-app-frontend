@@ -14,10 +14,7 @@ import { useRequireAdmin } from '@/hooks/useRequireAdmin';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import { statusLabel, type OrderStatus } from '@/modules/orders/types';
-import {
-  nextAdminStatus,
-  type AdminOrderDetail,
-} from '@/modules/admin/types';
+import { nextAdminStatus, type AdminOrderDetail } from '@/modules/admin/types';
 import { useAdminOrdersRealtime } from '@/modules/realtime/hooks';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { cn } from '@/lib/cn';
@@ -29,7 +26,7 @@ export default function AdminPedidoPage({
 }) {
   const { id } = use(params);
   const { isAuthenticated, ready } = useRequireAdmin();
-  const { prompt } = useAppDialog();
+  const { prompt, alert } = useAppDialog();
   const { isTablet } = useResponsiveLayout();
   const [order, setOrder] = useState<AdminOrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,7 +73,6 @@ export default function AdminPedidoPage({
     if (!ready || !isAuthenticated || realtimeVersion === 0) return;
     void loadOrder({ background: true });
   }, [ready, isAuthenticated, realtimeVersion, loadOrder]);
-
 
   const advance = async () => {
     if (!order) return;
@@ -127,6 +123,19 @@ export default function AdminPedidoPage({
         return;
       }
       setOrder(json.order as AdminOrderDetail);
+      const refund = json.refund as 'done' | 'already' | 'failed' | undefined;
+      if (refund === 'done') {
+        await alert({
+          title: 'Pedido cancelado',
+          description: 'O estorno do Pix foi solicitado ao Mercado Pago.',
+        });
+      } else if (refund === 'failed') {
+        await alert({
+          title: 'Pedido cancelado, mas o estorno falhou',
+          description:
+            'Estorne manualmente pelo painel do Mercado Pago ou tente cancelar de novo.',
+        });
+      }
     } catch {
       setError('Falha de rede ao cancelar.');
     } finally {
@@ -224,6 +233,19 @@ export default function AdminPedidoPage({
                       : order.paymentMethod === 'cash'
                         ? 'Dinheiro'
                         : 'Cartão'}
+                    {order.paymentMethod === 'pix'
+                      ? ` · ${
+                          order.paymentStatus === 'confirmed'
+                            ? 'Pago'
+                            : order.paymentStatus === 'refunded'
+                              ? 'Estornado'
+                              : order.paymentStatus === 'failed'
+                                ? 'Não pago'
+                                : order.paymentStatus === 'cancelled'
+                                  ? 'Cancelado'
+                                  : 'Aguardando'
+                        }`
+                      : ''}
                   </p>
                 </div>
               </div>
@@ -262,9 +284,7 @@ export default function AdminPedidoPage({
               </div>
             </section>
 
-            {error ? (
-              <p className="text-xs text-destructive">{error}</p>
-            ) : null}
+            {error ? <p className="text-xs text-destructive">{error}</p> : null}
 
             {next ? (
               <button

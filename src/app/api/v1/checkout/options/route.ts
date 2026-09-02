@@ -34,7 +34,6 @@ export async function GET() {
       longitude: storeResult.data.longitude,
       freeDeliveryRadiusMeters: storeResult.data.freeDeliveryRadiusMeters,
       fixedDeliveryFeeCents: storeResult.data.fixedDeliveryFeeCents,
-      pixCopyPaste: storeResult.data.pixCopyPaste,
       whatsappE164: storeResult.data.whatsappE164,
       acceptsPayments: storeResult.data.acceptsPayments,
     },

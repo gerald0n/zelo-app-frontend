@@ -16,7 +16,6 @@ const patchSchema = z
     name: z.string().trim().min(1).max(120).optional(),
     phoneE164: z.string().trim().min(8).max(20).optional(),
     whatsappE164: z.string().trim().min(8).max(20).optional(),
-    pixCopyPaste: z.string().trim().max(500).nullable().optional(),
     addressLine: z.string().trim().min(1).max(200).optional(),
     city: z.string().trim().min(1).max(80).optional(),
     state: z.string().trim().min(2).max(2).optional(),

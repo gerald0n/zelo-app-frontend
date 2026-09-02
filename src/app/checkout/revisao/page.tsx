@@ -163,6 +163,11 @@ export default function RevisaoPage() {
       const orderNumber = json.order.orderNumber as number;
       clearCart();
       resetCheckout();
+      // Pix: cai na tela do QR e só avança quando o pagamento é confirmado.
+      if (checkout.paymentMethod === 'pix' && json.pix) {
+        router.push(`/checkout/pix/${encodeURIComponent(orderId)}`);
+        return;
+      }
       router.push(
         `/pedido-recebido?orderId=${encodeURIComponent(orderId)}&orderNumber=${orderNumber}`,
       );
@@ -191,7 +196,11 @@ export default function RevisaoPage() {
 
       <div>
         <div
-          className={cn('space-y-3', pageBodyPadClass, checkoutDesktopContainerClass)}
+          className={cn(
+            'space-y-3',
+            pageBodyPadClass,
+            checkoutDesktopContainerClass,
+          )}
         >
           <SummaryBlock icon={ShoppingBag} title="Itens do pedido">
             {items.map((item) => (

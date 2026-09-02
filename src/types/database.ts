@@ -685,10 +685,19 @@ export type Database = {
           delivery_method: Database['public']['Enums']['delivery_method'];
           id: string;
           internal_note: string | null;
+          mp_order_id: string | null;
+          mp_refund_id: string | null;
           needs_change: boolean | null;
           order_number: number;
+          paid_at: string | null;
           payment_method: Database['public']['Enums']['payment_method'];
           payment_status: Database['public']['Enums']['payment_status'];
+          pix_attempt: number;
+          pix_expires_at: string | null;
+          pix_qr_code: string | null;
+          pix_qr_code_base64: string | null;
+          pix_ticket_url: string | null;
+          refunded_at: string | null;
           scheduled_for: string | null;
           source_order_id: string | null;
           status: Database['public']['Enums']['order_status'];
@@ -710,10 +719,19 @@ export type Database = {
           delivery_method: Database['public']['Enums']['delivery_method'];
           id?: string;
           internal_note?: string | null;
+          mp_order_id?: string | null;
+          mp_refund_id?: string | null;
           needs_change?: boolean | null;
           order_number?: number;
+          paid_at?: string | null;
           payment_method: Database['public']['Enums']['payment_method'];
           payment_status?: Database['public']['Enums']['payment_status'];
+          pix_attempt?: number;
+          pix_expires_at?: string | null;
+          pix_qr_code?: string | null;
+          pix_qr_code_base64?: string | null;
+          pix_ticket_url?: string | null;
+          refunded_at?: string | null;
           scheduled_for?: string | null;
           source_order_id?: string | null;
           status?: Database['public']['Enums']['order_status'];
@@ -735,10 +753,19 @@ export type Database = {
           delivery_method?: Database['public']['Enums']['delivery_method'];
           id?: string;
           internal_note?: string | null;
+          mp_order_id?: string | null;
+          mp_refund_id?: string | null;
           needs_change?: boolean | null;
           order_number?: number;
+          paid_at?: string | null;
           payment_method?: Database['public']['Enums']['payment_method'];
           payment_status?: Database['public']['Enums']['payment_status'];
+          pix_attempt?: number;
+          pix_expires_at?: string | null;
+          pix_qr_code?: string | null;
+          pix_qr_code_base64?: string | null;
+          pix_ticket_url?: string | null;
+          refunded_at?: string | null;
           scheduled_for?: string | null;
           source_order_id?: string | null;
           status?: Database['public']['Enums']['order_status'];
@@ -758,6 +785,62 @@ export type Database = {
           {
             foreignKeyName: 'orders_source_order_id_fkey';
             columns: ['source_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'orders';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      payment_events: {
+        Row: {
+          action: string | null;
+          created_at: string;
+          event_id: string | null;
+          event_type: string | null;
+          id: string;
+          mp_order_id: string | null;
+          mp_payment_id: string | null;
+          order_id: string | null;
+          payload: Json;
+          process_result: string | null;
+          processed_at: string | null;
+          provider: string;
+          signature_valid: boolean;
+        };
+        Insert: {
+          action?: string | null;
+          created_at?: string;
+          event_id?: string | null;
+          event_type?: string | null;
+          id?: string;
+          mp_order_id?: string | null;
+          mp_payment_id?: string | null;
+          order_id?: string | null;
+          payload: Json;
+          process_result?: string | null;
+          processed_at?: string | null;
+          provider?: string;
+          signature_valid?: boolean;
+        };
+        Update: {
+          action?: string | null;
+          created_at?: string;
+          event_id?: string | null;
+          event_type?: string | null;
+          id?: string;
+          mp_order_id?: string | null;
+          mp_payment_id?: string | null;
+          order_id?: string | null;
+          payload?: Json;
+          process_result?: string | null;
+          processed_at?: string | null;
+          provider?: string;
+          signature_valid?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'payment_events_order_id_fkey';
+            columns: ['order_id'];
             isOneToOne: false;
             referencedRelation: 'orders';
             referencedColumns: ['id'];
@@ -1103,6 +1186,53 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      confirm_order_pix_payment: {
+        Args: {
+          p_mp_order_id?: string;
+          p_order_id: string;
+          p_paid_at?: string;
+        };
+        Returns: {
+          add_ons_total_cents: number;
+          cancellation_reason: string | null;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
+          change_for_amount_cents: number | null;
+          created_at: string;
+          customer_id: string;
+          customer_note: string | null;
+          delivery_fee_cents: number;
+          delivery_method: Database['public']['Enums']['delivery_method'];
+          id: string;
+          internal_note: string | null;
+          mp_order_id: string | null;
+          mp_refund_id: string | null;
+          needs_change: boolean | null;
+          order_number: number;
+          paid_at: string | null;
+          payment_method: Database['public']['Enums']['payment_method'];
+          payment_status: Database['public']['Enums']['payment_status'];
+          pix_attempt: number;
+          pix_expires_at: string | null;
+          pix_qr_code: string | null;
+          pix_qr_code_base64: string | null;
+          pix_ticket_url: string | null;
+          refunded_at: string | null;
+          scheduled_for: string | null;
+          source_order_id: string | null;
+          status: Database['public']['Enums']['order_status'];
+          subtotal_cents: number;
+          timing: Database['public']['Enums']['order_timing'];
+          total_cents: number;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'orders';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       consume_rate_limit: {
         Args: { p_bucket: string; p_limit: number; p_window_seconds: number };
         Returns: boolean;
@@ -1112,8 +1242,95 @@ export type Database = {
         Args: { p_customer_id: string; payload: Json };
         Returns: string;
       };
+      fail_order_pix_payment: {
+        Args: { p_order_id: string; p_reason?: string };
+        Returns: {
+          add_ons_total_cents: number;
+          cancellation_reason: string | null;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
+          change_for_amount_cents: number | null;
+          created_at: string;
+          customer_id: string;
+          customer_note: string | null;
+          delivery_fee_cents: number;
+          delivery_method: Database['public']['Enums']['delivery_method'];
+          id: string;
+          internal_note: string | null;
+          mp_order_id: string | null;
+          mp_refund_id: string | null;
+          needs_change: boolean | null;
+          order_number: number;
+          paid_at: string | null;
+          payment_method: Database['public']['Enums']['payment_method'];
+          payment_status: Database['public']['Enums']['payment_status'];
+          pix_attempt: number;
+          pix_expires_at: string | null;
+          pix_qr_code: string | null;
+          pix_qr_code_base64: string | null;
+          pix_ticket_url: string | null;
+          refunded_at: string | null;
+          scheduled_for: string | null;
+          source_order_id: string | null;
+          status: Database['public']['Enums']['order_status'];
+          subtotal_cents: number;
+          timing: Database['public']['Enums']['order_timing'];
+          total_cents: number;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'orders';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       is_admin: { Args: never; Returns: boolean };
+      is_hhmm_list: { Args: { v: string[] }; Returns: boolean };
       purge_rate_limits: { Args: { p_older_than?: string }; Returns: number };
+      refund_order_pix_payment: {
+        Args: { p_mp_refund_id?: string; p_order_id: string };
+        Returns: {
+          add_ons_total_cents: number;
+          cancellation_reason: string | null;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
+          change_for_amount_cents: number | null;
+          created_at: string;
+          customer_id: string;
+          customer_note: string | null;
+          delivery_fee_cents: number;
+          delivery_method: Database['public']['Enums']['delivery_method'];
+          id: string;
+          internal_note: string | null;
+          mp_order_id: string | null;
+          mp_refund_id: string | null;
+          needs_change: boolean | null;
+          order_number: number;
+          paid_at: string | null;
+          payment_method: Database['public']['Enums']['payment_method'];
+          payment_status: Database['public']['Enums']['payment_status'];
+          pix_attempt: number;
+          pix_expires_at: string | null;
+          pix_qr_code: string | null;
+          pix_qr_code_base64: string | null;
+          pix_ticket_url: string | null;
+          refunded_at: string | null;
+          scheduled_for: string | null;
+          source_order_id: string | null;
+          status: Database['public']['Enums']['order_status'];
+          subtotal_cents: number;
+          timing: Database['public']['Enums']['order_timing'];
+          total_cents: number;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'orders';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       transition_order_status: {
         Args: {
           p_actor_type: Database['public']['Enums']['status_change_actor_type'];
@@ -1134,10 +1351,19 @@ export type Database = {
           delivery_method: Database['public']['Enums']['delivery_method'];
           id: string;
           internal_note: string | null;
+          mp_order_id: string | null;
+          mp_refund_id: string | null;
           needs_change: boolean | null;
           order_number: number;
+          paid_at: string | null;
           payment_method: Database['public']['Enums']['payment_method'];
           payment_status: Database['public']['Enums']['payment_status'];
+          pix_attempt: number;
+          pix_expires_at: string | null;
+          pix_qr_code: string | null;
+          pix_qr_code_base64: string | null;
+          pix_ticket_url: string | null;
+          refunded_at: string | null;
           scheduled_for: string | null;
           source_order_id: string | null;
           status: Database['public']['Enums']['order_status'];
@@ -1173,10 +1399,19 @@ export type Database = {
           delivery_method: Database['public']['Enums']['delivery_method'];
           id: string;
           internal_note: string | null;
+          mp_order_id: string | null;
+          mp_refund_id: string | null;
           needs_change: boolean | null;
           order_number: number;
+          paid_at: string | null;
           payment_method: Database['public']['Enums']['payment_method'];
           payment_status: Database['public']['Enums']['payment_status'];
+          pix_attempt: number;
+          pix_expires_at: string | null;
+          pix_qr_code: string | null;
+          pix_qr_code_base64: string | null;
+          pix_ticket_url: string | null;
+          refunded_at: string | null;
           scheduled_for: string | null;
           source_order_id: string | null;
           status: Database['public']['Enums']['order_status'];
@@ -1206,7 +1441,8 @@ export type Database = {
         | 'cancelled';
       order_timing: 'immediate' | 'scheduled';
       payment_method: 'pix' | 'cash' | 'card';
-      payment_status: 'pending' | 'confirmed' | 'failed' | 'cancelled';
+      payment_status:
+        'pending' | 'confirmed' | 'failed' | 'cancelled' | 'refunded';
       status_change_actor_type: 'customer' | 'admin' | 'system';
     };
     CompositeTypes: {
@@ -1348,7 +1584,13 @@ export const Constants = {
       ],
       order_timing: ['immediate', 'scheduled'],
       payment_method: ['pix', 'cash', 'card'],
-      payment_status: ['pending', 'confirmed', 'failed', 'cancelled'],
+      payment_status: [
+        'pending',
+        'confirmed',
+        'failed',
+        'cancelled',
+        'refunded',
+      ],
       status_change_actor_type: ['customer', 'admin', 'system'],
     },
   },

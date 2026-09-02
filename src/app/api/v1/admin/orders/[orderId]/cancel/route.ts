@@ -39,5 +39,8 @@ export async function POST(request: Request, context: RouteContext) {
     );
   }
 
-  return NextResponse.json({ order: result.data });
+  return NextResponse.json({
+    order: result.data.order,
+    ...(result.data.refund ? { refund: result.data.refund } : {}),
+  });
 }

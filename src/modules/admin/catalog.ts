@@ -888,7 +888,6 @@ export async function updateAdminStore(input: {
   name?: string;
   phoneE164?: string;
   whatsappE164?: string;
-  pixCopyPaste?: string | null;
   addressLine?: string;
   city?: string;
   state?: string;
@@ -938,9 +937,6 @@ export async function updateAdminStore(input: {
   }
   if (typeof input.whatsappE164 === 'string') {
     patch.whatsapp_e164 = input.whatsappE164.trim();
-  }
-  if (input.pixCopyPaste !== undefined) {
-    patch.pix_copy_paste = input.pixCopyPaste?.trim() || null;
   }
   if (typeof input.addressLine === 'string') {
     patch.address_line = input.addressLine.trim();
