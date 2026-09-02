@@ -18,7 +18,8 @@
     "db:reset": "supabase db reset",
     "db:status": "supabase status",
     "gen:types": "supabase gen types typescript --local > src/types/database.ts",
-    "gen:icons": "node scripts/generate-pwa-icons.mjs"
+    "gen:seal": "node scripts/prepare-brand-seal.mjs",
+    "gen:icons": "node scripts/prepare-brand-seal.mjs && node scripts/generate-pwa-icons.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",
