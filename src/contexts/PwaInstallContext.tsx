@@ -57,7 +57,13 @@ function PwaInstallDialog({
 }) {
   if (!open) return null;
 
-  const manualMode = mode !== 'native';
+  // Assim que o navegador oferece a instalação nativa (`beforeinstallprompt`),
+  // mostramos o botão de 1 toque — mesmo se o popup já tinha aberto no modo
+  // "passo a passo".
+  const showNativeButton = canNativeInstall;
+  const showSteps =
+    !showNativeButton &&
+    (mode === 'ios' || mode === 'android-manual' || mode === 'generic-manual');
 
   return (
     <div
@@ -115,7 +121,7 @@ function PwaInstallDialog({
           mais rápido — sem precisar da loja de apps.
         </p>
 
-        {mode === 'ios' ? (
+        {showSteps && mode === 'ios' ? (
           <ol className="mt-4 space-y-2.5 rounded-xl border border-border bg-secondary/60 p-3.5 text-sm text-foreground">
             <li className="flex items-start gap-2.5">
               <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-card text-xs font-bold text-primary">
@@ -146,7 +152,7 @@ function PwaInstallDialog({
           </ol>
         ) : null}
 
-        {mode === 'android-manual' ? (
+        {showSteps && mode === 'android-manual' ? (
           <ol className="mt-4 space-y-2.5 rounded-xl border border-border bg-secondary/60 p-3.5 text-sm text-foreground">
             <li className="flex items-start gap-2.5">
               <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-card text-xs font-bold text-primary">
@@ -174,7 +180,7 @@ function PwaInstallDialog({
           </ol>
         ) : null}
 
-        {mode === 'generic-manual' ? (
+        {showSteps && mode === 'generic-manual' ? (
           <ol className="mt-4 space-y-2.5 rounded-xl border border-border bg-secondary/60 p-3.5 text-sm text-foreground">
             <li className="flex items-start gap-2.5">
               <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-card text-xs font-bold text-primary">
@@ -203,11 +209,11 @@ function PwaInstallDialog({
         ) : null}
 
         <div className="mt-4 flex flex-col gap-2">
-          {mode === 'native' ? (
+          {showNativeButton ? (
             <Button
               type="button"
               className="h-11 w-full rounded-lg text-sm font-semibold"
-              disabled={installing || !canNativeInstall}
+              disabled={installing}
               onClick={onInstall}
             >
               {installing ? 'Abrindo instalação…' : 'Adicionar à tela inicial'}
@@ -215,14 +221,14 @@ function PwaInstallDialog({
           ) : null}
           <Button
             type="button"
-            variant={manualMode ? 'default' : 'ghost'}
+            variant={showSteps ? 'default' : 'ghost'}
             className={cn(
               'h-11 w-full rounded-lg text-sm font-semibold',
-              !manualMode && 'text-muted-foreground',
+              !showSteps && 'text-muted-foreground',
             )}
             onClick={onDismiss}
           >
-            {manualMode ? 'Entendi' : 'Agora não'}
+            {showSteps ? 'Entendi' : 'Agora não'}
           </Button>
         </div>
       </div>
@@ -303,7 +309,11 @@ export function PwaInstallProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (isStandaloneDisplay() || wasPwaInstallDismissedRecently()) return;
+    // Só o app instalado não precisa disto. Mesmo com o convite automático
+    // já dispensado, seguimos capturando o `beforeinstallprompt` pra que o
+    // botão "Adicionar à tela inicial" (no popup e na tela de Conta)
+    // consiga abrir a instalação nativa em vez de só mostrar o passo a passo.
+    if (isStandaloneDisplay()) return;
 
     void registerZeloServiceWorker();
 
@@ -312,6 +322,7 @@ export function PwaInstallProvider({ children }: { children: React.ReactNode }) 
       deferredPromptRef.current = event as BeforeInstallPromptEvent;
       setCanNativeInstall(true);
       setCanOfferInstall(true);
+      // `tryAutoShow` → `showPrompt` já respeita o "dispensado há pouco".
       if (delayReadyRef.current) {
         tryAutoShow();
       }
