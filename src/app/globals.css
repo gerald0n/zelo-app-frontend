@@ -285,19 +285,22 @@ a {
   }
 }
 
-/* Vidro fosco discreto — assinatura da navbar, sem o "liquid" pesado */
+/*
+ * Vidro real da navbar: translúcido de verdade — dá pra ver o conteúdo
+ * borrado passando atrás. Sem `saturate()`, que era o que puxava o tom
+ * rosado ("blush").
+ */
 .liquid-glass {
   overflow: hidden;
-  background: rgba(255, 253, 250, 0.82);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 252, 249, 0.48);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
   box-shadow:
-    0 6px 20px oklch(0.28 0.04 40 / 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    0 6px 22px oklch(0.28 0.04 40 / 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
-/* Soft blur veil behind the floating navbar */
+/* Blur suave atrás da navbar flutuante, esmaecendo pra cima */
 .liquid-glass-veil {
   pointer-events: none;
   isolation: isolate;
@@ -307,21 +310,19 @@ a {
   content: '';
   position: absolute;
   inset: 0;
-  backdrop-filter: blur(24px) saturate(130%);
-  -webkit-backdrop-filter: blur(24px) saturate(130%);
-  mask-image: linear-gradient(to top, black 55%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to top, black 55%, transparent 100%);
+  backdrop-filter: blur(18px);
+  mask-image: linear-gradient(to top, black 45%, transparent 100%);
 }
 
+/* Fade mínimo só pra borda inferior da tela não cortar seco — sem cor/blush. */
 .liquid-glass-veil::after {
   content: '';
   position: absolute;
   inset: 0;
   background: linear-gradient(
     to top,
-    rgba(255, 248, 240, 0.88) 0%,
-    rgba(255, 248, 240, 0.42) 55%,
-    transparent 100%
+    rgba(249, 243, 233, 0.5) 0%,
+    transparent 55%
   );
 }
 

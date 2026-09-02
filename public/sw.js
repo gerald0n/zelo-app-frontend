@@ -1,5 +1,5 @@
 /* Zelo service worker — push + offline shell (cache versionado). */
-const CACHE_VERSION = 'zelo-static-v1';
+const CACHE_VERSION = 'zelo-static-v2';
 const PRECACHE = ['/', '/offline', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (event) => {
