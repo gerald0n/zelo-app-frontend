@@ -1,16 +1,12 @@
 'use client';
 
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { Clock, Info, MapPin, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useStoreHoursLabel, useStoreOpen } from '@/hooks/useStoreOpen';
+import { ZeloSeal } from '@/components/ZeloSeal';
 import { cn } from '@/lib/utils';
 
 const DRAWER_MS = 320;
@@ -114,7 +110,9 @@ export default function StoreHeader({ onHeightChange }: Props) {
 
     animRef.current?.cancel();
 
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
     const snap = snapOpenRef.current || reduced;
 
     if (snap) {
@@ -157,7 +155,9 @@ export default function StoreHeader({ onHeightChange }: Props) {
 
     animRef.current?.cancel();
 
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
     if (reduced) {
       setVisible(false);
       return;
@@ -232,7 +232,9 @@ export default function StoreHeader({ onHeightChange }: Props) {
         />
       </div>
 
-      {portalReady && compactBar ? createPortal(compactBar, document.body) : null}
+      {portalReady && compactBar
+        ? createPortal(compactBar, document.body)
+        : null}
     </div>
   );
 }
@@ -251,21 +253,13 @@ function HeroContent({
   return (
     <div className="flex items-start justify-between gap-2.5">
       <div className="flex min-w-0 items-start gap-2.5">
-        <div
-          className={cn(
-            'flex shrink-0 items-center justify-center bg-primary text-primary-foreground',
+        <ZeloSeal
+          className={expanded ? 'size-11' : 'size-8'}
+          fallbackClassName={cn(
             expanded ? 'size-11 rounded-xl' : 'size-8 rounded-lg',
           )}
-        >
-          <span
-            className={cn(
-              'font-serif font-semibold',
-              expanded ? 'text-xl' : 'text-base',
-            )}
-          >
-            Z
-          </span>
-        </div>
+          letterClassName={expanded ? 'text-xl' : 'text-base'}
+        />
 
         <div className="min-w-0 pt-0.5">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -293,7 +287,10 @@ function HeroContent({
             <span className="shrink-0">Pereiro, CE</span>
             {expanded ? (
               <>
-                <span className="shrink-0 text-muted-foreground/50" aria-hidden="true">
+                <span
+                  className="shrink-0 text-muted-foreground/50"
+                  aria-hidden="true"
+                >
                   ·
                 </span>
                 <span className="truncate">Entrega e retirada</span>
@@ -360,7 +357,9 @@ function HeaderActions({
   const iconSize = expanded ? 'size-4' : 'size-3.5';
 
   return (
-    <div className={cn('flex shrink-0 items-center gap-1.5', expanded && 'mt-0.5')}>
+    <div
+      className={cn('flex shrink-0 items-center gap-1.5', expanded && 'mt-0.5')}
+    >
       <Link
         href="/loja"
         aria-label="Informações da loja"
