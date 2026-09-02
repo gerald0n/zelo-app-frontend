@@ -197,31 +197,15 @@ body {
 }
 
 /*
- * App shell mobile (<1024px): o documento não rola — a barra de URL do
- * navegador fica estável, como num app. O scroll vive em [data-app-scroll]
- * (ver `mobileAppShellClass` / `mobileAppShellScrollClass` em lib/layout.ts).
+ * Sem app shell no mobile: o documento rola normalmente (a barra de URL do
+ * navegador aparece/some como em qualquer site). Tentar prender o viewport
+ * com `height: 100svh` + `overflow: hidden` reintroduzia a "faixa morta" de
+ * ~100px no Chrome iOS aberto por link/QR.
  *
- * Sem `position: fixed` e sem `height:100%`/`vh` — só `svh`. O shell é
- * dimensionado em `100svh` (small viewport, barra de URL visível), que é
- * bem-definido já no 1º paint do Chrome iOS. Isso evita a "faixa morta"
- * da 1ª versão, que usava `fixed inset-0` sobre `height:100%`.
- *
- * O bloqueio de zoom fica no <meta viewport> (Chrome iOS) + LockMobileZoom
- * (Safari iOS). Nada de `touch-action` aqui — restringir o ancestral também
- * mataria o pinch-zoom do mapa Leaflet.
+ * O bloqueio de zoom continua: <meta viewport> (Chrome) + LockMobileZoom
+ * (Safari iOS). O PWA instalado ganha tela cheia pelo `display: standalone`
+ * do manifest, sem depender de CSS.
  */
-@media (max-width: 1023px) {
-  html,
-  body {
-    height: 100svh;
-    overflow: hidden;
-    overscroll-behavior: none;
-  }
-
-  [data-app-scroll] {
-    -webkit-overflow-scrolling: touch;
-  }
-}
 
 /* Leaflet dentro de containers com borda arredondada */
 .leaflet-container {

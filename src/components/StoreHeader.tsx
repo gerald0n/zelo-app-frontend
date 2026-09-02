@@ -11,7 +11,6 @@ import Link from 'next/link';
 import { Clock, Info, MapPin, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useStoreHoursLabel, useStoreOpen } from '@/hooks/useStoreOpen';
-import { getAppScroller, getAppScrollTop } from '@/lib/layout';
 import { cn } from '@/lib/utils';
 
 const DRAWER_MS = 320;
@@ -62,7 +61,7 @@ export default function StoreHeader({ onHeightChange }: Props) {
     if (!heroRef.current) return;
 
     scrollSampleRef.current = {
-      y: getAppScrollTop(getAppScroller()),
+      y: window.scrollY,
       t: performance.now(),
     };
 
@@ -83,7 +82,7 @@ export default function StoreHeader({ onHeightChange }: Props) {
     };
 
     const onScroll = () => {
-      const y = getAppScrollTop(getAppScroller());
+      const y = window.scrollY;
       const t = performance.now();
       const { y: prevY, t: prevT } = scrollSampleRef.current;
       const dt = Math.max(t - prevT, 1);
@@ -101,15 +100,11 @@ export default function StoreHeader({ onHeightChange }: Props) {
     };
 
     onScroll();
-    // Desktop rola em `window`; mobile no container `[data-app-scroll]`.
-    // Ouve os dois — o que não rola simplesmente nunca dispara.
+    // Scroll normal do documento (sem app shell).
     window.addEventListener('scroll', onScroll, { passive: true });
-    const shellScroller = document.querySelector('[data-app-scroll]');
-    shellScroller?.addEventListener('scroll', onScroll, { passive: true });
 
     return () => {
       window.removeEventListener('scroll', onScroll);
-      shellScroller?.removeEventListener('scroll', onScroll);
     };
   }, []);
 
