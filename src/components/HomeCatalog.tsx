@@ -187,8 +187,12 @@ export default function HomeCatalog({
 
         {!showSideCategories ? (
           <div
-            className="sticky z-30 mt-3 bg-background/90 px-4 py-2 backdrop-blur"
-            style={{ top: STORE_HEADER_COMPACT_HEIGHT }}
+            className="sticky z-30 mt-3 bg-background px-4 py-2"
+            style={{
+              // Encosta logo abaixo da barra compacta, contando a área segura
+              // (status bar / notch) no PWA instalado.
+              top: `calc(env(safe-area-inset-top, 0px) + ${STORE_HEADER_COMPACT_HEIGHT}px)`,
+            }}
           >
             <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <Link

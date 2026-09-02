@@ -32,8 +32,13 @@ function AppShell({ children }: { children: React.ReactNode }) {
       <div
         className={cn(
           'lg:min-h-dvh',
-          !hideCustomerNav && 'max-lg:pb-[84px]',
-          isAdmin && !isAdminLogin && 'max-lg:pb-[84px] lg:pb-0',
+          // Folga p/ a navbar flutuante + a área segura inferior (home
+          // indicator no iPhone), pra o último item passar todo acima dela.
+          !hideCustomerNav &&
+            'max-lg:pb-[calc(84px+env(safe-area-inset-bottom,0px))]',
+          isAdmin &&
+            !isAdminLogin &&
+            'max-lg:pb-[calc(84px+env(safe-area-inset-bottom,0px))] lg:pb-0',
         )}
       >
         {children}
