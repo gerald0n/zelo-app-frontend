@@ -7,6 +7,8 @@ import {
   ArrowLeft,
   Zap,
   Calendar,
+  Clock,
+  Check,
   Bike,
   ShoppingBag,
   CheckCircle2,
@@ -61,13 +63,71 @@ type ValidationResult = {
   message?: string;
 };
 
-function formatDateLabel(iso: string): string {
+function todayIso(): string {
+  return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD, hora local
+}
+
+function relativeDayLabel(iso: string): string | null {
+  const today = new Date(`${todayIso()}T12:00:00`);
+  const target = new Date(`${iso}T12:00:00`);
+  const diffDays = Math.round(
+    (target.getTime() - today.getTime()) / 86_400_000,
+  );
+  if (diffDays === 0) return 'Hoje';
+  if (diffDays === 1) return 'Amanhã';
+  return null;
+}
+
+function scheduleDateParts(iso: string): {
+  weekday: string;
+  day: string;
+  month: string;
+} {
   const date = new Date(`${iso}T12:00:00`);
-  return date.toLocaleDateString('pt-BR', {
-    weekday: 'short',
+  return {
+    weekday: date
+      .toLocaleDateString('pt-BR', { weekday: 'short' })
+      .replace('.', ''),
+    day: date.toLocaleDateString('pt-BR', { day: '2-digit' }),
+    month: date
+      .toLocaleDateString('pt-BR', { month: 'short' })
+      .replace('.', ''),
+  };
+}
+
+function formatScheduleSummary(iso: string, time: string): string {
+  const date = new Date(`${iso}T12:00:00`);
+  const relative = relativeDayLabel(iso);
+  const label = date.toLocaleDateString('pt-BR', {
+    // Com rótulo relativo ("Amanhã") o dia da semana vira redundância.
+    weekday: relative ? undefined : 'long',
     day: '2-digit',
-    month: '2-digit',
+    month: 'long',
   });
+  const prefix = relative ? `${relative}, ` : '';
+  return `${prefix}${label} às ${time}`;
+}
+
+/** Agrupa horários em manhã / tarde / noite para leitura mais fácil. */
+function groupTimesByPeriod(
+  times: string[],
+): Array<{ id: string; label: string; times: string[] }> {
+  const buckets: Record<string, string[]> = {
+    manha: [],
+    tarde: [],
+    noite: [],
+  };
+  for (const time of times) {
+    const hour = Number(time.slice(0, 2));
+    if (hour < 12) buckets.manha.push(time);
+    else if (hour < 18) buckets.tarde.push(time);
+    else buckets.noite.push(time);
+  }
+  return [
+    { id: 'manha', label: 'Manhã', times: buckets.manha },
+    { id: 'tarde', label: 'Tarde', times: buckets.tarde },
+    { id: 'noite', label: 'Noite', times: buckets.noite },
+  ].filter((group) => group.times.length > 0);
 }
 
 export default function RecebimentoPage() {
@@ -476,54 +536,108 @@ export default function RecebimentoPage() {
           </div>
 
           {checkout.scheduleType === 'scheduled' ? (
-            <div className="mt-1 space-y-2.5">
-              <p className="text-sm font-semibold">Data</p>
-              <div className="no-scrollbar -mx-1 min-w-0 overflow-x-auto px-1">
+            <div className="mt-1 space-y-3">
+              <p className="text-sm font-semibold">Escolha o dia</p>
+              <div className="no-scrollbar -mx-3 flex snap-x snap-mandatory gap-2 overflow-x-auto px-3 pb-1">
                 {availableDates.map((key) => {
                   const selected = checkout.scheduledDate === key;
+                  const parts = scheduleDateParts(key);
+                  const relative = relativeDayLabel(key);
                   return (
                     <button
                       key={key}
                       type="button"
                       onClick={() => setScheduledDate(key)}
+                      aria-pressed={selected}
                       className={cn(
-                        'mr-2 inline-flex shrink-0 rounded-lg border px-3.5 py-2 text-sm font-medium last:mr-0',
+                        'flex w-[62px] shrink-0 snap-start flex-col items-center gap-0.5 rounded-xl border-[1.5px] py-2 transition-[background-color,border-color,transform] duration-100 active:scale-[0.97]',
                         selected
                           ? 'border-primary bg-primary text-white'
-                          : 'border-border bg-card',
+                          : 'border-border bg-card text-foreground',
                       )}
                     >
-                      {formatDateLabel(key)}
+                      <span
+                        className={cn(
+                          'text-[10px] font-semibold uppercase tracking-wide',
+                          selected ? 'text-white/80' : 'text-muted-foreground',
+                        )}
+                      >
+                        {relative ?? parts.weekday}
+                      </span>
+                      <span className="text-lg font-bold leading-none tabular-nums">
+                        {parts.day}
+                      </span>
+                      <span
+                        className={cn(
+                          'text-[10px] font-medium uppercase',
+                          selected ? 'text-white/80' : 'text-muted-foreground',
+                        )}
+                      >
+                        {parts.month}
+                      </span>
                     </button>
                   );
                 })}
               </div>
-              <p className="mt-1 text-sm font-semibold">Horário</p>
-              <div className="flex flex-wrap gap-2">
-                {availableTimes.map((time) => {
-                  const selected = checkout.scheduledTime === time;
-                  return (
-                    <button
-                      key={time}
-                      type="button"
-                      onClick={() => setScheduledTime(time)}
-                      className={cn(
-                        'rounded-md border px-4 py-2 text-sm font-medium',
-                        selected
-                          ? 'border-primary bg-primary text-white'
-                          : 'border-border bg-card',
+
+              <p className="text-sm font-semibold">Escolha o horário</p>
+              {availableTimes.length === 0 ? (
+                <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+                  <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                  <p>Sem horários para esta data. Tente outro dia.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {groupTimesByPeriod(availableTimes).map((group) => (
+                    <div key={group.id} className="space-y-1.5">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        {group.label}
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {group.times.map((time) => {
+                          const selected = checkout.scheduledTime === time;
+                          return (
+                            <button
+                              key={time}
+                              type="button"
+                              onClick={() => setScheduledTime(time)}
+                              aria-pressed={selected}
+                              className={cn(
+                                'flex items-center justify-center gap-1 rounded-lg border-[1.5px] py-2 text-sm font-semibold tabular-nums transition-[background-color,border-color,transform] duration-100 active:scale-[0.97]',
+                                selected
+                                  ? 'border-primary bg-primary text-white'
+                                  : 'border-border bg-card text-foreground',
+                              )}
+                            >
+                              {selected ? (
+                                <Check className="size-3.5" />
+                              ) : null}
+                              {time}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {checkout.scheduledDate && checkout.scheduledTime ? (
+                <div className="flex items-center gap-2 rounded-lg border border-primary/25 bg-primary/[0.06] px-3 py-2.5 text-sm">
+                  <Clock className="size-4 shrink-0 text-primary" />
+                  <p className="leading-snug">
+                    {checkout.deliveryType === 'pickup'
+                      ? 'Retirada '
+                      : 'Entrega '}
+                    <span className="font-semibold">
+                      {formatScheduleSummary(
+                        checkout.scheduledDate,
+                        checkout.scheduledTime,
                       )}
-                    >
-                      {time}
-                    </button>
-                  );
-                })}
-                {availableTimes.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Nenhum horário disponível nesta data.
+                    </span>
                   </p>
-                ) : null}
-              </div>
+                </div>
+              ) : null}
             </div>
           ) : null}
 

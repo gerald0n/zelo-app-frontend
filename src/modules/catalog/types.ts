@@ -69,6 +69,8 @@ export type CatalogStore = {
   acceptsPayments: CatalogPaymentMethods;
   businessHours: CatalogBusinessHour[];
   blackoutPeriods: CatalogBlackout[];
+  /** Horários candidatos de agendamento (HH:MM), configurados no admin. */
+  scheduleSlotTimes: string[];
 };
 
 export function formatWeightGrams(

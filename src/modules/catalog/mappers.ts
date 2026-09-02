@@ -1,5 +1,6 @@
 import type { Database } from '@/types/database';
 import { productImagePublicUrl } from '@/lib/constants';
+import { normalizeSlotTimes } from '@/modules/scheduling/slot-times';
 import {
   formatWeightGrams,
   type CatalogAddon,
@@ -126,6 +127,7 @@ export function mapStore(
       cash: row.accepts_cash,
       card: row.accepts_card,
     },
+    scheduleSlotTimes: normalizeSlotTimes(row.schedule_slot_times),
     businessHours: hours
       .map(mapBusinessHour)
       .sort((a, b) => a.weekday - b.weekday),

@@ -3,17 +3,14 @@ import type {
   CatalogStore,
 } from '@/modules/catalog/types';
 import { isCatalogStoreOpenNow } from '@/modules/catalog/store-hours';
+import {
+  DEFAULT_SCHEDULE_SLOT_TIMES,
+  normalizeSlotTimes,
+} from '@/modules/scheduling/slot-times';
 
-const DEFAULT_SCHEDULE_TIMES = [
-  '08:00',
-  '09:00',
-  '10:00',
-  '11:00',
-  '14:00',
-  '15:00',
-  '16:00',
-  '17:00',
-];
+function storeSlotTimes(store: CatalogStore): string[] {
+  return normalizeSlotTimes(store.scheduleSlotTimes);
+}
 
 function parseTimeToMinutes(value: string): number {
   const [hours, minutes] = value.slice(0, 5).split(':').map(Number);
@@ -117,7 +114,7 @@ export function listAvailableScheduleTimes(
     return [];
   }
 
-  return DEFAULT_SCHEDULE_TIMES.filter((time) => {
+  return storeSlotTimes(store).filter((time) => {
     if (!timeWithinWindow(time, hour.opensAt, hour.closesAt)) return false;
     return !isInstantInBlackout(
       scheduleSlotInstant(dateIso, time),
@@ -150,6 +147,6 @@ export function getSchedulingSnapshot(store: CatalogStore) {
     ),
     defaultTimes: first
       ? listAvailableScheduleTimes(store, first, 'delivery')
-      : DEFAULT_SCHEDULE_TIMES,
+      : [...DEFAULT_SCHEDULE_SLOT_TIMES],
   };
 }

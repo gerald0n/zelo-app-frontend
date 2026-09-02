@@ -152,6 +152,27 @@ export default function AdminConfiguracoesPage() {
     defaultValues: { startsAt: '', endsAt: '', reason: '' },
   });
 
+  const [slotTimes, setSlotTimes] = useState<string[]>([]);
+  const [slotDraft, setSlotDraft] = useState('');
+  const slotsDirty =
+    JSON.stringify(slotTimes) !==
+    JSON.stringify(storeQuery.data?.store?.scheduleSlotTimes ?? []);
+
+  useEffect(() => {
+    const times = storeQuery.data?.store?.scheduleSlotTimes;
+    if (times) setSlotTimes(times);
+  }, [storeQuery.data]);
+
+  const addSlot = () => {
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(slotDraft)) return;
+    setSlotTimes((prev) =>
+      prev.includes(slotDraft)
+        ? prev
+        : [...prev, slotDraft].sort((a, b) => a.localeCompare(b)),
+    );
+    setSlotDraft('');
+  };
+
   useEffect(() => {
     const store = storeQuery.data?.store;
     if (!store) return;
@@ -250,6 +271,21 @@ export default function AdminConfiguracoesPage() {
     },
   });
 
+  const slotsMutation = useMutation({
+    mutationFn: (times: string[]) =>
+      apiJson('/api/v1/admin/store', {
+        method: 'PATCH',
+        body: JSON.stringify({ scheduleSlotTimes: times }),
+      }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: adminKeys.store() }),
+        queryClient.invalidateQueries({ queryKey: adminKeys.audit() }),
+        queryClient.invalidateQueries({ queryKey: ['catalog', 'store'] }),
+      ]);
+    },
+  });
+
   const blackoutMutation = useMutation({
     mutationFn: (values: BlackoutForm) =>
       apiJson('/api/v1/admin/blackouts', {
@@ -280,6 +316,7 @@ export default function AdminConfiguracoesPage() {
   const hours =
     useWatch({ control: hoursForm.control, name: 'hours' }) ?? [];
   const mutationError =
+    (slotsMutation.error instanceof ApiError && slotsMutation.error.message) ||
     (storeMutation.error instanceof ApiError && storeMutation.error.message) ||
     (hoursMutation.error instanceof ApiError && hoursMutation.error.message) ||
     (blackoutMutation.error instanceof ApiError &&
@@ -467,6 +504,80 @@ export default function AdminConfiguracoesPage() {
             {hoursMutation.isPending ? 'Salvando…' : 'Salvar horários'}
           </button>
         </form>
+
+        <section className="space-y-3 rounded-lg border border-border bg-card p-3.5">
+          <div>
+            <p className="text-sm font-semibold">Horários de agendamento</p>
+            <p className="mt-0.5 text-2xs leading-4 text-muted-foreground">
+              Opções que o cliente vê ao escolher “Agendar” no checkout. Cada
+              horário só aparece se couber na janela de funcionamento do dia e
+              fora de períodos bloqueados.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            {slotTimes.map((time) => (
+              <span
+                key={time}
+                className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 py-1 pl-2.5 pr-1 text-xs font-semibold tabular-nums"
+              >
+                {time}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSlotTimes((prev) => prev.filter((t) => t !== time))
+                  }
+                  aria-label={`Remover ${time}`}
+                  className="rounded p-0.5 text-muted-foreground transition-colors hover:text-destructive"
+                >
+                  <Trash2 className="size-3" />
+                </button>
+              </span>
+            ))}
+            {slotTimes.length === 0 ? (
+              <p className="text-2xs text-destructive">
+                Adicione ao menos um horário.
+              </p>
+            ) : null}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Input
+              type="time"
+              value={slotDraft}
+              onChange={(event) => setSlotDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  addSlot();
+                }
+              }}
+              className="h-8 w-32 rounded-md border border-border px-2 text-xs"
+            />
+            <button
+              type="button"
+              onClick={addSlot}
+              disabled={!/^([01]\d|2[0-3]):[0-5]\d$/.test(slotDraft)}
+              className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold transition-[background-color,transform] duration-100 hover:bg-muted active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
+            >
+              <Plus className="size-3.5" />
+              Adicionar
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => slotsMutation.mutate(slotTimes)}
+            disabled={
+              slotsMutation.isPending || slotTimes.length === 0 || !slotsDirty
+            }
+            className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:active:scale-100 disabled:opacity-60"
+          >
+            {slotsMutation.isPending
+              ? 'Salvando…'
+              : 'Salvar horários de agendamento'}
+          </button>
+        </section>
 
         <section className="space-y-3 rounded-lg border border-border bg-card p-3.5">
           <p className="text-sm font-semibold">Períodos bloqueados</p>

@@ -21,7 +21,8 @@ insert into public.stores (
   longitude,
   free_delivery_radius_meters,
   fixed_delivery_fee_cents,
-  timezone
+  timezone,
+  schedule_slot_times
 ) values (
   'a0000000-0000-4000-8000-000000000001',
   'Zelo Confeitaria',
@@ -36,7 +37,8 @@ insert into public.stores (
   -38.622000,
   2000,
   500,
-  'America/Fortaleza'
+  'America/Fortaleza',
+  array['08:00','09:00','10:00','11:00','14:00','15:00','16:00','17:00']::text[]
 );
 
 -- weekday: 0=domingo … 6=sábado

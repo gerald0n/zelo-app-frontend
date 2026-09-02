@@ -8,6 +8,7 @@ import { writeAuditLog } from '@/modules/admin/audit';
 import { requireAdmin } from '@/modules/admin/auth';
 import { getPublicStore } from '@/modules/catalog/catalog-repository';
 import { mapBusinessHour } from '@/modules/catalog/mappers';
+import { isHhmm } from '@/modules/scheduling/slot-times';
 import type { CatalogStore } from '@/modules/catalog/types';
 import type {
   AdminAddon,
@@ -900,6 +901,7 @@ export async function updateAdminStore(input: {
   acceptsPix?: boolean;
   acceptsCash?: boolean;
   acceptsCard?: boolean;
+  scheduleSlotTimes?: string[];
 }): Promise<Result<CatalogStore>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
@@ -967,6 +969,18 @@ export async function updateAdminStore(input: {
   }
   if (typeof input.acceptsCard === 'boolean') {
     patch.accepts_card = input.acceptsCard;
+  }
+  if (input.scheduleSlotTimes !== undefined) {
+    const cleaned = Array.from(
+      new Set(input.scheduleSlotTimes.filter((time) => isHhmm(time))),
+    ).sort();
+    if (cleaned.length === 0) {
+      return err(
+        'VALIDATION_ERROR',
+        'Informe ao menos um horário de agendamento válido (HH:MM).',
+      );
+    }
+    patch.schedule_slot_times = cleaned;
   }
 
   if (Object.keys(patch).length === 0) {
