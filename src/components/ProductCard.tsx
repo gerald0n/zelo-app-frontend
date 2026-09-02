@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Heart, Plus } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { ProductThumb } from '@/components/product-thumb';
-import { CatalogCartControls } from '@/components/CartQtyStepper';
+import { CatalogItemActions } from '@/components/CartQtyStepper';
 import {
   categoryTone,
   formatCatalogPrice,
@@ -15,12 +15,15 @@ import { cn } from '@/lib/utils';
 
 type Props = {
   product: CatalogProduct;
-  categoryName?: string;
-  /** @deprecated mantido por compatibilidade — o card é sempre foto-primeiro. */
   vertical?: boolean;
+  categoryName?: string;
 };
 
-export default function ProductCard({ product, categoryName }: Props) {
+export default function ProductCard({
+  product,
+  vertical = false,
+  categoryName,
+}: Props) {
   const { addItem, items } = useCart();
   const { favorites, toggleFavorite, notify } = useShopExperience();
   const isFavorite = favorites.has(product.id);
@@ -34,7 +37,7 @@ export default function ProductCard({ product, categoryName }: Props) {
       return;
     }
     addItem(product, 1, []);
-    notify(`${product.name} adicionado à sacola.`);
+    notify(`${product.name} adicionado ao carrinho.`);
   };
 
   const handleFavorite = (e: React.MouseEvent) => {
@@ -43,42 +46,33 @@ export default function ProductCard({ product, categoryName }: Props) {
     toggleFavorite(product.id, product.name);
   };
 
-  const thumb = (
-    <ProductThumb
-      tone={categoryTone(categoryName ?? product.slug)}
-      src={product.image}
-      alt={product.imageAlt ?? product.name}
-      className="aspect-[16/10] w-full"
-      iconClassName="size-9"
-    />
-  );
-
   return (
     <article
       className={cn(
-        'group relative overflow-hidden rounded-2xl bg-card shadow-[0_1px_3px_rgba(60,40,35,0.06),0_8px_24px_rgba(60,40,35,0.07)] transition-colors',
-        !product.available && 'opacity-55',
+        'relative overflow-hidden rounded-xl border border-border bg-card transition-colors duration-150 hover:border-foreground/15',
+        vertical
+          ? 'flex min-h-[286px] flex-col p-0'
+          : 'flex items-center gap-3 p-2.5',
+        !product.available && 'opacity-60',
       )}
     >
-      <div className="relative">
-        {product.available ? (
-          <Link
-            href={`/produto/${product.slug}`}
-            className="block"
-            aria-label={`${product.name} — ver detalhes`}
-          >
-            {thumb}
-          </Link>
-        ) : (
-          <div className="block">{thumb}</div>
-        )}
-
-        {!product.available ? (
-          <span className="absolute left-3 top-3 rounded-full bg-background/85 px-2 py-0.5 text-2xs font-semibold text-muted-foreground backdrop-blur">
-            Esgotado hoje
-          </span>
+      <div className={cn('relative shrink-0', vertical && 'w-full')}>
+        <ProductThumb
+          tone={categoryTone(categoryName ?? product.slug)}
+          src={product.image}
+          alt={product.imageAlt ?? product.name}
+          className={
+            vertical ? 'h-[128px] w-full rounded-none' : 'size-20 rounded-lg'
+          }
+          iconClassName={vertical ? 'size-10' : 'size-9'}
+        />
+        {!product.available && vertical ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/45">
+            <span className="text-2xs font-semibold text-primary-foreground">
+              Indisponível
+            </span>
+          </div>
         ) : null}
-
         <button
           type="button"
           onClick={handleFavorite}
@@ -87,69 +81,71 @@ export default function ProductCard({ product, categoryName }: Props) {
               ? `Remover ${product.name} dos favoritos`
               : `Adicionar ${product.name} aos favoritos`
           }
-          className="absolute right-2.5 top-2.5 flex size-8 items-center justify-center rounded-full bg-background/60 text-primary backdrop-blur transition-transform duration-100 active:scale-90"
+          className={cn(
+            'absolute flex items-center justify-center rounded-full bg-card/80 backdrop-blur transition-transform duration-150 active:scale-90',
+            vertical
+              ? 'top-[7px] right-[7px] size-[30px]'
+              : 'left-1.5 top-1.5 size-7',
+          )}
         >
           <Heart
             className={cn(
-              'size-4 transition-colors',
-              isFavorite ? 'fill-primary text-primary' : 'text-muted-foreground',
+              'transition-colors',
+              vertical ? 'size-[17px]' : 'size-4',
+              isFavorite
+                ? 'fill-primary text-primary'
+                : 'text-muted-foreground',
             )}
           />
         </button>
       </div>
 
-      <div className="flex items-end justify-between gap-3 p-3">
+      <div
+        className={cn(
+          'flex min-w-0 flex-1 items-center gap-2.5',
+          vertical && 'p-2.5',
+        )}
+      >
         <div className="min-w-0 flex-1">
           {product.available ? (
             <Link
               href={`/produto/${product.slug}`}
-              className="font-medium leading-tight text-card-foreground"
+              className="font-semibold leading-tight text-card-foreground"
             >
               {product.name}
+              <span className="sr-only"> — ver detalhes</span>
             </Link>
           ) : (
-            <p className="font-medium leading-tight text-card-foreground">
+            <p className="font-semibold leading-tight text-card-foreground">
               {product.name}
+              <span className="ml-2 text-xs font-medium text-muted-foreground">
+                Indisponível
+              </span>
             </p>
           )}
-          <p className="mt-1 line-clamp-2 text-xs leading-snug text-muted-foreground">
+          <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted-foreground">
             {product.description}
           </p>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-[15px] font-semibold tabular-nums text-foreground">
+          <div className="mt-1.5 flex min-w-0 items-baseline gap-1.5">
+            <span className="font-serif text-base font-semibold tabular-nums text-primary">
               {formatCatalogPrice(product.price)}
             </span>
             {product.weight ? (
-              <span className="text-2xs text-muted-foreground">
-                {product.weight}
+              <span className="text-xs text-muted-foreground">
+                · {product.weight}
               </span>
             ) : null}
           </div>
         </div>
-
-        <div className="shrink-0">
-          {quantityInCart > 0 ? (
-            <CatalogCartControls
-              compact
-              productId={product.id}
-              productName={product.name}
-              quantity={quantityInCart}
-              onIncrease={addToCart}
-            />
-          ) : product.available ? (
-            <button
-              type="button"
-              aria-label={`Adicionar ${product.name} à sacola`}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                addToCart();
-              }}
-              className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform duration-100 active:scale-90"
-            >
-              <Plus className="size-4" aria-hidden="true" />
-            </button>
-          ) : null}
+        <div className="flex shrink-0 items-center justify-end">
+          <CatalogItemActions
+            compact
+            productId={product.id}
+            productName={product.name}
+            quantity={quantityInCart}
+            available={product.available}
+            onAdd={addToCart}
+          />
         </div>
       </div>
     </article>

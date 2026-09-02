@@ -2,35 +2,30 @@
 
 :root {
   color-scheme: light;
-  /* "Vidro Quente" — estrutura Liquid Glass (Apple) + paleta da Zelo.
-     Papel morno, um único acento terracota-rosê, sálvia só para "aberto". */
-  --background: oklch(0.925 0.016 74);
-  --foreground: oklch(0.27 0.013 55);
-  --card: oklch(0.985 0.006 78);
-  --card-foreground: oklch(0.27 0.013 55);
-  --popover: oklch(0.985 0.006 78);
-  --popover-foreground: oklch(0.27 0.013 55);
-  --primary: oklch(0.555 0.105 33);
-  --primary-foreground: oklch(0.985 0.008 60);
-  --secondary: oklch(0.9 0.02 78);
-  --secondary-foreground: oklch(0.42 0.03 55);
-  --muted: oklch(0.91 0.017 76);
-  --muted-foreground: oklch(0.48 0.02 58);
-  --accent: oklch(0.9 0.03 70);
-  --accent-foreground: oklch(0.38 0.03 55);
+  --background: oklch(0.975 0.014 78);
+  --foreground: oklch(0.29 0.035 40);
+  --card: oklch(0.995 0.008 85);
+  --card-foreground: oklch(0.29 0.035 40);
+  --popover: oklch(0.995 0.008 85);
+  --popover-foreground: oklch(0.29 0.035 40);
+  --primary: oklch(0.43 0.135 10);
+  --primary-foreground: oklch(0.98 0.012 80);
+  --secondary: oklch(0.93 0.03 75);
+  --secondary-foreground: oklch(0.38 0.05 45);
+  --muted: oklch(0.94 0.02 78);
+  --muted-foreground: oklch(0.52 0.04 50);
+  --accent: oklch(0.9 0.05 70);
+  --accent-foreground: oklch(0.38 0.06 45);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.87 0.02 74);
-  --input: oklch(0.87 0.02 74);
-  --ring: oklch(0.555 0.105 33);
+  --border: oklch(0.9 0.025 70);
+  --input: oklch(0.9 0.025 70);
+  --ring: oklch(0.42 0.15 8);
   --caramel: oklch(0.74 0.12 62);
   --caramel-foreground: oklch(0.3 0.05 45);
   --pistachio: oklch(0.83 0.08 128);
   --pistachio-foreground: oklch(0.35 0.06 130);
-  --success: oklch(0.55 0.07 140);
+  --success: oklch(0.45 0.12 130);
   --success-foreground: oklch(0.98 0.012 80);
-  /* Vidro flutuante — retomado por .liquid-glass / .glass-chrome. */
-  --glass-bg: oklch(0.95 0.012 76 / 0.68);
-  --glass-border: oklch(1 0 0 / 0.5);
   /* Superfícies pastel dessaturadas para status/badges (fundo + texto). */
   --tone-neutral: oklch(0.95 0.006 80);
   --tone-neutral-foreground: oklch(0.44 0.02 60);
@@ -49,15 +44,15 @@
   --chart-3: oklch(0.83 0.08 128);
   --chart-4: oklch(0.6 0.12 30);
   --chart-5: oklch(0.5 0.1 350);
-  --radius: 0.75rem;
-  --sidebar: oklch(0.985 0.006 78);
-  --sidebar-foreground: oklch(0.27 0.013 55);
-  --sidebar-primary: oklch(0.555 0.105 33);
-  --sidebar-primary-foreground: oklch(0.985 0.008 60);
-  --sidebar-accent: oklch(0.9 0.03 70);
-  --sidebar-accent-foreground: oklch(0.38 0.03 55);
-  --sidebar-border: oklch(0.87 0.02 74);
-  --sidebar-ring: oklch(0.555 0.105 33);
+  --radius: 0.5rem;
+  --sidebar: oklch(0.995 0.008 85);
+  --sidebar-foreground: oklch(0.29 0.035 40);
+  --sidebar-primary: oklch(0.42 0.15 8);
+  --sidebar-primary-foreground: oklch(0.98 0.012 80);
+  --sidebar-accent: oklch(0.9 0.05 70);
+  --sidebar-accent-foreground: oklch(0.38 0.06 45);
+  --sidebar-border: oklch(0.9 0.025 70);
+  --sidebar-ring: oklch(0.42 0.15 8);
 }
 
 @theme inline {
@@ -309,45 +304,13 @@ a {
 /* Vidro fosco discreto — assinatura da navbar, sem o "liquid" pesado */
 .liquid-glass {
   overflow: hidden;
-  background: var(--glass-bg);
-  backdrop-filter: blur(22px) saturate(180%);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
-  border: 1px solid var(--glass-border);
+  background: rgba(255, 253, 250, 0.82);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   box-shadow:
-    0 6px 20px oklch(0.28 0.04 40 / 0.1),
+    0 6px 20px oklch(0.28 0.04 40 / 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.7);
-}
-
-/*
- * Camada de vidro estrutural — cabeçalho do cardápio e barra de abas.
- * Regra Apple: o conteúdo rola por baixo; a borda é névoa, não filete.
- */
-.glass-chrome {
-  background: var(--glass-bg);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  box-shadow: inset 0 1px 0 var(--glass-border);
-}
-
-/* prefers-reduced-transparency: vidro vira superfície sólida. */
-@media (prefers-reduced-transparency: reduce) {
-  .liquid-glass,
-  .glass-chrome {
-    background: var(--card);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-  .liquid-glass-veil::before {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-}
-
-@media (prefers-contrast: more) {
-  .glass-chrome {
-    background: var(--card);
-    border-bottom: 1px solid var(--border);
-  }
 }
 
 /* Soft blur veil behind the floating navbar */

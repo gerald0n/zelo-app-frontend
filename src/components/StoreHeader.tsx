@@ -1,87 +1,396 @@
 'use client';
 
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { Info, Search, ShoppingBag } from 'lucide-react';
+import { Clock, Info, MapPin, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
-import { useStoreOpen } from '@/hooks/useStoreOpen';
+import { useStoreHoursLabel, useStoreOpen } from '@/hooks/useStoreOpen';
+import { getAppScroller, getAppScrollTop } from '@/lib/layout';
 import { cn } from '@/lib/utils';
 
-/**
- * Barra da loja — conteúdo da camada de vidro fixa no topo do cardápio
- * (a moldura de vidro + a faixa de categorias vivem em HomeCatalog).
- * Só marca, status e ações; horário e regras ficam no cartão de aviso do scroll.
- */
-export default function StoreHeader() {
+const DRAWER_MS = 320;
+const DRAWER_EASING = 'cubic-bezier(0.32, 0.72, 0, 1)';
+/** Mostra a barra compacta logo no início do scroll (não espera o hero sumir). */
+const PIN_AT = 12;
+const UNPIN_AT = 4;
+/** Scroll rápido ou já avançado → encaixa sem animação drawer. */
+const FAST_SCROLL_VELOCITY = 0.65;
+const SNAP_OPEN_SCROLL_Y = 36;
+
+export const STORE_HEADER_COMPACT_HEIGHT = 52;
+
+/** Mesmo vidro dos filtros sticky em HomeCatalog. */
+const STICKY_SURFACE_CLASS = 'bg-background/90 backdrop-blur';
+
+type Props = {
+  onHeightChange?: (height: number) => void;
+};
+
+export default function StoreHeader({ onHeightChange }: Props) {
+  const heroRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const pinnedRef = useRef(false);
+  const animRef = useRef<Animation | null>(null);
+  const openPendingRef = useRef(false);
+  const snapOpenRef = useRef(false);
+  const scrollSampleRef = useRef({ y: 0, t: 0 });
+
+  const [pinned, setPinned] = useState(false);
+  const [portalReady, setPortalReady] = useState(false);
+  /** Barra compacta no DOM (portal). */
+  const [visible, setVisible] = useState(false);
+
   const storeOpen = useStoreOpen();
+  const hoursLabel = useStoreHoursLabel();
   const { totalItems } = useCart();
 
-  return (
-    <div className="flex items-center justify-between gap-2.5 px-4 pb-2 pt-3">
-      <div className="flex min-w-0 items-center gap-2.5">
-        <Link href="/loja" className="min-w-0 leading-none">
-          <span className="block font-serif text-xl font-semibold tracking-tight text-foreground">
-            Zelo
-          </span>
-          <span className="mt-0.5 block text-2xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Confeitaria
-          </span>
-        </Link>
-        <span
-          className={cn(
-            'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-2xs font-semibold',
-            storeOpen ? 'bg-success/15 text-success' : 'bg-primary/12 text-primary',
-          )}
-        >
-          <span
+  useEffect(() => {
+    onHeightChange?.(STORE_HEADER_COMPACT_HEIGHT);
+  }, [onHeightChange]);
+
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!heroRef.current) return;
+
+    scrollSampleRef.current = {
+      y: getAppScrollTop(getAppScroller()),
+      t: performance.now(),
+    };
+
+    const applyPinned = (next: boolean, scrollY: number, velocity: number) => {
+      if (next === pinnedRef.current) return;
+      pinnedRef.current = next;
+
+      if (next) {
+        const fast =
+          Math.abs(velocity) >= FAST_SCROLL_VELOCITY ||
+          scrollY >= SNAP_OPEN_SCROLL_Y;
+        snapOpenRef.current = fast;
+        openPendingRef.current = !fast;
+        setVisible(true);
+      }
+
+      setPinned(next);
+    };
+
+    const onScroll = () => {
+      const y = getAppScrollTop(getAppScroller());
+      const t = performance.now();
+      const { y: prevY, t: prevT } = scrollSampleRef.current;
+      const dt = Math.max(t - prevT, 1);
+      const velocity = (y - prevY) / dt;
+      scrollSampleRef.current = { y, t };
+
+      const prev = pinnedRef.current;
+      if (!prev && y >= PIN_AT) {
+        applyPinned(true, y, velocity);
+        return;
+      }
+      if (prev && y <= UNPIN_AT) {
+        applyPinned(false, y, velocity);
+      }
+    };
+
+    onScroll();
+    // Desktop rola em `window`; mobile no container `[data-app-scroll]`.
+    // Ouve os dois — o que não rola simplesmente nunca dispara.
+    window.addEventListener('scroll', onScroll, { passive: true });
+    const shellScroller = document.querySelector('[data-app-scroll]');
+    shellScroller?.addEventListener('scroll', onScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      shellScroller?.removeEventListener('scroll', onScroll);
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const panel = panelRef.current;
+    if (!visible || !pinned || !panel) return;
+
+    animRef.current?.cancel();
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const snap = snapOpenRef.current || reduced;
+
+    if (snap) {
+      snapOpenRef.current = false;
+      openPendingRef.current = false;
+      panel.style.transform = 'translate3d(0, 0, 0)';
+      panel.style.opacity = '1';
+      return;
+    }
+
+    if (!openPendingRef.current) return;
+
+    openPendingRef.current = false;
+
+    const slide = panel.offsetHeight || STORE_HEADER_COMPACT_HEIGHT;
+
+    animRef.current = panel.animate(
+      [
+        {
+          transform: `translate3d(0, -${slide}px, 0)`,
+          opacity: 0,
+        },
+        {
+          transform: 'translate3d(0, 0, 0)',
+          opacity: 1,
+        },
+      ],
+      { duration: DRAWER_MS, easing: DRAWER_EASING, fill: 'forwards' },
+    );
+  }, [visible, pinned]);
+
+  useEffect(() => {
+    if (pinned || !visible) return;
+
+    const panel = panelRef.current;
+    if (!panel) {
+      setVisible(false);
+      return;
+    }
+
+    animRef.current?.cancel();
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) {
+      setVisible(false);
+      return;
+    }
+
+    const slide = panel.offsetHeight || STORE_HEADER_COMPACT_HEIGHT;
+
+    const anim = panel.animate(
+      [
+        {
+          transform: 'translate3d(0, 0, 0)',
+          opacity: 1,
+        },
+        {
+          transform: `translate3d(0, -${slide}px, 0)`,
+          opacity: 0,
+        },
+      ],
+      { duration: DRAWER_MS, easing: DRAWER_EASING, fill: 'forwards' },
+    );
+
+    animRef.current = anim;
+    anim.onfinish = () => setVisible(false);
+
+    return () => {
+      anim.cancel();
+    };
+  }, [pinned, visible]);
+
+  const compactBar =
+    visible && portalReady ? (
+      <div
+        className="pointer-events-none fixed inset-x-0 top-0 z-[45] pt-[env(safe-area-inset-top,0px)]"
+        aria-hidden={!pinned}
+      >
+        <div className="pointer-events-none mx-auto w-full max-w-md lg:max-w-none">
+          <div
+            ref={panelRef}
+            role="banner"
             className={cn(
-              'size-1.5 rounded-full',
-              storeOpen ? 'bg-success' : 'bg-primary',
+              'pointer-events-auto border-b border-border/50 px-4 py-1.5',
+              STICKY_SURFACE_CLASS,
+              pinned ? 'pointer-events-auto' : 'pointer-events-none',
             )}
-            aria-hidden="true"
-          />
-          {storeOpen ? 'Aberto' : 'Fechado'}
-        </span>
+            style={{
+              transform: `translate3d(0, -${STORE_HEADER_COMPACT_HEIGHT}px, 0)`,
+              opacity: 0,
+            }}
+          >
+            <HeroContent
+              storeOpen={storeOpen}
+              hoursLabel={hoursLabel}
+              totalItems={totalItems}
+              expanded={false}
+            />
+          </div>
+        </div>
+      </div>
+    ) : null;
+
+  return (
+    <div>
+      <div
+        ref={heroRef}
+        className="border-b border-border/50 bg-background/90 px-4 pb-2.5 pt-3 backdrop-blur-md"
+      >
+        <HeroContent
+          storeOpen={storeOpen}
+          hoursLabel={hoursLabel}
+          totalItems={totalItems}
+          expanded
+        />
       </div>
 
-      <div className="flex shrink-0 items-center gap-1.5">
-        <HeaderAction href="/busca" label="Buscar no cardápio">
-          <Search className="size-4" aria-hidden="true" />
-        </HeaderAction>
-        <HeaderAction href="/loja" label="Informações da loja">
-          <Info className="size-4" aria-hidden="true" />
-        </HeaderAction>
-        <HeaderAction
-          href="/carrinho"
-          label={totalItems > 0 ? `Sacola, ${totalItems} itens` : 'Sacola'}
-        >
-          <ShoppingBag className="size-4" aria-hidden="true" />
-          {totalItems > 0 ? (
-            <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-background bg-primary px-1 text-[10px] font-bold tabular-nums text-primary-foreground">
-              {totalItems}
-            </span>
-          ) : null}
-        </HeaderAction>
-      </div>
+      {portalReady && compactBar ? createPortal(compactBar, document.body) : null}
     </div>
   );
 }
 
-function HeaderAction({
-  href,
-  label,
-  children,
+function HeroContent({
+  expanded,
+  storeOpen,
+  hoursLabel,
+  totalItems,
 }: {
-  href: string;
-  label: string;
-  children: React.ReactNode;
+  expanded: boolean;
+  storeOpen: boolean;
+  hoursLabel: string;
+  totalItems: number;
 }) {
   return (
-    <Link
-      href={href}
-      aria-label={label}
-      className="relative flex size-9 items-center justify-center rounded-full bg-card/55 text-foreground transition-transform duration-100 active:scale-95"
+    <div className="flex items-start justify-between gap-2.5">
+      <div className="flex min-w-0 items-start gap-2.5">
+        <div
+          className={cn(
+            'flex shrink-0 items-center justify-center bg-primary text-primary-foreground',
+            expanded ? 'size-11 rounded-xl' : 'size-8 rounded-lg',
+          )}
+        >
+          <span
+            className={cn(
+              'font-serif font-semibold',
+              expanded ? 'text-xl' : 'text-base',
+            )}
+          >
+            Z
+          </span>
+        </div>
+
+        <div className="min-w-0 pt-0.5">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <h1
+              className={cn(
+                'font-serif font-semibold leading-none text-foreground',
+                expanded ? 'text-lg' : 'text-sm',
+              )}
+            >
+              {expanded ? 'Zelo Confeitaria' : 'Zelo'}
+            </h1>
+            <StatusBadge storeOpen={storeOpen} compact={!expanded} />
+          </div>
+
+          <p
+            className={cn(
+              'flex items-center gap-1 overflow-hidden whitespace-nowrap text-muted-foreground',
+              expanded ? 'mt-1 text-xs' : 'mt-0.5 text-2xs',
+            )}
+          >
+            <MapPin
+              className={cn('shrink-0', expanded ? 'size-3' : 'size-2.5')}
+              aria-hidden="true"
+            />
+            <span className="shrink-0">Pereiro, CE</span>
+            {expanded ? (
+              <>
+                <span className="shrink-0 text-muted-foreground/50" aria-hidden="true">
+                  ·
+                </span>
+                <span className="truncate">Entrega e retirada</span>
+              </>
+            ) : null}
+          </p>
+
+          {expanded ? (
+            <div className="mt-1.5">
+              <p className="text-xs leading-snug text-muted-foreground">
+                Cookies, pudins e salgados artesanais
+              </p>
+              <p className="mt-1 flex items-center gap-1.5 overflow-hidden text-2xs font-medium whitespace-nowrap text-foreground/80">
+                <Clock className="size-3 shrink-0" aria-hidden="true" />
+                <span className="truncate">{hoursLabel}</span>
+              </p>
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <HeaderActions expanded={expanded} totalItems={totalItems} />
+    </div>
+  );
+}
+
+function StatusBadge({
+  storeOpen,
+  compact,
+}: {
+  storeOpen: boolean;
+  compact: boolean;
+}) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 rounded-full font-semibold',
+        storeOpen
+          ? 'bg-pistachio/60 text-pistachio-foreground'
+          : 'bg-destructive/15 text-destructive',
+        compact ? 'px-1.5 py-0.5 text-2xs' : 'px-1.5 py-0.5 text-2xs',
+      )}
     >
-      {children}
-    </Link>
+      <span
+        className={cn(
+          'rounded-full',
+          storeOpen ? 'bg-pistachio-foreground' : 'bg-destructive',
+          compact ? 'size-1' : 'size-1.5',
+        )}
+      />
+      {storeOpen ? 'Aberto agora' : 'Fechado'}
+    </span>
+  );
+}
+
+function HeaderActions({
+  expanded,
+  totalItems,
+}: {
+  expanded: boolean;
+  totalItems: number;
+}) {
+  const iconBtn = expanded ? 'size-9' : 'size-8';
+  const iconSize = expanded ? 'size-4' : 'size-3.5';
+
+  return (
+    <div className={cn('flex shrink-0 items-center gap-1.5', expanded && 'mt-0.5')}>
+      <Link
+        href="/loja"
+        aria-label="Informações da loja"
+        className={cn(
+          'flex items-center justify-center rounded-full border border-border bg-card text-foreground hover:bg-accent',
+          iconBtn,
+        )}
+      >
+        <Info className={iconSize} />
+      </Link>
+      <Link
+        href="/carrinho"
+        aria-label={totalItems > 0 ? `Sacola, ${totalItems} itens` : 'Sacola'}
+        className={cn(
+          'relative flex items-center justify-center rounded-full border border-border bg-card text-foreground hover:bg-accent',
+          iconBtn,
+        )}
+      >
+        <ShoppingBag className={iconSize} />
+        {totalItems > 0 ? (
+          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-2xs font-bold text-primary-foreground">
+            {totalItems}
+          </span>
+        ) : null}
+      </Link>
+    </div>
   );
 }
