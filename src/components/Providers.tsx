@@ -14,11 +14,7 @@ import MobileBottomNav from '@/components/MobileBottomNav';
 import AdminBottomNav from '@/components/admin/AdminBottomNav';
 import { PwaInstallProvider } from '@/contexts/PwaInstallContext';
 import LockMobileZoom from '@/components/LockMobileZoom';
-import {
-  mobileAppShellClass,
-  mobileAppShellScrollClass,
-  shouldHideCustomerMobileNav,
-} from '@/lib/layout';
+import { shouldHideCustomerMobileNav } from '@/lib/layout';
 import { cn } from '@/lib/utils';
 import { QueryProvider } from '@/providers/query-provider';
 
@@ -31,17 +27,16 @@ function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <DesktopNavigation />
-      <div className={cn('lg:min-h-dvh', mobileAppShellClass)}>
-        <div
-          data-app-scroll
-          className={cn(
-            mobileAppShellScrollClass,
-            !hideCustomerNav && 'max-lg:pb-[84px]',
-            isAdmin && !isAdminLogin && 'max-lg:pb-[84px] lg:pb-0',
-          )}
-        >
-          {children}
-        </div>
+      {/* Documento rola normalmente; padding só p/ o conteúdo não ficar sob
+          a navbar flutuante do mobile. */}
+      <div
+        className={cn(
+          'lg:min-h-dvh',
+          !hideCustomerNav && 'max-lg:pb-[84px]',
+          isAdmin && !isAdminLogin && 'max-lg:pb-[84px] lg:pb-0',
+        )}
+      >
+        {children}
       </div>
       <MobileBottomNav />
       <AdminBottomNav />

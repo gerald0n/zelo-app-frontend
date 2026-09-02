@@ -1,53 +1,12 @@
 /*
- * App shell mobile (2026-09-01, 2ª versão).
+ * Sem app shell no mobile: o documento rola normalmente (como qualquer site).
+ * A tentativa de prender o viewport (`h-[100svh]` + `overflow: hidden` no
+ * html/body + container único `[data-app-scroll]`) reintroduzia a "faixa
+ * morta" de ~100px no Chrome iOS aberto por link/QR, então foi removida.
  *
- * Objetivo: no mobile a experiência é de app — a tela toda é ocupada, o
- * documento NÃO rola (a barra de URL do navegador nunca some/aparece) e o
- * scroll fica num único container interno.
- *
- * A 1ª versão quebrava o layout no Chrome iOS ao abrir via QR Code porque
- * usava `position: fixed; inset: 0` + `html,body{height:100%;overflow:hidden}`.
- * No 1º paint o Chrome iOS resolvia essa altura pelo large viewport (barra
- * escondida) enquanto pintava o small viewport → faixa morta de ~100px.
- *
- * Esta versão evita os dois gatilhos:
- *  - sem `position: fixed` — o shell é um filho normal em fluxo (`flex`);
- *  - altura só em `svh` (small viewport height), que já é bem-definido no 1º
- *    paint e é estável (a barra de URL fica sempre visível, então svh == área
- *    visível o tempo todo). Nunca `%`, `vh` nem `dvh`.
- * O trecho `html,body{overflow:hidden}` vive em `globals.css` (@media mobile).
+ * O bloqueio de zoom continua (viewport + LockMobileZoom). O PWA instalado
+ * ganha tela cheia pelo `display: standalone` do manifest.
  */
-
-/** Shell: ocupa 100svh, empilha em coluna, não deixa nada vazar. */
-export const mobileAppShellClass =
-  'max-lg:flex max-lg:h-[100svh] max-lg:flex-col max-lg:overflow-hidden';
-
-/**
- * Único container que rola no mobile (marcado com `data-app-scroll`).
- * `[&>*]:min-h-full` faz a raiz de cada página preencher exatamente o shell
- * (as páginas usam `min-h-dvh`, que sobraria ~84px sob a navbar flutuante e
- * criaria um scroll fantasma). Desktop mantém `min-h-dvh`.
- */
-export const mobileAppShellScrollClass =
-  'max-lg:min-h-0 max-lg:flex-1 max-lg:overflow-y-auto max-lg:overscroll-y-contain max-lg:[&>*]:min-h-full';
-
-/**
- * Elemento que rola: `window` no desktop (scroll de documento normal),
- * o container `[data-app-scroll]` no mobile (shell). Reavaliar a cada uso —
- * o breakpoint pode mudar sem recriar o componente.
- */
-export function getAppScroller(): HTMLElement | Window {
-  if (typeof window === 'undefined') return window;
-  if (window.matchMedia('(min-width: 1024px)').matches) return window;
-  return document.querySelector<HTMLElement>('[data-app-scroll]') ?? window;
-}
-
-/** Posição de scroll do elemento resolvido por `getAppScroller`. */
-export function getAppScrollTop(scroller: HTMLElement | Window): number {
-  return scroller === window
-    ? window.scrollY
-    : (scroller as HTMLElement).scrollTop;
-}
 
 /** Barra de título das páginas internas (checkout, conta, busca). */
 export const pageHeaderBarClass =
