@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { httpStatusFor } from '@/lib/errors';
+import { jsonError } from '@/lib/http';
+import { clientIpFromRequest } from '@/lib/request-ip';
 import {
   createOrderBodySchema,
   createOrderFromCheckout,
 } from '@/modules/orders/create-order';
 import { listCustomerOrders } from '@/modules/orders/customer-orders';
+import { enforceIpRateLimit } from '@/modules/security/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +31,14 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const limited = await enforceIpRateLimit({
+    kind: 'order_create',
+    ip: clientIpFromRequest(request),
+    limit: 20,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!limited.ok) return jsonError(limited.error);
+
   const idempotencyKey = request.headers.get('Idempotency-Key')?.trim();
   if (!idempotencyKey || idempotencyKey.length < 8) {
     return NextResponse.json(

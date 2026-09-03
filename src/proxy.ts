@@ -7,11 +7,16 @@ import {
   hasSupabasePublicConfig,
   isProductionLike,
 } from '@/config/env';
+import { buildContentSecurityPolicy } from '@/config/security-headers';
 import { supabaseAuthCookieOptions } from '@/lib/supabase/cookie-options';
 
 /**
- * Redirect HTTP→HTTPS em produção e checagem otimista das rotas `/admin/*`.
- * A autorização completa continua no servidor via `requireAdmin()`.
+ * A cada request:
+ * 1. Redireciona HTTP→HTTPS em produção.
+ * 2. Emite a `Content-Security-Policy` com um `nonce` único (o Next injeta o
+ *    nonce nos próprios scripts, dispensando `script-src 'unsafe-inline'`).
+ * 3. Checagem otimista das rotas `/admin/*` — a autorização real continua no
+ *    servidor via `requireAdmin()`.
  */
 export default async function proxy(request: NextRequest) {
   if (isProductionLike()) {
@@ -23,16 +28,33 @@ export default async function proxy(request: NextRequest) {
     }
   }
 
+  const nonce = crypto.randomUUID().replace(/-/g, '');
+  const csp = buildContentSecurityPolicy(nonce);
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  // O Next lê este header do request para extrair o nonce durante o SSR.
+  requestHeaders.set('Content-Security-Policy', csp);
+
+  const nextWithHeaders = () =>
+    NextResponse.next({ request: { headers: requestHeaders } });
+
+  const withCsp = (response: NextResponse) => {
+    response.headers.set('Content-Security-Policy', csp);
+    return response;
+  };
+
   const { pathname } = request.nextUrl;
-  if (!pathname.startsWith('/admin') || pathname === '/admin/login') {
-    return NextResponse.next();
+  const needsAdminCheck =
+    pathname.startsWith('/admin') &&
+    pathname !== '/admin/login' &&
+    hasSupabasePublicConfig();
+
+  if (!needsAdminCheck) {
+    return withCsp(nextWithHeaders());
   }
 
-  if (!hasSupabasePublicConfig()) {
-    return NextResponse.next();
-  }
-
-  let response = NextResponse.next({ request });
+  let response = nextWithHeaders();
   const authCookies = supabaseAuthCookieOptions();
 
   const supabase = createServerClient<Database>(
@@ -48,7 +70,7 @@ export default async function proxy(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) => {
             request.cookies.set(name, value);
           });
-          response = NextResponse.next({ request });
+          response = nextWithHeaders();
           cookiesToSet.forEach(({ name, value, options }) => {
             response.cookies.set(name, value, { ...options, ...authCookies });
           });
@@ -63,14 +85,12 @@ export default async function proxy(request: NextRequest) {
 
   if (!user) {
     const loginUrl = new URL('/admin/login', request.url);
-    return NextResponse.redirect(loginUrl);
+    return withCsp(NextResponse.redirect(loginUrl));
   }
 
-  return response;
+  return withCsp(response);
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|icons/|sw.js).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icons/|sw.js).*)'],
 };

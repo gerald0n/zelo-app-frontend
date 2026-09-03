@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { httpStatusFor } from '@/lib/errors';
+import { jsonError } from '@/lib/http';
+import { clientIpFromRequest } from '@/lib/request-ip';
 import {
   createSavedAddress,
   listSavedAddresses,
 } from '@/modules/customers/addresses';
+import { enforceIpRateLimit } from '@/modules/security/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +38,14 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const limited = await enforceIpRateLimit({
+    kind: 'address_write',
+    ip: clientIpFromRequest(request),
+    limit: 40,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!limited.ok) return jsonError(limited.error);
+
   const json = await request.json().catch(() => null);
   const parsed = createSchema.safeParse(json);
   if (!parsed.success) {

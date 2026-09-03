@@ -1,5 +1,6 @@
 import 'server-only';
 
+import sharp from 'sharp';
 import { err, ok, type Result } from '@/lib/errors';
 import { productImagePublicUrl, slugify } from '@/lib/constants';
 import { logger } from '@/lib/logger';
@@ -579,20 +580,37 @@ export async function uploadProductImage(options: {
   const product = await getAdminProduct(options.productId);
   if (!product.ok) return product;
 
+  // Não confia no Content-Type do cliente: re-encoda a imagem no servidor.
+  // Se não for um bitmap válido (SVG, HTML, payload forjado), o sharp lança e
+  // o upload é rejeitado. O re-encode também descarta metadata (EXIF/GPS).
+  const source = Buffer.from(await options.file.arrayBuffer());
+  let normalized: Buffer;
+  try {
+    const pipeline = sharp(source, { failOn: 'error' }).rotate();
+    const meta = await pipeline.metadata();
+    if (!meta.width || !meta.height) {
+      return err('VALIDATION_ERROR', 'Arquivo de imagem inválido.');
+    }
+    normalized = await pipeline
+      .resize({
+        width: 2000,
+        height: 2000,
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .webp({ quality: 82 })
+      .toBuffer();
+  } catch {
+    return err('VALIDATION_ERROR', 'Arquivo de imagem inválido.');
+  }
+
   const admin = createAdminSupabaseClient();
-  const extension =
-    options.file.type === 'image/png'
-      ? 'png'
-      : options.file.type === 'image/webp'
-        ? 'webp'
-        : 'jpg';
-  const storagePath = `${options.productId}/${crypto.randomUUID()}.${extension}`;
-  const buffer = Buffer.from(await options.file.arrayBuffer());
+  const storagePath = `${options.productId}/${crypto.randomUUID()}.webp`;
 
   const { error: uploadError } = await admin.storage
     .from('product-images')
-    .upload(storagePath, buffer, {
-      contentType: options.file.type,
+    .upload(storagePath, normalized, {
+      contentType: 'image/webp',
       upsert: false,
     });
 

@@ -1,0 +1,27 @@
+version: 2
+updates:
+  # Dependências npm/pnpm — atualizações de segurança + agrupadas por semana.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    groups:
+      dev-dependencies:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+      production-patches:
+        dependency-type: production
+        update-types:
+          - patch
+
+  # Actions do GitHub usadas no CI.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday

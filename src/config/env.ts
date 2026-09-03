@@ -33,6 +33,7 @@ const envSchema = z.object({
   MERCADOPAGO_ACCESS_TOKEN: z.string().min(1).optional().or(z.literal('')),
   MERCADOPAGO_WEBHOOK_SECRET: z.string().min(1).optional().or(z.literal('')),
   CRON_SECRET: z.string().min(1).optional().or(z.literal('')),
+  OTP_HASH_SECRET: z.string().min(16).optional().or(z.literal('')),
 });
 
 export type AppEnv = z.infer<typeof appEnvSchema>;
@@ -63,6 +64,7 @@ const parsed = envSchema.safeParse({
   MERCADOPAGO_ACCESS_TOKEN: process.env.MERCADOPAGO_ACCESS_TOKEN,
   MERCADOPAGO_WEBHOOK_SECRET: process.env.MERCADOPAGO_WEBHOOK_SECRET,
   CRON_SECRET: process.env.CRON_SECRET,
+  OTP_HASH_SECRET: process.env.OTP_HASH_SECRET,
 });
 
 if (!parsed.success) {
@@ -124,6 +126,11 @@ function assertProductionEnv(): void {
   // Protege o cron de reconciliação de pagamentos Pix.
   if (!env.CRON_SECRET) {
     missing.push('CRON_SECRET (cron de reconciliação Pix)');
+  }
+
+  // Segredo dedicado para o hash dos códigos OTP (separação de chaves).
+  if (!env.OTP_HASH_SECRET) {
+    missing.push('OTP_HASH_SECRET (hash dos códigos OTP)');
   }
 
   if (missing.length > 0) {
@@ -288,6 +295,15 @@ export function hasMercadoPagoConfig(): boolean {
 /** Segredo compartilhado com o Supabase Cron (header Authorization: Bearer). */
 export function getCronSecret(): string | undefined {
   return env.CRON_SECRET || undefined;
+}
+
+/**
+ * Segredo dedicado ao HMAC dos códigos OTP. Fora de produção, cai numa
+ * derivação da service role key para não travar o setup local; em produção o
+ * boot exige `OTP_HASH_SECRET` (ver `assertProductionEnv`).
+ */
+export function getOtpHashSecret(): string {
+  return env.OTP_HASH_SECRET || `otp:${getSupabaseServiceRoleKey().slice(0, 32)}`;
 }
 
 export { env };

@@ -30,6 +30,7 @@ function lanDevOrigins(): string[] {
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: lanDevOrigins(),
+  poweredByHeader: false,
   async headers() {
     return [
       {

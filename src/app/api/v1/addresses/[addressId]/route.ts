@@ -1,14 +1,26 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { httpStatusFor } from '@/lib/errors';
+import { jsonError } from '@/lib/http';
+import { clientIpFromRequest } from '@/lib/request-ip';
 import {
   archiveSavedAddress,
   updateSavedAddress,
 } from '@/modules/customers/addresses';
+import { enforceIpRateLimit } from '@/modules/security/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
 type RouteContext = { params: Promise<{ addressId: string }> };
+
+function limitAddressWrite(request: Request) {
+  return enforceIpRateLimit({
+    kind: 'address_write',
+    ip: clientIpFromRequest(request),
+    limit: 40,
+    windowMs: 10 * 60 * 1000,
+  });
+}
 
 const updateSchema = z.object({
   label: z.string().trim().max(40).optional(),
@@ -26,6 +38,9 @@ const updateSchema = z.object({
 });
 
 export async function PATCH(request: Request, context: RouteContext) {
+  const limited = await limitAddressWrite(request);
+  if (!limited.ok) return jsonError(limited.error);
+
   const { addressId } = await context.params;
   const json = await request.json().catch(() => null);
   const parsed = updateSchema.safeParse(json);
@@ -52,7 +67,10 @@ export async function PATCH(request: Request, context: RouteContext) {
   return NextResponse.json({ address: result.data });
 }
 
-export async function DELETE(_request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
+  const limited = await limitAddressWrite(request);
+  if (!limited.ok) return jsonError(limited.error);
+
   const { addressId } = await context.params;
   const result = await archiveSavedAddress(addressId);
   if (!result.ok) {
