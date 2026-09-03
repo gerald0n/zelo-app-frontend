@@ -285,7 +285,7 @@ export function hasMercadoPagoConfig(): boolean {
   return Boolean(getMercadoPagoAccessToken());
 }
 
-/** Segredo compartilhado com o Vercel Cron (header Authorization: Bearer). */
+/** Segredo compartilhado com o Supabase Cron (header Authorization: Bearer). */
 export function getCronSecret(): string | undefined {
   return env.CRON_SECRET || undefined;
 }

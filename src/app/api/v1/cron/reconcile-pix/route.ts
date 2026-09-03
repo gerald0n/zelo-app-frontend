@@ -7,9 +7,10 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 /**
- * Reconciliação de pagamentos Pix pendentes. Roda pelo Vercel Cron
- * (ver `vercel.json`), que envia `Authorization: Bearer <CRON_SECRET>`.
- * Confirma pedidos pagos cujo webhook se perdeu e falha os Pix expirados.
+ * Reconciliação de pagamentos Pix pendentes. Agendada pelo Supabase Cron
+ * (`pg_cron` + `pg_net`, ver `supabase/cron/reconcile-pix.sql`), que envia
+ * `Authorization: Bearer <CRON_SECRET>`. Confirma pedidos pagos cujo webhook
+ * se perdeu e falha os Pix expirados.
  */
 async function handle(request: Request) {
   const secret = getCronSecret();
