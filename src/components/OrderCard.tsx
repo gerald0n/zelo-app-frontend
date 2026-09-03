@@ -6,6 +6,7 @@ import { formatCatalogPrice } from '@/modules/catalog/types';
 import {
   statusLabel,
   STATUS_COLORS,
+  isAwaitingPixPayment,
   type CustomerOrderListItem,
 } from '@/modules/orders/types';
 import { cn } from '@/lib/cn';
@@ -27,6 +28,7 @@ export default function OrderCard({
     .map((i) => `${i.quantity}× ${i.name}`)
     .join(', ');
   const isDone = order.status === 'delivered' || order.status === 'cancelled';
+  const awaitingPayment = isAwaitingPixPayment(order);
 
   const content = (
     <>
@@ -35,15 +37,22 @@ export default function OrderCard({
         <span
           className={cn(
             'rounded-md px-2 py-0.5 text-2xs font-semibold',
-            STATUS_COLORS[order.status],
+            awaitingPayment
+              ? 'bg-tone-warning text-tone-warning-foreground'
+              : STATUS_COLORS[order.status],
           )}
         >
-          {statusLabel(order.status)}
+          {awaitingPayment ? 'Aguardando pagamento' : statusLabel(order.status)}
         </span>
       </div>
       <p className="line-clamp-2 text-xs leading-4 text-muted-foreground">
         {itemNames}
       </p>
+      {awaitingPayment ? (
+        <p className="text-2xs font-medium text-tone-warning-foreground">
+          Toque para finalizar o pagamento Pix
+        </p>
+      ) : null}
       <div className="mt-0.5 flex items-center justify-between">
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           {order.deliveryMethod === 'delivery' ? (

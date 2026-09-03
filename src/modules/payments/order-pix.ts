@@ -116,6 +116,7 @@ type OwnedOrderRow = {
   status: string;
   payment_method: string;
   payment_status: string;
+  mp_order_id: string | null;
   pix_attempt: number;
   pix_qr_code: string | null;
   pix_qr_code_base64: string | null;
@@ -124,7 +125,7 @@ type OwnedOrderRow = {
 };
 
 const OWNED_ORDER_SELECT =
-  'id, order_number, total_cents, status, payment_method, payment_status, pix_attempt, pix_qr_code, pix_qr_code_base64, pix_ticket_url, pix_expires_at';
+  'id, order_number, total_cents, status, payment_method, payment_status, mp_order_id, pix_attempt, pix_qr_code, pix_qr_code_base64, pix_ticket_url, pix_expires_at';
 
 /** Carrega um pedido garantindo que ele pertence ao cliente autenticado. */
 async function loadOwnedOrder(orderId: string): Promise<Result<OwnedOrderRow>> {
@@ -170,15 +171,29 @@ function viewFromRow(row: OwnedOrderRow): OrderPixView {
   };
 }
 
+/**
+ * Só aceitamos operar a cobrança Pix de pedidos do fluxo dinâmico (Orders API),
+ * que têm `mp_order_id`. Pedidos Pix antigos (fluxo manual: copia e cola +
+ * WhatsApp) nunca tiveram cobrança no Mercado Pago e não devem gerar uma agora.
+ */
+function ensureDynamicPixOrder(row: OwnedOrderRow): Result<null> {
+  if (row.payment_method !== 'pix') {
+    return err('VALIDATION_ERROR', 'Este pedido não é Pix.');
+  }
+  if (!row.mp_order_id) {
+    return err('VALIDATION_ERROR', 'Este pedido não tem cobrança Pix.');
+  }
+  return ok(null);
+}
+
 /** Estado atual da cobrança Pix de um pedido (para a tela de pagamento). */
 export async function getOrderPixView(
   orderId: string,
 ): Promise<Result<OrderPixView>> {
   const owned = await loadOwnedOrder(orderId);
   if (!owned.ok) return owned;
-  if (owned.data.payment_method !== 'pix') {
-    return err('VALIDATION_ERROR', 'Este pedido não é Pix.');
-  }
+  const guard = ensureDynamicPixOrder(owned.data);
+  if (!guard.ok) return guard;
   return ok(viewFromRow(owned.data));
 }
 
@@ -193,9 +208,8 @@ export async function regenerateOrderPixCharge(
   if (!owned.ok) return owned;
   const row = owned.data;
 
-  if (row.payment_method !== 'pix') {
-    return err('VALIDATION_ERROR', 'Este pedido não é Pix.');
-  }
+  const guard = ensureDynamicPixOrder(row);
+  if (!guard.ok) return guard;
   if (row.payment_status === 'confirmed') {
     return ok(viewFromRow(row));
   }

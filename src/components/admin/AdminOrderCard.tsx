@@ -3,7 +3,11 @@
 import Link from 'next/link';
 import { Bike, ShoppingBag } from 'lucide-react';
 import { formatCatalogPrice } from '@/modules/catalog/types';
-import { statusLabel, STATUS_COLORS } from '@/modules/orders/types';
+import {
+  statusLabel,
+  STATUS_COLORS,
+  isAwaitingPixPayment,
+} from '@/modules/orders/types';
 import type { AdminOrderListItem } from '@/modules/admin/types';
 import { useNow } from '@/hooks/useNow';
 import { cn } from '@/lib/cn';
@@ -16,6 +20,7 @@ export default function AdminOrderCard({ order }: Props) {
   const createdAt = new Date(order.createdAt).getTime();
   const now = useNow(createdAt + 60_000);
   const age = Math.max(1, Math.round((now - createdAt) / 60000));
+  const awaitingPayment = isAwaitingPixPayment(order);
 
   return (
     <Link
@@ -45,10 +50,12 @@ export default function AdminOrderCard({ order }: Props) {
         <span
           className={cn(
             'rounded-full px-2 py-0.5 text-2xs font-semibold',
-            STATUS_COLORS[order.status],
+            awaitingPayment
+              ? 'bg-tone-warning text-tone-warning-foreground'
+              : STATUS_COLORS[order.status],
           )}
         >
-          {statusLabel(order.status)}
+          {awaitingPayment ? 'Aguardando Pix' : statusLabel(order.status)}
         </span>
         <div className="flex items-center gap-1 text-2xs text-muted-foreground">
           {order.deliveryMethod === 'delivery' ? (

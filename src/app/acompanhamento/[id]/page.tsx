@@ -27,6 +27,7 @@ import { useShopExperience } from '@/contexts/ShopExperienceContext';
 import {
   statusLabel,
   STATUS_COPY,
+  isAwaitingPixPayment,
   type CustomerOrder,
   type OrderStatus,
 } from '@/modules/orders/types';
@@ -203,6 +204,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
   const steps =
     order.deliveryMethod === 'pickup' ? PICKUP_STEPS : DELIVERY_STEPS;
   const isCancelled = order.status === 'cancelled';
+  const awaitingPayment = isAwaitingPixPayment(order);
   const currentStep = isCancelled
     ? -1
     : steps.findIndex((s) => s.id === order.status);
@@ -231,8 +233,41 @@ function AcompanhamentoContent({ id }: { id: string }) {
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 py-3 pb-6 lg:grid lg:grid-cols-3 lg:items-start lg:gap-5 lg:px-0">
         <div className="flex flex-col gap-3 lg:col-span-2">
+          {awaitingPayment ? (
+            <section
+              aria-live="polite"
+              className="rounded-2xl border border-tone-warning-foreground/25 bg-tone-warning/50 px-4 py-5 text-center"
+            >
+              <p className="font-serif text-xl font-semibold text-tone-warning-foreground">
+                Aguardando pagamento
+              </p>
+              <p className="mx-auto mt-2 max-w-[32ch] text-sm leading-relaxed text-tone-warning-foreground/90">
+                Este pedido só entra na fila da confeitaria depois que o Pix for
+                confirmado. Assim que o pagamento cair, ele avança sozinho.
+              </p>
+              {order.scheduledFor ? (
+                <p className="mt-2 text-sm text-tone-warning-foreground/80">
+                  Agendado para:{' '}
+                  {new Date(order.scheduledFor).toLocaleDateString('pt-BR', {
+                    weekday: 'short',
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              ) : null}
+              <Link
+                href={`/checkout/pix/${order.id}`}
+                className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-transform duration-100 active:scale-[0.99]"
+              >
+                Finalizar pagamento Pix
+              </Link>
+            </section>
+          ) : null}
           <section
             aria-live="polite"
+            hidden={awaitingPayment}
             className={cn(
               'relative overflow-hidden rounded-2xl border px-4 py-5 text-center',
               isCancelled
@@ -302,7 +337,7 @@ function AcompanhamentoContent({ id }: { id: string }) {
             ) : null}
           </section>
 
-          {!isCancelled ? (
+          {!isCancelled && !awaitingPayment ? (
             <section
               aria-label="Andamento do pedido"
               className="rounded-xl border border-border bg-card p-3.5"

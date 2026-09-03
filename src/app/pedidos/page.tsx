@@ -11,8 +11,17 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useCart, type CartItem } from '@/modules/carts';
 import { setAuthReturnTo } from '@/modules/auth/auth-return';
 import { useShopExperience } from '@/contexts/ShopExperienceContext';
-import { type CustomerOrderListItem } from '@/modules/orders/types';
+import {
+  isAwaitingPixPayment,
+  type CustomerOrderListItem,
+} from '@/modules/orders/types';
 import { cn } from '@/lib/cn';
+
+function orderHref(order: CustomerOrderListItem): string {
+  return isAwaitingPixPayment(order)
+    ? `/checkout/pix/${order.id}`
+    : `/acompanhamento/${order.id}`;
+}
 
 type Tab = 'active' | 'history';
 
@@ -222,11 +231,7 @@ export default function PedidosPage() {
         ) : tab === 'active' ? (
           orders.length > 0 ? (
             orders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                href={`/acompanhamento/${order.id}`}
-              />
+              <OrderCard key={order.id} order={order} href={orderHref(order)} />
             ))
           ) : (
             <div className="flex flex-col items-center gap-2 px-8 pt-10 text-center">
@@ -250,7 +255,7 @@ export default function PedidosPage() {
             <OrderCard
               key={order.id}
               order={order}
-              href={`/acompanhamento/${order.id}`}
+              href={orderHref(order)}
               onReorder={() => void handleReorder(order.id)}
               reordering={reorderingId === order.id}
             />
