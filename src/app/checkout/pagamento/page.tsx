@@ -3,17 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  ArrowLeft,
-  QrCode,
-  Banknote,
-  CreditCard,
-  Check,
-  Info,
-  Copy,
-  CheckCircle2,
-  MessageCircle,
-} from 'lucide-react';
+import { ArrowLeft, QrCode, Banknote, CreditCard, Check } from 'lucide-react';
 import { useCheckout, type PaymentMethod } from '@/contexts/CheckoutContext';
 import { useCart } from '@/contexts/CartContext';
 import { Input } from '@/components/ui/input';
@@ -28,7 +18,6 @@ import {
   pageBodyPadClass,
   pageCtaBaseClass,
 } from '@/lib/layout';
-import { useAppDialog } from '@/contexts/AppDialogContext';
 
 const METHODS: {
   id: PaymentMethod;
@@ -40,7 +29,7 @@ const METHODS: {
     id: 'pix',
     label: 'Pix',
     icon: QrCode,
-    desc: 'Pague via Pix e envie o comprovante pelo WhatsApp.',
+    desc: 'QR Code na próxima etapa; a confirmação é automática.',
   },
   {
     id: 'cash',
@@ -57,8 +46,6 @@ const METHODS: {
 ];
 
 type CheckoutOptionsStore = {
-  pixCopyPaste?: string | null;
-  whatsappE164?: string;
   acceptsPayments?: {
     pix: boolean;
     cash: boolean;
@@ -70,11 +57,7 @@ export default function PagamentoPage() {
   const router = useRouter();
   const { checkout, setPaymentMethod, setChangeFor } = useCheckout();
   const { subtotal } = useCart();
-  const { alert } = useAppDialog();
-  const [pixCopied, setPixCopied] = useState(false);
   const [needsChange, setNeedsChange] = useState<boolean | null>(null);
-  const [pixCopyPaste, setPixCopyPaste] = useState('');
-  const [whatsappE164, setWhatsappE164] = useState('');
   const [acceptsPayments, setAcceptsPayments] = useState({
     pix: true,
     cash: true,
@@ -89,12 +72,6 @@ export default function PagamentoPage() {
         const json = await response.json();
         if (cancelled || !response.ok) return;
         const store = json?.store as CheckoutOptionsStore | undefined;
-        if (store?.pixCopyPaste) {
-          setPixCopyPaste(store.pixCopyPaste);
-        }
-        if (store?.whatsappE164) {
-          setWhatsappE164(store.whatsappE164);
-        }
         if (store?.acceptsPayments) {
           setAcceptsPayments(store.acceptsPayments);
           const enabled = METHODS.filter(
@@ -150,36 +127,9 @@ export default function PagamentoPage() {
         checkout.changeFor.trim().length > 0 &&
         !changeInvalid));
 
-  const whatsappHref = whatsappE164
-    ? `https://wa.me/${whatsappE164.replace(/\D/g, '')}?text=${encodeURIComponent(
-        `Olá! Segue o comprovante do pagamento Pix (${formatCatalogPrice(total)}).`,
-      )}`
-    : null;
-
-  const handleCopyPix = async () => {
-    if (!pixCopyPaste) return;
-    try {
-      await navigator.clipboard.writeText(pixCopyPaste);
-    } catch {
-      await alert({
-        title: 'Código Pix copia e cola',
-        description: 'Copie manualmente o código abaixo:',
-        body: pixCopyPaste,
-        confirmLabel: 'Fechar',
-      });
-    }
-    setPixCopied(true);
-    setTimeout(() => setPixCopied(false), 3000);
-  };
-
   return (
     <div className="flex min-h-dvh min-w-0 flex-col bg-background">
-      <header
-        className={cn(
-          pageHeaderBarClass,
-          checkoutDesktopContainerClass,
-        )}
-      >
+      <header className={cn(pageHeaderBarClass, checkoutDesktopContainerClass)}>
         <Link href="/checkout/recebimento" aria-label="Voltar ao recebimento">
           <ArrowLeft className="size-6" />
         </Link>
@@ -196,7 +146,11 @@ export default function PagamentoPage() {
 
       <div>
         <div
-          className={cn('space-y-3', pageBodyPadClass, checkoutDesktopContainerClass)}
+          className={cn(
+            'space-y-3',
+            pageBodyPadClass,
+            checkoutDesktopContainerClass,
+          )}
         >
           <div className="flex items-center justify-between rounded-xl border border-border bg-card p-3">
             <span className="text-sm text-muted-foreground">Total a pagar</span>
@@ -273,54 +227,13 @@ export default function PagamentoPage() {
           })}
 
           {activePaymentMethod === 'pix' && acceptsPayments.pix ? (
-            <div className="space-y-2 rounded-xl border border-border bg-card p-3">
-              <div className="flex items-center gap-2">
-                <Info className="size-[18px] text-primary" />
-                <p className="text-sm font-semibold">Como pagar com Pix</p>
-              </div>
+            <div className="flex items-start gap-2.5 rounded-xl border border-border bg-card p-3">
+              <QrCode className="mt-0.5 size-[18px] shrink-0 text-primary" />
               <p className="text-sm leading-5 text-muted-foreground">
-                1. Copie o código abaixo
-                <br />
-                2. Abra seu banco e cole em &quot;Pix copia e cola&quot;
-                <br />
-                3. Confirme o pagamento de {formatCatalogPrice(total)}
-                <br />
-                4. Envie o comprovante pelo WhatsApp da loja
+                Ao continuar, você recebe um QR Code (e o código copia e cola)
+                para pagar de qualquer banco. O pedido é confirmado
+                automaticamente assim que o Pix cai — sem enviar comprovante.
               </p>
-              <button
-                type="button"
-                onClick={handleCopyPix}
-                disabled={!pixCopyPaste}
-                className={cn(
-                  'flex w-full items-center justify-center gap-2 rounded-md py-3 text-sm font-semibold',
-                  pixCopied
-                    ? 'bg-success text-success-foreground'
-                    : 'bg-primary text-primary-foreground',
-                  !pixCopyPaste && 'opacity-50',
-                )}
-              >
-                {pixCopied ? (
-                  <CheckCircle2 className="size-[18px]" />
-                ) : (
-                  <Copy className="size-[18px]" />
-                )}
-                {pixCopied
-                  ? 'Código copiado!'
-                  : pixCopyPaste
-                    ? 'Copiar código Pix'
-                    : 'Pix indisponível'}
-              </button>
-              {whatsappHref ? (
-                <a
-                  href={whatsappHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex w-full items-center justify-center gap-2 rounded-md border border-border bg-background py-3 text-sm font-semibold text-foreground"
-                >
-                  <MessageCircle className="size-[18px] text-primary" />
-                  Enviar comprovante no WhatsApp
-                </a>
-              ) : null}
             </div>
           ) : null}
 

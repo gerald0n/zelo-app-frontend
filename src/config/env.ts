@@ -30,6 +30,9 @@ const envSchema = z.object({
   VAPID_SUBJECT: z.string().min(1).optional().or(z.literal('')),
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().min(1).optional().or(z.literal('')),
   TURNSTILE_SECRET_KEY: z.string().min(1).optional().or(z.literal('')),
+  MERCADOPAGO_ACCESS_TOKEN: z.string().min(1).optional().or(z.literal('')),
+  MERCADOPAGO_WEBHOOK_SECRET: z.string().min(1).optional().or(z.literal('')),
+  CRON_SECRET: z.string().min(1).optional().or(z.literal('')),
 });
 
 export type AppEnv = z.infer<typeof appEnvSchema>;
@@ -57,6 +60,9 @@ const parsed = envSchema.safeParse({
   VAPID_SUBJECT: process.env.VAPID_SUBJECT,
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
   TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
+  MERCADOPAGO_ACCESS_TOKEN: process.env.MERCADOPAGO_ACCESS_TOKEN,
+  MERCADOPAGO_WEBHOOK_SECRET: process.env.MERCADOPAGO_WEBHOOK_SECRET,
+  CRON_SECRET: process.env.CRON_SECRET,
 });
 
 if (!parsed.success) {
@@ -105,6 +111,19 @@ function assertProductionEnv(): void {
     missing.push(
       'Cloudflare Turnstile (NEXT_PUBLIC_TURNSTILE_SITE_KEY + TURNSTILE_SECRET_KEY)',
     );
+  }
+
+  // Pix é a única forma de pagamento com confirmação automática: sem estas
+  // chaves o checkout Pix não consegue gerar cobrança nem receber o webhook.
+  if (!env.MERCADOPAGO_ACCESS_TOKEN || !env.MERCADOPAGO_WEBHOOK_SECRET) {
+    missing.push(
+      'Mercado Pago Pix (MERCADOPAGO_ACCESS_TOKEN + MERCADOPAGO_WEBHOOK_SECRET)',
+    );
+  }
+
+  // Protege o cron de reconciliação de pagamentos Pix.
+  if (!env.CRON_SECRET) {
+    missing.push('CRON_SECRET (cron de reconciliação Pix)');
   }
 
   if (missing.length > 0) {
@@ -250,6 +269,25 @@ export function getTurnstileSecretKey(): string | undefined {
 
 export function hasTurnstileConfig(): boolean {
   return Boolean(getTurnstileSiteKey() && getTurnstileSecretKey());
+}
+
+/** Access token da conta PJ do Mercado Pago (somente servidor). */
+export function getMercadoPagoAccessToken(): string | undefined {
+  return env.MERCADOPAGO_ACCESS_TOKEN || undefined;
+}
+
+/** Segredo do webhook do Mercado Pago para validar o header `x-signature`. */
+export function getMercadoPagoWebhookSecret(): string | undefined {
+  return env.MERCADOPAGO_WEBHOOK_SECRET || undefined;
+}
+
+export function hasMercadoPagoConfig(): boolean {
+  return Boolean(getMercadoPagoAccessToken());
+}
+
+/** Segredo compartilhado com o Supabase Cron (header Authorization: Bearer). */
+export function getCronSecret(): string | undefined {
+  return env.CRON_SECRET || undefined;
 }
 
 export { env };

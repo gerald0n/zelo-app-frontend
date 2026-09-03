@@ -111,7 +111,6 @@ export function mapStore(
     name: row.name,
     phoneE164: row.phone_e164,
     whatsappE164: row.whatsapp_e164,
-    pixCopyPaste: row.pix_copy_paste,
     addressLine: row.address_line,
     city: row.city,
     state: row.state,

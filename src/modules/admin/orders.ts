@@ -6,18 +6,18 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/modules/admin/auth';
 import { notifyOrderStatusChange } from '@/modules/notifications/send';
-import {
-  canCustomerCancel,
-  type OrderStatus,
-} from '@/modules/orders/types';
+import { refundOrderPixPayment } from '@/modules/payments';
+import { canCustomerCancel, type OrderStatus } from '@/modules/orders/types';
 import type {
   AdminOrderDetail,
   AdminOrderListItem,
 } from '@/modules/admin/types';
 
-export type { AdminOrderDetail, AdminOrderListItem } from '@/modules/admin/types';
+export type {
+  AdminOrderDetail,
+  AdminOrderListItem,
+} from '@/modules/admin/types';
 export { nextAdminStatus } from '@/modules/admin/types';
-
 
 const LIST_SELECT = `
   id,
@@ -315,18 +315,49 @@ export async function transitionAdminOrderStatus(options: {
   return order;
 }
 
+export type CancelAdminOrderResult = {
+  order: AdminOrderDetail;
+  /** Presente quando o pedido era um Pix pago: estado do estorno automático. */
+  refund?: 'done' | 'already' | 'failed';
+};
+
 export async function cancelAdminOrder(options: {
   orderId: string;
   reason: string;
-}): Promise<Result<AdminOrderDetail>> {
+}): Promise<Result<CancelAdminOrderResult>> {
   const reason = options.reason.trim();
   if (reason.length < 3) {
-    return err('VALIDATION_ERROR', 'Informe um motivo com pelo menos 3 caracteres.');
+    return err(
+      'VALIDATION_ERROR',
+      'Informe um motivo com pelo menos 3 caracteres.',
+    );
   }
 
-  return transitionAdminOrderStatus({
+  const cancelled = await transitionAdminOrderStatus({
     orderId: options.orderId,
     newStatus: 'cancelled',
     reason,
   });
+  if (!cancelled.ok) return cancelled;
+
+  const order = cancelled.data;
+
+  // Pix já pago → estorna automaticamente no Mercado Pago. O pedido já está
+  // cancelado; uma falha no estorno não desfaz o cancelamento.
+  if (order.paymentMethod === 'pix' && order.paymentStatus === 'confirmed') {
+    const refund = await refundOrderPixPayment(options.orderId);
+    if (!refund.ok) {
+      logger.error('Cancelamento ok, mas o estorno Pix falhou', {
+        orderId: options.orderId,
+        code: refund.error.code,
+      });
+      return ok({ order, refund: 'failed' });
+    }
+    return ok({
+      order,
+      refund: refund.data.alreadyRefunded ? 'already' : 'done',
+    });
+  }
+
+  return ok({ order });
 }

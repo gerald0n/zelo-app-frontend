@@ -55,7 +55,6 @@ export type CatalogStore = {
   name: string;
   phoneE164: string;
   whatsappE164: string;
-  pixCopyPaste: string | null;
   addressLine: string;
   city: string;
   state: string;

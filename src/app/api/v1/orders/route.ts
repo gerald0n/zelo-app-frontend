@@ -69,7 +69,11 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json(
-    { order: result.data.order, replayed: result.data.replayed },
+    {
+      order: result.data.order,
+      ...(result.data.pix ? { pix: result.data.pix } : {}),
+      replayed: result.data.replayed,
+    },
     { status: result.data.httpStatus },
   );
 }

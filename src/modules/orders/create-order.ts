@@ -24,6 +24,7 @@ import {
   resolveCustomerForCheckout,
   saveIdempotentResponse,
 } from '@/modules/orders/customer';
+import { createOrderPixCharge } from '@/modules/payments';
 import type { CatalogStore } from '@/modules/catalog/types';
 
 const orderItemSchema = z.object({
@@ -75,6 +76,13 @@ export type CreatedOrderSummary = {
   deliveryFeeCents: number;
   subtotalCents: number;
   routeDistanceMeters: number | null;
+};
+
+export type CreatedOrderPix = {
+  qrCode: string;
+  qrCodeBase64: string;
+  ticketUrl: string | null;
+  expiresAt: string;
 };
 
 function mapRpcError(message: string): AppError {
@@ -356,7 +364,12 @@ export async function createOrderFromCheckout(options: {
   body: CreateOrderBody;
   idempotencyKey: string;
 }): Promise<
-  Result<{ order: CreatedOrderSummary; replayed: boolean; httpStatus: number }>
+  Result<{
+    order: CreatedOrderSummary;
+    pix?: CreatedOrderPix;
+    replayed: boolean;
+    httpStatus: number;
+  }>
 > {
   const identityResult = await resolveCustomerForCheckout();
   if (!identityResult.ok) return identityResult;
@@ -411,9 +424,13 @@ export async function createOrderFromCheckout(options: {
         'Idempotency-Key já usada com outro payload.',
       );
     }
+    const storedBody = existing.data.responseBody as {
+      order: CreatedOrderSummary;
+      pix?: CreatedOrderPix;
+    };
     return ok({
-      order: (existing.data.responseBody as { order: CreatedOrderSummary })
-        .order,
+      order: storedBody.order,
+      pix: storedBody.pix,
       replayed: true,
       httpStatus: existing.data.responseStatus,
     });
@@ -425,6 +442,26 @@ export async function createOrderFromCheckout(options: {
   const summary = await fetchOrderSummary(created.data);
   if (!summary.ok) return summary;
 
+  let pix: CreatedOrderPix | undefined;
+  if (options.body.paymentMethod === 'pix') {
+    const charge = await createOrderPixCharge({
+      orderId: summary.data.id,
+      orderNumber: summary.data.orderNumber,
+      totalCents: summary.data.totalCents,
+      customer: { id: identity.id },
+    });
+    if (!charge.ok) {
+      // Sem cobrança não há como pagar: cancela o pedido recém-criado.
+      const admin = createAdminSupabaseClient();
+      await admin.rpc('fail_order_pix_payment', {
+        p_order_id: summary.data.id,
+        p_reason: 'Falha ao gerar a cobrança Pix',
+      });
+      return charge;
+    }
+    pix = charge.data;
+  }
+
   const cleared = await clearCustomerCart(identity.id);
   if (!cleared.ok) {
     logger.error('Pedido criado sem limpar carrinho persistido', {
@@ -432,7 +469,7 @@ export async function createOrderFromCheckout(options: {
     });
   }
 
-  const responseBody = { order: summary.data };
+  const responseBody = { order: summary.data, ...(pix ? { pix } : {}) };
   const saved = await saveIdempotentResponse({
     scope: 'create_order',
     key: options.idempotencyKey,
@@ -450,6 +487,7 @@ export async function createOrderFromCheckout(options: {
 
   return ok({
     order: summary.data,
+    pix,
     replayed: false,
     httpStatus: 201,
   });
