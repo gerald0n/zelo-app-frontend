@@ -22,7 +22,7 @@
     "gen:icons": "node scripts/prepare-brand-seal.mjs && node scripts/generate-pwa-icons.mjs"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.7.1",
+    "@hookform/resolvers": "^5.9.1",
     "@sentry/nextjs": "^10.69.0",
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.112.4",
