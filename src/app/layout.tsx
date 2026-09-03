@@ -32,15 +32,36 @@ const geistMono = Geist_Mono({
  */
 export const dynamic = 'force-dynamic';
 
+/** Domínio de produção — usado como base para URLs absolutas do metadata. */
+const SITE_URL = 'https://zeloconfeitaria.com.br';
+const SITE_TITLE = 'Zelo Confeitaria — Doces artesanais em Pereiro, CE';
+const SITE_DESCRIPTION =
+  'Cookies, pudins e salgados artesanais feitos com carinho em Pereiro, CE.';
+
 export const metadata: Metadata = {
-  title: 'Zelo — Doces artesanais',
-  description:
-    'Cookies, pudins e salgados artesanais feitos com carinho em Pereiro, CE.',
+  metadataBase: new URL(SITE_URL),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
   applicationName: 'Zelo',
   appleWebApp: {
     capable: true,
     title: 'Zelo',
     statusBarStyle: 'default',
+  },
+  // A imagem (og:image / twitter:image) vem de `opengraph-image.tsx` e
+  // `twitter-image.tsx`, que o Next injeta automaticamente no <head>.
+  openGraph: {
+    type: 'website',
+    url: SITE_URL,
+    siteName: 'Zelo Confeitaria',
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    locale: 'pt_BR',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
   },
   icons: {
     icon: [
