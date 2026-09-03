@@ -15,13 +15,18 @@ import { cn } from '@/lib/utils';
 
 type Props = {
   product: CatalogProduct;
-  vertical?: boolean;
+  /**
+   * `true` → linha horizontal compacta no mobile que vira cartão vertical
+   * (foto no topo) a partir de `lg`. Usado nas grades (cardápio, busca).
+   * `false` → sempre linha horizontal (listas de uma coluna).
+   */
+  responsive?: boolean;
   categoryName?: string;
 };
 
 export default function ProductCard({
   product,
-  vertical = false,
+  responsive = false,
   categoryName,
 }: Props) {
   const { addItem, items } = useCart();
@@ -50,24 +55,25 @@ export default function ProductCard({
     <article
       className={cn(
         'relative overflow-hidden rounded-xl border border-border bg-card transition-colors duration-150 hover:border-foreground/15',
-        vertical
-          ? 'flex min-h-[286px] flex-col p-0'
-          : 'flex items-center gap-3 p-2.5',
+        'flex items-center gap-3 p-2.5',
+        responsive &&
+          'lg:h-full lg:flex-col lg:items-stretch lg:gap-0 lg:p-0',
         !product.available && 'opacity-60',
       )}
     >
-      <div className={cn('relative shrink-0', vertical && 'w-full')}>
+      <div className={cn('relative shrink-0', responsive && 'lg:w-full')}>
         <ProductThumb
           tone={categoryTone(categoryName ?? product.slug)}
           src={product.image}
           alt={product.imageAlt ?? product.name}
-          className={
-            vertical ? 'h-[128px] w-full rounded-none' : 'size-20 rounded-lg'
-          }
-          iconClassName={vertical ? 'size-10' : 'size-9'}
+          className={cn(
+            'size-20 rounded-lg',
+            responsive && 'lg:h-32 lg:w-full lg:rounded-none',
+          )}
+          iconClassName={cn('size-9', responsive && 'lg:size-10')}
         />
-        {!product.available && vertical ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/45">
+        {!product.available && responsive ? (
+          <div className="absolute inset-0 hidden items-center justify-center bg-black/45 lg:flex">
             <span className="text-2xs font-semibold text-primary-foreground">
               Indisponível
             </span>
@@ -82,16 +88,15 @@ export default function ProductCard({
               : `Adicionar ${product.name} aos favoritos`
           }
           className={cn(
-            'absolute flex items-center justify-center rounded-full bg-card/80 backdrop-blur transition-transform duration-150 active:scale-90',
-            vertical
-              ? 'top-[7px] right-[7px] size-[30px]'
-              : 'left-1.5 top-1.5 size-7',
+            'absolute left-1.5 top-1.5 flex size-7 items-center justify-center rounded-full bg-card/80 backdrop-blur transition-transform duration-150 active:scale-90',
+            responsive &&
+              'lg:left-auto lg:right-[7px] lg:top-[7px] lg:size-[30px]',
           )}
         >
           <Heart
             className={cn(
-              'transition-colors',
-              vertical ? 'size-[17px]' : 'size-4',
+              'size-4 transition-colors',
+              responsive && 'lg:size-[17px]',
               isFavorite
                 ? 'fill-primary text-primary'
                 : 'text-muted-foreground',
@@ -103,7 +108,7 @@ export default function ProductCard({
       <div
         className={cn(
           'flex min-w-0 flex-1 items-center gap-2.5',
-          vertical && 'p-2.5',
+          responsive && 'lg:p-3',
         )}
       >
         <div className="min-w-0 flex-1">

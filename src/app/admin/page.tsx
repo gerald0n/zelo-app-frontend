@@ -14,8 +14,8 @@ import {
 import AdminHeader from '@/components/admin/AdminHeader';
 import AdminOrderCard from '@/components/admin/AdminOrderCard';
 import { useRequireAdmin } from '@/hooks/useRequireAdmin';
-import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { apiJson } from '@/lib/api';
+import { adminContainerClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 import { adminKeys } from '@/lib/query-keys';
 import { formatCatalogPrice } from '@/modules/catalog/types';
@@ -25,7 +25,6 @@ import { useAdminOrdersRealtime } from '@/modules/realtime/hooks';
 export default function AdminDashboardPage() {
   const queryClient = useQueryClient();
   const { isAuthenticated, ready } = useRequireAdmin();
-  const { isTablet } = useResponsiveLayout();
   const { version: realtimeVersion } = useAdminOrdersRealtime(
     ready && isAuthenticated,
   );
@@ -92,8 +91,8 @@ export default function AdminDashboardPage() {
       <AdminHeader title="Visão geral" subtitle="Operação ao vivo" />
       <div
         className={cn(
-          'space-y-[18px] p-3.5 pb-8',
-          isTablet && 'mx-auto w-full max-w-[1100px] p-4',
+          'space-y-[18px] p-3.5 pb-8 md:px-6 md:pt-6',
+          adminContainerClass,
         )}
       >
         <button

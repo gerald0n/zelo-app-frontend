@@ -9,7 +9,7 @@ export default function DesktopCartPanel() {
   const { items, subtotal, totalItems, updateQuantity } = useCart();
 
   return (
-    <aside className="sticky top-0 flex h-dvh w-[320px] shrink-0 flex-col border-l border-border bg-card pt-4">
+    <aside className="hidden w-[320px] shrink-0 flex-col border-l border-border bg-card pt-4 lg:sticky lg:top-14 lg:flex lg:h-[calc(100dvh-3.5rem)]">
       <div className="flex items-center justify-between px-4">
         <div>
           <p className="text-2xs font-semibold tracking-widest text-muted-foreground">

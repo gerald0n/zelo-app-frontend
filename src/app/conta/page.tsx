@@ -19,8 +19,8 @@ import { setAuthReturnTo } from '@/modules/auth/auth-return';
 import { ADMIN_PHONE_E164 } from '@/config/admin';
 import { usePwaInstall } from '@/contexts/PwaInstallContext';
 import { useAppDialog } from '@/contexts/AppDialogContext';
-import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { Separator } from '@/components/ui/separator';
+import { shellNarrowClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 
 type MenuItem = {
@@ -35,7 +35,6 @@ export default function ContaPage() {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const { canOfferInstall, openInstallPrompt } = usePwaInstall();
-  const { isDesktop } = useResponsiveLayout();
   const { confirm } = useAppDialog();
 
   const initials = user?.name
@@ -138,8 +137,8 @@ export default function ContaPage() {
     <div className="flex min-h-dvh flex-col bg-background">
       <div
         className={cn(
-          'min-h-0 flex-1 space-y-2.5 overflow-y-auto p-3',
-          isDesktop && 'mx-auto w-full max-w-[1120px] p-8',
+          'min-h-0 flex-1 space-y-2.5 overflow-y-auto p-3 lg:pt-6',
+          shellNarrowClass,
         )}
       >
         <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">

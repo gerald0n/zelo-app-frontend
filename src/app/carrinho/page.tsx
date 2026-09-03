@@ -20,7 +20,11 @@ import { useAppDialog } from '@/contexts/AppDialogContext';
 import { checkoutContinuePath } from '@/modules/auth/checkout-path';
 import { ProductThumb } from '@/components/product-thumb';
 import { Separator } from '@/components/ui/separator';
-import { pageHeaderBarClass, pagePrimaryButtonClass } from '@/lib/layout';
+import {
+  pageHeaderBarClass,
+  pagePrimaryButtonClass,
+  shellWideClass,
+} from '@/lib/layout';
 import { cn } from '@/lib/cn';
 
 function useCartHydrated() {
@@ -255,8 +259,8 @@ export default function CarrinhoPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full flex-col bg-background lg:max-w-5xl">
-      <header className={cn(pageHeaderBarClass, 'lg:px-0')}>
+    <div className={cn('flex min-h-dvh w-full flex-col bg-background', shellWideClass)}>
+      <header className={pageHeaderBarClass}>
         <Link href="/" aria-label="Voltar ao cardápio">
           <ArrowLeft className="size-6" />
         </Link>

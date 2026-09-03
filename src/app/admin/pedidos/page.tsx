@@ -7,8 +7,8 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import AdminOrderCard from '@/components/admin/AdminOrderCard';
 import { Input } from '@/components/ui/input';
 import { useRequireAdmin } from '@/hooks/useRequireAdmin';
-import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { apiJson } from '@/lib/api';
+import { adminContainerClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 import { adminKeys } from '@/lib/query-keys';
 import type { AdminOrderListItem } from '@/modules/admin/types';
@@ -18,7 +18,6 @@ type Filter = 'active' | 'scheduled' | 'done';
 
 export default function AdminPedidosPage() {
   const { isAuthenticated, ready } = useRequireAdmin();
-  const { isTablet } = useResponsiveLayout();
   const [filter, setFilter] = useState<Filter>('active');
   const [query, setQuery] = useState('');
   const { version: realtimeVersion } = useAdminOrdersRealtime(
@@ -52,8 +51,8 @@ export default function AdminPedidosPage() {
       <AdminHeader title="Pedidos" subtitle="Fila ao vivo" />
       <div
         className={cn(
-          'space-y-2.5 p-3',
-          isTablet && 'mx-auto w-full max-w-[920px] pt-5',
+          'space-y-2.5 p-3 md:px-6 md:pt-6',
+          adminContainerClass,
         )}
       >
         <div className="flex h-11 items-center gap-2 rounded-lg border border-border px-3">
@@ -89,10 +88,7 @@ export default function AdminPedidosPage() {
       </div>
 
       <div
-        className={cn(
-          'space-y-2.5 px-3 pb-7',
-          isTablet && 'mx-auto w-full max-w-[920px]',
-        )}
+        className={cn('space-y-2.5 px-3 pb-7 md:px-6', adminContainerClass)}
       >
         {ordersQuery.isLoading ? (
           <div className="flex justify-center py-16">
