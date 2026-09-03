@@ -2,33 +2,34 @@
 
 import { useEffect, useState } from 'react';
 
-function getLayout(width: number, height: number) {
-  const isTablet = width >= 768;
-  const isDesktop = width >= 1024;
-  const isWideDesktop = width >= 1440;
-  const isLandscape = width > height;
+/*
+ * Um único conjunto de limiares, alinhado com os breakpoints do Tailwind
+ * (`md` 768, `lg` 1024). Use este hook só para lógica que precisa mesmo de
+ * JavaScript (contadores, medições); **estrutura de layout deve ser CSS**
+ * (`lg:` / `md:`), senão o primeiro paint sai como mobile e "pula" para o
+ * desktop depois da montagem.
+ */
+type Layout = {
+  width: number;
+  isTablet: boolean;
+  isDesktop: boolean;
+};
 
-  return {
-    width,
-    height,
-    isTablet,
-    isDesktop,
-    isWideDesktop,
-    isLandscape,
-    showSideCategories: isDesktop || (isTablet && isLandscape),
-    showPersistentCart: isDesktop || (isTablet && isLandscape && width >= 900),
-  };
-}
+/** SSR + primeiro paint no cliente: mobile. Viewport real aplicado após montar. */
+const SSR_LAYOUT: Layout = { width: 0, isTablet: false, isDesktop: false };
 
-/** SSR + first client paint: mobile. Real viewport applied after mount. */
-const SSR_LAYOUT = getLayout(0, 0);
-
-export function useResponsiveLayout() {
-  const [layout, setLayout] = useState(SSR_LAYOUT);
+export function useResponsiveLayout(): Layout {
+  const [layout, setLayout] = useState<Layout>(SSR_LAYOUT);
 
   useEffect(() => {
-    const update = () =>
-      setLayout(getLayout(window.innerWidth, window.innerHeight));
+    const update = () => {
+      const width = window.innerWidth;
+      setLayout({
+        width,
+        isTablet: width >= 768,
+        isDesktop: width >= 1024,
+      });
+    };
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);

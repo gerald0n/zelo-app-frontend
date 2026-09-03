@@ -194,7 +194,7 @@ export default function StoreHeader({ onHeightChange }: Props) {
   const compactBar =
     visible && portalReady ? (
       <div
-        className="pointer-events-none fixed inset-x-0 top-0 z-[45]"
+        className="pointer-events-none fixed inset-x-0 top-0 z-[45] lg:hidden"
         aria-hidden={!pinned}
       >
         <div className="pointer-events-none mx-auto w-full max-w-md lg:max-w-none">
@@ -226,7 +226,7 @@ export default function StoreHeader({ onHeightChange }: Props) {
     ) : null;
 
   return (
-    <div>
+    <div className="lg:hidden">
       <div
         ref={heroRef}
         className="border-b border-border/50 bg-background px-4 pb-2.5 pt-[max(0.75rem,env(safe-area-inset-top,0px))]"

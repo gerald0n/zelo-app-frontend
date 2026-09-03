@@ -11,11 +11,11 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import { ADMIN_MIN_PASSWORD_LENGTH } from '@/config/admin';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 import { useRequireAdmin } from '@/hooks/useRequireAdmin';
-import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ApiError, apiJson } from '@/lib/api';
 import { WEEKDAY_LABELS } from '@/lib/constants';
+import { adminFormContainerClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 import { adminKeys } from '@/lib/query-keys';
 import type {
@@ -85,7 +85,6 @@ export default function AdminConfiguracoesPage() {
   const queryClient = useQueryClient();
   const { isAuthenticated, ready, logout, admin } = useRequireAdmin();
   const { confirm } = useAppDialog();
-  const { isTablet } = useResponsiveLayout();
   const [loggingOut, setLoggingOut] = useState(false);
 
   const storeQuery = useQuery({
@@ -332,8 +331,8 @@ export default function AdminConfiguracoesPage() {
       <AdminHeader title="Configurações" subtitle="Loja, horários e auditoria" />
       <div
         className={cn(
-          'space-y-5 p-3.5 pb-8',
-          isTablet && 'mx-auto w-full max-w-[760px] p-4',
+          'space-y-5 p-3.5 pb-8 md:px-6 md:pt-6',
+          adminFormContainerClass,
         )}
       >
         {mutationError ? (

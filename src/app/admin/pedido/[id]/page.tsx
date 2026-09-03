@@ -16,7 +16,7 @@ import { formatCatalogPrice } from '@/modules/catalog/types';
 import { statusLabel, type OrderStatus } from '@/modules/orders/types';
 import { nextAdminStatus, type AdminOrderDetail } from '@/modules/admin/types';
 import { useAdminOrdersRealtime } from '@/modules/realtime/hooks';
-import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { adminContainerClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 
 export default function AdminPedidoPage({
@@ -27,7 +27,6 @@ export default function AdminPedidoPage({
   const { id } = use(params);
   const { isAuthenticated, ready } = useRequireAdmin();
   const { prompt, alert } = useAppDialog();
-  const { isTablet } = useResponsiveLayout();
   const [order, setOrder] = useState<AdminOrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -199,8 +198,8 @@ export default function AdminPedidoPage({
       />
       <div
         className={cn(
-          'p-3 pb-8',
-          isTablet && 'mx-auto w-full max-w-[1050px] p-4',
+          'p-3 pb-8 md:px-6 md:pt-6',
+          adminContainerClass,
         )}
       >
         <div className="flex flex-wrap">

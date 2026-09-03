@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ShoppingBag } from 'lucide-react';
-import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useCart } from '@/contexts/CartContext';
+import { shouldHideCustomerNav } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 
 const PRIMARY_ROUTES = [
@@ -14,16 +14,17 @@ const PRIMARY_ROUTES = [
 ];
 
 export default function DesktopNavigation() {
-  const { isDesktop } = useResponsiveLayout();
   const { totalItems } = useCart();
   const pathname = usePathname();
 
-  if (!isDesktop || pathname.startsWith('/admin')) {
+  // Visibilidade só por CSS (`lg:flex`): renderizar/ocultar via JS fazia o
+  // primeiro paint sair sem a barra e "pular" depois de montar.
+  if (shouldHideCustomerNav(pathname)) {
     return null;
   }
 
   return (
-    <header className="sticky top-0 z-[100] flex h-14 items-center justify-between border-b border-border bg-background px-6">
+    <header className="sticky top-0 z-[100] hidden h-14 items-center justify-between border-b border-border bg-background px-6 lg:flex">
       <Link href="/" className="flex items-baseline gap-[7px]">
         <span className="font-serif text-2xl font-semibold tracking-tight">
           Zelo

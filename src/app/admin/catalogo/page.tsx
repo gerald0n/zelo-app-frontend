@@ -16,11 +16,11 @@ import {
 import AdminHeader from '@/components/admin/AdminHeader';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 import { useRequireAdmin } from '@/hooks/useRequireAdmin';
-import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ApiError, apiJson } from '@/lib/api';
+import { adminContainerClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 import { adminKeys } from '@/lib/query-keys';
 import { formatCatalogPrice } from '@/modules/catalog/types';
@@ -82,7 +82,6 @@ export default function AdminCatalogoPage() {
   const queryClient = useQueryClient();
   const { isAuthenticated, ready } = useRequireAdmin();
   const { confirm } = useAppDialog();
-  const { isTablet } = useResponsiveLayout();
   const [tab, setTab] = useState<Tab>('products');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<AdminCategory | null>(
@@ -452,8 +451,8 @@ export default function AdminCatalogoPage() {
       />
       <div
         className={cn(
-          'space-y-4 p-3 pb-8',
-          isTablet && 'mx-auto w-full max-w-[1050px] p-4',
+          'space-y-4 p-3 pb-8 md:px-6 md:pt-6',
+          adminContainerClass,
         )}
       >
         <div className="flex gap-1.5">

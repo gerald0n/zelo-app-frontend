@@ -7,7 +7,6 @@ import { Receipt, Clock } from 'lucide-react';
 import OrderCard from '@/components/OrderCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
-import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useCart, type CartItem } from '@/modules/carts';
 import { setAuthReturnTo } from '@/modules/auth/auth-return';
 import { useShopExperience } from '@/contexts/ShopExperienceContext';
@@ -15,6 +14,7 @@ import {
   isAwaitingPixPayment,
   type CustomerOrderListItem,
 } from '@/modules/orders/types';
+import { shellContentClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 
 function orderHref(order: CustomerOrderListItem): string {
@@ -32,7 +32,6 @@ export default function PedidosPage() {
   const [reorderingId, setReorderingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { isDesktop } = useResponsiveLayout();
   const router = useRouter();
   const { replaceItems } = useCart();
   const { notify } = useShopExperience();
@@ -151,11 +150,16 @@ export default function PedidosPage() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
-      <header className="space-y-2 border-b border-border px-3 pb-2 pt-3 max-lg:sticky max-lg:top-0 max-lg:z-30 max-lg:bg-background">
-        <h1 className="text-lg font-bold tracking-tight">
+      <header
+        className={cn(
+          'space-y-2 border-b border-border px-3 pb-2 pt-3 max-lg:sticky max-lg:top-0 max-lg:z-30 max-lg:bg-background lg:border-none lg:px-0 lg:pb-3 lg:pt-6',
+          shellContentClass,
+        )}
+      >
+        <h1 className="text-lg font-bold tracking-tight lg:text-2xl">
           Meus pedidos
         </h1>
-        <div className="flex rounded-md bg-muted p-0.5">
+        <div className="flex rounded-md bg-muted p-0.5 lg:max-w-xs">
           {(['active', 'history'] as Tab[]).map((t) => (
             <button
               key={t}
@@ -176,8 +180,8 @@ export default function PedidosPage() {
 
       <div
         className={cn(
-          'min-h-0 flex-1 overflow-y-auto pt-2',
-          isDesktop && 'mx-auto w-full max-w-[1180px] px-6 pt-6',
+          'min-h-0 flex-1 overflow-y-auto pt-2 lg:pt-4',
+          shellContentClass,
         )}
       >
         {loading ? (

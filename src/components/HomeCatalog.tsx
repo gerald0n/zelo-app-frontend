@@ -10,8 +10,8 @@ import ProductCard from '@/components/ProductCard';
 import StoreHeader, {
   STORE_HEADER_COMPACT_HEIGHT,
 } from '@/components/StoreHeader';
+import StoreStrip from '@/components/StoreStrip';
 import { ProductThumb } from '@/components/product-thumb';
-import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import {
   categoryTone,
   formatCatalogPrice,
@@ -38,7 +38,6 @@ export default function HomeCatalog({
   const [active, setActive] = useState<Filter>('Todos');
   const { addItem, items } = useCart();
   const { favorites, notify } = useShopExperience();
-  const { showSideCategories, showPersistentCart } = useResponsiveLayout();
   const quantityByProduct = useMemo(() => {
     const quantities = new Map<string, number>();
     for (const item of items) {
@@ -83,40 +82,39 @@ export default function HomeCatalog({
 
   return (
     <div className="flex w-full lg:min-h-dvh">
-      {showSideCategories ? (
-        <aside className="flex w-[220px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-border bg-background px-3 py-4 lg:sticky lg:top-0 lg:h-dvh">
-          <Link
-            href="/busca"
-            className="mb-3 flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+      <aside className="hidden w-[220px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-border bg-background px-3 py-4 lg:flex lg:sticky lg:top-14 lg:h-[calc(100dvh-3.5rem)]">
+        <Link
+          href="/busca"
+          className="mb-3 flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+        >
+          <Search className="size-4" aria-hidden="true" /> Buscar
+        </Link>
+        <p className="px-2.5 pb-1 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Categorias
+        </p>
+        {categoryFilters.map((filter) => (
+          <button
+            key={filter.id}
+            type="button"
+            onClick={() => setActive(filter.id)}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold transition-colors active:scale-[0.98]',
+              active === filter.id
+                ? 'bg-primary text-primary-foreground'
+                : 'text-foreground hover:bg-accent',
+            )}
           >
-            <Search className="size-4" aria-hidden="true" /> Buscar
-          </Link>
-          <p className="px-2.5 pb-1 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Categorias
-          </p>
-          {categoryFilters.map((filter) => (
-            <button
-              key={filter.id}
-              type="button"
-              onClick={() => setActive(filter.id)}
-              className={cn(
-                'flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold transition-colors active:scale-[0.98]',
-                active === filter.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-foreground hover:bg-accent',
-              )}
-            >
-              {filter.id === 'Favoritos' ? (
-                <Heart className="size-4 shrink-0" aria-hidden="true" />
-              ) : null}
-              {filter.label}
-            </button>
-          ))}
-        </aside>
-      ) : null}
+            {filter.id === 'Favoritos' ? (
+              <Heart className="size-4 shrink-0" aria-hidden="true" />
+            ) : null}
+            {filter.label}
+          </button>
+        ))}
+      </aside>
 
       <div className="mx-auto flex min-h-dvh w-full min-w-0 max-w-md flex-1 flex-col bg-background max-lg:min-h-full lg:max-w-none">
         <StoreHeader />
+        <StoreStrip />
         <MenuHeroCarousel />
 
         {popular.length > 0 ? (
@@ -185,9 +183,9 @@ export default function HomeCatalog({
           </section>
         ) : null}
 
-        {!showSideCategories ? (
+        {(
           <div
-            className="sticky z-30 mt-3 bg-background px-4 py-2"
+            className="sticky z-30 mt-3 bg-background px-4 py-2 lg:hidden"
             style={{
               // Encosta logo abaixo da barra compacta, contando a área segura
               // (status bar / notch) no PWA instalado.
@@ -242,7 +240,7 @@ export default function HomeCatalog({
               ))}
             </div>
           </div>
-        ) : null}
+        )}
 
         <section className="px-4 pt-2 pb-6" aria-labelledby="menu-heading">
           <h3
@@ -262,21 +260,16 @@ export default function HomeCatalog({
                 : 'Nenhum produto nesta categoria.'}
             </p>
           ) : (
-            <ul
-              className={cn(
-                'mt-2.5 flex flex-col gap-2.5',
-                showSideCategories &&
-                  'grid gap-3 sm:grid-cols-2 xl:grid-cols-3',
-              )}
-            >
+            <ul className="mt-2.5 flex flex-col gap-2.5 lg:grid lg:grid-cols-2 lg:gap-3 2xl:grid-cols-3">
               {filtered.map((product, index) => (
                 <li
                   key={product.id}
-                  className="reveal-rise"
+                  className="reveal-rise lg:h-full"
                   style={{ '--i': index } as CSSProperties}
                 >
                   <ProductCard
                     product={product}
+                    responsive
                     categoryName={categoryNames[product.categoryId]}
                   />
                 </li>
@@ -286,7 +279,7 @@ export default function HomeCatalog({
         </section>
       </div>
 
-      {showPersistentCart ? <DesktopCartPanel /> : null}
+      <DesktopCartPanel />
     </div>
   );
 }

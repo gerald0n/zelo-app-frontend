@@ -6,8 +6,7 @@ import { ArrowLeft, Search, Frown } from 'lucide-react';
 import type { CatalogProduct } from '@/modules/catalog/types';
 import ProductCard from '@/components/ProductCard';
 import { Input } from '@/components/ui/input';
-import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { pageHeaderBarClass } from '@/lib/layout';
+import { pageHeaderBarClass, shellContentClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 
 export default function BuscaClient({
@@ -16,7 +15,6 @@ export default function BuscaClient({
   products: CatalogProduct[];
 }) {
   const [query, setQuery] = useState('');
-  const { isTablet } = useResponsiveLayout();
 
   const results = useMemo(() => {
     const trimmed = query.trim();
@@ -30,7 +28,7 @@ export default function BuscaClient({
   }, [products, query]);
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full flex-col bg-background lg:max-w-4xl">
+    <div className={cn('flex min-h-dvh w-full flex-col bg-background', shellContentClass)}>
       <header className={cn(pageHeaderBarClass, 'gap-3 lg:px-0')}>
         <Link href="/" aria-label="Voltar ao cardápio" className="lg:hidden">
           <ArrowLeft className="size-6" />
@@ -66,20 +64,9 @@ export default function BuscaClient({
               {results.length}{' '}
               {results.length === 1 ? 'resultado' : 'resultados'}
             </p>
-            <div
-              className={cn(
-                'px-3 lg:px-0',
-                isTablet
-                  ? 'grid grid-cols-2 gap-3 xl:grid-cols-3'
-                  : 'space-y-0',
-              )}
-            >
+            <div className="flex flex-col gap-2.5 px-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:px-0 2xl:grid-cols-3">
               {results.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  vertical={isTablet}
-                />
+                <ProductCard key={product.id} product={product} responsive />
               ))}
             </div>
           </>

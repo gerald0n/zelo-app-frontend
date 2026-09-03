@@ -6,7 +6,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, AlertTriangle, Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/cn';
-import { pageCtaBaseClass, pageHeaderBarClass } from '@/lib/layout';
+import {
+  pageCtaBaseClass,
+  pageHeaderBarClass,
+  shellNarrowClass,
+} from '@/lib/layout';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 
 const REASON_SUGGESTIONS = [
@@ -59,7 +63,7 @@ function CancelarPedidoContent() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
+    <div className={cn('flex min-h-dvh flex-col bg-background', shellNarrowClass)}>
       <header className={pageHeaderBarClass}>
         <Link
           href={orderId ? `/acompanhamento/${orderId}` : '/pedidos'}

@@ -11,7 +11,7 @@ type Props = {
 
 export default function AdminHeader({ title, subtitle, backTo }: Props) {
   return (
-    <header className="flex min-h-14 items-center gap-2.5 border-b border-border bg-background px-3 pb-2.5 pt-2.5 max-lg:sticky max-lg:top-0 max-lg:z-30">
+    <header className="sticky top-0 z-30 flex min-h-14 items-center gap-2.5 border-b border-border bg-background px-3 pb-2.5 pt-2.5 lg:px-6">
       {backTo ? (
         <Link
           href={backTo}

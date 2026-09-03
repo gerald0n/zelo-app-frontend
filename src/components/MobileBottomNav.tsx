@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { UtensilsCrossed, ReceiptText, User } from 'lucide-react';
 import LiquidGlassTabs from '@/components/LiquidGlassTabs';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { shouldHideCustomerMobileNav } from '@/lib/layout';
+import { shouldHideCustomerNav } from '@/lib/layout';
 
 const TABS = [
   {
@@ -31,7 +31,7 @@ export default function MobileBottomNav() {
   const { isDesktop } = useResponsiveLayout();
   const pathname = usePathname();
 
-  if (isDesktop || shouldHideCustomerMobileNav(pathname)) {
+  if (isDesktop || shouldHideCustomerNav(pathname)) {
     return null;
   }
 

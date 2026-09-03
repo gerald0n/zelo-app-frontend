@@ -11,15 +11,15 @@ import DesktopNavigation from '@/components/DesktopNavigation';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { PwaInstallProvider } from '@/contexts/PwaInstallContext';
 import LockMobileZoom from '@/components/LockMobileZoom';
-import { shouldHideCustomerMobileNav } from '@/lib/layout';
+import { shouldHideCustomerNav } from '@/lib/layout';
 import { cn } from '@/lib/utils';
 import { QueryProvider } from '@/providers/query-provider';
 
 function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  // `/admin/*` cai em `shouldHideCustomerMobileNav` e traz o próprio layout
+  // `/admin/*` cai em `shouldHideCustomerNav` e traz o próprio layout
   // (navbar + padding) em `src/app/admin/layout.tsx`.
-  const hideCustomerNav = shouldHideCustomerMobileNav(pathname);
+  const hideCustomerNav = shouldHideCustomerNav(pathname);
 
   return (
     <>

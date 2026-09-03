@@ -32,19 +32,48 @@ export const pagePrimaryButtonClass = `${pageCtaBaseClass} bg-primary text-prima
 /** CTA secundário (contorno) das páginas internas. */
 export const pageSecondaryButtonClass = `${pageCtaBaseClass} border border-border bg-card text-foreground hover:bg-accent`;
 
-/**
- * No desktop, o checkout continua em uma única coluna (fluxo de etapas),
- * mas centralizado como um cartão de largura confortável — em vez do
- * fluxo mobile esticado por toda a largura da tela.
+/*
+ * Sistema de larguras de container no desktop. Três degraus, uma decisão
+ * por tela — nada de `max-w-[NNNN]` avulso por página. No mobile o container
+ * é transparente (largura total); a partir de `lg` ele centraliza e limita.
+ *
+ * - narrow  (40rem / 640px) — fluxos de etapa única, formulários, leitura,
+ *   ajustes de conta, coluna de texto da página de produto.
+ * - content (56rem / 896px) — telas de visão geral e listas (pedidos, busca).
+ * - wide    (64rem / 1024px) — layouts de duas colunas (carrinho, admin).
+ *
+ * A home e o painel admin têm shell próprio (trilhos / sidebar) e não usam
+ * estes tokens diretamente.
  */
-export const checkoutDesktopContainerClass =
-  'lg:mx-auto lg:w-full lg:max-w-[640px]';
+export const shellNarrowClass = 'lg:mx-auto lg:w-full lg:max-w-[40rem]';
+export const shellContentClass = 'lg:mx-auto lg:w-full lg:max-w-[56rem]';
+export const shellWideClass = 'lg:mx-auto lg:w-full lg:max-w-[64rem]';
+
+/**
+ * Alias histórico de {@link shellNarrowClass} (mesmo valor, 640px). Mantido
+ * porque checkout e telas de conta já importam este nome.
+ */
+export const checkoutDesktopContainerClass = shellNarrowClass;
+
+/*
+ * Corpo das páginas do painel admin. A sidebar entra em `lg` (`lg:pl-52`);
+ * a centralização começa em `md` (mantém o comportamento anterior, que era
+ * gated por `isTablet`, só que agora em CSS — sem flash na montagem).
+ */
+export const adminContainerClass = 'md:mx-auto md:w-full md:max-w-[72rem]';
+/** Variante estreita para telas do admin dominadas por formulário (configurações). */
+export const adminFormContainerClass = 'md:mx-auto md:w-full md:max-w-[44rem]';
 
 /** Espaço inferior para a navbar flutuante + véu de blur */
 export const MOBILE_NAV_PAD_PX = 84;
 
-/** Telas do cliente em que a navbar mobile fica oculta. */
-export function shouldHideCustomerMobileNav(pathname: string): boolean {
+/**
+ * Telas do cliente em que a navegação principal fica oculta — tanto a navbar
+ * flutuante do mobile quanto a barra do topo no desktop. São fluxos com foco
+ * (checkout) ou telas com seu próprio botão de voltar (produto, carrinho,
+ * acompanhamento, loja, cancelamento).
+ */
+export function shouldHideCustomerNav(pathname: string): boolean {
   return (
     pathname.startsWith('/admin') ||
     pathname.startsWith('/produto') ||
@@ -55,3 +84,6 @@ export function shouldHideCustomerMobileNav(pathname: string): boolean {
     pathname.startsWith('/checkout')
   );
 }
+
+/** @deprecated Use {@link shouldHideCustomerNav}. */
+export const shouldHideCustomerMobileNav = shouldHideCustomerNav;
