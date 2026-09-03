@@ -7,7 +7,10 @@ import {
   hasSupabasePublicConfig,
   isProductionLike,
 } from '@/config/env';
-import { buildContentSecurityPolicy } from '@/config/security-headers';
+import {
+  buildContentSecurityPolicy,
+  reportingEndpointsHeader,
+} from '@/config/security-headers';
 import { supabaseAuthCookieOptions } from '@/lib/supabase/cookie-options';
 
 /**
@@ -30,6 +33,7 @@ export default async function proxy(request: NextRequest) {
 
   const nonce = crypto.randomUUID().replace(/-/g, '');
   const csp = buildContentSecurityPolicy(nonce);
+  const reporting = reportingEndpointsHeader();
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);
@@ -41,6 +45,7 @@ export default async function proxy(request: NextRequest) {
 
   const withCsp = (response: NextResponse) => {
     response.headers.set('Content-Security-Policy', csp);
+    if (reporting) response.headers.set('Reporting-Endpoints', reporting);
     return response;
   };
 
@@ -92,5 +97,7 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|icons/|sw.js).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|icons/|sw.js|monitoring).*)',
+  ],
 };
