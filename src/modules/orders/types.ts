@@ -39,6 +39,8 @@ export type CustomerOrder = {
   deliveryMethod: DeliveryMethod;
   paymentMethod: PaymentMethod;
   paymentStatus: string;
+  /** Há uma cobrança Pix dinâmica (Mercado Pago) atrelada a este pedido. */
+  hasPixCharge: boolean;
   subtotalCents: number;
   deliveryFeeCents: number;
   totalCents: number;
@@ -73,6 +75,8 @@ export type CustomerOrderListItem = Pick<
   | 'status'
   | 'deliveryMethod'
   | 'paymentMethod'
+  | 'paymentStatus'
+  | 'hasPixCharge'
   | 'subtotalCents'
   | 'deliveryFeeCents'
   | 'totalCents'
@@ -130,6 +134,23 @@ export const STATUS_COLORS: Record<OrderStatus, string> = {
 
 export function canCustomerCancel(status: OrderStatus): boolean {
   return CUSTOMER_CANCELLABLE_STATUSES.includes(status);
+}
+
+/**
+ * Pedido com cobrança Pix dinâmica que ainda não foi paga. Nesse estado o
+ * cliente precisa voltar para a tela do QR e a loja não deve começar a
+ * produção. Não vale para pedidos Pix do fluxo manual antigo (sem cobrança).
+ */
+export function isAwaitingPixPayment(order: {
+  paymentStatus: string;
+  status: OrderStatus;
+  hasPixCharge: boolean;
+}): boolean {
+  return (
+    order.hasPixCharge &&
+    order.paymentStatus === 'pending' &&
+    order.status === 'received'
+  );
 }
 
 export const STATUS_COPY: Partial<Record<OrderStatus, string>> = {

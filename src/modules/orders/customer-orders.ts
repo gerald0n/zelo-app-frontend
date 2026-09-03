@@ -26,6 +26,8 @@ const ORDER_LIST_SELECT = `
   status,
   delivery_method,
   payment_method,
+  payment_status,
+  mp_order_id,
   subtotal_cents,
   add_ons_total_cents,
   delivery_fee_cents,
@@ -50,6 +52,7 @@ const ORDER_DETAIL_SELECT = `
   delivery_method,
   payment_method,
   payment_status,
+  mp_order_id,
   subtotal_cents,
   add_ons_total_cents,
   delivery_fee_cents,
@@ -114,6 +117,8 @@ function mapListItem(row: {
   status: OrderStatus;
   delivery_method: CustomerOrder['deliveryMethod'];
   payment_method: CustomerOrder['paymentMethod'];
+  payment_status: string;
+  mp_order_id: string | null;
   subtotal_cents: number;
   add_ons_total_cents: number;
   delivery_fee_cents: number;
@@ -137,6 +142,8 @@ function mapListItem(row: {
     status: row.status,
     deliveryMethod: row.delivery_method,
     paymentMethod: row.payment_method,
+    paymentStatus: row.payment_status,
+    hasPixCharge: row.mp_order_id !== null,
     subtotalCents: row.subtotal_cents + row.add_ons_total_cents,
     deliveryFeeCents: row.delivery_fee_cents,
     totalCents: row.total_cents,
@@ -161,6 +168,7 @@ function mapDetail(row: {
   delivery_method: CustomerOrder['deliveryMethod'];
   payment_method: CustomerOrder['paymentMethod'];
   payment_status: string;
+  mp_order_id: string | null;
   subtotal_cents: number;
   add_ons_total_cents: number;
   delivery_fee_cents: number;
@@ -243,6 +251,7 @@ function mapDetail(row: {
     deliveryMethod: row.delivery_method,
     paymentMethod: row.payment_method,
     paymentStatus: row.payment_status,
+    hasPixCharge: row.mp_order_id !== null,
     subtotalCents: row.subtotal_cents + row.add_ons_total_cents,
     deliveryFeeCents: row.delivery_fee_cents,
     totalCents: row.total_cents,

@@ -8,6 +8,8 @@ export type AdminOrderListItem = {
   status: OrderStatus;
   deliveryMethod: CustomerOrder['deliveryMethod'];
   paymentMethod: CustomerOrder['paymentMethod'];
+  paymentStatus: string;
+  hasPixCharge: boolean;
   timing: CustomerOrder['timing'];
   scheduledFor: string | null;
   totalCents: number;
