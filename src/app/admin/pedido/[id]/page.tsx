@@ -99,16 +99,10 @@ export default function AdminPedidoPage({
     }
   };
 
-  const cancel = async () => {
-    if (!order) return;
-    const reason = await prompt({
-      title: 'Cancelar pedido',
-      description: 'Informe o motivo do cancelamento administrativo.',
-      placeholder: 'Motivo do cancelamento',
-      minLength: 3,
-      confirmLabel: 'Cancelar pedido',
-    });
-    if (!reason) return;
+  // Chama a rota de cancelamento. Serve tanto para cancelar o pedido quanto,
+  // num pedido já cancelado, para reenviar só o estorno do Pix (o backend
+  // detecta o estado e faz a coisa certa).
+  const postCancel = async (reason: string, netError: string) => {
     setBusy(true);
     setError(null);
     try {
@@ -119,27 +113,59 @@ export default function AdminPedidoPage({
       });
       const json = await response.json();
       if (!response.ok) {
-        setError(json?.error?.message ?? 'Não foi possível cancelar.');
+        setError(json?.error?.message ?? netError);
         return;
       }
       setOrder(json.order as AdminOrderDetail);
-      const refund = json.refund as 'done' | 'already' | 'failed' | undefined;
-      if (refund === 'done') {
-        await alert({
-          title: 'Pedido cancelado',
-          description: 'O estorno do Pix foi solicitado ao Mercado Pago.',
-        });
-      } else if (refund === 'failed') {
-        await alert({
-          title: 'Pedido cancelado, mas o estorno falhou',
-          description:
-            'Estorne manualmente pelo painel do Mercado Pago ou tente cancelar de novo.',
-        });
-      }
+      return json.refund as 'done' | 'already' | 'failed' | undefined;
     } catch {
-      setError('Falha de rede ao cancelar.');
+      setError(netError);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const cancel = async () => {
+    if (!order) return;
+    const reason = await prompt({
+      title: 'Cancelar pedido',
+      description: 'Informe o motivo do cancelamento administrativo.',
+      placeholder: 'Motivo do cancelamento',
+      minLength: 3,
+      confirmLabel: 'Cancelar pedido',
+    });
+    if (!reason) return;
+    const refund = await postCancel(reason, 'Falha de rede ao cancelar.');
+    if (refund === 'done') {
+      await alert({
+        title: 'Pedido cancelado',
+        description: 'O estorno do Pix foi solicitado ao Mercado Pago.',
+      });
+    } else if (refund === 'failed') {
+      await alert({
+        title: 'Pedido cancelado, mas o estorno falhou',
+        description:
+          'Reenvie o estorno pelo botão "Tentar estorno do Pix de novo" ou estorne manualmente no painel do Mercado Pago.',
+      });
+    }
+  };
+
+  const retryRefund = async () => {
+    if (!order) return;
+    const refund = await postCancel(
+      'Reenvio do estorno Pix',
+      'Falha de rede ao estornar.',
+    );
+    if (refund === 'done' || refund === 'already') {
+      await alert({
+        title: 'Estorno enviado',
+        description: 'O estorno do Pix foi enviado ao Mercado Pago.',
+      });
+    } else if (refund === 'failed') {
+      await alert({
+        title: 'O estorno falhou de novo',
+        description: 'Estorne manualmente pelo painel do Mercado Pago.',
+      });
     }
   };
 
@@ -307,6 +333,20 @@ export default function AdminPedidoPage({
                 className="w-full rounded-lg border border-destructive/40 py-3 text-sm font-semibold text-destructive disabled:opacity-60"
               >
                 Cancelar pedido
+              </button>
+            ) : null}
+
+            {order.status === 'cancelled' &&
+            order.paymentMethod === 'pix' &&
+            order.paymentStatus === 'confirmed' ? (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void retryRefund()}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-destructive/40 py-3 text-sm font-semibold text-destructive disabled:opacity-60"
+              >
+                {busy ? <Loader2 className="size-4 animate-spin" /> : null}
+                Tentar estorno do Pix de novo
               </button>
             ) : null}
           </div>

@@ -13,7 +13,11 @@ const REQUEST_TIMEOUT_MS = 10_000;
 const DEFAULT_EXPIRATION_MINUTES = 30;
 
 /** Status de pagamento normalizado para o nosso enum `payment_status`. */
-export type NormalizedPaymentStatus = 'pending' | 'confirmed' | 'failed';
+export type NormalizedPaymentStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'failed'
+  | 'refunded';
 
 export type PixCharge = {
   mpOrderId: string;
@@ -109,10 +113,11 @@ export function normalizePaymentStatus(
     case 'cancelled':
     case 'canceled':
     case 'expired':
-    case 'refunded':
-    case 'charged_back':
     case 'failed':
       return 'failed';
+    case 'refunded':
+    case 'charged_back':
+      return 'refunded';
     default:
       return 'pending';
   }
