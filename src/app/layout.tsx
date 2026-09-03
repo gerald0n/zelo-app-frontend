@@ -33,8 +33,12 @@ const geistMono = Geist_Mono({
  */
 export const dynamic = 'force-dynamic';
 
-/** Domínio de produção — usado como base para URLs absolutas do metadata. */
-const SITE_URL = 'https://zeloconfeitaria.com.br';
+/**
+ * Domínio de produção do app (o cardápio) — base para as URLs absolutas do
+ * metadata (og:image, og:url etc.). É `cardapio.…`, não o apex, que hospeda
+ * a landing em outro projeto.
+ */
+const SITE_URL = 'https://cardapio.zeloconfeitaria.com.br';
 const SITE_TITLE = 'Zelo Confeitaria — Doces artesanais em Pereiro, CE';
 const SITE_DESCRIPTION =
   'Cookies, pudins e salgados artesanais feitos com carinho em Pereiro, CE.';
