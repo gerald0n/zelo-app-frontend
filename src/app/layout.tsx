@@ -25,6 +25,14 @@ const geistMono = Geist_Mono({
   display: 'swap',
 });
 
+/**
+ * A CSP com `nonce` (ver `src/proxy.ts`) exige renderização dinâmica: o nonce
+ * é injetado nos scripts durante o SSR de cada request. Páginas estáticas
+ * ficariam com scripts sem nonce e seriam bloqueadas. O app já é quase todo
+ * dinâmico (dados no cliente via react-query, sem ISR), então o custo é baixo.
+ */
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Zelo — Doces artesanais',
   description:

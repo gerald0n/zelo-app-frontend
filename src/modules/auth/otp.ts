@@ -1,11 +1,7 @@
 import 'server-only';
 
-import { createHash, randomInt } from 'node:crypto';
-import {
-  getAppEnv,
-  getSupabaseServiceRoleKey,
-  hasTwilioVerifyConfig,
-} from '@/config/env';
+import { createHmac, randomInt, timingSafeEqual } from 'node:crypto';
+import { getAppEnv, getOtpHashSecret, hasTwilioVerifyConfig } from '@/config/env';
 import { err, ok, type Result } from '@/lib/errors';
 import { logger } from '@/lib/logger';
 import { toPhoneE164 } from '@/lib/phone';
@@ -39,9 +35,17 @@ export type VerifyOtpResult = {
 };
 
 function hashOtp(phoneE164: string, code: string): string {
-  return createHash('sha256')
-    .update(`${phoneE164}:${code}:${getSupabaseServiceRoleKey().slice(0, 24)}`)
+  return createHmac('sha256', getOtpHashSecret())
+    .update(`${phoneE164}:${code}`)
     .digest('hex');
+}
+
+/** Comparação em tempo constante de dois hashes hex. */
+function hashesMatch(a: string, b: string): boolean {
+  const bufA = Buffer.from(a, 'hex');
+  const bufB = Buffer.from(b, 'hex');
+  if (bufA.length === 0 || bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
 }
 
 function generateCode(): string {
@@ -199,7 +203,7 @@ export async function verifyCustomerOtp(options: {
       serviceSidFromTwilioVerifyHash(challenge.code_hash),
     );
     if (!checked.ok) return checked;
-  } else if (challenge.code_hash !== hashOtp(phoneE164, code)) {
+  } else if (!hashesMatch(challenge.code_hash, hashOtp(phoneE164, code))) {
     return err('OTP_INVALID', 'Código inválido.');
   }
 

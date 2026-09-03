@@ -1,4 +1,12 @@
-/** Headers aplicados em todas as rotas via next.config. */
+/**
+ * Cabeçalhos de segurança.
+ *
+ * - `buildSecurityHeaders()` (sem CSP) é aplicado a todas as rotas via
+ *   `next.config.ts`.
+ * - A `Content-Security-Policy` é emitida pelo `src/proxy.ts` a cada request,
+ *   com um `nonce` único, para dispensar `script-src 'unsafe-inline'` em
+ *   produção. `buildContentSecurityPolicy(nonce)` monta a policy.
+ */
 
 type Header = { key: string; value: string };
 
@@ -48,16 +56,32 @@ const CONNECT_SRC_DEV = [
     : []),
 ];
 
-export function buildSecurityHeaders(): Header[] {
+/**
+ * Monta a `Content-Security-Policy`.
+ *
+ * Com `nonce`, o `script-src` usa `'nonce-<...>' 'strict-dynamic'` e dispensa
+ * `'unsafe-inline'` (o Next injeta o nonce nos próprios scripts; scripts de
+ * terceiros carregados por um script confiável — ex.: Turnstile — herdam a
+ * confiança via `strict-dynamic`). Sem `nonce` (fallback para rotas que o
+ * proxy não cobre, como assets estáticos), cai no `'unsafe-inline'`.
+ */
+export function buildContentSecurityPolicy(nonce?: string): string {
   const production = !isRelaxedEnv();
 
   // `unsafe-eval` só é necessário para o React Refresh do `next dev`.
-  const scriptSrc = [
-    "script-src 'self'",
-    "'unsafe-inline'",
-    production ? null : "'unsafe-eval'",
-    'https://challenges.cloudflare.com',
-  ].filter(Boolean);
+  const scriptSrc = nonce
+    ? [
+        "script-src 'self'",
+        `'nonce-${nonce}'`,
+        "'strict-dynamic'",
+        production ? null : "'unsafe-eval'",
+      ].filter(Boolean)
+    : [
+        "script-src 'self'",
+        "'unsafe-inline'",
+        production ? null : "'unsafe-eval'",
+        'https://challenges.cloudflare.com',
+      ].filter(Boolean);
 
   const connectSrc = [
     "connect-src 'self'",
@@ -72,6 +96,8 @@ export function buildSecurityHeaders(): Header[] {
     "frame-ancestors 'none'",
     "object-src 'none'",
     scriptSrc.join(' '),
+    // Atributos `style=` do React exigem `'unsafe-inline'` em `style-src`;
+    // injeção de estilo não executa script, então o risco residual é baixo.
     "style-src 'self' 'unsafe-inline'",
     production
       ? "img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://tile.openstreetmap.org"
@@ -84,10 +110,17 @@ export function buildSecurityHeaders(): Header[] {
     production ? 'upgrade-insecure-requests' : null,
   ].filter(Boolean);
 
+  return csp.join('; ');
+}
+
+/** Cabeçalhos fixos (sem CSP) — aplicados a todas as rotas via next.config. */
+export function buildSecurityHeaders(): Header[] {
   return [
     { key: 'X-Content-Type-Options', value: 'nosniff' },
     { key: 'X-Frame-Options', value: 'DENY' },
     { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+    { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+    { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
     {
       key: 'Permissions-Policy',
       value: 'camera=(), microphone=(), geolocation=(), payment=()',
@@ -96,6 +129,5 @@ export function buildSecurityHeaders(): Header[] {
       key: 'Strict-Transport-Security',
       value: 'max-age=63072000; includeSubDomains; preload',
     },
-    { key: 'Content-Security-Policy', value: csp.join('; ') },
   ];
 }
