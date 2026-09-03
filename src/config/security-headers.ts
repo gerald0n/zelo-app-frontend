@@ -6,9 +6,41 @@
  * - A `Content-Security-Policy` é emitida pelo `src/proxy.ts` a cada request,
  *   com um `nonce` único, para dispensar `script-src 'unsafe-inline'` em
  *   produção. `buildContentSecurityPolicy(nonce)` monta a policy.
+ * - Violações de CSP são reportadas ao endpoint de Security Headers do Sentry
+ *   (derivado do DSN público). `reportingEndpointsHeader()` dá o header
+ *   `Reporting-Endpoints` que o proxy emite junto.
  */
 
 type Header = { key: string; value: string };
+
+const CSP_REPORT_GROUP = 'csp-endpoint';
+
+/**
+ * Endpoint de Security Headers do Sentry, derivado de `NEXT_PUBLIC_SENTRY_DSN`
+ * (`https://<key>@<host>/<projectId>` → `https://<host>/api/<projectId>/security/?sentry_key=<key>`).
+ * `null` quando não há DSN (local sem Sentry).
+ */
+function sentryCspReportUri(): string | null {
+  const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
+  if (!dsn) return null;
+  try {
+    const url = new URL(dsn);
+    const key = url.username;
+    const projectId = url.pathname.replace(/^\/+/, '');
+    if (!key || !projectId) return null;
+    const env = process.env.NEXT_PUBLIC_APP_ENV ?? process.env.APP_ENV;
+    const suffix = env ? `&sentry_environment=${encodeURIComponent(env)}` : '';
+    return `${url.protocol}//${url.host}/api/${projectId}/security/?sentry_key=${key}${suffix}`;
+  } catch {
+    return null;
+  }
+}
+
+/** Header `Reporting-Endpoints` para o grupo de report da CSP (ou `null`). */
+export function reportingEndpointsHeader(): string | null {
+  const uri = sentryCspReportUri();
+  return uri ? `${CSP_REPORT_GROUP}="${uri}"` : null;
+}
 
 /**
  * CSP relaxada só quando o app fala com o Supabase local: `next dev`, ou um
@@ -109,6 +141,13 @@ export function buildContentSecurityPolicy(nonce?: string): string {
     // carregamento dos chunks (`_next/static/*`) forçando https local inexistente.
     production ? 'upgrade-insecure-requests' : null,
   ].filter(Boolean);
+
+  const reportUri = sentryCspReportUri();
+  if (reportUri) {
+    // `report-to` (moderno) + `report-uri` (fallback p/ navegadores antigos).
+    csp.push(`report-to ${CSP_REPORT_GROUP}`);
+    csp.push(`report-uri ${reportUri}`);
+  }
 
   return csp.join('; ');
 }
