@@ -257,6 +257,7 @@ export async function regenerateOrderPixCharge(
 export type WebhookOutcome =
   | 'confirmed'
   | 'failed'
+  | 'refunded'
   | 'pending'
   | 'ignored'
   | 'order_not_found'
@@ -375,6 +376,21 @@ async function applyStatus(
       });
     }
     return ok('failed');
+  }
+
+  if (status === 'refunded') {
+    // Cobre tanto o webhook disparado pelo nosso próprio estorno quanto um
+    // estorno feito direto no painel do Mercado Pago. Idempotente: se o pedido
+    // já está `refunded`, a RPC não faz nada.
+    const { error } = await admin.rpc('refund_order_pix_payment', {
+      p_order_id: orderId,
+    });
+    if (error) {
+      return err('INTERNAL_ERROR', 'Falha ao registrar o estorno.', {
+        cause: error,
+      });
+    }
+    return ok('refunded');
   }
 
   return ok('pending');
@@ -611,7 +627,8 @@ export async function reconcilePendingPixOrders(options?: {
       continue;
     }
     if (applied.data === 'confirmed') summary.confirmed += 1;
-    else if (applied.data === 'failed') summary.failed += 1;
+    else if (applied.data === 'failed' || applied.data === 'refunded')
+      summary.failed += 1;
     else summary.stillPending += 1;
   }
 

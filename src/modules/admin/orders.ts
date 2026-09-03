@@ -327,6 +327,35 @@ export type CancelAdminOrderResult = {
   refund?: 'done' | 'already' | 'failed';
 };
 
+/** Um Pix pago que ainda não foi estornado. */
+function needsPixRefund(order: AdminOrderDetail): boolean {
+  return order.paymentMethod === 'pix' && order.paymentStatus === 'confirmed';
+}
+
+/**
+ * Estorna o Pix e devolve o pedido já atualizado. Uma falha no estorno não
+ * desfaz o cancelamento — o admin vê o aviso e pode tentar de novo.
+ */
+async function finishPixRefund(
+  orderId: string,
+  fallbackOrder: AdminOrderDetail,
+): Promise<Result<CancelAdminOrderResult>> {
+  const refund = await refundOrderPixPayment(orderId);
+  if (!refund.ok) {
+    logger.error('Cancelamento ok, mas o estorno Pix falhou', {
+      orderId,
+      code: refund.error.code,
+    });
+    return ok({ order: fallbackOrder, refund: 'failed' });
+  }
+
+  const refreshed = await getAdminOrder(orderId);
+  return ok({
+    order: refreshed.ok ? refreshed.data : fallbackOrder,
+    refund: refund.data.alreadyRefunded ? 'already' : 'done',
+  });
+}
+
 export async function cancelAdminOrder(options: {
   orderId: string;
   reason: string;
@@ -339,6 +368,18 @@ export async function cancelAdminOrder(options: {
     );
   }
 
+  const current = await getAdminOrder(options.orderId);
+  if (!current.ok) return current;
+
+  // Pedido já cancelado: não dá pra transicionar de novo, mas o estorno Pix
+  // pode ter ficado pendente (falha na 1ª tentativa). Refaz só o estorno.
+  if (current.data.status === 'cancelled') {
+    if (!needsPixRefund(current.data)) {
+      return err('VALIDATION_ERROR', 'Este pedido já está cancelado.');
+    }
+    return finishPixRefund(options.orderId, current.data);
+  }
+
   const cancelled = await transitionAdminOrderStatus({
     orderId: options.orderId,
     newStatus: 'cancelled',
@@ -346,24 +387,10 @@ export async function cancelAdminOrder(options: {
   });
   if (!cancelled.ok) return cancelled;
 
-  const order = cancelled.data;
-
-  // Pix já pago → estorna automaticamente no Mercado Pago. O pedido já está
-  // cancelado; uma falha no estorno não desfaz o cancelamento.
-  if (order.paymentMethod === 'pix' && order.paymentStatus === 'confirmed') {
-    const refund = await refundOrderPixPayment(options.orderId);
-    if (!refund.ok) {
-      logger.error('Cancelamento ok, mas o estorno Pix falhou', {
-        orderId: options.orderId,
-        code: refund.error.code,
-      });
-      return ok({ order, refund: 'failed' });
-    }
-    return ok({
-      order,
-      refund: refund.data.alreadyRefunded ? 'already' : 'done',
-    });
+  // Pix já pago → estorna automaticamente no Mercado Pago.
+  if (needsPixRefund(cancelled.data)) {
+    return finishPixRefund(options.orderId, cancelled.data);
   }
 
-  return ok({ order });
+  return ok({ order: cancelled.data });
 }
