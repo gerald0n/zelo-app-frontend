@@ -210,11 +210,11 @@ pasta.
 1. **105 — Frete.** Fura a fila: bug de dinheiro (taxa binária nos 2 km) e de
    confiança; pré-requisito da comanda manual (103) e do financeiro (104).
    Ordem interna: **(a) chave Google + geocodificação — ✅ em produção**;
-   **(b) autocomplete — ✅ em `develop`**; **(área de entrega por raio +
-   bairro opcional + raio máx/grátis editáveis no admin — ✅ em `develop`,
-   ver §9)**; (c) mapa Google + satélite + reverse geocode + mapa grande;
-   (d) tratar confiança (rooftop/interpolado); (e) suavizar a taxa (faixas/km);
-   (f) extrair componente único.
+   **(b) autocomplete — ✅ em produção**; **(área de entrega por raio +
+   bairro opcional + raio máx/grátis editáveis no admin — ✅ em produção,
+   PR #31, ver §9)**; (c) mapa Google + satélite + reverse geocode + mapa
+   grande; (d) tratar confiança (rooftop/interpolado); (e) suavizar a taxa
+   (faixas/km); (f) extrair componente único.
 2. **104 — Promoções** (necessária para o lançamento: loja toda −10%).
 3. **103 — Bloco 1 (quadros de pedidos)** e demais blocos.
 4. **104 — Cupons + Financeiro** (após o Bloco 3; cupons de preferência após o
@@ -228,14 +228,16 @@ pasta.
 
 ## 7. Próximo passo
 
-**Subir `develop` para produção** (b + área por raio, ver §8 e §9). No deploy:
-1. `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` da Vercel com **Places API (New)** habilitada.
-2. CSP em produção ganhou `places.googleapis.com` no `connect-src`.
-3. `supabase db push` (ou o fluxo de migração usado) aplica
-   `20260904120000_store_max_delivery_radius.sql` — coluna `max_delivery_radius_meters`
-   (default 3000). Depois, ajustar o raio grátis:
-   `UPDATE public.stores SET free_delivery_radius_meters = 1000;` (era 2 km).
-   Raio máx e raio grátis agora se editam em **Ajustes → loja** no admin.
+**Itens (b) + área por raio — ✅ EM PRODUÇÃO** (PR #31, deploy 04/09/2026).
+Verificado no ar: CSP com `places.googleapis.com`; migração `20260904120000`
+aplicada; `stores` com `free_delivery_radius_meters=1000` e
+`max_delivery_radius_meters=3000`; `/api/v1/addresses/validate` a 0,4/2,0/5,0 km
+→ grátis / R$5 / fora da área. Falta só o teste visual do autocomplete no
+navegador de produção.
+
+Próximo: **item 105-(c) — mapa Google + satélite** no lugar do Leaflet (reverse
+geocode ao arrastar o pin, mapa maior, CSP dos domínios do Maps JS) ou
+**(e) suavizar a taxa** (hoje ainda tem o degrau em 1 km).
 
 Depois, **item 105-(c) — mapa Google + satélite** no lugar do Leaflet: reverse
 geocode ao arrastar o pin, mapa maior, e CSP para os domínios do Maps JS.
@@ -274,7 +276,7 @@ geocode ao arrastar o pin, mapa maior, e CSP para os domínios do Maps JS.
   "Rua Coronel Jose Sabino, 100, Centro" → `-6.0476, -38.4614`, rota 392 m,
   frete R$ 0, `source: google_maps`. (Antes ia pra **Sobral**, 465 km, R$ 5.)
 
-### Feito — item (b), em `develop` (commits `ec330d4` + o desta sessão)
+### Feito — item (b) + área por raio, EM PRODUÇÃO (PR #31, commits ec330d4..8674f9b)
 - `src/modules/delivery/places.ts` (novo, **client-safe**): `fetchPlaceSuggestions`
   (POST `places:autocomplete`, `locationBias` circular em Pereiro, raio 15 km,
   `includedRegionCodes:['br']`), `fetchPlaceDetails` (GET `places/{id}`,
