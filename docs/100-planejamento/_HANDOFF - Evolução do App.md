@@ -211,9 +211,10 @@ pasta.
    confiança; pré-requisito da comanda manual (103) e do financeiro (104).
    Ordem interna: **(a) chave Google + geocodificação — ✅ em produção**;
    **(b) autocomplete — ✅ em `develop`**; **(área de entrega por raio +
-   bairro opcional — ✅ em `develop`, ver §9)**; (c) mapa Google + satélite +
-   reverse geocode + mapa grande; (d) tratar confiança (rooftop/interpolado);
-   (e) raio máx/grátis/taxa editáveis no admin; (f) extrair componente único.
+   bairro opcional + raio máx/grátis editáveis no admin — ✅ em `develop`,
+   ver §9)**; (c) mapa Google + satélite + reverse geocode + mapa grande;
+   (d) tratar confiança (rooftop/interpolado); (e) suavizar a taxa (faixas/km);
+   (f) extrair componente único.
 2. **104 — Promoções** (necessária para o lançamento: loja toda −10%).
 3. **103 — Bloco 1 (quadros de pedidos)** e demais blocos.
 4. **104 — Cupons + Financeiro** (após o Bloco 3; cupons de preferência após o
@@ -230,8 +231,11 @@ pasta.
 **Subir `develop` para produção** (b + área por raio, ver §8 e §9). No deploy:
 1. `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` da Vercel com **Places API (New)** habilitada.
 2. CSP em produção ganhou `places.googleapis.com` no `connect-src`.
-3. Rodar em produção: `UPDATE public.stores SET free_delivery_radius_meters = 1000;`
-   (raio grátis passou de 2 km → 1 km; raio máximo 3 km é constante no código).
+3. `supabase db push` (ou o fluxo de migração usado) aplica
+   `20260904120000_store_max_delivery_radius.sql` — coluna `max_delivery_radius_meters`
+   (default 3000). Depois, ajustar o raio grátis:
+   `UPDATE public.stores SET free_delivery_radius_meters = 1000;` (era 2 km).
+   Raio máx e raio grátis agora se editam em **Ajustes → loja** no admin.
 
 Depois, **item 105-(c) — mapa Google + satélite** no lugar do Leaflet: reverse
 geocode ao arrastar o pin, mapa maior, e CSP para os domínios do Maps JS.
@@ -323,7 +327,7 @@ geocode ao arrastar o pin, mapa maior, e CSP para os domínios do Maps JS.
 ### Falta no 105
 - (c) mapa Google + satélite + reverse geocode + mapa grande + CSP (domínios
   Maps JS) · (d) tratar confiança (rooftop/interpolado; obrigar confirmar pin) ·
-  (e) raio máx/grátis/taxa editáveis no admin (migração `stores.max_delivery_radius_meters`) ·
+  (e) suavizar a taxa (faixas por km / R$ por km — hoje ainda tem o degrau em 1 km) ·
   (f) extrair componente único (checkout + comanda manual).
 
 ---
@@ -336,9 +340,12 @@ passou a ser raio a partir da loja** (a coordenada já vem do autocomplete/pin).
 
 - **Linha reta** (haversine, sem × 1,3, sem Routes API no caminho do quote).
 - **Grátis ≤ 1 km**, **R$ 5 fixo** de 1 a 3 km, **> 3 km = fora** (só retirada).
-- `MAX_DELIVERY_RADIUS_METERS = 3000` — **constante** em `quote.ts` (TODO: admin, item e).
-- Raio grátis continua no banco (`stores.free_delivery_radius_meters`): **2000 → 1000**
-  (seed + UPDATE manual em produção no deploy).
+- Migração `20260904120000_store_max_delivery_radius.sql`: coluna
+  `stores.max_delivery_radius_meters` (default 3000). Raio máx **e** raio grátis
+  agora editáveis em **Ajustes → loja** (`admin/configuracoes`); o admin valida
+  `máx ≥ grátis` (mensagem amigável em `updateAdminStore` + `superRefine` na rota).
+- Raio grátis no banco: **2000 → 1000** (seed + `UPDATE` manual no deploy).
+- `quoteDelivery` lê `store.maxDeliveryRadiusMeters` (a constante do código sumiu).
 - **Campo bairro virou `<Input>` opcional** ("Bairro / localidade (opcional)")
   no checkout e no `AccountAddressForm` — sumiu o `<select>`. Só rótulo pro
   entregador; não entra na cotação. `''` é aceito em todo o caminho
@@ -356,11 +363,10 @@ passou a ser raio a partir da loja** (a coordenada já vem do autocomplete/pin).
   não invalida mais a cotação nem o pin confirmado.
 - Verificado no dev: autocomplete → sem select → pin → quote por raio; faixas
   0,5/1,5/2,8/4 km dão grátis/R$5/R$5/fora; **pedido #1000 fechado com
-  `neighborhood: ''`**; admin renderiza o endereço limpo.
+  `neighborhood: ''`**; admin renderiza o endereço limpo; mudar o raio máx no
+  admin para 2 km fez o endereço de 2,8 km cair pra fora da área na hora.
 
 ### Falta / fast-follow
-- Raio máx + grátis + taxa **editáveis no admin** (`admin/configuracoes`) — precisa
-  de migração `stores.max_delivery_radius_meters` + tipo + rota `admin/store` + form.
 - Suavizar a taxa (faixas por km / R$ por km) — hoje ainda tem o degrau em 1 km.
 - `maps.ts:getDrivingDistanceMeters` e `geo.ts:estimateRoadDistanceMeters` ficaram
   sem uso (guardados para o item c).

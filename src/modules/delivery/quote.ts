@@ -4,13 +4,6 @@ import { geocodeAddress, hasGoogleMapsServerKey } from '@/modules/delivery/maps'
 import { geocodeAddressOsm } from '@/modules/delivery/osm';
 import { haversineDistanceMeters } from '@/modules/delivery/geo';
 
-/**
- * Raio máximo de entrega, em metros (linha reta da loja até o cliente). Fora
- * disso: só retirada. TODO: mover para config do admin junto de
- * `freeDeliveryRadiusMeters` e `fixedDeliveryFeeCents` (coluna nova em `stores`).
- */
-export const MAX_DELIVERY_RADIUS_METERS = 3000;
-
 /** Centro de Pereiro-CE — âncora quando não conseguimos localizar o endereço. */
 const PEREIRO_CENTER = { latitude: -6.0485, longitude: -38.4612 } as const;
 

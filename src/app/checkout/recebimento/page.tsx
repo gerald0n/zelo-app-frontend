@@ -70,6 +70,13 @@ function todayIso(): string {
   return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD, hora local
 }
 
+/** "800 m" / "1 km" / "1,5 km". */
+function formatRadius(meters: number): string {
+  if (meters < 1000) return `${meters} m`;
+  const km = meters / 1000;
+  return `${(Number.isInteger(km) ? km.toString() : km.toFixed(1)).replace('.', ',')} km`;
+}
+
 function relativeDayLabel(iso: string): string | null {
   const today = new Date(`${todayIso()}T12:00:00`);
   const target = new Date(`${iso}T12:00:00`);
@@ -689,7 +696,11 @@ export default function RecebimentoPage() {
                       ? deliveryFee === 0
                         ? 'Grátis'
                         : formatCatalogPrice(deliveryFee)
-                      : 'Grátis até 1 km'
+                      : options
+                        ? `Grátis até ${formatRadius(
+                            options.store.freeDeliveryRadiusMeters,
+                          )}`
+                        : 'Grátis por perto'
                     : 'Grátis'}
                 </span>
               </button>

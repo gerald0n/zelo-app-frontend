@@ -914,6 +914,7 @@ export async function updateAdminStore(input: {
   longitude?: number;
   freeDeliveryRadiusMeters?: number;
   fixedDeliveryFeeCents?: number;
+  maxDeliveryRadiusMeters?: number;
   acceptingOrders?: boolean;
   acceptsPix?: boolean;
   acceptsCash?: boolean;
@@ -948,6 +949,17 @@ export async function updateAdminStore(input: {
     );
   }
 
+  const nextFreeRadius =
+    input.freeDeliveryRadiusMeters ?? current.data.freeDeliveryRadiusMeters;
+  const nextMaxRadius =
+    input.maxDeliveryRadiusMeters ?? current.data.maxDeliveryRadiusMeters;
+  if (nextMaxRadius < nextFreeRadius) {
+    return err(
+      'VALIDATION_ERROR',
+      'O raio máximo de entrega deve ser maior ou igual ao raio grátis.',
+    );
+  }
+
   const patch: StoreUpdate = {};
   if (typeof input.name === 'string') patch.name = input.name.trim();
   if (typeof input.phoneE164 === 'string') {
@@ -971,6 +983,9 @@ export async function updateAdminStore(input: {
   }
   if (typeof input.fixedDeliveryFeeCents === 'number') {
     patch.fixed_delivery_fee_cents = input.fixedDeliveryFeeCents;
+  }
+  if (typeof input.maxDeliveryRadiusMeters === 'number') {
+    patch.max_delivery_radius_meters = input.maxDeliveryRadiusMeters;
   }
   if (typeof input.acceptingOrders === 'boolean') {
     patch.is_open_override = input.acceptingOrders ? null : false;

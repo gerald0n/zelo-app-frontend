@@ -63,6 +63,8 @@ export type CatalogStore = {
   longitude: number;
   freeDeliveryRadiusMeters: number;
   fixedDeliveryFeeCents: number;
+  /** Raio máximo de entrega (m, linha reta); além dele, só retirada. */
+  maxDeliveryRadiusMeters: number;
   timezone: string;
   isOpenOverride: boolean | null;
   acceptsPayments: CatalogPaymentMethods;

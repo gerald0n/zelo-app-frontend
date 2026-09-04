@@ -6,7 +6,6 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { getPublicStore } from '@/modules/catalog/catalog-repository';
 import {
   quoteDelivery,
-  MAX_DELIVERY_RADIUS_METERS,
   type DeliveryAddressInput,
 } from '@/modules/delivery';
 import {
@@ -104,7 +103,7 @@ async function resolveQuotedCoords(
     longitude: store.longitude,
     freeDeliveryRadiusMeters: store.freeDeliveryRadiusMeters,
     fixedDeliveryFeeCents: store.fixedDeliveryFeeCents,
-    maxDeliveryRadiusMeters: MAX_DELIVERY_RADIUS_METERS,
+    maxDeliveryRadiusMeters: store.maxDeliveryRadiusMeters,
     addressLine: store.addressLine,
     city: store.city,
     state: store.state,

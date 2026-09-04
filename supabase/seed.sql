@@ -20,6 +20,7 @@ insert into public.stores (
   latitude,
   longitude,
   free_delivery_radius_meters,
+  max_delivery_radius_meters,
   fixed_delivery_fee_cents,
   timezone,
   schedule_slot_times
@@ -36,6 +37,7 @@ insert into public.stores (
   -6.048527,
   -38.461176,
   1000,
+  3000,
   500,
   'America/Fortaleza',
   array['08:00','09:00','10:00','11:00','14:00','15:00','16:00','17:00']::text[]

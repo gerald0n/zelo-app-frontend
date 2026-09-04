@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getPublicStore } from '@/modules/catalog/catalog-repository';
-import { quoteDelivery, MAX_DELIVERY_RADIUS_METERS } from '@/modules/delivery';
+import { quoteDelivery } from '@/modules/delivery';
 import { httpStatusFor } from '@/lib/errors';
 
 export const dynamic = 'force-dynamic';
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     longitude: store.longitude,
     freeDeliveryRadiusMeters: store.freeDeliveryRadiusMeters,
     fixedDeliveryFeeCents: store.fixedDeliveryFeeCents,
-    maxDeliveryRadiusMeters: MAX_DELIVERY_RADIUS_METERS,
+    maxDeliveryRadiusMeters: store.maxDeliveryRadiusMeters,
     addressLine: store.addressLine,
     city: store.city,
     state: store.state,
