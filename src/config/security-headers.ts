@@ -137,11 +137,13 @@ export function buildContentSecurityPolicy(nonce?: string): string {
     scriptSrc.join(' '),
     // Atributos `style=` do React exigem `'unsafe-inline'` em `style-src`;
     // injeção de estilo não executa script, então o risco residual é baixo.
-    "style-src 'self' 'unsafe-inline'",
+    // O Maps JS injeta o CSS das fontes (Roboto/Google Sans) de fonts.googleapis.com.
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     production
       ? "img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://maps.gstatic.com https://maps.googleapis.com https://khms0.googleapis.com https://khms1.googleapis.com"
       : "img-src 'self' data: blob: https:",
-    "font-src 'self' data:",
+    // Os arquivos de fonte referenciados pelo CSS acima vêm de fonts.gstatic.com.
+    "font-src 'self' data: https://fonts.gstatic.com",
     connectSrc.join(' '),
     'frame-src https://challenges.cloudflare.com https://www.openstreetmap.org',
     // Só em produção: em `next dev` sobre http, esta diretiva quebra o
