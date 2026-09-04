@@ -117,10 +117,9 @@ export async function geocodeAddress(
   }
 }
 
-export async function getDrivingDistanceMeters(
-  origin: GeoPoint,
-  destination: GeoPoint,
-): Promise<Result<number>> {
+export async function reverseGeocodeCoords(
+  point: GeoPoint,
+): Promise<Result<GeocodeResult>> {
   const key = getGoogleMapsApiKey();
   if (!key) {
     return err(
@@ -130,75 +129,67 @@ export async function getDrivingDistanceMeters(
   }
 
   try {
-    const response = await fetch(
-      'https://routes.googleapis.com/directions/v2:computeRoutes',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': key,
-          'X-Goog-FieldMask': 'routes.distanceMeters',
-        },
-        body: JSON.stringify({
-          origin: {
-            location: {
-              latLng: {
-                latitude: origin.latitude,
-                longitude: origin.longitude,
-              },
-            },
-          },
-          destination: {
-            location: {
-              latLng: {
-                latitude: destination.latitude,
-                longitude: destination.longitude,
-              },
-            },
-          },
-          travelMode: 'DRIVE',
-          units: 'METRIC',
-        }),
-        signal: AbortSignal.timeout(8000),
-      },
-    );
+    const url = new URL('https://maps.googleapis.com/maps/api/geocode/json');
+    url.searchParams.set('latlng', `${point.latitude},${point.longitude}`);
+    url.searchParams.set('language', 'pt-BR');
+    url.searchParams.set('key', key);
 
+    const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
     if (!response.ok) {
       return err(
         'INTEGRATION_UNAVAILABLE',
-        'Falha ao calcular a rota de entrega.',
+        'Falha ao identificar o endereço do pin.',
       );
     }
 
     const data = (await response.json()) as {
-      routes?: Array<{ distanceMeters?: number }>;
+      status: string;
+      results?: Array<{
+        formatted_address: string;
+        geometry: { location: { lat: number; lng: number } };
+        address_components?: Array<{
+          long_name: string;
+          short_name: string;
+          types: string[];
+        }>;
+      }>;
     };
 
-    const route = data.routes?.[0];
-    if (!route) {
+    if (data.status !== 'OK' || !data.results?.[0]) {
       return err(
         'VALIDATION_ERROR',
-        'Não foi possível calcular a rota até o endereço.',
+        'Não foi possível identificar o endereço do pin.',
       );
     }
 
-    // A Routes API omite `distanceMeters` quando é 0 (semântica proto3).
-    return ok(route.distanceMeters ?? 0);
+    const result = data.results[0];
+    const components = result.address_components ?? [];
+    const find = (type: string) =>
+      components.find((item) => item.types.includes(type));
+
+    return ok({
+      latitude: point.latitude,
+      longitude: point.longitude,
+      formattedAddress: result.formatted_address,
+      city: find('administrative_area_level_2')?.long_name,
+      state: find('administrative_area_level_1')?.short_name,
+      postalCode: find('postal_code')?.long_name,
+    });
   } catch (cause) {
     logger.captureAppError(
       {
         code: 'INTEGRATION_UNAVAILABLE',
-        message: 'Erro ao chamar Routes API',
+        message: 'Erro ao chamar Geocoding API (reverse)',
         cause,
       },
       {
-        integration: 'google_maps_routes',
+        integration: 'google_maps_reverse_geocode',
         reason: describeError(cause),
       },
     );
     return err(
       'INTEGRATION_UNAVAILABLE',
-      'Serviço de rota temporariamente indisponível.',
+      'Serviço de mapas temporariamente indisponível.',
       { cause },
     );
   }

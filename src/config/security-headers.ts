@@ -69,6 +69,10 @@ const CONNECT_SRC_BASE = [
   'https://maps.googleapis.com',
   // Autocomplete de endereço no checkout (Places API New, chamada do navegador).
   'https://places.googleapis.com',
+  // Tiles/assets do mapa de confirmação (Google Maps JS, satélite).
+  'https://maps.gstatic.com',
+  'https://khms0.googleapis.com',
+  'https://khms1.googleapis.com',
 ];
 
 /** Supabase local + HMR do Next — só em desenvolvimento. */
@@ -115,6 +119,7 @@ export function buildContentSecurityPolicy(nonce?: string): string {
         "'unsafe-inline'",
         production ? null : "'unsafe-eval'",
         'https://challenges.cloudflare.com',
+        'https://maps.googleapis.com',
       ].filter(Boolean);
 
   const connectSrc = [
@@ -134,7 +139,7 @@ export function buildContentSecurityPolicy(nonce?: string): string {
     // injeção de estilo não executa script, então o risco residual é baixo.
     "style-src 'self' 'unsafe-inline'",
     production
-      ? "img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://tile.openstreetmap.org"
+      ? "img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://maps.gstatic.com https://maps.googleapis.com https://khms0.googleapis.com https://khms1.googleapis.com"
       : "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
     connectSrc.join(' '),

@@ -5,10 +5,10 @@ import { useState } from 'react';
 import { Loader2, MapPin } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
-const DeliveryLeafletMap = dynamic(
+const DeliveryGoogleMap = dynamic(
   () =>
-    import('@/components/checkout/DeliveryLeafletMap').then(
-      (mod) => mod.DeliveryLeafletMap,
+    import('@/components/checkout/DeliveryGoogleMap').then(
+      (mod) => mod.DeliveryGoogleMap,
     ),
   {
     ssr: false,
@@ -27,6 +27,8 @@ type DeliveryMapConfirmProps = {
   onConfirm: () => void;
   /** Centro do mapa após o usuário arrastar (pin fixo no meio). */
   onCenterChange?: (latitude: number, longitude: number) => void;
+  /** Endereço resolvido por reverse geocode para o pin atual. */
+  addressPreview?: string;
 };
 
 function MapEmbedFallback({
@@ -56,6 +58,7 @@ export function DeliveryMapConfirm({
   confirmed,
   onConfirm,
   onCenterChange,
+  addressPreview,
 }: DeliveryMapConfirmProps) {
   const [mapStatus, setMapStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading',
@@ -71,12 +74,12 @@ export function DeliveryMapConfirm({
         </p>
       </div>
 
-      <div className="relative h-44 overflow-hidden rounded-md border border-border bg-muted sm:h-52">
+      <div className="relative h-64 overflow-hidden rounded-md border border-border bg-muted sm:h-80">
         {mapStatus === 'error' ? (
           <MapEmbedFallback latitude={latitude} longitude={longitude} />
         ) : (
           <>
-            <DeliveryLeafletMap
+            <DeliveryGoogleMap
               latitude={latitude}
               longitude={longitude}
               onReady={() => setMapStatus('ready')}
@@ -108,6 +111,13 @@ export function DeliveryMapConfirm({
 
       {loadError ? (
         <p className="text-xs text-muted-foreground">{loadError}</p>
+      ) : null}
+
+      {addressPreview ? (
+        <p className="text-sm leading-snug text-muted-foreground">
+          Local do pin:{' '}
+          <span className="font-medium text-foreground">{addressPreview}</span>
+        </p>
       ) : null}
 
       <button
