@@ -210,9 +210,10 @@ pasta.
 1. **105 — Frete.** Fura a fila: bug de dinheiro (taxa binária nos 2 km) e de
    confiança; pré-requisito da comanda manual (103) e do financeiro (104).
    Ordem interna: **(a) ligar chave Google + geocodificação/rota por Google —
-   ✅ FEITO e em produção**; (b) autocomplete; (c) mapa Google + satélite +
-   reverse geocode + mapa grande; (d) tratar confiança; (e) origem da loja por
-   pin; (f) extrair componente único.
+   ✅ FEITO e em produção**; **(b) autocomplete — ✅ FEITO em `develop` (falta
+   subir p/ produção)**; (c) mapa Google + satélite + reverse geocode + mapa
+   grande; (d) tratar confiança; (e) origem da loja por pin; (f) extrair
+   componente único.
 2. **104 — Promoções** (necessária para o lançamento: loja toda −10%).
 3. **103 — Bloco 1 (quadros de pedidos)** e demais blocos.
 4. **104 — Cupons + Financeiro** (após o Bloco 3; cupons de preferência após o
@@ -226,13 +227,14 @@ pasta.
 
 ## 7. Próximo passo
 
-**Item 105-(b) — autocomplete de endereço no checkout.** Places Autocomplete
-(API New, `places.googleapis.com/v1/places:autocomplete`) enviesado pra região
-de Pereiro, com session token cobrindo autocomplete + 1 geocodificação como uma
-coisa só. Ao escolher a sugestão, usar o `placeId` → coordenada precisa. Usa a
-chave de navegador `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (hoje sem uso). Testado na
-mão: a Places Autocomplete New responde OK com a chave de navegador + Referer da
-`cardapio.zeloconfeitaria.com.br`.
+**Subir o (b) para produção** (commits em `develop`, ver §8) — confirmar que a
+env `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` da Vercel tem a **Places API (New)**
+habilitada, e revisar o CSP em produção (o `connect-src` ganhou
+`places.googleapis.com`).
+
+Depois, **item 105-(c) — mapa Google + satélite** no lugar do Leaflet: reverse
+geocode ao arrastar o pin, mapa maior, e CSP para os domínios do Maps JS +
+`routes.googleapis.com`.
 
 ---
 
@@ -268,7 +270,43 @@ mão: a Places Autocomplete New responde OK com a chave de navegador + Referer d
   "Rua Coronel Jose Sabino, 100, Centro" → `-6.0476, -38.4614`, rota 392 m,
   frete R$ 0, `source: google_maps`. (Antes ia pra **Sobral**, 465 km, R$ 5.)
 
+### Feito — item (b), em `develop` (commits `ec330d4` + o desta sessão)
+- `src/modules/delivery/places.ts` (novo, **client-safe**): `fetchPlaceSuggestions`
+  (POST `places:autocomplete`, `locationBias` circular em Pereiro, raio 15 km,
+  `includedRegionCodes:['br']`), `fetchPlaceDetails` (GET `places/{id}`,
+  `X-Goog-FieldMask` obrigatório), `createPlacesSessionToken` (`crypto.randomUUID`),
+  parser dos `addressComponents`. Guarda de cidade: se `administrative_area_level_2`
+  ≠ "Pereiro", devolve o texto mas com coordenada `NaN`. Lê
+  `process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` **direto** (literal inlined) — não
+  criou helper em `config/env.ts` porque nenhum client component importa de lá.
+- `src/components/checkout/AddressAutocomplete.tsx` (novo): combobox acessível
+  (`role="combobox"`, ↑/↓/Enter/Esc, `aria-activedescendant`), debounce 300 ms,
+  `AbortController`, session token renovado após o Place Details. **Sem chave →
+  `<Input>` puro** (degradação testada).
+- Checkout (`checkout/recebimento/page.tsx`) e conta (`AccountAddressForm.tsx`):
+  campo "Rua" → `AddressAutocomplete`. Ao escolher a sugestão, preenche rua (+ nº
+  e bairro quando o Google traz) e fixa a coordenada.
+- **Coordenada "presa à rua"**: os handlers de nº e bairro **não limpam mais**
+  lat/lng (só a redigitação da rua limpa). Isso porque em Pereiro o Google quase
+  nunca traz `sublocality` — o cliente escolhe o bairro no `<select>` depois, e
+  sem essa mudança a coordenada exata do `placeId` era perdida nesse clique.
+- `security-headers.ts`: `+ https://places.googleapis.com` no `connect-src`.
+- Verificado no dev (chave de navegador no `.env.local`): sugestões enviesadas
+  pra Pereiro, 1 Place Details com o mesmo session token, `POST /addresses/validate`
+  recebe `latitude/longitude` do `placeId` e responde `source: google_maps`.
+  Teclado e degradação sem chave OK. Nenhuma violação de CSP.
+
 ### Aprendizados / pegadinhas
+- **Seed local desatualizado**: o `stores.latitude/longitude` do banco local ainda
+  é o valor **errado antigo** (`-5.977, -38.622`, ~25 km fora) — o `seed.sql` foi
+  corrigido mas este banco não foi re-semeado. Quotes locais dão distância/tarifa
+  erradas; **produção já está certa**. Re-semear (`pnpm db:reset` + seed) ou rodar
+  o UPDATE manual pra testar frete localmente.
+- Place Details (GET `places/{id}`) **exige** `X-Goog-FieldMask` — sem ele é 400.
+  No autocomplete (POST) o field mask é opcional.
+- Em Pereiro o Google não devolve bairro (`sublocality*`) para os endereços —
+  `administrative_area_level_4` costuma repetir "Pereiro". O `<select>` de bairro
+  continua necessário.
 - **Terminal do usuário mascara segredos colados** com `•` (U+2022) — a máscara
   foi salva na env var da Vercel e a Routes API quebrou com
   `TypeError: Cannot convert argument to a ByteString`. **Configurar env de chave
@@ -284,7 +322,7 @@ mão: a Places Autocomplete New responde OK com a chave de navegador + Referer d
   Node local é v20 (o projeto quer ≥22) — não bloqueia.
 
 ### Falta no 105
-- (b) autocomplete · (c) mapa Google + satélite + reverse geocode + mapa grande +
+- (c) mapa Google + satélite + reverse geocode + mapa grande +
   CSP (`routes.googleapis.com`, domínios Maps JS) · (d) tratar confiança
   (rooftop/interpolado/aproximado; obrigar confirmar pin) · (e) origem da loja
   por pin no admin · (f) extrair componente único (checkout + comanda manual).

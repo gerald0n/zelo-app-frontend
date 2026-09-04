@@ -780,11 +780,9 @@ export default function RecebimentoPage() {
                 <Input
                   value={details.number}
                   onChange={(e) =>
-                    setAddressDetails({
-                      number: e.target.value,
-                      latitude: undefined,
-                      longitude: undefined,
-                    })
+                    // Não limpa lat/lng: a coordenada está presa à rua (definida
+                    // pelo autocomplete ou pelo pin), não ao número.
+                    setAddressDetails({ number: e.target.value })
                   }
                   placeholder="Nº"
                   className={checkoutFieldClass}
@@ -793,11 +791,7 @@ export default function RecebimentoPage() {
               <select
                 value={details.neighborhood}
                 onChange={(e) =>
-                  setAddressDetails({
-                    neighborhood: e.target.value,
-                    latitude: undefined,
-                    longitude: undefined,
-                  })
+                  setAddressDetails({ neighborhood: e.target.value })
                 }
                 className={checkoutFieldClass}
               >

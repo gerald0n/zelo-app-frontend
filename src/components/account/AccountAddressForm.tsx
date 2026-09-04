@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { DeliveryMapConfirm } from '@/components/checkout/DeliveryMapConfirm';
 import { AddressAutocomplete } from '@/components/checkout/AddressAutocomplete';
@@ -101,20 +101,23 @@ export function AccountAddressForm({
     number.trim().length > 0 &&
     neighborhood.trim().length > 0;
 
-  // Pula a próxima auto-validação por texto quando o endereço acabou de ser
-  // resolvido pelo autocomplete (já validamos com a coordenada exata).
-  const skipAutoValidateRef = useRef(false);
+  // Coordenada exata vinda do autocomplete (placeId → Place Details) ou do pin
+  // do mapa. Presa à rua: sobrevive a edições de número/bairro; some quando a
+  // rua é redigitada à mão.
+  const [placeCoords, setPlaceCoords] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(
+    initial?.latitude != null && initial?.longitude != null
+      ? { latitude: initial.latitude, longitude: initial.longitude }
+      : null,
+  );
 
   useEffect(() => {
     if (!canQuote) {
       setQuote(null);
       setQuoteError('');
       setConfirmed(false);
-      return;
-    }
-
-    if (skipAutoValidateRef.current) {
-      skipAutoValidateRef.current = false;
       return;
     }
 
@@ -128,6 +131,8 @@ export function AccountAddressForm({
         neighborhood,
         complement,
         referencePoint,
+        latitude: placeCoords?.latitude,
+        longitude: placeCoords?.longitude,
       });
       if (!result.ok) {
         setQuote(null);
@@ -139,55 +144,30 @@ export function AccountAddressForm({
     }, 450);
 
     return () => window.clearTimeout(timer);
-  }, [canQuote, street, number, neighborhood, complement, referencePoint]);
+  }, [
+    canQuote,
+    street,
+    number,
+    neighborhood,
+    complement,
+    referencePoint,
+    placeCoords,
+  ]);
 
-  const revalidateWithCoords = async (
-    latitude: number,
-    longitude: number,
-    addressOverride?: {
-      street?: string;
-      number?: string;
-      neighborhood?: string;
-    },
-  ) => {
-    setQuoting(true);
-    setQuoteError('');
-    setConfirmed(false);
-    const result = await validateAddress({
-      street: addressOverride?.street ?? street,
-      number: addressOverride?.number ?? number,
-      neighborhood: addressOverride?.neighborhood ?? neighborhood,
-      complement,
-      referencePoint,
-      latitude,
-      longitude,
-    });
-    if (!result.ok) {
-      setQuoteError(result.message);
-    } else {
-      setQuote(result.data);
-    }
-    setQuoting(false);
+  // Pin do mapa arrastado: guarda a coordenada; o Effect re-valida com ela.
+  const handleCenterChange = (latitude: number, longitude: number) => {
+    setPlaceCoords({ latitude, longitude });
   };
 
   const handleResolvedPlace = (place: ResolvedPlace) => {
-    const nextStreet = place.street || street;
-    const nextNumber = place.number || number;
-    const nextNeighborhood = place.neighborhood || neighborhood;
-    setStreet(nextStreet);
-    setNumber(nextNumber);
-    setNeighborhood(nextNeighborhood);
-
-    const hasCoords =
-      Number.isFinite(place.latitude) && Number.isFinite(place.longitude);
-    if (hasCoords && nextNumber.trim() && nextNeighborhood.trim()) {
-      skipAutoValidateRef.current = true;
-      void revalidateWithCoords(place.latitude, place.longitude, {
-        street: nextStreet,
-        number: nextNumber,
-        neighborhood: nextNeighborhood,
-      });
-    }
+    setStreet(place.street || street);
+    if (place.number) setNumber(place.number);
+    if (place.neighborhood) setNeighborhood(place.neighborhood);
+    setPlaceCoords(
+      Number.isFinite(place.latitude) && Number.isFinite(place.longitude)
+        ? { latitude: place.latitude, longitude: place.longitude }
+        : null,
+    );
   };
 
   const isValid =
@@ -223,7 +203,10 @@ export function AccountAddressForm({
           className="col-span-2"
           inputClassName={checkoutFieldClass}
           value={street}
-          onChange={setStreet}
+          onChange={(text) => {
+            setStreet(text);
+            setPlaceCoords(null);
+          }}
           onResolve={handleResolvedPlace}
           placeholder="Rua"
           aria-label="Rua"
@@ -310,9 +293,7 @@ export function AccountAddressForm({
             longitude={quote.longitude}
             confirmed={confirmed}
             onConfirm={() => setConfirmed(true)}
-            onCenterChange={(lat, lng) => {
-              void revalidateWithCoords(lat, lng);
-            }}
+            onCenterChange={handleCenterChange}
           />
         </>
       ) : null}
