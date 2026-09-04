@@ -18,6 +18,17 @@ export function hasGoogleMapsServerKey(): boolean {
   return Boolean(getGoogleMapsApiKey());
 }
 
+/** Descreve um erro incluindo a `cause` aninhada do undici ("fetch failed"). */
+function describeError(error: unknown): string {
+  if (!(error instanceof Error)) return String(error);
+  const inner = (error as { cause?: unknown }).cause;
+  if (inner instanceof Error) {
+    return `${error.name}: ${error.message} <- ${inner.name}: ${inner.message}`;
+  }
+  if (inner != null) return `${error.name}: ${error.message} <- ${String(inner)}`;
+  return `${error.name}: ${error.message}`;
+}
+
 export async function geocodeAddress(
   address: string,
 ): Promise<Result<GeocodeResult>> {
@@ -81,7 +92,10 @@ export async function geocodeAddress(
         message: 'Erro ao chamar Geocoding API',
         cause,
       },
-      { integration: 'google_maps_geocode' },
+      {
+        integration: 'google_maps_geocode',
+        reason: describeError(cause),
+      },
     );
     return err(
       'INTEGRATION_UNAVAILABLE',
@@ -165,7 +179,10 @@ export async function getDrivingDistanceMeters(
         message: 'Erro ao chamar Routes API',
         cause,
       },
-      { integration: 'google_maps_routes' },
+      {
+        integration: 'google_maps_routes',
+        reason: describeError(cause),
+      },
     );
     return err(
       'INTEGRATION_UNAVAILABLE',
