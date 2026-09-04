@@ -203,12 +203,7 @@ export default function AdminPedidoPage({
         subtitle={statusLabel(order.status)}
         backTo="/admin/pedidos"
       />
-      <div
-        className={cn(
-          'p-3 pb-8 md:px-6 md:pt-6',
-          adminContainerClass,
-        )}
-      >
+      <div className={cn('p-3 pb-8 md:px-6 md:pt-6', adminContainerClass)}>
         <div className="flex flex-wrap">
           <div className="w-full space-y-3 px-0 lg:w-2/3 lg:pr-3">
             <section className="space-y-[13px] rounded-lg border border-border p-3.5">
@@ -299,11 +294,14 @@ export default function AdminPedidoPage({
                                   ? 'Cancelado'
                                   : 'Aguardando'
                         }`
-                      : ''}
+                      : order.paymentStatus === 'confirmed'
+                        ? ' · Pago'
+                        : ''}
                   </p>
                   {order.needsChange && order.changeForAmountCents != null ? (
                     <p className="mt-0.5 text-2xs text-muted-foreground">
-                      Troco para {formatCatalogPrice(order.changeForAmountCents)}
+                      Troco para{' '}
+                      {formatCatalogPrice(order.changeForAmountCents)}
                     </p>
                   ) : null}
                 </div>
@@ -311,6 +309,10 @@ export default function AdminPedidoPage({
               {order.customer ? (
                 <p className="text-xs text-muted-foreground">
                   Cliente: {order.customer.name} · {order.customer.phoneE164}
+                </p>
+              ) : order.guest ? (
+                <p className="text-xs text-muted-foreground">
+                  Cliente: {order.guest.name} · {order.guest.phoneE164} · Avulso
                 </p>
               ) : null}
             </section>

@@ -10,7 +10,8 @@ import {
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core';
-import { Search, Inbox, Loader2, Circle } from 'lucide-react';
+import Link from 'next/link';
+import { Search, Inbox, Loader2, Circle, Plus } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import AdminOrderCard from '@/components/admin/AdminOrderCard';
 import AdminOrderKanbanCard from '@/components/admin/AdminOrderKanbanCard';
@@ -23,7 +24,10 @@ import { adminKeys } from '@/lib/query-keys';
 import { cn } from '@/lib/cn';
 import { BOARD_COLUMNS, type BoardKind } from '@/lib/admin/order-columns';
 import { playNewOrderChime } from '@/lib/admin/notification-sound';
-import { nextAdminStatus, type AdminOrderListItem } from '@/modules/admin/types';
+import {
+  nextAdminStatus,
+  type AdminOrderListItem,
+} from '@/modules/admin/types';
 import { statusLabel, type OrderStatus } from '@/modules/orders/types';
 import { useAdminOrdersRealtime } from '@/modules/realtime/hooks';
 
@@ -256,6 +260,13 @@ export default function AdminPedidosPage() {
               </button>
             ))}
           </div>
+          <Link
+            href="/admin/pedidos/novo"
+            className="inline-flex shrink-0 items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97]"
+          >
+            <Plus className="size-3.5" />
+            Nova comanda
+          </Link>
         </div>
 
         <div className="flex h-11 items-center gap-2 rounded-lg border border-border px-3">
@@ -300,10 +311,10 @@ export default function AdminPedidosPage() {
                   type="button"
                   disabled={busyOrderId === order.id}
                   onClick={() =>
-                    handleAdvance(order, nextAdminStatus(
-                      order.status,
-                      order.deliveryMethod,
-                    )!)
+                    handleAdvance(
+                      order,
+                      nextAdminStatus(order.status, order.deliveryMethod)!,
+                    )
                   }
                   className="mt-1.5 w-full rounded-md bg-primary py-2 text-xs font-semibold text-white disabled:opacity-50"
                 >
