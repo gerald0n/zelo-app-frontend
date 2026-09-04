@@ -1,17 +1,11 @@
 import { err, ok, type Result } from '@/lib/errors';
 import { calcDeliveryFeeCents } from '@/modules/delivery/fee';
-import {
-  findPereiroNeighborhood,
-  isPereiroUrbanNeighborhood,
-} from '@/modules/delivery/pereiro';
-import {
-  geocodeAddress,
-  getDrivingDistanceMeters,
-  hasGoogleMapsServerKey,
-  type GeoPoint,
-} from '@/modules/delivery/maps';
-import { estimateRoadDistanceMeters } from '@/modules/delivery/geo';
+import { geocodeAddress, hasGoogleMapsServerKey } from '@/modules/delivery/maps';
 import { geocodeAddressOsm } from '@/modules/delivery/osm';
+import { haversineDistanceMeters } from '@/modules/delivery/geo';
+
+/** Centro de Pereiro-CE — âncora quando não conseguimos localizar o endereço. */
+const PEREIRO_CENTER = { latitude: -6.0485, longitude: -38.4612 } as const;
 
 export type DeliveryQuoteSource =
   | 'google_maps'
@@ -21,19 +15,21 @@ export type DeliveryQuoteSource =
 export type DeliveryAddressInput = {
   street: string;
   number: string;
-  neighborhood: string;
+  /** Opcional — só rótulo para o entregador e dica de geocodificação. */
+  neighborhood?: string;
   complement?: string;
   referencePoint?: string;
   city?: string;
   state?: string;
   postalCode?: string;
-  /** Quando o cliente ajusta o pin no mapa. */
+  /** Coordenada do autocomplete (placeId) ou do pin ajustado no mapa. */
   latitude?: number;
   longitude?: number;
 };
 
 export type DeliveryQuote = {
   inServiceArea: boolean;
+  /** Distância loja→cliente em linha reta, em metros (nome mantido por schema). */
   routeDistanceMeters: number;
   deliveryFeeCents: number;
   latitude: number;
@@ -48,6 +44,7 @@ export type StoreOrigin = {
   longitude: number;
   freeDeliveryRadiusMeters: number;
   fixedDeliveryFeeCents: number;
+  maxDeliveryRadiusMeters: number;
   addressLine: string;
   city: string;
   state: string;
@@ -86,10 +83,7 @@ function geocodeComponents(input: DeliveryAddressInput): string {
   return `locality:${locality}|administrative_area:${area}|country:BR`;
 }
 
-async function resolveCoordinates(
-  input: DeliveryAddressInput,
-  neighborhood: { latitude: number; longitude: number },
-): Promise<{
+async function resolveCoordinates(input: DeliveryAddressInput): Promise<{
   latitude: number;
   longitude: number;
   formattedAddress: string;
@@ -128,92 +122,69 @@ async function resolveCoordinates(
     };
   }
 
+  // Não localizamos: ancora no centro de Pereiro e pede o pin no mapa.
   return {
-    latitude: neighborhood.latitude,
-    longitude: neighborhood.longitude,
+    latitude: PEREIRO_CENTER.latitude,
+    longitude: PEREIRO_CENTER.longitude,
     formattedAddress: composeAddress(input),
     source: 'local_fallback',
   };
 }
 
-async function resolveRouteDistance(
-  origin: GeoPoint,
-  destination: GeoPoint,
-  preferred: DeliveryQuoteSource,
-): Promise<{ meters: number; source: DeliveryQuoteSource }> {
-  // Com chave, a Routes API é sempre o caminho principal — mesmo quando o ponto
-  // veio do OSM ou do bairro, ela dá a distância viária real entre as coordenadas.
-  if (hasGoogleMapsServerKey()) {
-    const google = await getDrivingDistanceMeters(origin, destination);
-    if (google.ok) {
-      return { meters: google.data, source: 'google_maps' };
-    }
-  }
-
-  // Sem Routes API: linha reta × 1,3. A confiança herda a origem do ponto.
-  return {
-    meters: estimateRoadDistanceMeters(origin, destination),
-    source: preferred,
-  };
+/** "1,4 km" / "800 m" para as mensagens ao cliente. */
+function formatDistance(meters: number): string {
+  return meters >= 1000
+    ? `${(meters / 1000).toFixed(1).replace('.', ',')} km`
+    : `${Math.round(meters / 50) * 50} m`;
 }
 
 export async function quoteDelivery(
   input: DeliveryAddressInput,
   store: StoreOrigin,
 ): Promise<Result<DeliveryQuote>> {
-  if (
-    !input.street.trim() ||
-    !input.number.trim() ||
-    !input.neighborhood.trim()
-  ) {
+  if (!input.street.trim() || !input.number.trim()) {
     return err(
       'VALIDATION_ERROR',
-      'Informe rua, número e bairro para calcular a entrega.',
+      'Informe a rua e o número para calcular a entrega.',
     );
   }
 
-  if (!isPereiroUrbanNeighborhood(input.neighborhood)) {
+  const resolved = await resolveCoordinates(input);
+  const straightMeters = Math.round(
+    haversineDistanceMeters(
+      { latitude: store.latitude, longitude: store.longitude },
+      { latitude: resolved.latitude, longitude: resolved.longitude },
+    ),
+  );
+
+  if (straightMeters > store.maxDeliveryRadiusMeters) {
     return ok({
       inServiceArea: false,
-      routeDistanceMeters: 0,
+      routeDistanceMeters: straightMeters,
       deliveryFeeCents: 0,
-      latitude: store.latitude,
-      longitude: store.longitude,
-      formattedAddress: composeAddress(input),
-      source: 'local_fallback',
-      message:
-        'Endereço fora da área urbana de Pereiro. Você pode concluir por retirada na loja.',
+      latitude: resolved.latitude,
+      longitude: resolved.longitude,
+      formattedAddress: resolved.formattedAddress,
+      source: resolved.source,
+      message: `Endereço a ${formatDistance(straightMeters)} da loja — fora da área de entrega (até ${formatDistance(store.maxDeliveryRadiusMeters)}). Você pode concluir por retirada na loja.`,
     });
   }
 
-  const neighborhood = findPereiroNeighborhood(input.neighborhood)!;
-  const resolved = await resolveCoordinates(input, neighborhood);
-  const route = await resolveRouteDistance(
-    { latitude: store.latitude, longitude: store.longitude },
-    { latitude: resolved.latitude, longitude: resolved.longitude },
-    resolved.source,
-  );
-
-  const routeDistanceMeters =
-    route.meters >= 0 ? route.meters : neighborhood.roadDistanceMeters;
-  const source: DeliveryQuoteSource =
-    route.meters >= 0 ? route.source : 'local_fallback';
-
   return ok({
     inServiceArea: true,
-    routeDistanceMeters,
+    routeDistanceMeters: straightMeters,
     deliveryFeeCents: calcDeliveryFeeCents(
-      routeDistanceMeters,
+      straightMeters,
       store.freeDeliveryRadiusMeters,
       store.fixedDeliveryFeeCents,
     ),
     latitude: resolved.latitude,
     longitude: resolved.longitude,
     formattedAddress: resolved.formattedAddress,
-    source,
+    source: resolved.source,
     message:
-      source === 'local_fallback'
-        ? 'Cotação estimada por bairro. Confirme o pin no mapa.'
+      resolved.source === 'local_fallback'
+        ? 'Não localizamos o endereço exato. Arraste o pin no mapa até o local.'
         : undefined,
   });
 }

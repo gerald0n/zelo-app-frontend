@@ -111,7 +111,8 @@ export default function EnderecosPage() {
                         {address.street}, {address.number}
                         {address.complement ? ` · ${address.complement}` : ''}
                         <br />
-                        {address.neighborhood}, {address.city}/{address.state}
+                        {address.neighborhood ? `${address.neighborhood}, ` : ''}
+                        {address.city}/{address.state}
                       </p>
                     </div>
                   </div>

@@ -209,10 +209,12 @@ pasta.
 
 1. **105 — Frete.** Fura a fila: bug de dinheiro (taxa binária nos 2 km) e de
    confiança; pré-requisito da comanda manual (103) e do financeiro (104).
-   Ordem interna: **(a) ligar chave Google + geocodificação/rota por Google —
-   ✅ FEITO e em produção**; (b) autocomplete; (c) mapa Google + satélite +
-   reverse geocode + mapa grande; (d) tratar confiança; (e) origem da loja por
-   pin; (f) extrair componente único.
+   Ordem interna: **(a) chave Google + geocodificação — ✅ em produção**;
+   **(b) autocomplete — ✅ em `develop`**; **(área de entrega por raio +
+   bairro opcional + raio máx/grátis editáveis no admin — ✅ em `develop`,
+   ver §9)**; (c) mapa Google + satélite + reverse geocode + mapa grande;
+   (d) tratar confiança (rooftop/interpolado); (e) suavizar a taxa (faixas/km);
+   (f) extrair componente único.
 2. **104 — Promoções** (necessária para o lançamento: loja toda −10%).
 3. **103 — Bloco 1 (quadros de pedidos)** e demais blocos.
 4. **104 — Cupons + Financeiro** (após o Bloco 3; cupons de preferência após o
@@ -226,13 +228,17 @@ pasta.
 
 ## 7. Próximo passo
 
-**Item 105-(b) — autocomplete de endereço no checkout.** Places Autocomplete
-(API New, `places.googleapis.com/v1/places:autocomplete`) enviesado pra região
-de Pereiro, com session token cobrindo autocomplete + 1 geocodificação como uma
-coisa só. Ao escolher a sugestão, usar o `placeId` → coordenada precisa. Usa a
-chave de navegador `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (hoje sem uso). Testado na
-mão: a Places Autocomplete New responde OK com a chave de navegador + Referer da
-`cardapio.zeloconfeitaria.com.br`.
+**Subir `develop` para produção** (b + área por raio, ver §8 e §9). No deploy:
+1. `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` da Vercel com **Places API (New)** habilitada.
+2. CSP em produção ganhou `places.googleapis.com` no `connect-src`.
+3. `supabase db push` (ou o fluxo de migração usado) aplica
+   `20260904120000_store_max_delivery_radius.sql` — coluna `max_delivery_radius_meters`
+   (default 3000). Depois, ajustar o raio grátis:
+   `UPDATE public.stores SET free_delivery_radius_meters = 1000;` (era 2 km).
+   Raio máx e raio grátis agora se editam em **Ajustes → loja** no admin.
+
+Depois, **item 105-(c) — mapa Google + satélite** no lugar do Leaflet: reverse
+geocode ao arrastar o pin, mapa maior, e CSP para os domínios do Maps JS.
 
 ---
 
@@ -268,7 +274,42 @@ mão: a Places Autocomplete New responde OK com a chave de navegador + Referer d
   "Rua Coronel Jose Sabino, 100, Centro" → `-6.0476, -38.4614`, rota 392 m,
   frete R$ 0, `source: google_maps`. (Antes ia pra **Sobral**, 465 km, R$ 5.)
 
+### Feito — item (b), em `develop` (commits `ec330d4` + o desta sessão)
+- `src/modules/delivery/places.ts` (novo, **client-safe**): `fetchPlaceSuggestions`
+  (POST `places:autocomplete`, `locationBias` circular em Pereiro, raio 15 km,
+  `includedRegionCodes:['br']`), `fetchPlaceDetails` (GET `places/{id}`,
+  `X-Goog-FieldMask` obrigatório), `createPlacesSessionToken` (`crypto.randomUUID`),
+  parser dos `addressComponents`. Guarda de cidade: se `administrative_area_level_2`
+  ≠ "Pereiro", devolve o texto mas com coordenada `NaN`. Lê
+  `process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` **direto** (literal inlined) — não
+  criou helper em `config/env.ts` porque nenhum client component importa de lá.
+- `src/components/checkout/AddressAutocomplete.tsx` (novo): combobox acessível
+  (`role="combobox"`, ↑/↓/Enter/Esc, `aria-activedescendant`), debounce 300 ms,
+  `AbortController`, session token renovado após o Place Details. **Sem chave →
+  `<Input>` puro** (degradação testada).
+- Checkout (`checkout/recebimento/page.tsx`) e conta (`AccountAddressForm.tsx`):
+  campo "Rua" → `AddressAutocomplete`. Ao escolher a sugestão, preenche rua (+ nº
+  e bairro quando o Google traz) e fixa a coordenada.
+- **Coordenada "presa à rua"**: os handlers de nº e bairro **não limpam mais**
+  lat/lng (só a redigitação da rua limpa). (O `<select>` de bairro citado aqui
+  foi removido logo depois — ver §9.)
+- `security-headers.ts`: `+ https://places.googleapis.com` no `connect-src`.
+- Verificado no dev (chave de navegador no `.env.local`): sugestões enviesadas
+  pra Pereiro, 1 Place Details com o mesmo session token, `POST /addresses/validate`
+  recebe `latitude/longitude` do `placeId` e responde `source: google_maps`.
+  Teclado e degradação sem chave OK. Nenhuma violação de CSP.
+
 ### Aprendizados / pegadinhas
+- **Seed local desatualizado**: o `stores.latitude/longitude` do banco local ainda
+  é o valor **errado antigo** (`-5.977, -38.622`, ~25 km fora) — o `seed.sql` foi
+  corrigido mas este banco não foi re-semeado. Quotes locais dão distância/tarifa
+  erradas; **produção já está certa**. Re-semear (`pnpm db:reset` + seed) ou rodar
+  o UPDATE manual pra testar frete localmente.
+- Place Details (GET `places/{id}`) **exige** `X-Goog-FieldMask` — sem ele é 400.
+  No autocomplete (POST) o field mask é opcional.
+- Em Pereiro o Google não devolve bairro (`sublocality*`) para os endereços —
+  `administrative_area_level_4` costuma repetir "Pereiro". (Foi o que motivou
+  trocar a trava por bairro pela trava por raio — ver §9.)
 - **Terminal do usuário mascara segredos colados** com `•` (U+2022) — a máscara
   foi salva na env var da Vercel e a Routes API quebrou com
   `TypeError: Cannot convert argument to a ByteString`. **Configurar env de chave
@@ -284,9 +325,48 @@ mão: a Places Autocomplete New responde OK com a chave de navegador + Referer d
   Node local é v20 (o projeto quer ≥22) — não bloqueia.
 
 ### Falta no 105
-- (b) autocomplete · (c) mapa Google + satélite + reverse geocode + mapa grande +
-  CSP (`routes.googleapis.com`, domínios Maps JS) · (d) tratar confiança
-  (rooftop/interpolado/aproximado; obrigar confirmar pin) · (e) origem da loja
-  por pin no admin · (f) extrair componente único (checkout + comanda manual).
-- Suavizar a taxa binária (perde/cobra dinheiro por poucos metros no limite dos
-  2 km) — não estava na lista a–f, mas é o "bug de dinheiro" que motivou o 105.
+- (c) mapa Google + satélite + reverse geocode + mapa grande + CSP (domínios
+  Maps JS) · (d) tratar confiança (rooftop/interpolado; obrigar confirmar pin) ·
+  (e) suavizar a taxa (faixas por km / R$ por km — hoje ainda tem o degrau em 1 km) ·
+  (f) extrair componente único (checkout + comanda manual).
+
+---
+
+## 9. Área de entrega por raio + bairro opcional (sessão 2026-09-04, `develop`)
+
+Decisão do dono: os nomes da lista de 7 bairros não batem com o uso local. Em vez
+de arrumar a lista, a **área de entrega deixou de ser "está num dos bairros" e
+passou a ser raio a partir da loja** (a coordenada já vem do autocomplete/pin).
+
+- **Linha reta** (haversine, sem × 1,3, sem Routes API no caminho do quote).
+- **Grátis ≤ 1 km**, **R$ 5 fixo** de 1 a 3 km, **> 3 km = fora** (só retirada).
+- Migração `20260904120000_store_max_delivery_radius.sql`: coluna
+  `stores.max_delivery_radius_meters` (default 3000). Raio máx **e** raio grátis
+  agora editáveis em **Ajustes → loja** (`admin/configuracoes`); o admin valida
+  `máx ≥ grátis` (mensagem amigável em `updateAdminStore` + `superRefine` na rota).
+- Raio grátis no banco: **2000 → 1000** (seed + `UPDATE` manual no deploy).
+- `quoteDelivery` lê `store.maxDeliveryRadiusMeters` (a constante do código sumiu).
+- **Campo bairro virou `<Input>` opcional** ("Bairro / localidade (opcional)")
+  no checkout e no `AccountAddressForm` — sumiu o `<select>`. Só rótulo pro
+  entregador; não entra na cotação. `''` é aceito em todo o caminho
+  (`create_order` só exige *uma string*; sem migração).
+- `quoteDelivery` reescrito: exige só rua + número; resolve coordenada
+  (input → geocode travado em Pereiro → OSM → **centro de Pereiro** como âncora);
+  `routeDistanceMeters` do retorno agora carrega a distância em **linha reta**.
+- `pereiro.ts` enxugado (só `id`+`name`, usado só pelo `findPereiroNeighborhood`
+  do autocomplete); `isPereiroUrbanNeighborhood` removido.
+- Schemas com `neighborhood` `.min(1)` → `.optional().default('')`:
+  `create-order.ts`, `api/v1/addresses/{route,[addressId],validate}`.
+- `formatAddress` (admin + customer-orders) e telas de endereço toleram bairro `''`
+  (sem " – ,").
+- `CheckoutContext.setAddressDetails`: mudar bairro/complemento/ponto de referência
+  não invalida mais a cotação nem o pin confirmado.
+- Verificado no dev: autocomplete → sem select → pin → quote por raio; faixas
+  0,5/1,5/2,8/4 km dão grátis/R$5/R$5/fora; **pedido #1000 fechado com
+  `neighborhood: ''`**; admin renderiza o endereço limpo; mudar o raio máx no
+  admin para 2 km fez o endereço de 2,8 km cair pra fora da área na hora.
+
+### Falta / fast-follow
+- Suavizar a taxa (faixas por km / R$ por km) — hoje ainda tem o degrau em 1 km.
+- `maps.ts:getDrivingDistanceMeters` e `geo.ts:estimateRoadDistanceMeters` ficaram
+  sem uso (guardados para o item c).

@@ -1123,6 +1123,7 @@ export type Database = {
           is_open_override: boolean | null;
           latitude: number;
           longitude: number;
+          max_delivery_radius_meters: number;
           name: string;
           phone_e164: string;
           pix_copy_paste: string | null;
@@ -1146,6 +1147,7 @@ export type Database = {
           is_open_override?: boolean | null;
           latitude: number;
           longitude: number;
+          max_delivery_radius_meters?: number;
           name: string;
           phone_e164: string;
           pix_copy_paste?: string | null;
@@ -1169,6 +1171,7 @@ export type Database = {
           is_open_override?: boolean | null;
           latitude?: number;
           longitude?: number;
+          max_delivery_radius_meters?: number;
           name?: string;
           phone_e164?: string;
           pix_copy_paste?: string | null;

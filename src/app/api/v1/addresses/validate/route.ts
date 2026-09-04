@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 const bodySchema = z.object({
   street: z.string().min(1),
   number: z.string().min(1),
-  neighborhood: z.string().min(1),
+  neighborhood: z.string().optional().default(''),
   complement: z.string().optional(),
   referencePoint: z.string().optional(),
   city: z.string().optional(),
@@ -59,6 +59,7 @@ export async function POST(request: Request) {
     longitude: store.longitude,
     freeDeliveryRadiusMeters: store.freeDeliveryRadiusMeters,
     fixedDeliveryFeeCents: store.fixedDeliveryFeeCents,
+    maxDeliveryRadiusMeters: store.maxDeliveryRadiusMeters,
     addressLine: store.addressLine,
     city: store.city,
     state: store.state,

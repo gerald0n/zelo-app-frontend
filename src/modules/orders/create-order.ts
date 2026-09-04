@@ -44,7 +44,7 @@ const orderItemSchema = z.object({
 const addressSchema = z.object({
   street: z.string().min(1),
   number: z.string().min(1),
-  neighborhood: z.string().min(1),
+  neighborhood: z.string().optional().default(''),
   city: z.string().min(1),
   state: z.string().min(1),
   postalCode: z.string().optional(),
@@ -224,6 +224,7 @@ async function resolveDeliveryFee(body: CreateOrderBody): Promise<
       longitude: store.longitude,
       freeDeliveryRadiusMeters: store.freeDeliveryRadiusMeters,
       fixedDeliveryFeeCents: store.fixedDeliveryFeeCents,
+      maxDeliveryRadiusMeters: store.maxDeliveryRadiusMeters,
       addressLine: store.addressLine,
       city: store.city,
       state: store.state,

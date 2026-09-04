@@ -147,16 +147,31 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
   const setAddressDetails = useCallback((details: Partial<CheckoutAddress>) => {
     setCheckout((p) => {
       const nextDetails = { ...p.addressDetails, ...details };
+      const keys = Object.keys(details);
       const onlyCoordinates =
-        Object.keys(details).length > 0 &&
-        Object.keys(details).every(
-          (key) => key === 'latitude' || key === 'longitude',
-        );
+        keys.length > 0 &&
+        keys.every((key) => key === 'latitude' || key === 'longitude');
       if (onlyCoordinates) {
         return {
           ...p,
           addressDetails: nextDetails,
           locationConfirmed: false,
+        };
+      }
+      // Campos que só anotam o endereço (não entram na cotação nem no pin):
+      // atualiza sem invalidar a cotação/localização já confirmada.
+      const annotationKeys = new Set([
+        'neighborhood',
+        'complement',
+        'referencePoint',
+      ]);
+      const onlyAnnotations =
+        keys.length > 0 && keys.every((key) => annotationKeys.has(key));
+      if (onlyAnnotations) {
+        return {
+          ...p,
+          addressDetails: nextDetails,
+          address: formatAddressSummary(nextDetails),
         };
       }
       return {

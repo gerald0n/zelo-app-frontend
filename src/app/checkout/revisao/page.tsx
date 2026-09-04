@@ -238,7 +238,7 @@ export default function RevisaoPage() {
             {checkout.deliveryType === 'delivery' &&
             checkout.routeDistanceMeters != null ? (
               <p className="text-sm leading-5 text-muted-foreground">
-                Rota {(checkout.routeDistanceMeters / 1000).toFixed(1)} km
+                A {(checkout.routeDistanceMeters / 1000).toFixed(1)} km da loja
               </p>
             ) : null}
           </SummaryBlock>

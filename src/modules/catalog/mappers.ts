@@ -119,6 +119,7 @@ export function mapStore(
     longitude: Number(row.longitude),
     freeDeliveryRadiusMeters: row.free_delivery_radius_meters,
     fixedDeliveryFeeCents: row.fixed_delivery_fee_cents,
+    maxDeliveryRadiusMeters: row.max_delivery_radius_meters,
     timezone: row.timezone,
     isOpenOverride: row.is_open_override,
     acceptsPayments: {

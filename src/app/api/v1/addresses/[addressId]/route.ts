@@ -26,7 +26,7 @@ const updateSchema = z.object({
   label: z.string().trim().max(40).optional(),
   street: z.string().trim().min(1),
   number: z.string().trim().min(1),
-  neighborhood: z.string().trim().min(1),
+  neighborhood: z.string().trim().default(''),
   complement: z.string().optional(),
   referencePoint: z.string().optional(),
   city: z.string().optional(),

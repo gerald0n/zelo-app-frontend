@@ -67,6 +67,8 @@ const CONNECT_SRC_BASE = [
   'https://*.ingest.sentry.io',
   'https://*.sentry.io',
   'https://maps.googleapis.com',
+  // Autocomplete de endereço no checkout (Places API New, chamada do navegador).
+  'https://places.googleapis.com',
 ];
 
 /** Supabase local + HMR do Next — só em desenvolvimento. */

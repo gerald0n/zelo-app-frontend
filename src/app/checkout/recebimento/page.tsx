@@ -21,6 +21,7 @@ import { checkoutContinuePath } from '@/modules/auth/checkout-path';
 import { Input } from '@/components/ui/input';
 import CheckoutProgress from '@/components/CheckoutProgress';
 import { DeliveryMapConfirm } from '@/components/checkout/DeliveryMapConfirm';
+import { AddressAutocomplete } from '@/components/checkout/AddressAutocomplete';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import type { DeliveryQuoteSource } from '@/modules/delivery';
 import type { SavedAddress } from '@/modules/customers/addresses';
@@ -41,6 +42,8 @@ type CheckoutOptions = {
     addressLine: string;
     city: string;
     state: string;
+    latitude: number;
+    longitude: number;
     freeDeliveryRadiusMeters: number;
     fixedDeliveryFeeCents: number;
   };
@@ -65,6 +68,13 @@ type ValidationResult = {
 
 function todayIso(): string {
   return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD, hora local
+}
+
+/** "800 m" / "1 km" / "1,5 km". */
+function formatRadius(meters: number): string {
+  if (meters < 1000) return `${meters} m`;
+  const km = meters / 1000;
+  return `${(Number.isInteger(km) ? km.toString() : km.toFixed(1)).replace('.', ',')} km`;
 }
 
 function relativeDayLabel(iso: string): string | null {
@@ -287,8 +297,7 @@ export default function RecebimentoPage() {
   const canQuote =
     checkout.deliveryType === 'delivery' &&
     details.street.trim().length > 1 &&
-    details.number.trim().length > 0 &&
-    details.neighborhood.trim().length > 0;
+    details.number.trim().length > 0;
 
   const applyValidation = useEffectEvent((validation: ValidationResult) => {
     setQuoteMessage(validation.message ?? null);
@@ -384,9 +393,6 @@ export default function RecebimentoPage() {
     canQuote,
     details.street,
     details.number,
-    details.neighborhood,
-    details.complement,
-    details.referencePoint,
     details.city,
     details.state,
     details.postalCode,
@@ -690,7 +696,11 @@ export default function RecebimentoPage() {
                       ? deliveryFee === 0
                         ? 'Grátis'
                         : formatCatalogPrice(deliveryFee)
-                      : 'Grátis até 2 km'
+                      : options
+                        ? `Grátis até ${formatRadius(
+                            options.store.freeDeliveryRadiusMeters,
+                          )}`
+                        : 'Grátis por perto'
                     : 'Grátis'}
                 </span>
               </button>
@@ -736,7 +746,7 @@ export default function RecebimentoPage() {
                       )}
                     >
                       <span className="block font-semibold">
-                        {address.label || address.neighborhood}
+                        {address.label || address.neighborhood || address.street}
                       </span>
                       {address.street}, {address.number}
                     </button>
@@ -744,49 +754,55 @@ export default function RecebimentoPage() {
                 </div>
               ) : null}
               <div className="grid min-w-0 grid-cols-3 gap-2">
-                <Input
+                <AddressAutocomplete
+                  className="col-span-2"
+                  inputClassName={checkoutFieldClass}
                   value={details.street}
-                  onChange={(e) =>
+                  onChange={(text) =>
                     setAddressDetails({
-                      street: e.target.value,
+                      street: text,
                       latitude: undefined,
                       longitude: undefined,
                     })
                   }
+                  onResolve={(place) =>
+                    setAddressDetails({
+                      street: place.street || details.street,
+                      number: place.number || details.number,
+                      neighborhood: place.neighborhood || details.neighborhood,
+                      city: 'Pereiro',
+                      state: 'CE',
+                      latitude: Number.isFinite(place.latitude)
+                        ? place.latitude
+                        : undefined,
+                      longitude: Number.isFinite(place.longitude)
+                        ? place.longitude
+                        : undefined,
+                    })
+                  }
+                  bias={options?.store}
                   placeholder="Rua"
-                  className={cn(checkoutFieldClass, 'col-span-2')}
+                  aria-label="Rua"
                 />
                 <Input
                   value={details.number}
                   onChange={(e) =>
-                    setAddressDetails({
-                      number: e.target.value,
-                      latitude: undefined,
-                      longitude: undefined,
-                    })
+                    // Não limpa lat/lng: a coordenada está presa à rua (definida
+                    // pelo autocomplete ou pelo pin), não ao número.
+                    setAddressDetails({ number: e.target.value })
                   }
                   placeholder="Nº"
                   className={checkoutFieldClass}
                 />
               </div>
-              <select
+              <Input
                 value={details.neighborhood}
                 onChange={(e) =>
-                  setAddressDetails({
-                    neighborhood: e.target.value,
-                    latitude: undefined,
-                    longitude: undefined,
-                  })
+                  setAddressDetails({ neighborhood: e.target.value })
                 }
+                placeholder="Bairro / localidade (opcional)"
                 className={checkoutFieldClass}
-              >
-                <option value="">Bairro / localidade</option>
-                {(options?.neighborhoods ?? []).map((item) => (
-                  <option key={item.id} value={item.name}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
+              />
               <Input
                 value={details.complement}
                 onChange={(e) =>
@@ -807,7 +823,7 @@ export default function RecebimentoPage() {
               {quoting ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="size-4 animate-spin" />
-                  Calculando rota…
+                  Calculando entrega…
                 </div>
               ) : null}
 
@@ -823,7 +839,7 @@ export default function RecebimentoPage() {
                   <AlertCircle className="mt-0.5 size-4 shrink-0" />
                   <p>
                     {quoteMessage ??
-                      'Fora da área urbana de Pereiro. Escolha retirada na loja.'}
+                      'Endereço fora da área de entrega. Escolha retirada na loja.'}
                   </p>
                 </div>
               ) : null}
@@ -844,13 +860,11 @@ export default function RecebimentoPage() {
                           ? 'Grátis'
                           : formatCatalogPrice(deliveryFee)}
                       </span>{' '}
-                      · Distância por rota:{' '}
-                      {(checkout.routeDistanceMeters / 1000).toFixed(1)} km
+                      · A {(checkout.routeDistanceMeters / 1000).toFixed(1)} km da
+                      loja
                       {checkout.deliveryQuoteSource === 'local_fallback'
-                        ? ' (estimativa local)'
-                        : checkout.deliveryQuoteSource === 'openstreetmap'
-                          ? ' (rota)'
-                          : null}
+                        ? ' (confirme o pin)'
+                        : null}
                     </p>
                   </div>
 

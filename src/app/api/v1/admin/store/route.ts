@@ -24,6 +24,7 @@ const patchSchema = z
     longitude: z.number().min(-180).max(180).optional(),
     freeDeliveryRadiusMeters: z.number().int().min(0).max(50_000).optional(),
     fixedDeliveryFeeCents: z.number().int().min(0).max(100_000).optional(),
+    maxDeliveryRadiusMeters: z.number().int().min(0).max(50_000).optional(),
     acceptsPix: z.boolean().optional(),
     acceptsCash: z.boolean().optional(),
     acceptsCard: z.boolean().optional(),
@@ -48,6 +49,17 @@ const patchSchema = z
         code: 'custom',
         message: 'Mantenha ao menos uma forma de pagamento habilitada.',
         path: ['acceptsPix'],
+      });
+    }
+    if (
+      typeof value.freeDeliveryRadiusMeters === 'number' &&
+      typeof value.maxDeliveryRadiusMeters === 'number' &&
+      value.maxDeliveryRadiusMeters < value.freeDeliveryRadiusMeters
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'O raio máximo deve ser maior ou igual ao raio grátis.',
+        path: ['maxDeliveryRadiusMeters'],
       });
     }
   });

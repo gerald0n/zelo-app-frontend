@@ -37,6 +37,7 @@ const storeSchema = z
     latitude: z.number().min(-90).max(90),
     longitude: z.number().min(-180).max(180),
     freeDeliveryRadiusMeters: z.number().int().min(0),
+    maxDeliveryRadiusMeters: z.number().int().min(0),
     fixedDeliveryFeeReais: z.number().min(0),
     acceptingOrders: z.boolean(),
     acceptsPix: z.boolean(),
@@ -49,6 +50,13 @@ const storeSchema = z
         code: 'custom',
         message: 'Mantenha ao menos uma forma de pagamento habilitada.',
         path: ['acceptsPix'],
+      });
+    }
+    if (value.maxDeliveryRadiusMeters < value.freeDeliveryRadiusMeters) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'O raio máximo deve ser maior ou igual ao raio grátis.',
+        path: ['maxDeliveryRadiusMeters'],
       });
     }
   });
@@ -131,7 +139,8 @@ export default function AdminConfiguracoesPage() {
       postalCode: '',
       latitude: 0,
       longitude: 0,
-      freeDeliveryRadiusMeters: 2000,
+      freeDeliveryRadiusMeters: 1000,
+      maxDeliveryRadiusMeters: 3000,
       fixedDeliveryFeeReais: 5,
       acceptingOrders: true,
       acceptsPix: true,
@@ -184,6 +193,7 @@ export default function AdminConfiguracoesPage() {
       latitude: store.latitude,
       longitude: store.longitude,
       freeDeliveryRadiusMeters: store.freeDeliveryRadiusMeters,
+      maxDeliveryRadiusMeters: store.maxDeliveryRadiusMeters,
       fixedDeliveryFeeReais: store.fixedDeliveryFeeCents / 100,
       acceptingOrders: storeQuery.data?.acceptingOrders ?? true,
       acceptsPix: store.acceptsPayments.pix,
@@ -225,6 +235,7 @@ export default function AdminConfiguracoesPage() {
           latitude: values.latitude,
           longitude: values.longitude,
           freeDeliveryRadiusMeters: values.freeDeliveryRadiusMeters,
+          maxDeliveryRadiusMeters: values.maxDeliveryRadiusMeters,
           fixedDeliveryFeeCents: Math.round(values.fixedDeliveryFeeReais * 100),
           acceptingOrders: values.acceptingOrders,
           acceptsPix: values.acceptsPix,
@@ -395,6 +406,7 @@ export default function AdminConfiguracoesPage() {
                 ['latitude', 'Latitude'],
                 ['longitude', 'Longitude'],
                 ['freeDeliveryRadiusMeters', 'Raio grátis (m)'],
+                ['maxDeliveryRadiusMeters', 'Raio máx. de entrega (m)'],
                 ['fixedDeliveryFeeReais', 'Taxa fixa (R$)'],
               ] as const
             ).map(([field, label]) => {
@@ -402,6 +414,7 @@ export default function AdminConfiguracoesPage() {
                 'latitude',
                 'longitude',
                 'freeDeliveryRadiusMeters',
+                'maxDeliveryRadiusMeters',
                 'fixedDeliveryFeeReais',
               ].includes(field);
               return (
