@@ -14,6 +14,8 @@ export type AdminOrderListItem = {
   scheduledFor: string | null;
   totalCents: number;
   createdAt: string;
+  /** Aproxima "tempo parado no status atual" — qualquer update no pedido o move. */
+  updatedAt: string;
   customerName: string | null;
   customerPhone: string | null;
   items: Array<{ name: string; quantity: number }>;

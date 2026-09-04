@@ -111,7 +111,7 @@ pasta.
 
 | Doc | Assunto | Status |
 | --- | --- | --- |
-| **103 — Evolução do Painel Administrativo** | Kanban de pedidos, estoque, comanda manual, impressão térmica + melhorias menores (troco/obs/histórico/WhatsApp, catálogo, config, relatórios, push) | escrito; decisões travadas; falta 3 decisões (impressora, MEI/nota, agendados-automático) |
+| **103 — Evolução do Painel Administrativo** | Kanban de pedidos, estoque, comanda manual, impressão térmica + melhorias menores (troco/obs/histórico/WhatsApp, catálogo, config, relatórios, push) | **Bloco 1 (quadro de pedidos) implementado, falta subir** (ver §13); resto do doc segue igual — falta 3 decisões (impressora, MEI/nota, agendados-automático) |
 | **104 — Promoções, Cupons e Controle Financeiro** | Promoções por especificidade; cupons %/fixo/frete-grátis sem acúmulo; financeiro com taxa real do MP | **Promoções implementadas, falta subir** (ver §12); Cupons e Financeiro pendentes |
 | **105 — Precisão do Cálculo de Frete** | Ligar Google Maps de verdade: Places Autocomplete, mapa Google com satélite, Routes API, tratar confiança, origem da loja por pin | **(a)-(c) em produção**; **(d) implementado, falta subir**; (e)-(f) pendentes. Ver §8/§10/§11. |
 | **106 — Avaliações e Depoimentos** | Fase 1: avaliação do pedido + depoimentos curados. Fase 2: nota por produto (pós login SMS) | escrito; 3 decisões menores em aberto |
@@ -221,7 +221,9 @@ pasta.
 2. **104 — Promoções — ✅ implementado, pendente commit/deploy, ver §12**
    (a promoção do lançamento, "loja toda −10%", já pode ser cadastrada pelo
    admin assim que subir).
-3. **103 — Bloco 1 (quadros de pedidos)** e demais blocos.
+3. **103 — Bloco 1 (quadros de pedidos) — ✅ implementado, pendente commit/deploy,
+   ver §13** — e demais blocos (estoque, comanda manual, impressão, melhorias
+   dentro do pedido, catálogo, loja/relatórios, push — ainda não iniciados).
 4. **104 — Cupons + Financeiro** (após o Bloco 3; cupons de preferência após o
    login por SMS).
 5. **106 — Avaliações** (Fase 1 pode entrar cedo por ser barata; Fase 2 após o
@@ -629,3 +631,146 @@ no mesmo período.
 ### Falta em 104
 - Cupons (%/fixo/frete-grátis, sem acúmulo com promoção) e Controle
   Financeiro (taxa real do MP) — decisões já travadas no §4, não implementado.
+
+---
+
+## 13. Item 103 — Bloco 1: quadro de pedidos (sessão seguinte, mesmo dia)
+
+Trocada a lista simples de `/admin/pedidos` por dois quadros vivos (Retirada
+Delivery) + painel Agenda, seguindo as decisões travadas no §4. **Só
+apresentação — nenhuma migration, nenhuma tabela nova, nenhuma mudança em
+`private.transition_order_status`.** Os únicos ajustes de "banco" foram no
+`SELECT` de listagem (coluna já existente).
+
+- `src/lib/admin/order-columns.ts` (novo): `BOARD_COLUMNS` — as colunas de
+  cada quadro, na ordem de exibição. As 3 primeiras (`received/confirmed/
+  in_production`) são as mesmas nos dois quadros; a cauda muda por
+  `deliveryMethod` (retirada: `ready_for_pickup → delivered`; delivery:
+  `ready_for_delivery → out_for_delivery → delivered`). `nextAdminStatus`
+  (já existia em `admin/types.ts`) já cobria essa bifurcação — não precisou
+  de lógica nova de transição, só de agrupamento visual.
+- **Régua de urgência** (`src/lib/admin/order-urgency.ts`): cor do card por
+  minutos parado no status atual — `updated_at` do pedido como proxy (o
+  projeto não tem "timestamp de entrada no status atual" dedicado; qualquer
+  update no pedido reseta o relógio, não só transição de status — é uma
+  aproximação, não um dado exato). ≥15 min = aviso (amarelo), ≥30 min =
+  crítico (vermelho); pedidos `delivered`/`cancelled` nunca ficam urgentes.
+  Esses limiares (15/30 min) são um chute razoável, não uma decisão do dono —
+  ajustar se a cozinha achar sensível demais ou de menos.
+- `updated_at` **adicionado ao `LIST_SELECT` e ao `AdminOrderListItem`**
+  (`src/modules/admin/orders.ts`, `src/modules/admin/types.ts`) — única
+  mudança em código de acesso a dados; a coluna já existia na tabela
+  `orders`, só não era exposta na listagem.
+- **Agenda** (decisão em aberto #3 do 103, resolvida como "manual" por
+  padrão): mostra só pedidos `timing='scheduled' AND status='received'`,
+  ordenados por `scheduled_for`. Não têm quadro nem posição por status — é
+  uma lista simples (reaproveita `AdminOrderCard` existente) com um botão
+  "Passar para produção" que chama o mesmo `nextAdminStatus`/transição usada
+  nos quadros. Depois de avançar (deixa de ser `received`), o pedido some da
+  Agenda e passa a aparecer no quadro certo (Retirada/Delivery) na coluna
+  correspondente — **não existe** o comportamento "aparece sozinho no quadro
+  no dia" cogitado como alternativa; ficou 100% manual. Fácil de trocar depois
+  se o dono preferir o outro modo.
+- **Drag-and-drop**: `@dnd-kit/core` + `@dnd-kit/sortable` + `@dnd-kit/utilities`
+  (novo, nenhuma lib de D&D existia no projeto — `react-beautiful-dnd` está
+  descontinuado, `@dnd-kit` tem melhor suporte a React 19).
+  `src/components/admin/AdminOrderKanbanCard.tsx` (`useDraggable`) +
+  `AdminKanbanColumn.tsx` (`useDroppable`), só no quadro desktop — a lista
+  mobile fica **fora** do `DndContext` (`draggable={false}` no card,
+  sem grip) porque lá não há colunas pra soltar, só o botão "avançar".
+  `onDragEnd` só aceita o drop se `over.id === nextAdminStatus(...)` — soltar
+  em qualquer outra coluna (inclusive pra trás) não faz nada; o backend
+  (`private.transition_order_status`) também rejeitaria, mas a checagem no
+  cliente evita a chamada à toa.
+  - Avanço **otimista**: tanto o botão quanto o drag atualizam um
+    `optimisticStatus` local na hora do clique/drop (o card já "salta" pra
+    coluna nova), e só reverte se a chamada falhar — sem isso, o delay da
+    rede faria o card voltar à posição antiga por um instante antes de
+    reaparecer no lugar certo.
+- **Cancelar**: usa o `prompt()` do `AppDialogContext` (minLength 3, igual à
+  validação do backend) — não tinha um jeito de coletar o motivo direto do
+  quadro antes.
+- **Indicador "ao vivo"**: `useAdminOrdersRealtime` já existia e já expunha
+  `status` (`idle/connecting/subscribed/reconnecting/error`), mas a tela não
+  usava — só o `version` (pra invalidar a query). Agora um ponto verde +
+  "Ao vivo" quando `status === 'subscribed'`.
+- **Som de pedido novo**: `src/lib/admin/notification-sound.ts` — dois tons
+  curtos via Web Audio API (osciladores), sem arquivo de áudio pra
+  servir/manter. Detecção de "é novo" compara o `Set` de IDs do fetch atual
+  com o do fetch anterior **do mesmo `scope`** (guardado num `useRef` por
+  scope) — ignora o primeiro carregamento de cada scope (não temos histórico
+  antes disso) e não dispara ao trocar de aba Retirada↔Delivery (ambas usam
+  `scope=all`, então compartilham a mesma entrada de cache/comparação — o som
+  toca independente de qual quadro está aberto quando chega um pedido de
+  qualquer tipo). Autoplay bloqueado pelo navegador falha em silêncio (try/
+  catch) — o indicador visual "ao vivo" cobre esse caso.
+- **"Ocultar entregues"**: checkbox simples que tira a coluna `delivered` da
+  lista de colunas exibidas (desktop e mobile). Isso cobre "recolhível +
+  filtro de foco" do jeito mais barato possível — **não é** um colapso por
+  coluna individual (cada coluna dobrável separadamente); se o dono quiser
+  esse nível de controle depois, dá pra evoluir.
+- **Mobile** ("um fluxo por vez, em lista"): pills horizontais com o nome do
+  status + contagem, e abaixo a lista plana só daquele status — mesmo padrão
+  visual dos outros filtros pill do admin (`admin/catalogo`, filtro antigo de
+  pedidos). O quadro completo lado a lado só aparece em `lg:` (1024px+); abaixo
+  disso é sempre a visão de lista por status.
+- **Fetch**: os quadros Retirada/Delivery usam `scope=all` (200 pedidos mais
+  recentes, todos os status) e filtram por `deliveryMethod` no cliente — isso
+  reaproveita o endpoint existente sem mudar nada no backend, ao custo de só
+  "ver" os 200 mais recentes (aceitável: um dia de operação real não deve
+  chegar perto disso, e pedidos `delivered` antigos saem da janela sozinhos
+  conforme novos entram). A Agenda usa `scope=scheduled` (já existia).
+- Verificado no dev (Supabase local, dados de teste inseridos via SQL direto
+  — sem `psql` no ambiente, usado `docker exec ... psql`; removidos depois
+  com `supabase db reset`):
+  - Quadro Retirada com 5 colunas, contagens corretas, card no "Entregue" sem
+    botão de avançar ("Concluído").
+  - Troca de aba Delivery → colunas certas (6, com `ready_for_delivery`/
+    `out_for_delivery`), urgência crítica (borda vermelha) num pedido com
+    `updated_at` de 40 min atrás.
+  - Botão "avançar": `received → confirmed → in_production`, cada clique
+    validado contra o banco (`select status from orders` após cada ação).
+  - Agenda: pedido agendado listado sozinho, "Passar para produção" o tirou
+    da Agenda e o pôs em "Pedido confirmado" no quadro certo, com a etiqueta
+    "Agendado para DD/MM, HH:mm" visível no card.
+  - Cancelar: prompt pediu o motivo, `POST .../cancel` gravou
+    `status=cancelled` e `cancellation_reason` no banco (conferido por SQL),
+    card sumiu do quadro.
+  - "Ocultar entregues": coluna `delivered`/pill some dos dois layouts.
+  - Layout mobile (viewport 900px, abaixo do `lg`): pills + lista por status
+    testados via clique de mouse (sem emulação de toque) — troca de status e
+    avançar funcionaram.
+  - `pnpm typecheck && pnpm lint && pnpm build` limpos.
+
+### Não verificado
+- **Arrastar e soltar de fato** (mouse ou toque) — três tentativas nesta
+  sessão (`left_click_drag` da ferramenta, sensor `Mouse`/`TouchSensor` do
+  dnd-kit, e até despachar `mousedown`/`mousemove`/`mouseup` via
+  `dispatchEvent` manualmente) não fizeram o card mudar de coluna. Mesmo
+  padrão do problema já visto na sessão do item 105-(c) (arrastar o pin do
+  mapa): esta ferramenta de automação parece não conseguir sustentar um
+  gesto de arraste até o fim de um jeito que bibliotecas JS de D&D
+  reconheçam — não é um erro do app (sem exceptions no console, a mutação de
+  avançar por botão usa exatamente o mesmo código de destino e funciona).
+  **Precisa de um teste manual num tablet/mouse de verdade antes de confiar
+  no arrastar em produção.**
+- **Emulação de toque da ferramenta trava cliques simples** nesta sessão:
+  qualquer `left_click` com o viewport no preset `mobile` (ou largura <768px,
+  que ativa toque automaticamente) veio com timeout de 30s — a aba sempre se
+  recuperava depois (screenshot seguinte funcionava normal), mas o clique em
+  si nunca completava. Contornado testando o layout mobile numa largura
+  intermediária (900px, abaixo do `lg` mas sem emulação de toque) — o layout
+  e os cliques ali funcionaram. Vale um teste manual num tablet/celular real
+  antes de confiar cegamente no fluxo mobile também.
+- **Som de pedido novo**: implementado e sem erros, mas não há como um
+  agente automatizado "ouvir" áudio — só a lógica de detecção de pedido novo
+  foi revisada por código; nunca ouvi o bipe de fato.
+
+### Observação lateral (fora do escopo desta sessão)
+Durante os testes desta sessão, uma aba extra do navegador abriu sozinha
+apontando para a **produção** (`cardapio.zeloconfeitaria.com.br`), numa tela
+de identificação com captcha — não fui eu que abri, não interagi com ela
+(não preencheria telefone nem resolveria o captcha de um ambiente de
+produção a partir de testes automatizados) e voltei pra aba do
+`localhost:3000`. Se isso não foi você mexendo na mesma janela, vale
+investigar de onde veio.
