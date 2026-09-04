@@ -10,10 +10,8 @@ import {
   hasGoogleMapsServerKey,
   type GeoPoint,
 } from '@/modules/delivery/maps';
-import {
-  geocodeAddressOsm,
-  getDrivingDistanceOsm,
-} from '@/modules/delivery/osm';
+import { estimateRoadDistanceMeters } from '@/modules/delivery/geo';
+import { geocodeAddressOsm } from '@/modules/delivery/osm';
 
 export type DeliveryQuoteSource =
   | 'google_maps'
@@ -120,22 +118,20 @@ async function resolveRouteDistance(
   destination: GeoPoint,
   preferred: DeliveryQuoteSource,
 ): Promise<{ meters: number; source: DeliveryQuoteSource }> {
-  if (hasGoogleMapsServerKey() && preferred === 'google_maps') {
+  // Com chave, a Routes API é sempre o caminho principal — mesmo quando o ponto
+  // veio do OSM ou do bairro, ela dá a distância viária real entre as coordenadas.
+  if (hasGoogleMapsServerKey()) {
     const google = await getDrivingDistanceMeters(origin, destination);
     if (google.ok) {
       return { meters: google.data, source: 'google_maps' };
     }
   }
 
-  const osm = await getDrivingDistanceOsm(origin, destination);
-  if (osm.ok) {
-    return {
-      meters: osm.data,
-      source: preferred === 'local_fallback' ? 'openstreetmap' : preferred,
-    };
-  }
-
-  return { meters: -1, source: preferred };
+  // Sem Routes API: linha reta × 1,3. A confiança herda a origem do ponto.
+  return {
+    meters: estimateRoadDistanceMeters(origin, destination),
+    source: preferred,
+  };
 }
 
 export async function quoteDelivery(

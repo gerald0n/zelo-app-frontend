@@ -104,23 +104,39 @@ export async function getDrivingDistanceMeters(
   }
 
   try {
-    const url = new URL(
-      'https://maps.googleapis.com/maps/api/distancematrix/json',
+    const response = await fetch(
+      'https://routes.googleapis.com/directions/v2:computeRoutes',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': key,
+          'X-Goog-FieldMask': 'routes.distanceMeters',
+        },
+        body: JSON.stringify({
+          origin: {
+            location: {
+              latLng: {
+                latitude: origin.latitude,
+                longitude: origin.longitude,
+              },
+            },
+          },
+          destination: {
+            location: {
+              latLng: {
+                latitude: destination.latitude,
+                longitude: destination.longitude,
+              },
+            },
+          },
+          travelMode: 'DRIVE',
+          units: 'METRIC',
+        }),
+        signal: AbortSignal.timeout(8000),
+      },
     );
-    url.searchParams.set(
-      'origins',
-      `${origin.latitude},${origin.longitude}`,
-    );
-    url.searchParams.set(
-      'destinations',
-      `${destination.latitude},${destination.longitude}`,
-    );
-    url.searchParams.set('mode', 'driving');
-    url.searchParams.set('language', 'pt-BR');
-    url.searchParams.set('units', 'metric');
-    url.searchParams.set('key', key);
 
-    const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
     if (!response.ok) {
       return err(
         'INTEGRATION_UNAVAILABLE',
@@ -129,37 +145,27 @@ export async function getDrivingDistanceMeters(
     }
 
     const data = (await response.json()) as {
-      status: string;
-      rows?: Array<{
-        elements?: Array<{
-          status: string;
-          distance?: { value: number };
-        }>;
-      }>;
+      routes?: Array<{ distanceMeters?: number }>;
     };
 
-    const element = data.rows?.[0]?.elements?.[0];
-    if (
-      data.status !== 'OK' ||
-      !element ||
-      element.status !== 'OK' ||
-      element.distance?.value == null
-    ) {
+    const route = data.routes?.[0];
+    if (!route) {
       return err(
         'VALIDATION_ERROR',
         'Não foi possível calcular a rota até o endereço.',
       );
     }
 
-    return ok(element.distance.value);
+    // A Routes API omite `distanceMeters` quando é 0 (semântica proto3).
+    return ok(route.distanceMeters ?? 0);
   } catch (cause) {
     logger.captureAppError(
       {
         code: 'INTEGRATION_UNAVAILABLE',
-        message: 'Erro ao chamar Distance Matrix API',
+        message: 'Erro ao chamar Routes API',
         cause,
       },
-      { integration: 'google_maps_distance' },
+      { integration: 'google_maps_routes' },
     );
     return err(
       'INTEGRATION_UNAVAILABLE',
