@@ -49,6 +49,7 @@ export type AdminProduct = {
   priceCents: number;
   weightMinGrams: number | null;
   weightMaxGrams: number | null;
+  stockQuantity: number | null;
   isActive: boolean;
   isAvailable: boolean;
   archivedAt: string | null;

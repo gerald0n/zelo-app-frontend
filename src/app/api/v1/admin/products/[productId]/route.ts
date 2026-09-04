@@ -18,6 +18,7 @@ const patchSchema = z.object({
   slug: z.string().trim().min(1).max(80).optional(),
   weightMinGrams: z.number().int().positive().nullable().optional(),
   weightMaxGrams: z.number().int().positive().nullable().optional(),
+  stockQuantity: z.number().int().min(0).nullable().optional(),
   sortOrder: z.number().int().min(0).max(10_000).optional(),
   isActive: z.boolean().optional(),
   isAvailable: z.boolean().optional(),

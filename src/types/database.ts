@@ -934,6 +934,7 @@ export type Database = {
           price_cents: number;
           slug: string;
           sort_order: number;
+          stock_quantity: number | null;
           updated_at: string;
           weight_max_grams: number | null;
           weight_min_grams: number | null;
@@ -950,6 +951,7 @@ export type Database = {
           price_cents: number;
           slug: string;
           sort_order?: number;
+          stock_quantity?: number | null;
           updated_at?: string;
           weight_max_grams?: number | null;
           weight_min_grams?: number | null;
@@ -966,6 +968,7 @@ export type Database = {
           price_cents?: number;
           slug?: string;
           sort_order?: number;
+          stock_quantity?: number | null;
           updated_at?: string;
           weight_max_grams?: number | null;
           weight_min_grams?: number | null;
