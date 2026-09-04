@@ -29,8 +29,17 @@ function describeError(error: unknown): string {
   return `${error.name}: ${error.message}`;
 }
 
+export type GeocodeOptions = {
+  /**
+   * Filtro `components` da Geocoding API (ex.: `locality:Pereiro|country:BR`).
+   * Restringe o resultado — sem isso, "Centro, CE" cai em Sobral.
+   */
+  components?: string;
+};
+
 export async function geocodeAddress(
   address: string,
+  options: GeocodeOptions = {},
 ): Promise<Result<GeocodeResult>> {
   const key = getGoogleMapsApiKey();
   if (!key) {
@@ -45,6 +54,9 @@ export async function geocodeAddress(
     url.searchParams.set('address', address);
     url.searchParams.set('region', 'br');
     url.searchParams.set('language', 'pt-BR');
+    if (options.components) {
+      url.searchParams.set('components', options.components);
+    }
     url.searchParams.set('key', key);
 
     const response = await fetch(url, { signal: AbortSignal.timeout(8000) });

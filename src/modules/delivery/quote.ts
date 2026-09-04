@@ -65,6 +65,16 @@ function composeAddress(input: DeliveryAddressInput): string {
   return parts.join(', ');
 }
 
+/**
+ * Trava a geocodificação na cidade da loja. Sem isso o Google resolve
+ * "Centro, CE" como Sobral (cidade grande ~250 km a noroeste).
+ */
+function geocodeComponents(input: DeliveryAddressInput): string {
+  const locality = input.city ?? 'Pereiro';
+  const area = input.state ?? 'CE';
+  return `locality:${locality}|administrative_area:${area}|country:BR`;
+}
+
 async function resolveCoordinates(
   input: DeliveryAddressInput,
   neighborhood: { latitude: number; longitude: number },
@@ -84,7 +94,9 @@ async function resolveCoordinates(
   }
 
   if (hasGoogleMapsServerKey()) {
-    const geo = await geocodeAddress(composeAddress(input));
+    const geo = await geocodeAddress(composeAddress(input), {
+      components: geocodeComponents(input),
+    });
     if (geo.ok) {
       return {
         latitude: geo.data.latitude,
