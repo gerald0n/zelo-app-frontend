@@ -27,12 +27,12 @@ insert into public.stores (
   '+5588999999999',        -- <<<PREENCHA>>> telefone E.164
   '+5588999999999',        -- <<<PREENCHA>>> WhatsApp E.164
   '00020126580014BR.GOV.BCB.PIX013614zelo@email.com5204000053039865802BR5920Zelo Confeitaria6008Pereiro62070503***6304ABCD',  -- <<<PREENCHA>>> Pix copia-e-cola real
-  'Rua das Flores, 456 - Centro',  -- <<<PREENCHA>>> endereço
+  'Rua Capitão Bandeira, 115 - Centro',  -- <<<CONFIRME>>> endereço exato
   'Pereiro',
   'CE',
   '63460-000',             -- <<<PREENCHA>>> CEP
-  -5.977000,               -- <<<PREENCHA>>> latitude da loja
-  -38.622000,              -- <<<PREENCHA>>> longitude da loja
+  -6.048527,               -- pin no Google Maps (R. Cap. Bandeira, Pereiro-CE)
+  -38.461176,              -- pin no Google Maps
   2000,
   500,
   'America/Fortaleza'

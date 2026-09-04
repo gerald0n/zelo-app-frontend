@@ -1,0 +1,292 @@
+# _HANDOFF — Evolução do App (resumo de sessão)
+
+Resumo para abrir uma sessão nova sem re-explorar o código. Cobre o que foi
+discutido: evolução do painel admin + frete + promoções/cupons/financeiro +
+avaliações. Os planos detalhados estão nos docs **103, 104, 105, 106** desta
+pasta.
+
+---
+
+## 1. Contexto do projeto
+
+- **Repo:** `zelo-app-frontend` (confeitaria Zelo, Pereiro-CE). **Um único
+  admin.** O painel `/admin` é usado **majoritariamente em tablet**.
+- **Stack:** Next.js (versão modificada — ler `node_modules/next/dist/docs/`
+  antes de codar, ver `AGENTS.md`), TypeScript strict, Tailwind v4 (`@theme` em
+  `globals.css`), shadcn/ui, TanStack Query, Supabase (Postgres + RLS + funções
+  RPC), react-hook-form + zod, Leaflet, Mercado Pago (Pix), Web Push (VAPID).
+- **Gerenciador:** pnpm. **Verificação por fase:**
+  `pnpm typecheck && pnpm lint && pnpm build`. Commits Conventional em pt-BR,
+  uma linha.
+- **Regra de escopo herdada da 102:** mexer só em apresentação quando possível;
+  não tocar em `modules/`, rotas de API e migrations sem necessidade.
+
+---
+
+## 2. Fatos técnicos já levantados (não precisa re-explorar)
+
+### Admin
+- Rotas: `src/app/admin/{page,pedidos,pedido/[id],catalogo,configuracoes,login}`.
+- Componentes: `src/components/admin/{AdminHeader,AdminBottomNav,AdminOrderCard}`.
+- Módulos: `src/modules/admin/{orders,catalog,auth,audit,types}.ts`.
+- O admin **não usa os primitivos** (`src/components/ui/{button,badge,card,
+  input,skeleton,...}`) — usa `<button>`/`<div>` crus, valores avulsos
+  (`rounded-[11px]`), `Loader2` no lugar de skeleton. O redesign 102 fez o app do
+  cliente e **deixou o admin de fora de propósito**.
+
+### Pedidos / status
+- Enum de status: `received → confirmed → in_production →
+  (ready_for_pickup | ready_for_delivery) → [ready_for_delivery →
+  out_for_delivery] → delivered`; mais `cancelled`.
+- **Transições são forward-only + cancelar**, validadas em
+  `private.transition_order_status` (migration `20260809144928`). **Não há volta
+  nem desfazer** sem migration nova.
+- `delivery_method ∈ {pickup, delivery}`; `timing ∈ {immediate, scheduled}` +
+  `scheduled_for`. **"Agendamento" é o `timing`, não um terceiro método.**
+- Realtime: `useAdminOrdersRealtime` (`src/modules/realtime/hooks.ts`) é
+  **só sinal** — incrementa um contador em qualquer mudança de
+  `orders`/`order_status_history`; a página refaz o fetch. Não diz o que mudou
+  (para detectar "pedido novo", comparar IDs no cliente).
+- `getAdminOrder` **já devolve** `history` (order_status_history), `needsChange`/
+  `changeForAmountCents` (troco), `customerNote`, `address.referencePoint`,
+  `address.routeDistanceMeters`, `customer.phoneE164` — e a tela
+  `pedido/[id]/page.tsx` **não renderiza nada disso**. É "expor o que já existe".
+- **Não há sistema de toast** no projeto (só `AppDialogContext`:
+  confirm/prompt/alert modais).
+
+### Pedido / pagamento
+- `private.create_order(payload jsonb)` recalcula todos os totais no servidor.
+- `orders.customer_id` é **NOT NULL** → `customers` → `auth.users`. **Comanda
+  manual precisa de mudança de schema** para "cliente sem conta".
+- `products` **não tem coluna de estoque**. `product_images` **já** suporta
+  várias imagens + `is_primary` + `sort_order` (a UI só faz upload de uma).
+- Pix: `orders.mp_order_id`; `payment_events` guarda o payload completo do MP em
+  jsonb, **mas o código não extrai a taxa**. `confirm_order_pix_payment` RPC.
+  Estorno existe (`refundOrderPixPayment` + guarda de estado terminal).
+
+### Frete / mapas
+- `src/modules/delivery/{quote,maps,osm,pereiro,fee,geo}.ts`.
+- **Chave do Google configurada e no ar** (item 105-a, ver §8). Cascata de
+  geocodificação: pin do cliente → **Google Geocoding travado em Pereiro**
+  (`components=locality:Pereiro|administrative_area:CE|country:BR`, endereço
+  **sem** cidade no texto — senão o Google casa "Centro, CE" com Sobral) →
+  Nominatim (viewbox recentrado em Pereiro real) → centroide de bairro fixo.
+- Mapa: `DeliveryLeafletMap` = Leaflet + **tiles raster do OSM**, ~180px. Pin
+  fixo no centro. **Ainda não trocado por Google** (item 105-c).
+- Distância: **Google Routes API** (`routes.googleapis.com/directions/v2:computeRoutes`,
+  `maps.ts:getDrivingDistanceMeters`) → fallback **linha reta × 1,3**
+  (`geo.ts:estimateRoadDistanceMeters`). OSRM de demonstração **removido**.
+- Taxa: **binária** — grátis até `freeDeliveryRadiusMeters` (2 km), senão fixa
+  (`fixedDeliveryFeeCents`, R$5). `calcDeliveryFeeCents`. **Ainda binária** —
+  suavizar é item futuro do 105 (não estava na lista original a–f).
+- Env: `GOOGLE_MAPS_API_KEY` (servidor: Geocoding + Routes),
+  `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (navegador: Maps JS + Places — **ainda sem
+  uso**, entra no item b/c). `getGoogleMapsApiKey()` usa a de servidor e cai na
+  pública se faltar — a pública tem restrição de referrer e **não serve** para
+  Geocoding/Routes, então a de servidor precisa existir de verdade.
+- Origem da loja: `stores.latitude/longitude`. **Corrigida** para
+  `-6.048527, -38.461176` (R. Cap. Bandeira ~115, Pereiro-CE) — a antiga
+  (`-5.977, -38.622`) estava ~28 km fora. Corrigida no seed **e** no banco de
+  produção (UPDATE manual). `pereiro.ts` (7 bairros) e o viewbox do `osm.ts`
+  também foram realinhados.
+- CSP (`src/config/security-headers.ts`) libera `maps.googleapis.com` (connect).
+  **Falta** `routes.googleapis.com` e os domínios do Maps JS — entram no item c
+  (hoje as chamadas Google são server-side, CSP não as afeta).
+
+### Outros
+- Roadmap **Fase 14 = login do cliente por SMS** (Twilio Verify). Hoje a
+  identidade do cliente é **temporária**. Limite de cupom por cliente e atribuição
+  confiável de avaliação **dependem disso**.
+- `docs/00-produto-e-dominio/00 - Produto.md` → "Evoluções Futuras" já lista:
+  fidelidade, cupons, promoções, favoritos, gateways, confirmação automática de
+  Pix, notificações WhatsApp, dashboard financeiro, relatórios, múltiplas lojas.
+  **Não lista:** avaliações, estoque, comanda manual, impressão térmica.
+- "controle **detalhado** de estoque" e "sistema financeiro completo" estão na
+  lista de **fora de escopo** do 00-Produto — estoque básico e relatório
+  financeiro simples são ok.
+
+---
+
+## 3. Os planos (docs 103–106)
+
+| Doc | Assunto | Status |
+| --- | --- | --- |
+| **103 — Evolução do Painel Administrativo** | Kanban de pedidos, estoque, comanda manual, impressão térmica + melhorias menores (troco/obs/histórico/WhatsApp, catálogo, config, relatórios, push) | escrito; decisões travadas; falta 3 decisões (impressora, MEI/nota, agendados-automático) |
+| **104 — Promoções, Cupons e Controle Financeiro** | Promoções por especificidade; cupons %/fixo/frete-grátis sem acúmulo; financeiro com taxa real do MP | escrito; **todas as decisões travadas** |
+| **105 — Precisão do Cálculo de Frete** | Ligar Google Maps de verdade: Places Autocomplete, mapa Google com satélite, Routes API, tratar confiança, origem da loja por pin | **item (a) FEITO e em produção**; (b)–(f) pendentes. Ver §8. |
+| **106 — Avaliações e Depoimentos** | Fase 1: avaliação do pedido + depoimentos curados. Fase 2: nota por produto (pós login SMS) | escrito; 3 decisões menores em aberto |
+
+### 103 em uma linha cada
+- **Quadro de pedidos:** dois quadros vivos (**Retirada** / **Delivery**, colunas
+  diferentes no fim) + painel **Agenda** à parte. Arrastar e soltar **só pra
+  frente**, não entre quadros. 3 primeiras colunas alinhadas. Recolhível + filtro
+  de foco. Som ao entrar pedido, indicador "ao vivo". **Não mexe no banco.**
+- **Estoque 🗄️:** opcional por produto; baixa ao criar o pedido; devolve no
+  cancelamento; ajuste manual + histórico; "acabou" automático ao zerar.
+- **Comanda manual 🗄️:** admin lança pedido de canal externo; cliente avulso
+  (nome/telefone no pedido, sem conta); entra no quadro, baixa estoque, imprime.
+- **Impressão térmica (EPSON TM-T20X) 🔌:** comprovante 80mm automático + botão
+  reimprimir; dados do MEI + "não fiscal". Melhor caso: impressora na rede →
+  impressão silenciosa (ePOS-Print). Fallback: `window.print()` com template.
+- **Dentro do pedido 🖥️:** expor troco, obs. do cliente, obs. por item, ponto de
+  referência, histórico; botão WhatsApp; editar nota interna; reimprimir.
+- **Catálogo 🖥️:** "acabou" num toque, reordenar arrastando, várias fotos
+  (banco já suporta), duplicar produto.
+- **Loja/relatórios 🖥️:** pausar com tempo+motivo; config em abas; faturamento
+  por período; produção do dia; relatório de cancelamentos.
+- **Push no celular 🗄️:** notificar o admin ao entrar pedido (hoje só o cliente
+  recebe push; `push_subscriptions` é chaveada por `customer_id`).
+
+---
+
+## 4. Decisões travadas
+
+### Quadro de pedidos (103)
+- Dois quadros (Retirada / Delivery) + painel Agenda separado; agendado não se
+  mistura.
+- Arrastar e soltar, forward-only, sem arrastar entre quadros. Cartão também tem
+  botão de avançar. Cancelar = botão no cartão.
+- Régua de urgência (cartão amarelo→vermelho por tempo parado).
+- Celular: um fluxo por vez, em lista.
+
+### Promoções (104)
+- **Uma promoção efetiva por produto**, resolvida por **especificidade:
+  produto > categoria > loja toda**. "Loja toda" cobre o que não está em outra.
+  Admin bloqueia o mesmo produto em duas do mesmo nível.
+- Abrangência: loja toda / categorias / produtos. Percentual + período + ativa.
+- **Arredondar por unidade**, em centavos.
+- "Loja toda −10% no lançamento" = uma promoção com data de fim.
+
+### Cupons (104)
+- Tipos: **percentual, valor fixo, frete grátis** (sim, mantém "frete grátis").
+- Incide sobre subtotal de produtos (não sobre frete; "frete grátis" zera o
+  frete).
+- **Sem acúmulo com promoção:** carrinho com item em promoção → cupom recusado.
+- **Só limite total de usos** (sem limite por cliente até o login por SMS).
+- Uso contado junto com a criação do pedido (atômico); cancelamento devolve.
+
+### Financeiro (104)
+- **Taxa real do Mercado Pago**, gravada por transação (1 chamada extra ao MP na
+  confirmação do Pix): grava taxa (R$) e líquido (R$) no pedido.
+- Campo configurável de taxa (padrão **0,99%**) só para estimar onde não há o
+  número real.
+- Estorno não devolve a taxa — relatório mostra como custo.
+- Dinheiro / cartão na entrega: separados (sem taxa MP).
+- **Aba "Financeiro" própria** no admin.
+
+### Frete (105)
+- Conta de faturamento no Google Cloud **criada**; duas chaves ativas (servidor
+  e navegador). Caminho é Google Maps Platform.
+- **Satélite sim** no mapa de confirmação.
+- **Trocar o mapa inteiro por Google** (não manter Leaflet).
+- Geocodificação **travada na cidade da loja** via `components` + endereço sem
+  cidade no texto (decisão tomada durante a implementação do item a).
+- Fallback de rota = **linha reta × 1,3** (substituiu OSRM de demonstração).
+
+---
+
+## 5. Decisões em aberto
+
+### 103
+1. **Impressora — conexão:** USB no tablet, cabo de rede ou Wi-Fi? Define
+   impressão silenciosa × com janelinha. (impressora chega "amanhã" a partir de
+   ~2026-09-04)
+2. **Nota — dados do MEI:** quais entram (CNPJ, nome empresarial, endereço)?
+   Emite NFC-e/NF-e hoje ou é só comprovante interno?
+3. **Agendados:** aparecem sozinhos no quadro no dia (sugestão) + botão "Passar
+   para produção" antes; ou só manual?
+
+### 106
+1. Nome no depoimento: primeiro nome + inicial (sugestão) / completo / cliente
+   escolhe.
+2. Mínimo de avaliações para mostrar estrela no card do produto (sugestão: 3).
+3. Push "como foi seu pedido?" após entrega — quer, ou só convite na tela de
+   acompanhamento?
+
+---
+
+## 6. Ordem de prioridade acordada
+
+1. **105 — Frete.** Fura a fila: bug de dinheiro (taxa binária nos 2 km) e de
+   confiança; pré-requisito da comanda manual (103) e do financeiro (104).
+   Ordem interna: **(a) ligar chave Google + geocodificação/rota por Google —
+   ✅ FEITO e em produção**; (b) autocomplete; (c) mapa Google + satélite +
+   reverse geocode + mapa grande; (d) tratar confiança; (e) origem da loja por
+   pin; (f) extrair componente único.
+2. **104 — Promoções** (necessária para o lançamento: loja toda −10%).
+3. **103 — Bloco 1 (quadros de pedidos)** e demais blocos.
+4. **104 — Cupons + Financeiro** (após o Bloco 3; cupons de preferência após o
+   login por SMS).
+5. **106 — Avaliações** (Fase 1 pode entrar cedo por ser barata; Fase 2 após o
+   login por SMS).
+- A **repaginação visual** do admin (primitivos, tokens, skeletons — pendência da
+  102) acontece junto, tela por tela.
+
+---
+
+## 7. Próximo passo
+
+**Item 105-(b) — autocomplete de endereço no checkout.** Places Autocomplete
+(API New, `places.googleapis.com/v1/places:autocomplete`) enviesado pra região
+de Pereiro, com session token cobrindo autocomplete + 1 geocodificação como uma
+coisa só. Ao escolher a sugestão, usar o `placeId` → coordenada precisa. Usa a
+chave de navegador `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (hoje sem uso). Testado na
+mão: a Places Autocomplete New responde OK com a chave de navegador + Referer da
+`cardapio.zeloconfeitaria.com.br`.
+
+---
+
+## 8. Estado da implementação do 105 (sessão 2026-09-04)
+
+### Feito — item (a), em produção
+- **Chaves Google Maps Platform criadas** (conta de faturamento ativa):
+  - servidor `GOOGLE_MAPS_API_KEY` — restrição de API: Geocoding + Routes;
+    restrição de aplicativo: Nenhuma. **Não pode ter restrição de referrer**
+    (Geocoding/Routes recusam chave com referrer).
+  - navegador `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` — restrição de API: Maps JS +
+    Places; restrição de referrer: domínio da loja.
+  - Ambas na Vercel como **tipo `config`** (Production + Preview) e no
+    `.env.local`.
+- `maps.ts`: `getDrivingDistanceMeters` migrado de **Distance Matrix → Routes
+  API** (a Distance Matrix nem está habilitada na chave). Trata `distanceMeters`
+  omitido (=0, proto3). `geocodeAddress` ganhou opção `components`. `describeError`
+  loga a `cause` aninhada do undici.
+- `geo.ts` (novo): `haversineDistanceMeters` + `estimateRoadDistanceMeters`
+  (× 1,3) — fallback de rota no lugar do OSRM de demonstração.
+- `quote.ts`: Routes API é sempre o caminho principal com chave;
+  `composeStreetAddress` (rua+número+bairro, **sem** cidade) alimenta o Google
+  junto com `components=locality:Pereiro|...`; OSM continua com endereço completo.
+- `osm.ts`: `getDrivingDistanceOsm` removido; `PEREIRO_VIEWBOX` recentrado
+  (`-38.49,-6.075,-38.44,-6.025`).
+- `pereiro.ts`: 7 bairros realinhados por translação até a Pereiro real +
+  distâncias recalculadas.
+- **Origem da loja corrigida** (`-6.048527, -38.461176`) no `seed.sql`,
+  `seed-operacional.sql` **e no banco de produção** (UPDATE manual rodado).
+- Commits em `develop` (**pushados**): `3ecafc5` feat · `3f84c30` log de causa ·
+  `ec840d3` trava de cidade v1 · `6fa7847` geocodifica só rua+bairro.
+- Verificado em produção via `POST /api/v1/addresses/validate`:
+  "Rua Coronel Jose Sabino, 100, Centro" → `-6.0476, -38.4614`, rota 392 m,
+  frete R$ 0, `source: google_maps`. (Antes ia pra **Sobral**, 465 km, R$ 5.)
+
+### Aprendizados / pegadinhas
+- **Terminal do usuário mascara segredos colados** com `•` (U+2022) — a máscara
+  foi salva na env var da Vercel e a Routes API quebrou com
+  `TypeError: Cannot convert argument to a ByteString`. **Configurar env de chave
+  só pelo dashboard web**, nunca `printf ... | vercel env add`. Conferir depois
+  com `vercel env pull` + `cat` (sem máscara).
+- **`components:locality` só funciona se o endereço-texto não trouxer
+  cidade/estado** — com "Centro, CE, Brasil" no texto o Google ignora o filtro
+  e vai pra Sobral.
+- Vercel CLI 59.x: env `preview` trava no prompt "Git branch?" quando o valor
+  vem por pipe; env `NEXT_PUBLIC_*` com cara de credencial exige
+  `--type config`. Dashboard evita os dois.
+- Deploy foi por `vercel --prod --force` (CLI, a partir do working dir local).
+  Node local é v20 (o projeto quer ≥22) — não bloqueia.
+
+### Falta no 105
+- (b) autocomplete · (c) mapa Google + satélite + reverse geocode + mapa grande +
+  CSP (`routes.googleapis.com`, domínios Maps JS) · (d) tratar confiança
+  (rooftop/interpolado/aproximado; obrigar confirmar pin) · (e) origem da loja
+  por pin no admin · (f) extrair componente único (checkout + comanda manual).
+- Suavizar a taxa binária (perde/cobra dinheiro por poucos metros no limite dos
+  2 km) — não estava na lista a–f, mas é o "bug de dinheiro" que motivou o 105.

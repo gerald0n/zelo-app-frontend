@@ -10,10 +10,8 @@ import {
   hasGoogleMapsServerKey,
   type GeoPoint,
 } from '@/modules/delivery/maps';
-import {
-  geocodeAddressOsm,
-  getDrivingDistanceOsm,
-} from '@/modules/delivery/osm';
+import { estimateRoadDistanceMeters } from '@/modules/delivery/geo';
+import { geocodeAddressOsm } from '@/modules/delivery/osm';
 
 export type DeliveryQuoteSource =
   | 'google_maps'
@@ -67,6 +65,27 @@ function composeAddress(input: DeliveryAddressInput): string {
   return parts.join(', ');
 }
 
+/**
+ * Só rua + número + bairro, sem cidade/estado. Para a Geocoding API do Google
+ * com filtro `components`: se o texto trouxer "Centro, CE, Brasil" o Google
+ * ignora o filtro e casa com o Centro de Sobral (~250 km).
+ */
+function composeStreetAddress(input: DeliveryAddressInput): string {
+  return [input.street, input.number, input.neighborhood]
+    .filter(Boolean)
+    .join(', ');
+}
+
+/**
+ * Trava a geocodificação na cidade da loja. Sem isso o Google resolve
+ * "Centro" como Sobral (cidade grande ~250 km a noroeste).
+ */
+function geocodeComponents(input: DeliveryAddressInput): string {
+  const locality = input.city ?? 'Pereiro';
+  const area = input.state ?? 'CE';
+  return `locality:${locality}|administrative_area:${area}|country:BR`;
+}
+
 async function resolveCoordinates(
   input: DeliveryAddressInput,
   neighborhood: { latitude: number; longitude: number },
@@ -86,7 +105,9 @@ async function resolveCoordinates(
   }
 
   if (hasGoogleMapsServerKey()) {
-    const geo = await geocodeAddress(composeAddress(input));
+    const geo = await geocodeAddress(composeStreetAddress(input), {
+      components: geocodeComponents(input),
+    });
     if (geo.ok) {
       return {
         latitude: geo.data.latitude,
@@ -120,22 +141,20 @@ async function resolveRouteDistance(
   destination: GeoPoint,
   preferred: DeliveryQuoteSource,
 ): Promise<{ meters: number; source: DeliveryQuoteSource }> {
-  if (hasGoogleMapsServerKey() && preferred === 'google_maps') {
+  // Com chave, a Routes API é sempre o caminho principal — mesmo quando o ponto
+  // veio do OSM ou do bairro, ela dá a distância viária real entre as coordenadas.
+  if (hasGoogleMapsServerKey()) {
     const google = await getDrivingDistanceMeters(origin, destination);
     if (google.ok) {
       return { meters: google.data, source: 'google_maps' };
     }
   }
 
-  const osm = await getDrivingDistanceOsm(origin, destination);
-  if (osm.ok) {
-    return {
-      meters: osm.data,
-      source: preferred === 'local_fallback' ? 'openstreetmap' : preferred,
-    };
-  }
-
-  return { meters: -1, source: preferred };
+  // Sem Routes API: linha reta × 1,3. A confiança herda a origem do ponto.
+  return {
+    meters: estimateRoadDistanceMeters(origin, destination),
+    source: preferred,
+  };
 }
 
 export async function quoteDelivery(

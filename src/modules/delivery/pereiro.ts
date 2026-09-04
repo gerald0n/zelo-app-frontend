@@ -1,6 +1,10 @@
 /**
  * Localidades urbanas de Pereiro-CE atendidas na 1ª versão.
- * Distâncias locais são estimativas de rota para desenvolvimento sem Maps API.
+ *
+ * Coordenadas e distâncias são aproximadas, só para o fallback quando o Google
+ * (geocodificação + Routes) e o Nominatim falham. Alinhadas ao centro real de
+ * Pereiro (loja em ~-6.0485, -38.4612); o Google não tem dado por bairro nesta
+ * cidade, então a precisão fina depende do cliente confirmar o pin no mapa.
  */
 export type PereiroNeighborhood = {
   id: string;
@@ -15,51 +19,51 @@ export const PEREIRO_URBAN_NEIGHBORHOODS: PereiroNeighborhood[] = [
   {
     id: 'centro',
     name: 'Centro',
-    roadDistanceMeters: 900,
-    latitude: -5.9772,
-    longitude: -38.6218,
+    roadDistanceMeters: 100,
+    latitude: -6.048727,
+    longitude: -38.460976,
   },
   {
     id: 'alto-alegre',
     name: 'Alto Alegre',
-    roadDistanceMeters: 1600,
-    latitude: -5.9725,
-    longitude: -38.618,
+    roadDistanceMeters: 870,
+    latitude: -6.044027,
+    longitude: -38.457176,
   },
   {
     id: 'cohab',
     name: 'Cohab',
-    roadDistanceMeters: 2100,
-    latitude: -5.981,
-    longitude: -38.628,
+    roadDistanceMeters: 1040,
+    latitude: -6.052527,
+    longitude: -38.467176,
   },
   {
     id: 'padre-cicero',
     name: 'Padre Cícero',
-    roadDistanceMeters: 1800,
-    latitude: -5.974,
-    longitude: -38.6265,
+    roadDistanceMeters: 780,
+    latitude: -6.045527,
+    longitude: -38.465676,
   },
   {
     id: 'pedrinhas',
     name: 'Pedrinhas',
-    roadDistanceMeters: 2400,
-    latitude: -5.9855,
-    longitude: -38.619,
+    roadDistanceMeters: 1300,
+    latitude: -6.057027,
+    longitude: -38.458176,
   },
   {
     id: 'sao-francisco',
     name: 'São Francisco',
-    roadDistanceMeters: 1300,
-    latitude: -5.9795,
-    longitude: -38.6165,
+    roadDistanceMeters: 870,
+    latitude: -6.051027,
+    longitude: -38.455676,
   },
   {
     id: 'vila-nova',
     name: 'Vila Nova',
-    roadDistanceMeters: 1100,
-    latitude: -5.9758,
-    longitude: -38.6235,
+    roadDistanceMeters: 280,
+    latitude: -6.047327,
+    longitude: -38.462676,
   },
 ];
 
