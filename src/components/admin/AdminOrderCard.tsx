@@ -35,6 +35,7 @@ export default function AdminOrderCard({ order }: Props) {
               ? `há ${age} min`
               : new Date(order.createdAt).toLocaleDateString('pt-BR')}
             {order.customerName ? ` · ${order.customerName}` : ''}
+            {order.isGuest ? ' · Avulso' : ''}
           </p>
         </div>
         <p className="text-base font-bold tabular-nums">

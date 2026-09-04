@@ -1,5 +1,8 @@
 import type { CustomerOrder, OrderStatus } from '@/modules/orders/types';
-import type { CatalogBusinessHour, CatalogStore } from '@/modules/catalog/types';
+import type {
+  CatalogBusinessHour,
+  CatalogStore,
+} from '@/modules/catalog/types';
 
 export type AdminOrderListItem = {
   id: string;
@@ -18,6 +21,8 @@ export type AdminOrderListItem = {
   updatedAt: string;
   customerName: string | null;
   customerPhone: string | null;
+  /** Pedido de comanda manual sem vínculo com um customer existente. */
+  isGuest: boolean;
   items: Array<{ name: string; quantity: number }>;
 };
 
@@ -28,6 +33,12 @@ export type AdminOrderDetail = CustomerOrder & {
     name: string;
     phoneE164: string;
   } | null;
+  /** Presente só quando `isGuest` — nome/telefone digitados na comanda manual. */
+  guest: {
+    name: string;
+    phoneE164: string;
+  } | null;
+  isGuest: boolean;
 };
 
 export type AdminProductImage = {
@@ -49,6 +60,7 @@ export type AdminProduct = {
   priceCents: number;
   weightMinGrams: number | null;
   weightMaxGrams: number | null;
+  stockQuantity: number | null;
   isActive: boolean;
   isAvailable: boolean;
   archivedAt: string | null;

@@ -32,6 +32,8 @@ const LIST_SELECT = `
   total_cents,
   created_at,
   updated_at,
+  guest_name,
+  guest_phone_e164,
   customers ( name, phone_e164 ),
   order_items ( product_name, quantity )
 `;
@@ -58,6 +60,8 @@ const DETAIL_SELECT = `
   cancelled_at,
   created_at,
   updated_at,
+  guest_name,
+  guest_phone_e164,
   customers ( id, name, phone_e164 ),
   order_addresses (
     street,
@@ -165,8 +169,9 @@ export async function listAdminOrders(options?: {
       totalCents: row.total_cents,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-      customerName: customer?.name ?? null,
-      customerPhone: customer?.phone_e164 ?? null,
+      customerName: customer?.name ?? row.guest_name ?? null,
+      customerPhone: customer?.phone_e164 ?? row.guest_phone_e164 ?? null,
+      isGuest: !customer,
       items: (row.order_items ?? []).map(
         (item: { product_name: string; quantity: number }) => ({
           name: item.product_name,
@@ -286,6 +291,11 @@ export async function getAdminOrder(
           phoneE164: customer.phone_e164,
         }
       : null,
+    guest:
+      !customer && data.guest_name && data.guest_phone_e164
+        ? { name: data.guest_name, phoneE164: data.guest_phone_e164 }
+        : null,
+    isGuest: !customer,
   });
 }
 
@@ -397,4 +407,84 @@ export async function cancelAdminOrder(options: {
   }
 
   return ok({ order: cancelled.data });
+}
+
+export async function createManualAdminOrder(input: {
+  guestName: string;
+  guestPhoneE164: string;
+  items: Array<{
+    productId: string;
+    quantity: number;
+    customerNote?: string | null;
+    addOns: Array<{ addOnId: string; quantity: number }>;
+  }>;
+  deliveryMethod: 'pickup' | 'delivery';
+  timing: 'immediate' | 'scheduled';
+  scheduledFor?: string | null;
+  address?: {
+    street: string;
+    number: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    postalCode?: string | null;
+    complement?: string | null;
+    referencePoint?: string | null;
+  } | null;
+  deliveryFeeCents?: number;
+  paymentMethod: 'cash' | 'card';
+  alreadyPaid: boolean;
+  customerNote?: string | null;
+}): Promise<Result<AdminOrderDetail>> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth;
+
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc('create_manual_order', {
+    payload: {
+      guest_name: input.guestName,
+      guest_phone_e164: input.guestPhoneE164,
+      items: input.items.map((item) => ({
+        product_id: item.productId,
+        quantity: item.quantity,
+        customer_note: item.customerNote ?? null,
+        add_ons: item.addOns.map((addon) => ({
+          add_on_id: addon.addOnId,
+          quantity: addon.quantity,
+        })),
+      })),
+      delivery_method: input.deliveryMethod,
+      timing: input.timing,
+      scheduled_for: input.scheduledFor ?? null,
+      address: input.address
+        ? {
+            street: input.address.street,
+            number: input.address.number,
+            neighborhood: input.address.neighborhood,
+            city: input.address.city,
+            state: input.address.state,
+            postal_code: input.address.postalCode ?? null,
+            complement: input.address.complement ?? null,
+            reference_point: input.address.referencePoint ?? null,
+          }
+        : null,
+      delivery_fee_cents: input.deliveryFeeCents ?? null,
+      payment_method: input.paymentMethod,
+      already_paid: input.alreadyPaid,
+      customer_note: input.customerNote ?? null,
+    },
+  });
+
+  if (error || !data) {
+    logger.error('Falha ao criar comanda manual', {
+      message: error?.message,
+    });
+    return err(
+      'VALIDATION_ERROR',
+      error?.message || 'Não foi possível criar a comanda.',
+      { cause: error },
+    );
+  }
+
+  return getAdminOrder(data);
 }

@@ -10,7 +10,10 @@ import {
   isAwaitingPixPayment,
   type OrderStatus,
 } from '@/modules/orders/types';
-import { nextAdminStatus, type AdminOrderListItem } from '@/modules/admin/types';
+import {
+  nextAdminStatus,
+  type AdminOrderListItem,
+} from '@/modules/admin/types';
 import { urgencyLevel } from '@/lib/admin/order-urgency';
 import { useNow } from '@/hooks/useNow';
 import { cn } from '@/lib/cn';
@@ -77,6 +80,7 @@ export default function AdminOrderKanbanCard({
           <p className="text-sm font-bold tabular-nums">{order.number}</p>
           <p className="mt-0.5 truncate text-2xs text-muted-foreground">
             {order.customerName ?? 'Cliente'}
+            {order.isGuest ? ' · Avulso' : ''}
           </p>
         </Link>
         {next && draggable ? (
@@ -94,7 +98,9 @@ export default function AdminOrderKanbanCard({
       </div>
 
       <p className="line-clamp-2 text-xs leading-snug text-muted-foreground">
-        {order.items.map((item) => `${item.quantity}× ${item.name}`).join(' · ')}
+        {order.items
+          .map((item) => `${item.quantity}× ${item.name}`)
+          .join(' · ')}
       </p>
 
       <div className="flex items-center justify-between">

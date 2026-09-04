@@ -42,6 +42,7 @@ const PRODUCT_ADMIN_SELECT = `
   price_cents,
   weight_min_grams,
   weight_max_grams,
+  stock_quantity,
   is_active,
   is_available,
   archived_at,
@@ -85,6 +86,7 @@ function mapAdminProduct(row: {
   price_cents: number;
   weight_min_grams: number | null;
   weight_max_grams: number | null;
+  stock_quantity: number | null;
   is_active: boolean;
   is_available: boolean;
   archived_at: string | null;
@@ -115,6 +117,7 @@ function mapAdminProduct(row: {
     priceCents: row.price_cents,
     weightMinGrams: row.weight_min_grams,
     weightMaxGrams: row.weight_max_grams,
+    stockQuantity: row.stock_quantity,
     isActive: row.is_active,
     isAvailable: row.is_available,
     archivedAt: row.archived_at,
@@ -353,6 +356,7 @@ export async function createAdminProduct(input: {
   slug?: string;
   weightMinGrams?: number | null;
   weightMaxGrams?: number | null;
+  stockQuantity?: number | null;
   sortOrder?: number;
   isActive?: boolean;
   isAvailable?: boolean;
@@ -374,6 +378,7 @@ export async function createAdminProduct(input: {
       price_cents: input.priceCents,
       weight_min_grams: input.weightMinGrams ?? null,
       weight_max_grams: input.weightMaxGrams ?? null,
+      stock_quantity: input.stockQuantity ?? null,
       sort_order: input.sortOrder ?? 0,
       is_active: input.isActive ?? true,
       is_available: input.isAvailable ?? true,
@@ -423,6 +428,7 @@ export async function updateAdminProduct(options: {
   slug?: string;
   weightMinGrams?: number | null;
   weightMaxGrams?: number | null;
+  stockQuantity?: number | null;
   sortOrder?: number;
   isActive?: boolean;
   isAvailable?: boolean;
@@ -453,6 +459,9 @@ export async function updateAdminProduct(options: {
   }
   if (options.weightMaxGrams !== undefined) {
     patch.weight_max_grams = options.weightMaxGrams;
+  }
+  if (options.stockQuantity !== undefined) {
+    patch.stock_quantity = options.stockQuantity;
   }
   if (typeof options.sortOrder === 'number') {
     patch.sort_order = options.sortOrder;

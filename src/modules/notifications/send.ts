@@ -48,6 +48,9 @@ export async function notifyOrderStatusChange(options: {
       return;
     }
 
+    // Comanda manual sem conta vinculada: não há assinatura de push pra notificar.
+    if (!order.customer_id) return;
+
     const subscriptions = await listActiveSubscriptionsForCustomer(
       order.customer_id,
     );

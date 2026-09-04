@@ -58,6 +58,7 @@ const productSchema = z.object({
   isAvailable: z.boolean(),
   weightMinGrams: z.string().optional(),
   weightMaxGrams: z.string().optional(),
+  stockQuantity: z.string().optional(),
   addonIds: z.array(z.string().uuid()),
 });
 
@@ -189,6 +190,7 @@ export default function AdminCatalogoPage() {
       isAvailable: true,
       weightMinGrams: '',
       weightMaxGrams: '',
+      stockQuantity: '',
       addonIds: [],
     },
   });
@@ -286,6 +288,9 @@ export default function AdminCatalogoPage() {
         weightMaxGrams: values.weightMaxGrams
           ? Number(values.weightMaxGrams)
           : null,
+        stockQuantity: values.stockQuantity
+          ? Number(values.stockQuantity)
+          : null,
         addonIds: values.addonIds,
       };
       if (editingProduct) {
@@ -313,6 +318,7 @@ export default function AdminCatalogoPage() {
         isAvailable: true,
         weightMinGrams: '',
         weightMaxGrams: '',
+        stockQuantity: '',
         addonIds: [],
       });
       await invalidateCatalog();
@@ -513,6 +519,10 @@ export default function AdminCatalogoPage() {
               product.weightMaxGrams != null
                 ? String(product.weightMaxGrams)
                 : '',
+            stockQuantity:
+              product.stockQuantity != null
+                ? String(product.stockQuantity)
+                : '',
             addonIds: product.addonIds,
           }
         : {
@@ -525,6 +535,7 @@ export default function AdminCatalogoPage() {
             isAvailable: true,
             weightMinGrams: '',
             weightMaxGrams: '',
+            stockQuantity: '',
             addonIds: [],
           },
     );
@@ -726,6 +737,16 @@ export default function AdminCatalogoPage() {
                       className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
                     />
                   </Label>
+                  <Label className="block text-xs font-semibold">
+                    Estoque (deixe vazio para ilimitado)
+                    <Input
+                      type="number"
+                      min={0}
+                      step={1}
+                      {...productForm.register('stockQuantity')}
+                      className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                    />
+                  </Label>
                   <Label className="block text-xs font-semibold sm:col-span-2">
                     Descrição
                     <Textarea
@@ -826,6 +847,25 @@ export default function AdminCatalogoPage() {
                     <p className="text-2xs text-muted-foreground">
                       {product.categoryName} ·{' '}
                       {formatCatalogPrice(product.priceCents)}
+                      {product.stockQuantity != null ? (
+                        <>
+                          {' · '}
+                          <span
+                            className={cn(
+                              'font-semibold',
+                              product.stockQuantity === 0
+                                ? 'text-destructive'
+                                : product.stockQuantity <= 5
+                                  ? 'text-tone-warning'
+                                  : undefined,
+                            )}
+                          >
+                            {product.stockQuantity === 0
+                              ? 'Esgotado'
+                              : `${product.stockQuantity} em estoque`}
+                          </span>
+                        </>
+                      ) : null}
                     </p>
                   </div>
                   <label className="cursor-pointer rounded-md border border-border p-1.5 text-muted-foreground">
