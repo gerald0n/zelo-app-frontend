@@ -21,6 +21,7 @@ import { checkoutContinuePath } from '@/modules/auth/checkout-path';
 import { Input } from '@/components/ui/input';
 import CheckoutProgress from '@/components/CheckoutProgress';
 import { DeliveryMapConfirm } from '@/components/checkout/DeliveryMapConfirm';
+import { AddressAutocomplete } from '@/components/checkout/AddressAutocomplete';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import type { DeliveryQuoteSource } from '@/modules/delivery';
 import type { SavedAddress } from '@/modules/customers/addresses';
@@ -41,6 +42,8 @@ type CheckoutOptions = {
     addressLine: string;
     city: string;
     state: string;
+    latitude: number;
+    longitude: number;
     freeDeliveryRadiusMeters: number;
     fixedDeliveryFeeCents: number;
   };
@@ -744,17 +747,35 @@ export default function RecebimentoPage() {
                 </div>
               ) : null}
               <div className="grid min-w-0 grid-cols-3 gap-2">
-                <Input
+                <AddressAutocomplete
+                  className="col-span-2"
+                  inputClassName={checkoutFieldClass}
                   value={details.street}
-                  onChange={(e) =>
+                  onChange={(text) =>
                     setAddressDetails({
-                      street: e.target.value,
+                      street: text,
                       latitude: undefined,
                       longitude: undefined,
                     })
                   }
+                  onResolve={(place) =>
+                    setAddressDetails({
+                      street: place.street || details.street,
+                      number: place.number || details.number,
+                      neighborhood: place.neighborhood || details.neighborhood,
+                      city: 'Pereiro',
+                      state: 'CE',
+                      latitude: Number.isFinite(place.latitude)
+                        ? place.latitude
+                        : undefined,
+                      longitude: Number.isFinite(place.longitude)
+                        ? place.longitude
+                        : undefined,
+                    })
+                  }
+                  bias={options?.store}
                   placeholder="Rua"
-                  className={cn(checkoutFieldClass, 'col-span-2')}
+                  aria-label="Rua"
                 />
                 <Input
                   value={details.number}

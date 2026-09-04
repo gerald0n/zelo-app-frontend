@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { DeliveryMapConfirm } from '@/components/checkout/DeliveryMapConfirm';
+import { AddressAutocomplete } from '@/components/checkout/AddressAutocomplete';
 import { Input } from '@/components/ui/input';
 import { PEREIRO_URBAN_NEIGHBORHOODS } from '@/modules/delivery/pereiro';
+import type { ResolvedPlace } from '@/modules/delivery/places';
 import { checkoutFieldClass, pageCtaBaseClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 
@@ -99,11 +101,20 @@ export function AccountAddressForm({
     number.trim().length > 0 &&
     neighborhood.trim().length > 0;
 
+  // Pula a próxima auto-validação por texto quando o endereço acabou de ser
+  // resolvido pelo autocomplete (já validamos com a coordenada exata).
+  const skipAutoValidateRef = useRef(false);
+
   useEffect(() => {
     if (!canQuote) {
       setQuote(null);
       setQuoteError('');
       setConfirmed(false);
+      return;
+    }
+
+    if (skipAutoValidateRef.current) {
+      skipAutoValidateRef.current = false;
       return;
     }
 
@@ -130,14 +141,22 @@ export function AccountAddressForm({
     return () => window.clearTimeout(timer);
   }, [canQuote, street, number, neighborhood, complement, referencePoint]);
 
-  const revalidateWithCoords = async (latitude: number, longitude: number) => {
+  const revalidateWithCoords = async (
+    latitude: number,
+    longitude: number,
+    addressOverride?: {
+      street?: string;
+      number?: string;
+      neighborhood?: string;
+    },
+  ) => {
     setQuoting(true);
     setQuoteError('');
     setConfirmed(false);
     const result = await validateAddress({
-      street,
-      number,
-      neighborhood,
+      street: addressOverride?.street ?? street,
+      number: addressOverride?.number ?? number,
+      neighborhood: addressOverride?.neighborhood ?? neighborhood,
       complement,
       referencePoint,
       latitude,
@@ -149,6 +168,26 @@ export function AccountAddressForm({
       setQuote(result.data);
     }
     setQuoting(false);
+  };
+
+  const handleResolvedPlace = (place: ResolvedPlace) => {
+    const nextStreet = place.street || street;
+    const nextNumber = place.number || number;
+    const nextNeighborhood = place.neighborhood || neighborhood;
+    setStreet(nextStreet);
+    setNumber(nextNumber);
+    setNeighborhood(nextNeighborhood);
+
+    const hasCoords =
+      Number.isFinite(place.latitude) && Number.isFinite(place.longitude);
+    if (hasCoords && nextNumber.trim() && nextNeighborhood.trim()) {
+      skipAutoValidateRef.current = true;
+      void revalidateWithCoords(place.latitude, place.longitude, {
+        street: nextStreet,
+        number: nextNumber,
+        neighborhood: nextNeighborhood,
+      });
+    }
   };
 
   const isValid =
@@ -180,11 +219,14 @@ export function AccountAddressForm({
         className={checkoutFieldClass}
       />
       <div className="grid min-w-0 grid-cols-3 gap-2">
-        <Input
+        <AddressAutocomplete
+          className="col-span-2"
+          inputClassName={checkoutFieldClass}
           value={street}
-          onChange={(e) => setStreet(e.target.value)}
+          onChange={setStreet}
+          onResolve={handleResolvedPlace}
           placeholder="Rua"
-          className={cn(checkoutFieldClass, 'col-span-2')}
+          aria-label="Rua"
         />
         <Input
           value={number}
