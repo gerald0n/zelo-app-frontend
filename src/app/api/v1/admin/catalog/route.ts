@@ -5,14 +5,16 @@ import {
   listAdminCategories,
   listAdminProducts,
 } from '@/modules/admin/catalog';
+import { listAdminPromotions } from '@/modules/admin/promotions';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const [categories, products, addons] = await Promise.all([
+  const [categories, products, addons, promotions] = await Promise.all([
     listAdminCategories(),
     listAdminProducts(),
     listAdminAddons(),
+    listAdminPromotions(),
   ]);
 
   if (!categories.ok) {
@@ -33,10 +35,17 @@ export async function GET() {
       { status: httpStatusFor(addons.error.code) },
     );
   }
+  if (!promotions.ok) {
+    return NextResponse.json(
+      { error: promotions.error },
+      { status: httpStatusFor(promotions.error.code) },
+    );
+  }
 
   return NextResponse.json({
     categories: categories.data,
     products: products.data,
     addons: addons.data,
+    promotions: promotions.data,
   });
 }

@@ -31,6 +31,7 @@ const LIST_SELECT = `
   scheduled_for,
   total_cents,
   created_at,
+  updated_at,
   customers ( name, phone_e164 ),
   order_items ( product_name, quantity )
 `;
@@ -163,6 +164,7 @@ export async function listAdminOrders(options?: {
       scheduledFor: row.scheduled_for,
       totalCents: row.total_cents,
       createdAt: row.created_at,
+      updatedAt: row.updated_at,
       customerName: customer?.name ?? null,
       customerPhone: customer?.phone_e164 ?? null,
       items: (row.order_items ?? []).map(

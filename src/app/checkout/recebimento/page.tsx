@@ -63,6 +63,7 @@ type ValidationResult = {
   longitude: number;
   formattedAddress: string;
   source: DeliveryQuoteSource;
+  locationPrecision: 'high' | 'low';
   message?: string;
 };
 
@@ -862,11 +863,15 @@ export default function RecebimentoPage() {
                       </span>{' '}
                       · A {(checkout.routeDistanceMeters / 1000).toFixed(1)} km da
                       loja
-                      {checkout.deliveryQuoteSource === 'local_fallback'
-                        ? ' (confirme o pin)'
-                        : null}
                     </p>
                   </div>
+
+                  {quoteMessage ? (
+                    <div className="flex items-start gap-2 rounded-md bg-tone-warning p-2.5 text-sm text-tone-warning-foreground">
+                      <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                      <p>{quoteMessage}</p>
+                    </div>
+                  ) : null}
 
                   {checkout.addressDetails.latitude != null &&
                   checkout.addressDetails.longitude != null ? (

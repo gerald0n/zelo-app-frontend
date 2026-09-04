@@ -7,11 +7,23 @@ export type GeoPoint = {
   longitude: number;
 };
 
+/**
+ * Precisão do resultado, conforme a Geocoding API:
+ * `ROOFTOP` (exata) > `RANGE_INTERPOLATED` (interpolada no trecho da rua) >
+ * `GEOMETRIC_CENTER` (centro de um quarteirão/área) > `APPROXIMATE` (região).
+ */
+export type GeocodeLocationType =
+  | 'ROOFTOP'
+  | 'RANGE_INTERPOLATED'
+  | 'GEOMETRIC_CENTER'
+  | 'APPROXIMATE';
+
 export type GeocodeResult = GeoPoint & {
   formattedAddress: string;
   city?: string;
   state?: string;
   postalCode?: string;
+  locationType?: GeocodeLocationType;
 };
 
 export function hasGoogleMapsServerKey(): boolean {
@@ -71,7 +83,10 @@ export async function geocodeAddress(
       status: string;
       results?: Array<{
         formatted_address: string;
-        geometry: { location: { lat: number; lng: number } };
+        geometry: {
+          location: { lat: number; lng: number };
+          location_type?: GeocodeLocationType;
+        };
         address_components?: Array<{
           long_name: string;
           short_name: string;
@@ -96,6 +111,7 @@ export async function geocodeAddress(
       city: find('administrative_area_level_2')?.long_name,
       state: find('administrative_area_level_1')?.short_name,
       postalCode: find('postal_code')?.long_name,
+      locationType: result.geometry.location_type,
     });
   } catch (cause) {
     logger.captureAppError(

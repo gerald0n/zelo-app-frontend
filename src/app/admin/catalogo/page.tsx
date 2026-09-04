@@ -28,14 +28,17 @@ import type {
   AdminAddon,
   AdminCategory,
   AdminProduct,
+  AdminPromotion,
+  PromotionScope,
 } from '@/modules/admin/types';
 
-type Tab = 'products' | 'categories' | 'addons';
+type Tab = 'products' | 'categories' | 'addons' | 'promotions';
 
 type CatalogResponse = {
   categories: AdminCategory[];
   products: AdminProduct[];
   addons: AdminAddon[];
+  promotions: AdminPromotion[];
 };
 
 const categorySchema = z.object({
@@ -66,9 +69,51 @@ const addonSchema = z.object({
   isAvailable: z.boolean(),
 });
 
+const promotionSchema = z
+  .object({
+    name: z.string().trim().min(1, 'Informe o nome.'),
+    scope: z.enum(['store', 'category', 'products']),
+    discountPercent: z
+      .number()
+      .gt(0, 'Informe um desconto entre 0 e 100.')
+      .max(100, 'Informe um desconto entre 0 e 100.'),
+    startsAt: z.string().optional(),
+    endsAt: z.string().optional(),
+    isActive: z.boolean(),
+    categoryIds: z.array(z.string().uuid()),
+    productIds: z.array(z.string().uuid()),
+  })
+  .refine((data) => data.scope !== 'category' || data.categoryIds.length > 0, {
+    message: 'Selecione ao menos uma categoria.',
+    path: ['categoryIds'],
+  })
+  .refine((data) => data.scope !== 'products' || data.productIds.length > 0, {
+    message: 'Selecione ao menos um produto.',
+    path: ['productIds'],
+  });
+
 type CategoryForm = z.infer<typeof categorySchema>;
 type ProductForm = z.infer<typeof productSchema>;
 type AddonForm = z.infer<typeof addonSchema>;
+type PromotionForm = z.infer<typeof promotionSchema>;
+
+const promotionScopeLabels: Record<PromotionScope, string> = {
+  store: 'Loja toda',
+  category: 'Categorias',
+  products: 'Produtos',
+};
+
+/** `datetime-local` (sem fuso) <-> ISO. `''`/`undefined` viram `null`. */
+function localToIso(value: string | undefined): string | null {
+  return value ? new Date(value).toISOString() : null;
+}
+
+function isoToLocal(value: string | null): string {
+  if (!value) return '';
+  const date = new Date(value);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
 
 function reaisToCents(value: number) {
   return Math.round(value * 100);
@@ -91,10 +136,13 @@ export default function AdminCatalogoPage() {
     null,
   );
   const [editingAddon, setEditingAddon] = useState<AdminAddon | null>(null);
+  const [editingPromotion, setEditingPromotion] =
+    useState<AdminPromotion | null>(null);
   const [formError, setFormError] = useState('');
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [showProductForm, setShowProductForm] = useState(false);
   const [showAddonForm, setShowAddonForm] = useState(false);
+  const [showPromotionForm, setShowPromotionForm] = useState(false);
 
   const catalogQuery = useQuery({
     queryKey: adminKeys.catalog(),
@@ -113,6 +161,10 @@ export default function AdminCatalogoPage() {
   const addons = useMemo(
     () => catalogQuery.data?.addons ?? [],
     [catalogQuery.data?.addons],
+  );
+  const promotions = useMemo(
+    () => catalogQuery.data?.promotions ?? [],
+    [catalogQuery.data?.promotions],
   );
 
   const categoryForm = useForm<CategoryForm>({
@@ -152,8 +204,30 @@ export default function AdminCatalogoPage() {
     },
   });
 
+  const promotionForm = useForm<PromotionForm>({
+    resolver: zodResolver(promotionSchema),
+    defaultValues: {
+      name: '',
+      scope: 'store',
+      discountPercent: 10,
+      startsAt: '',
+      endsAt: '',
+      isActive: true,
+      categoryIds: [],
+      productIds: [],
+    },
+  });
+
   const selectedAddonIds =
     useWatch({ control: productForm.control, name: 'addonIds' }) ?? [];
+  const promotionScope = useWatch({
+    control: promotionForm.control,
+    name: 'scope',
+  });
+  const promotionCategoryIds =
+    useWatch({ control: promotionForm.control, name: 'categoryIds' }) ?? [];
+  const promotionProductIds =
+    useWatch({ control: promotionForm.control, name: 'productIds' }) ?? [];
 
   const invalidateCatalog = async () => {
     await queryClient.invalidateQueries({ queryKey: adminKeys.catalog() });
@@ -282,6 +356,49 @@ export default function AdminCatalogoPage() {
         error instanceof ApiError ? error.message : 'Falha ao salvar adicional.',
       );
     },
+  });
+
+  const promotionMutation = useMutation({
+    mutationFn: async (values: PromotionForm) => {
+      const payload = {
+        name: values.name,
+        scope: values.scope,
+        discountPercent: values.discountPercent,
+        startsAt: localToIso(values.startsAt),
+        endsAt: localToIso(values.endsAt),
+        isActive: values.isActive,
+        categoryIds: values.scope === 'category' ? values.categoryIds : [],
+        productIds: values.scope === 'products' ? values.productIds : [],
+      };
+      if (editingPromotion) {
+        return apiJson(`/api/v1/admin/promotions/${editingPromotion.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(payload),
+        });
+      }
+      return apiJson('/api/v1/admin/promotions', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+    onSuccess: async () => {
+      setShowPromotionForm(false);
+      setEditingPromotion(null);
+      setFormError('');
+      promotionForm.reset();
+      await invalidateCatalog();
+    },
+    onError: (error) => {
+      setFormError(
+        error instanceof ApiError ? error.message : 'Falha ao salvar promoção.',
+      );
+    },
+  });
+
+  const deletePromotionMutation = useMutation({
+    mutationFn: (promotionId: string) =>
+      apiJson(`/api/v1/admin/promotions/${promotionId}`, { method: 'DELETE' }),
+    onSuccess: invalidateCatalog,
   });
 
   const availabilityMutation = useMutation({
@@ -437,9 +554,39 @@ export default function AdminCatalogoPage() {
     setShowAddonForm(true);
   };
 
+  const openPromotionForm = (promotion?: AdminPromotion) => {
+    setFormError('');
+    setEditingPromotion(promotion ?? null);
+    promotionForm.reset(
+      promotion
+        ? {
+            name: promotion.name,
+            scope: promotion.scope,
+            discountPercent: promotion.discountPercent,
+            startsAt: isoToLocal(promotion.startsAt),
+            endsAt: isoToLocal(promotion.endsAt),
+            isActive: promotion.isActive,
+            categoryIds: promotion.categoryIds,
+            productIds: promotion.productIds,
+          }
+        : {
+            name: '',
+            scope: 'store',
+            discountPercent: 10,
+            startsAt: '',
+            endsAt: '',
+            isActive: true,
+            categoryIds: [],
+            productIds: [],
+          },
+    );
+    setShowPromotionForm(true);
+  };
+
   const tabs: Array<{ id: Tab; label: string }> = [
     { id: 'products', label: 'Produtos' },
     { id: 'categories', label: 'Categorias' },
+    { id: 'promotions', label: 'Promoções' },
     { id: 'addons', label: 'Adicionais' },
   ];
 
@@ -985,6 +1132,232 @@ export default function AdminCatalogoPage() {
               {addons.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   Nenhum adicional cadastrado.
+                </p>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
+        {tab === 'promotions' && !catalogQuery.isLoading ? (
+          <section className="space-y-3">
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => openPromotionForm()}
+                className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:active:scale-100"
+              >
+                <Plus className="size-3.5" />
+                Nova promoção
+              </button>
+            </div>
+
+            {showPromotionForm ? (
+              <form
+                onSubmit={promotionForm.handleSubmit((values) =>
+                  promotionMutation.mutate(values),
+                )}
+                className="space-y-3 rounded-lg border border-border bg-card p-3.5"
+              >
+                <p className="text-sm font-semibold">
+                  {editingPromotion ? 'Editar promoção' : 'Nova promoção'}
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Label className="block text-xs font-semibold">
+                    Nome
+                    <Input
+                      {...promotionForm.register('name')}
+                      className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                    />
+                  </Label>
+                  <Label className="block text-xs font-semibold">
+                    Desconto (%)
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      max={100}
+                      {...promotionForm.register('discountPercent', {
+                        valueAsNumber: true,
+                      })}
+                      className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                    />
+                  </Label>
+                  <label className="block text-xs font-semibold">
+                    Abrangência
+                    <select
+                      {...promotionForm.register('scope')}
+                      className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                    >
+                      {(
+                        Object.entries(promotionScopeLabels) as Array<
+                          [PromotionScope, string]
+                        >
+                      ).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <Label className="inline-flex items-center gap-2 self-end pb-2 text-xs font-semibold">
+                    <input
+                      type="checkbox"
+                      {...promotionForm.register('isActive')}
+                    />
+                    Ativa
+                  </Label>
+                  <Label className="block text-xs font-semibold">
+                    Início (opcional)
+                    <Input
+                      type="datetime-local"
+                      {...promotionForm.register('startsAt')}
+                      className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                    />
+                  </Label>
+                  <Label className="block text-xs font-semibold">
+                    Fim (opcional)
+                    <Input
+                      type="datetime-local"
+                      {...promotionForm.register('endsAt')}
+                      className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                    />
+                  </Label>
+                </div>
+
+                {promotionScope === 'category' ? (
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold">Categorias</p>
+                    <div className="max-h-40 space-y-1.5 overflow-y-auto rounded-md border border-border p-2">
+                      {categories.map((category) => (
+                        <label
+                          key={category.id}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={promotionCategoryIds.includes(category.id)}
+                            onChange={(e) => {
+                              const next = e.target.checked
+                                ? [...promotionCategoryIds, category.id]
+                                : promotionCategoryIds.filter(
+                                    (id) => id !== category.id,
+                                  );
+                              promotionForm.setValue('categoryIds', next);
+                            }}
+                          />
+                          {category.name}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {promotionScope === 'products' ? (
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold">Produtos</p>
+                    <div className="max-h-40 space-y-1.5 overflow-y-auto rounded-md border border-border p-2">
+                      {products.map((product) => (
+                        <label
+                          key={product.id}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={promotionProductIds.includes(product.id)}
+                            onChange={(e) => {
+                              const next = e.target.checked
+                                ? [...promotionProductIds, product.id]
+                                : promotionProductIds.filter(
+                                    (id) => id !== product.id,
+                                  );
+                              promotionForm.setValue('productIds', next);
+                            }}
+                          />
+                          {product.name}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={promotionMutation.isPending}
+                    className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:active:scale-100"
+                  >
+                    {promotionMutation.isPending ? 'Salvando…' : 'Salvar'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPromotionForm(false)}
+                    className="rounded-md border border-border px-3 py-2 text-xs font-semibold"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            ) : null}
+
+            <div className="space-y-2">
+              {promotions.map((promotion) => (
+                <div
+                  key={promotion.id}
+                  className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold">{promotion.name}</p>
+                    <p className="text-2xs text-muted-foreground">
+                      {promotion.discountPercent}% ·{' '}
+                      {promotionScopeLabels[promotion.scope]} ·{' '}
+                      {promotion.isActive ? 'Ativa' : 'Inativa'}
+                      {promotion.startsAt || promotion.endsAt
+                        ? ` · ${
+                            promotion.startsAt
+                              ? new Date(promotion.startsAt).toLocaleDateString(
+                                  'pt-BR',
+                                )
+                              : 'sem início'
+                          } – ${
+                            promotion.endsAt
+                              ? new Date(promotion.endsAt).toLocaleDateString(
+                                  'pt-BR',
+                                )
+                              : 'sem fim'
+                          }`
+                        : ''}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openPromotionForm(promotion)}
+                    className="rounded-md border border-border p-1.5"
+                  >
+                    <Pencil className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void (async () => {
+                        const ok = await confirm({
+                          title: 'Remover promoção',
+                          description: `Remover ${promotion.name}?`,
+                          confirmLabel: 'Remover',
+                          tone: 'destructive',
+                        });
+                        if (!ok) return;
+                        deletePromotionMutation.mutate(promotion.id);
+                      })();
+                    }}
+                    className="rounded-md border border-border p-1.5 text-destructive"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              ))}
+              {promotions.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Nenhuma promoção cadastrada.
                 </p>
               ) : null}
             </div>

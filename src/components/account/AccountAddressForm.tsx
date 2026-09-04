@@ -27,6 +27,7 @@ type QuotePreview = {
   latitude: number;
   longitude: number;
   formattedAddress?: string;
+  locationPrecision?: 'high' | 'low';
   message?: string;
 };
 
@@ -268,6 +269,12 @@ export function AccountAddressForm({
             <div className="flex items-start gap-2 rounded-md bg-muted p-2.5 text-sm text-muted-foreground">
               <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
               <p>A {(quote.routeDistanceMeters / 1000).toFixed(1)} km da loja</p>
+            </div>
+          ) : null}
+          {quote.message ? (
+            <div className="flex items-start gap-2 rounded-md bg-tone-warning p-2.5 text-sm text-tone-warning-foreground">
+              <AlertCircle className="mt-0.5 size-4 shrink-0" />
+              <p>{quote.message}</p>
             </div>
           ) : null}
           <DeliveryMapConfirm

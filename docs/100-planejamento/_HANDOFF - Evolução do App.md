@@ -111,9 +111,9 @@ pasta.
 
 | Doc | Assunto | Status |
 | --- | --- | --- |
-| **103 — Evolução do Painel Administrativo** | Kanban de pedidos, estoque, comanda manual, impressão térmica + melhorias menores (troco/obs/histórico/WhatsApp, catálogo, config, relatórios, push) | escrito; decisões travadas; falta 3 decisões (impressora, MEI/nota, agendados-automático) |
-| **104 — Promoções, Cupons e Controle Financeiro** | Promoções por especificidade; cupons %/fixo/frete-grátis sem acúmulo; financeiro com taxa real do MP | escrito; **todas as decisões travadas** |
-| **105 — Precisão do Cálculo de Frete** | Ligar Google Maps de verdade: Places Autocomplete, mapa Google com satélite, Routes API, tratar confiança, origem da loja por pin | **(a)-(c) feitos** (a/produção, b/c em `develop`); (d)–(f) pendentes. Ver §8/§10. |
+| **103 — Evolução do Painel Administrativo** | Kanban de pedidos, estoque, comanda manual, impressão térmica + melhorias menores (troco/obs/histórico/WhatsApp, catálogo, config, relatórios, push) | **Bloco 1 (quadro de pedidos) implementado, falta subir** (ver §13); resto do doc segue igual — falta 3 decisões (impressora, MEI/nota, agendados-automático) |
+| **104 — Promoções, Cupons e Controle Financeiro** | Promoções por especificidade; cupons %/fixo/frete-grátis sem acúmulo; financeiro com taxa real do MP | **Promoções implementadas, falta subir** (ver §12); Cupons e Financeiro pendentes |
+| **105 — Precisão do Cálculo de Frete** | Ligar Google Maps de verdade: Places Autocomplete, mapa Google com satélite, Routes API, tratar confiança, origem da loja por pin | **(a)-(c) em produção**; **(d) implementado, falta subir**; (e)-(f) pendentes. Ver §8/§10/§11. |
 | **106 — Avaliações e Depoimentos** | Fase 1: avaliação do pedido + depoimentos curados. Fase 2: nota por produto (pós login SMS) | escrito; 3 decisões menores em aberto |
 
 ### 103 em uma linha cada
@@ -213,11 +213,17 @@ pasta.
    **(b) autocomplete — ✅ em produção**; **(área de entrega por raio +
    bairro opcional + raio máx/grátis editáveis no admin — ✅ em produção,
    PR #31, ver §9)**; **(c) mapa Google + satélite + reverse geocode + mapa
-   grande — ✅ em `develop`, ver §10, pendente deploy**; (d) tratar confiança
-   (rooftop/interpolado); (e) suavizar a taxa (faixas/km); (f) extrair
-   componente único.
-2. **104 — Promoções** (necessária para o lançamento: loja toda −10%).
-3. **103 — Bloco 1 (quadros de pedidos)** e demais blocos.
+   grande — ✅ em produção, PR #32, ver §10**; **(d) tratar confiança do
+   geocode — ✅ implementado, pendente commit/deploy, ver §11**; **(e) suavizar
+   a taxa — adiado a pedido do dono** (sem fórmula/faixas definidas ainda;
+   retomar quando houver uma decisão de preço); (f) extrair componente único
+   (bloqueado até existir comanda manual, 103).
+2. **104 — Promoções — ✅ implementado, pendente commit/deploy, ver §12**
+   (a promoção do lançamento, "loja toda −10%", já pode ser cadastrada pelo
+   admin assim que subir).
+3. **103 — Bloco 1 (quadros de pedidos) — ✅ implementado, pendente commit/deploy,
+   ver §13** — e demais blocos (estoque, comanda manual, impressão, melhorias
+   dentro do pedido, catálogo, loja/relatórios, push — ainda não iniciados).
 4. **104 — Cupons + Financeiro** (após o Bloco 3; cupons de preferência após o
    login por SMS).
 5. **106 — Avaliações** (Fase 1 pode entrar cedo por ser barata; Fase 2 após o
@@ -235,26 +241,23 @@ aplicada; `stores` com `free_delivery_radius_meters=1000` e
 `max_delivery_radius_meters=3000`; `/api/v1/addresses/validate` a 0,4/2,0/5,0 km
 → grátis / R$5 / fora da área.
 
-**Item (c) — mapa Google + satélite pronto em `develop`, falta subir pra produção.**
-No deploy:
-1. `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` da Vercel com **Places API (New)** e
-   **Maps JavaScript API** habilitadas (a chave já tem restrição de API
-   Maps JS + Places desde o item a — conferir se "Maps JavaScript API" está
-   mesmo ativada no Google Cloud, não só permitida na restrição da chave).
-2. CSP em produção ganhou `places.googleapis.com`, `maps.gstatic.com`,
-   `khms0/khms1.googleapis.com` no `connect-src`/`img-src`.
-3. Corrigir `GOOGLE_MAPS_API_KEY` (servidor) na Vercel — o valor atual tem um
-   caractere inválido (bullet `•`), o que quebrava as chamadas à Routes API
-   em produção (Sentry ZELO-APP-3). A função que a usava
-   (`getDrivingDistanceMeters`) virou código morto com a área por raio e foi
-   removida; a chave segue necessária para geocodificação.
-4. Arrastar o pin manualmente num aparelho real após o deploy (não confirmado
-   por automação nesta sessão — ver §10).
+**Item (c) — mapa Google + satélite — ✅ EM PRODUÇÃO** (PR #32, merge direto
+`develop → main`, confirmado por fora nesta sessão via `curl` na produção:
+CSP com `maps.gstatic.com`/`khms0/khms1.googleapis.com`; `POST
+/api/v1/addresses/validate` com `latitude`/`longitude` devolve
+`formattedAddress` de reverse geocode real, não o texto digitado). Falta só
+**arrastar o pin manualmente num aparelho real** — não confirmado por
+automação em nenhuma das duas sessões (a ferramenta de navegador trava ao
+simular arraste sobre o canvas do Google Maps; ver §10). A lógica em si (usa
+os mesmos eventos padrão da Maps JS API) e o endpoint por trás dela (reverse
+geocode, testado por `curl`) estão verificados — falta só a interação humana
+de fato.
 
-Depois disso, **(e) suavizar a taxa** (hoje ainda tem o degrau em 1 km).
+**Item (d) — tratar confiança do geocode — ✅ implementado nesta sessão**
+(ver §11), ainda não commitado/subido.
 
-Depois, **item 105-(d) — tratar confiança do geocode** (rooftop/interpolado/
-aproximado; obrigar confirmar pin quando a precisão for baixa).
+Depois, **(e) suavizar a taxa** (hoje ainda tem o degrau em 1 km) e
+**(f) extrair componente único** (checkout + comanda manual).
 
 ---
 
@@ -441,20 +444,333 @@ Leaflet/OSM para a **Google Maps JavaScript API**, em modo híbrido
   `/// <reference types="google.maps" />` explícito no topo dos dois arquivos
   que usam o tipo (`google-maps-loader.ts`, `DeliveryGoogleMap.tsx`).
 
-### Não verificado (ambiente sem servidor local com a chave)
-- O `reverseGeocodeCoords` (parte nova do item c) não foi exercitado de fato
-  em dev porque `.env.local` só tem a chave de navegador — precisa da chave de
-  servidor (`GOOGLE_MAPS_API_KEY`) para testar. Já está coberto pelo fallback
-  existente; validar em preview/produção antes de confiar no texto do
-  `addressPreview` vindo de reverse geocode real.
-- Arrastar o pin (`dragstart`/`dragend` → `onCenterChange`) não foi confirmado
-  por interação real nesta sessão — a ferramenta de automação do navegador
-  travou ao simular arraste sobre o canvas do Google Maps (limitação da
-  ferramenta, não reproduzida fora do mapa). A lógica é idêntica à do Leaflet
-  (já validada em produção) e usa eventos padrão e documentados da Maps JS API;
-  ainda assim, vale um arrasto manual num tablet/celular real antes do deploy.
+### Atualização (sessão seguinte, mesmo dia): verificado em produção
+Depois do deploy (PR #32, merge direto em `main`), confirmado **por fora**
+(sem abrir o app, só `curl`):
+- CSP ao vivo já traz `maps.gstatic.com`/`khms0/khms1.googleapis.com`.
+- `POST https://cardapio.zeloconfeitaria.com.br/api/v1/addresses/validate`
+  com `latitude`/`longitude` (simulando pin arrastado) devolve
+  `formattedAddress` de **reverse geocode real** (ex.: `"R. Cel. José Freire,
+  87 - Pereiro, CE, 63460-000, Brasil"`), não o texto de rua/número enviado —
+  prova que `reverseGeocodeCoords` funciona de ponta a ponta em produção
+  (`GOOGLE_MAPS_API_KEY` de servidor está correta lá).
+- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` responde no endpoint da Maps JS API
+  (`maps.googleapis.com/maps/api/js`) — Maps JavaScript API está habilitada.
 
-### Falta no 105
-- (d) tratar confiança (rooftop/interpolado; obrigar confirmar pin) ·
-  (e) suavizar a taxa (faixas por km / R$ por km) · (f) extrair componente
-  único (checkout + comanda manual).
+**Ainda não confirmado**: arrastar o pin de fato (`dragstart`/`dragend` →
+`onCenterChange`) por interação humana/real. A ferramenta de automação do
+navegador travou nas duas tentativas ao simular arraste sobre o canvas do
+Google Maps (mouse-down parece nunca soltar) — limitação da ferramenta em uso
+nesta sessão, não reproduzida fora da área do mapa (cliques normais fora do
+canvas funcionam). Como o endpoint por trás do gesto já foi validado por
+`curl` e o código usa os eventos padrão e documentados da Maps JS API
+(idênticos aos que o Leaflet já usava, validados em produção antes), o risco
+residual é baixo — mas vale um arrasto manual num tablet/celular real.
+
+### Falta no 105 (antes do item d)
+- (e) suavizar a taxa (faixas por km / R$ por km) · (f) extrair componente
+  único (checkout + comanda manual). Item (d) — ver §11.
+
+---
+
+## 11. Item 105-(d) — tratar confiança do geocode (sessão seguinte, mesmo dia)
+
+Contexto: o checkout **já** exigia clicar "Confirmar localização no mapa" pra
+qualquer endereço de entrega (`deliveryReady` em `recebimento/page.tsx` checa
+`checkout.locationConfirmed` sempre, não só quando a confiança é baixa) — essa
+parte de "obrigar confirmar pin" já existia antes deste item. O que faltava
+era **explicar por que** confirmar importa: hoje o cliente não tem nenhum
+sinal de que o Google "chutou" a localização vs. achou o endereço exato.
+
+- `src/modules/delivery/maps.ts`: `GeocodeResult` ganhou `locationType`
+  (`ROOFTOP` / `RANGE_INTERPOLATED` / `GEOMETRIC_CENTER` / `APPROXIMATE`, o
+  `geometry.location_type` da Geocoding API), parseado em `geocodeAddress`
+  (a chamada por **texto**, antes de existir um pin). `reverseGeocodeCoords`
+  não ganhou o campo de propósito — uma vez que o cliente já apontou o pin
+  (autocomplete ou arrasto), a posição é confiável por definição, reverse
+  geocode ali só traz o endereço em texto.
+- `src/modules/delivery/quote.ts`: novo tipo `LocationPrecision = 'high' | 'low'`
+  em `DeliveryQuote`. `resolveCoordinates` decide a precisão por ramo:
+  - coordenada já pronta (autocomplete/pin) → sempre `'high'` (o cliente
+    apontou o lugar; não tem "chute" a avaliar).
+  - geocode por texto via Google → `'low'` só se `locationType` for
+    `GEOMETRIC_CENTER`/`APPROXIMATE`; `ROOFTOP`/`RANGE_INTERPOLATED` → `'high'`.
+  - Nominatim (OSM) → sempre `'low'` (não devolve um sinal de precisão
+    comparável ao do Google).
+  - âncora no centro de Pereiro (`local_fallback`) → sempre `'low'` (já tinha
+    mensagem própria, mantida como estava).
+  - Quando `inServiceArea` é `true` e a precisão é `'low'` (e não é o caso
+    `local_fallback`, que já tem sua mensagem), `message` vira "Localização
+    aproximada — confira com atenção se o pin está no lugar certo.".
+- Checkout (`recebimento/page.tsx`) e conta (`AccountAddressForm.tsx`): a
+  caixa de aviso (`quoteMessage`/`quote.message`) agora aparece **também** no
+  caminho de sucesso (`inServiceArea === true`), não só no de "fora da área".
+  Removida a sufixo `(confirme o pin)` que só cobria o caso `local_fallback` —
+  a caixa de mensagem agora cobre os dois casos (fallback e baixa precisão) de
+  forma consistente.
+- `DeliveryQuote`/`ValidationResult`/`QuotePreview` ganharam o campo
+  `locationPrecision` (tipado, ainda não usado na UI além do `message` já
+  computado no servidor — reservado pra uma eventual diferenciação visual
+  futura, ex. ícone diferente).
+- Verificado:
+  - Local (`curl` no dev): endereço sem pin cai no `local_fallback` (sem
+    `GOOGLE_MAPS_API_KEY` de servidor no `.env.local` e sem acesso à internet
+    pro Nominatim no sandbox) → `locationPrecision: "low"`, mensagem exibida.
+  - Produção (`curl`, antes deste deploy — baseline): pin com coordenada →
+    `source: "google_maps"`, sem `locationPrecision`/`message` (comportamento
+    anterior a este item; será `"high"`/sem mensagem depois do deploy).
+  - `pnpm typecheck && pnpm lint && pnpm build` limpos.
+- **Não verificado**: um caso real de `locationType` `APPROXIMATE`/
+  `GEOMETRIC_CENTER` vindo do Google em produção (difícil de forçar sem um
+  endereço ambíguo de verdade) — a lógica segue a documentação oficial do
+  campo `geometry.location_type`, mas vale conferir com um endereço de fato
+  impreciso depois do deploy.
+
+---
+
+## 12. Item 104 — Promoções (sessão seguinte, mesmo dia)
+
+Implementadas as promoções por especificidade (decisões do §4): abrangência
+loja toda / categorias / produtos; uma efetiva por produto (produto >
+categoria > loja toda, sem acúmulo); arredondamento por unidade em centavos;
+admin bloqueado de criar duas promoções do mesmo nível cobrindo o mesmo alvo
+no mesmo período.
+
+- Migration `supabase/migrations/20260904170000_promotions.sql`: tabelas
+  `promotions` (`scope` check `store|category|products`, `discount_percent`
+  numeric 0-100, `starts_at`/`ends_at` opcionais, `is_active`),
+  `promotion_categories` e `promotion_products` (junções N:N, já que
+  `products.category_id` é 1:1 — a "categoria" de uma promoção de escopo
+  `category` é uma lista arbitrária de categorias, não a do produto). RLS no
+  mesmo padrão de `categories`/`products` (`_public_read` com `is_active` +
+  período; `_admin_manage` via `private.is_admin()`).
+- `private.effective_price_cents(price_cents, category_id, product_id)`
+  (nova função `stable`): resolve o desconto por especificidade entre
+  promoções ativas e dentro do período (`now() between starts_at/ends_at`,
+  null = sem limite), arredonda com `round()`. Empate no mesmo nível pega o
+  maior desconto (defensivo — a validação do admin já devia impedir).
+- `private.create_order` foi **redefinido por inteiro** nesta migration (só
+  assim dá pra `create or replace function`) trocando as duas leituras de
+  `v_product.price_cents` cru pelos dois loops por
+  `private.effective_price_cents(...)`, guardado em `v_unit_price` novo. Todo
+  o resto da função é idêntico ao original
+  (`20260809144928_initial_schema.sql`) — só essa troca pontual. É a fonte de
+  verdade: o preço gravado em `order_items.unit_price_cents` já sai correto.
+- **Catálogo público** (`src/modules/catalog/`):
+  - `promotions.ts` (novo): `resolveDiscountPercent` (mesma especificidade em
+    TS) + `applyDiscount` (mesmo arredondamento) — usados só para **exibir**
+    o preço com desconto no catálogo/carrinho/checkout; o pedido em si sempre
+    recalcula pela função SQL.
+  - `catalog-repository.ts`: `listActivePromotions()` (novo) faz um select em
+    `promotions` (a RLS pública já filtra ativa+no período) com
+    `promotion_categories`/`promotion_products` aninhados; chamado em paralelo
+    com a query de produtos em `listPublicProducts` e
+    `getPublicProductBySlugOrId`.
+  - `mappers.ts::mapProduct` ganhou um 2º parâmetro opcional `promotions`;
+    calcula `discountPercent` e devolve `price` já com desconto,
+    `originalPrice`/`discountPercent` só quando há desconto ativo.
+  - `types.ts::CatalogProduct` ganhou `originalPrice?`/`discountPercent?`.
+    **Carrinho e checkout não precisaram mudar** — já consomem `product.price`
+    (o preço final), então herdam o desconto automaticamente
+    (`cart-store.ts`, `revalidate-cart.ts`, `persist-cart.ts`).
+  - UI: `ProductCard.tsx`, `HomeCatalog.tsx` (destaques) e `ProdutoClient.tsx`
+    (página do produto) ganharam o preço original riscado ao lado do preço
+    com desconto, quando `originalPrice` existe.
+- **Admin**:
+  - `src/modules/admin/promotions.ts` (novo, mesmo padrão de `catalog.ts`):
+    `listAdminPromotions`, `createAdminPromotion`, `updateAdminPromotion`,
+    `deleteAdminPromotion`. Validação de forma (categoria/produto exige lista
+    não vazia; fim > início) + `findOverlapConflict` (busca outras promoções
+    ativas do mesmo `scope`, calcula sobreposição de período em JS tratando
+    `null` como sem limite, e para `category`/`products` checa interseção de
+    IDs) — mensagem de erro nomeia a promoção conflitante.
+  - Rotas `src/app/api/v1/admin/promotions/{route.ts,[promotionId]/route.ts}`
+    no padrão usual (zod no topo, `Result` → `httpStatusFor`).
+  - `GET /api/v1/admin/catalog` (agregador que a página já usa) ganhou
+    `promotions` na resposta — sem endpoint novo pro front buscar.
+  - Aba **"Promoções"** nova em `admin/catalogo/page.tsx` (entre Categorias e
+    Adicionais): mesmo padrão inline-form das outras abas (sem modal); campo
+    de abrangência muda o formulário (mostra checklist de categorias ou de
+    produtos); datas em `<input type="datetime-local">` convertidas para
+    ISO só no submit.
+- **Tipos gerados**: `src/types/database.ts` regenerado via
+  `npx supabase gen types typescript --local` (supabase CLI não está
+  instalado globalmente neste ambiente, mas roda via `npx`; sem isso o
+  arquivo teria que ser editado à mão). Cuidado ao gerar: mandar só o stdout
+  pro arquivo (`> arquivo.ts`, nunca `2>&1 > arquivo.ts`) — o CLI novo
+  imprime "Connecting to db..." no stderr, que polui o arquivo se for
+  redirecionado junto; e rodar `prettier --write` depois, porque a versão do
+  CLI usada aqui (2.116) gera sem `;` (formatação antiga do arquivo tinha
+  `;`, então um `git diff` cru fica gigante por reformatação se pular esse
+  passo).
+- Verificado de ponta a ponta no dev (Supabase local via Docker):
+  - `private.effective_price_cents` direto por `psql`: loja 10% → categoria
+    20% (vence) → produto 50% (vence) — especificidade correta; produto sem
+    vínculo próprio ainda pega o desconto de categoria (não "vaza" pra loja
+    toda incorretamente, só quando não há categoria nem produto aplicável).
+  - Admin → aba Promoções → criou "Loja toda -10% no lançamento" → catálogo
+    (`/`) mostrou `R$ 6,30` riscado `R$ 7,00` em todos os produtos, na home
+    (destaques) e na grade principal — `curl /api/v1/catalog/products`
+    confirmou `price`/`originalPrice`/`discountPercent` no JSON.
+  - Carrinho já com 1 item antes da promoção existir: ao abrir `/carrinho`
+    depois, o preço já apareceu atualizado (R$ 6,30) — o mecanismo de
+    revalidação do carrinho (`revalidateCartAgainstCatalog`) absorveu o
+    desconto sem precisar de código novo.
+  - Tentativa de criar uma 2ª promoção "loja toda" ativa: bloqueada com
+    `"Já existe uma promoção ativa para a loja toda no mesmo período
+    (\"Loja toda -10% no lançamento\")."` — confirma a validação de
+    sobreposição.
+  - `pnpm typecheck && pnpm lint && pnpm build` limpos (0 erros; os 456
+    warnings pré-existentes de `react-hooks/set-state-in-effect` não mudaram).
+- **Não verificado**: um pedido completo (`private.create_order`) com uma
+  promoção ativa — testei a função de preço isoladamente por `psql` e revisei
+  a substituição na função, mas não finalizei um checkout de ponta a ponta
+  pelo navegador nesta sessão para ver o total do pedido gravado. Vale
+  conferir antes de anunciar a promoção do lançamento.
+
+### Falta em 104
+- Cupons (%/fixo/frete-grátis, sem acúmulo com promoção) e Controle
+  Financeiro (taxa real do MP) — decisões já travadas no §4, não implementado.
+
+---
+
+## 13. Item 103 — Bloco 1: quadro de pedidos (sessão seguinte, mesmo dia)
+
+Trocada a lista simples de `/admin/pedidos` por dois quadros vivos (Retirada
+Delivery) + painel Agenda, seguindo as decisões travadas no §4. **Só
+apresentação — nenhuma migration, nenhuma tabela nova, nenhuma mudança em
+`private.transition_order_status`.** Os únicos ajustes de "banco" foram no
+`SELECT` de listagem (coluna já existente).
+
+- `src/lib/admin/order-columns.ts` (novo): `BOARD_COLUMNS` — as colunas de
+  cada quadro, na ordem de exibição. As 3 primeiras (`received/confirmed/
+  in_production`) são as mesmas nos dois quadros; a cauda muda por
+  `deliveryMethod` (retirada: `ready_for_pickup → delivered`; delivery:
+  `ready_for_delivery → out_for_delivery → delivered`). `nextAdminStatus`
+  (já existia em `admin/types.ts`) já cobria essa bifurcação — não precisou
+  de lógica nova de transição, só de agrupamento visual.
+- **Régua de urgência** (`src/lib/admin/order-urgency.ts`): cor do card por
+  minutos parado no status atual — `updated_at` do pedido como proxy (o
+  projeto não tem "timestamp de entrada no status atual" dedicado; qualquer
+  update no pedido reseta o relógio, não só transição de status — é uma
+  aproximação, não um dado exato). ≥15 min = aviso (amarelo), ≥30 min =
+  crítico (vermelho); pedidos `delivered`/`cancelled` nunca ficam urgentes.
+  Esses limiares (15/30 min) são um chute razoável, não uma decisão do dono —
+  ajustar se a cozinha achar sensível demais ou de menos.
+- `updated_at` **adicionado ao `LIST_SELECT` e ao `AdminOrderListItem`**
+  (`src/modules/admin/orders.ts`, `src/modules/admin/types.ts`) — única
+  mudança em código de acesso a dados; a coluna já existia na tabela
+  `orders`, só não era exposta na listagem.
+- **Agenda** (decisão em aberto #3 do 103, resolvida como "manual" por
+  padrão): mostra só pedidos `timing='scheduled' AND status='received'`,
+  ordenados por `scheduled_for`. Não têm quadro nem posição por status — é
+  uma lista simples (reaproveita `AdminOrderCard` existente) com um botão
+  "Passar para produção" que chama o mesmo `nextAdminStatus`/transição usada
+  nos quadros. Depois de avançar (deixa de ser `received`), o pedido some da
+  Agenda e passa a aparecer no quadro certo (Retirada/Delivery) na coluna
+  correspondente — **não existe** o comportamento "aparece sozinho no quadro
+  no dia" cogitado como alternativa; ficou 100% manual. Fácil de trocar depois
+  se o dono preferir o outro modo.
+- **Drag-and-drop**: `@dnd-kit/core` + `@dnd-kit/sortable` + `@dnd-kit/utilities`
+  (novo, nenhuma lib de D&D existia no projeto — `react-beautiful-dnd` está
+  descontinuado, `@dnd-kit` tem melhor suporte a React 19).
+  `src/components/admin/AdminOrderKanbanCard.tsx` (`useDraggable`) +
+  `AdminKanbanColumn.tsx` (`useDroppable`), só no quadro desktop — a lista
+  mobile fica **fora** do `DndContext` (`draggable={false}` no card,
+  sem grip) porque lá não há colunas pra soltar, só o botão "avançar".
+  `onDragEnd` só aceita o drop se `over.id === nextAdminStatus(...)` — soltar
+  em qualquer outra coluna (inclusive pra trás) não faz nada; o backend
+  (`private.transition_order_status`) também rejeitaria, mas a checagem no
+  cliente evita a chamada à toa.
+  - Avanço **otimista**: tanto o botão quanto o drag atualizam um
+    `optimisticStatus` local na hora do clique/drop (o card já "salta" pra
+    coluna nova), e só reverte se a chamada falhar — sem isso, o delay da
+    rede faria o card voltar à posição antiga por um instante antes de
+    reaparecer no lugar certo.
+- **Cancelar**: usa o `prompt()` do `AppDialogContext` (minLength 3, igual à
+  validação do backend) — não tinha um jeito de coletar o motivo direto do
+  quadro antes.
+- **Indicador "ao vivo"**: `useAdminOrdersRealtime` já existia e já expunha
+  `status` (`idle/connecting/subscribed/reconnecting/error`), mas a tela não
+  usava — só o `version` (pra invalidar a query). Agora um ponto verde +
+  "Ao vivo" quando `status === 'subscribed'`.
+- **Som de pedido novo**: `src/lib/admin/notification-sound.ts` — dois tons
+  curtos via Web Audio API (osciladores), sem arquivo de áudio pra
+  servir/manter. Detecção de "é novo" compara o `Set` de IDs do fetch atual
+  com o do fetch anterior **do mesmo `scope`** (guardado num `useRef` por
+  scope) — ignora o primeiro carregamento de cada scope (não temos histórico
+  antes disso) e não dispara ao trocar de aba Retirada↔Delivery (ambas usam
+  `scope=all`, então compartilham a mesma entrada de cache/comparação — o som
+  toca independente de qual quadro está aberto quando chega um pedido de
+  qualquer tipo). Autoplay bloqueado pelo navegador falha em silêncio (try/
+  catch) — o indicador visual "ao vivo" cobre esse caso.
+- **"Ocultar entregues"**: checkbox simples que tira a coluna `delivered` da
+  lista de colunas exibidas (desktop e mobile). Isso cobre "recolhível +
+  filtro de foco" do jeito mais barato possível — **não é** um colapso por
+  coluna individual (cada coluna dobrável separadamente); se o dono quiser
+  esse nível de controle depois, dá pra evoluir.
+- **Mobile** ("um fluxo por vez, em lista"): pills horizontais com o nome do
+  status + contagem, e abaixo a lista plana só daquele status — mesmo padrão
+  visual dos outros filtros pill do admin (`admin/catalogo`, filtro antigo de
+  pedidos). O quadro completo lado a lado só aparece em `lg:` (1024px+); abaixo
+  disso é sempre a visão de lista por status.
+- **Fetch**: os quadros Retirada/Delivery usam `scope=all` (200 pedidos mais
+  recentes, todos os status) e filtram por `deliveryMethod` no cliente — isso
+  reaproveita o endpoint existente sem mudar nada no backend, ao custo de só
+  "ver" os 200 mais recentes (aceitável: um dia de operação real não deve
+  chegar perto disso, e pedidos `delivered` antigos saem da janela sozinhos
+  conforme novos entram). A Agenda usa `scope=scheduled` (já existia).
+- Verificado no dev (Supabase local, dados de teste inseridos via SQL direto
+  — sem `psql` no ambiente, usado `docker exec ... psql`; removidos depois
+  com `supabase db reset`):
+  - Quadro Retirada com 5 colunas, contagens corretas, card no "Entregue" sem
+    botão de avançar ("Concluído").
+  - Troca de aba Delivery → colunas certas (6, com `ready_for_delivery`/
+    `out_for_delivery`), urgência crítica (borda vermelha) num pedido com
+    `updated_at` de 40 min atrás.
+  - Botão "avançar": `received → confirmed → in_production`, cada clique
+    validado contra o banco (`select status from orders` após cada ação).
+  - Agenda: pedido agendado listado sozinho, "Passar para produção" o tirou
+    da Agenda e o pôs em "Pedido confirmado" no quadro certo, com a etiqueta
+    "Agendado para DD/MM, HH:mm" visível no card.
+  - Cancelar: prompt pediu o motivo, `POST .../cancel` gravou
+    `status=cancelled` e `cancellation_reason` no banco (conferido por SQL),
+    card sumiu do quadro.
+  - "Ocultar entregues": coluna `delivered`/pill some dos dois layouts.
+  - Layout mobile (viewport 900px, abaixo do `lg`): pills + lista por status
+    testados via clique de mouse (sem emulação de toque) — troca de status e
+    avançar funcionaram.
+  - `pnpm typecheck && pnpm lint && pnpm build` limpos.
+
+### Não verificado
+- **Arrastar e soltar de fato** (mouse ou toque) — três tentativas nesta
+  sessão (`left_click_drag` da ferramenta, sensor `Mouse`/`TouchSensor` do
+  dnd-kit, e até despachar `mousedown`/`mousemove`/`mouseup` via
+  `dispatchEvent` manualmente) não fizeram o card mudar de coluna. Mesmo
+  padrão do problema já visto na sessão do item 105-(c) (arrastar o pin do
+  mapa): esta ferramenta de automação parece não conseguir sustentar um
+  gesto de arraste até o fim de um jeito que bibliotecas JS de D&D
+  reconheçam — não é um erro do app (sem exceptions no console, a mutação de
+  avançar por botão usa exatamente o mesmo código de destino e funciona).
+  **Precisa de um teste manual num tablet/mouse de verdade antes de confiar
+  no arrastar em produção.**
+- **Emulação de toque da ferramenta trava cliques simples** nesta sessão:
+  qualquer `left_click` com o viewport no preset `mobile` (ou largura <768px,
+  que ativa toque automaticamente) veio com timeout de 30s — a aba sempre se
+  recuperava depois (screenshot seguinte funcionava normal), mas o clique em
+  si nunca completava. Contornado testando o layout mobile numa largura
+  intermediária (900px, abaixo do `lg` mas sem emulação de toque) — o layout
+  e os cliques ali funcionaram. Vale um teste manual num tablet/celular real
+  antes de confiar cegamente no fluxo mobile também.
+- **Som de pedido novo**: implementado e sem erros, mas não há como um
+  agente automatizado "ouvir" áudio — só a lógica de detecção de pedido novo
+  foi revisada por código; nunca ouvi o bipe de fato.
+
+### Observação lateral (fora do escopo desta sessão)
+Durante os testes desta sessão, uma aba extra do navegador abriu sozinha
+apontando para a **produção** (`cardapio.zeloconfeitaria.com.br`), numa tela
+de identificação com captcha — não fui eu que abri, não interagi com ela
+(não preencheria telefone nem resolveria o captcha de um ambiente de
+produção a partir de testes automatizados) e voltei pra aba do
+`localhost:3000`. Se isso não foi você mexendo na mesma janela, vale
+investigar de onde veio.

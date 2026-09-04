@@ -14,6 +14,8 @@ export type AdminOrderListItem = {
   scheduledFor: string | null;
   totalCents: number;
   createdAt: string;
+  /** Aproxima "tempo parado no status atual" — qualquer update no pedido o move. */
+  updatedAt: string;
   customerName: string | null;
   customerPhone: string | null;
   items: Array<{ name: string; quantity: number }>;
@@ -70,6 +72,22 @@ export type AdminAddon = {
   priceCents: number;
   isActive: boolean;
   isAvailable: boolean;
+};
+
+export type PromotionScope = 'store' | 'category' | 'products';
+
+export type AdminPromotion = {
+  id: string;
+  name: string;
+  scope: PromotionScope;
+  discountPercent: number;
+  startsAt: string | null;
+  endsAt: string | null;
+  isActive: boolean;
+  /** Presente só quando `scope === 'category'`. */
+  categoryIds: string[];
+  /** Presente só quando `scope === 'products'`. */
+  productIds: string[];
 };
 
 export type AdminBlackout = {

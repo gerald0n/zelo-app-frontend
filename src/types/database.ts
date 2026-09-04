@@ -980,6 +980,108 @@ export type Database = {
           },
         ];
       };
+      promotion_categories: {
+        Row: {
+          category_id: string;
+          created_at: string;
+          promotion_id: string;
+        };
+        Insert: {
+          category_id: string;
+          created_at?: string;
+          promotion_id: string;
+        };
+        Update: {
+          category_id?: string;
+          created_at?: string;
+          promotion_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'promotion_categories_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'promotion_categories_promotion_id_fkey';
+            columns: ['promotion_id'];
+            isOneToOne: false;
+            referencedRelation: 'promotions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      promotion_products: {
+        Row: {
+          created_at: string;
+          product_id: string;
+          promotion_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          product_id: string;
+          promotion_id: string;
+        };
+        Update: {
+          created_at?: string;
+          product_id?: string;
+          promotion_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'promotion_products_product_id_fkey';
+            columns: ['product_id'];
+            isOneToOne: false;
+            referencedRelation: 'products';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'promotion_products_promotion_id_fkey';
+            columns: ['promotion_id'];
+            isOneToOne: false;
+            referencedRelation: 'promotions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      promotions: {
+        Row: {
+          created_at: string;
+          discount_percent: number;
+          ends_at: string | null;
+          id: string;
+          is_active: boolean;
+          name: string;
+          scope: string;
+          starts_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          discount_percent: number;
+          ends_at?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          scope: string;
+          starts_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          discount_percent?: number;
+          ends_at?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name?: string;
+          scope?: string;
+          starts_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       push_subscriptions: {
         Row: {
           auth: string;
