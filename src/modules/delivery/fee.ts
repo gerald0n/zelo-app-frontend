@@ -1,6 +1,6 @@
 export function calcDeliveryFeeCents(
   distanceMeters: number,
-  freeRadiusMeters = 2000,
+  freeRadiusMeters = 1000,
   fixedFeeCents = 500,
 ): number {
   if (distanceMeters < 0) return fixedFeeCents;

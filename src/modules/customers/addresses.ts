@@ -6,6 +6,7 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { getPublicStore } from '@/modules/catalog/catalog-repository';
 import {
   quoteDelivery,
+  MAX_DELIVERY_RADIUS_METERS,
   type DeliveryAddressInput,
 } from '@/modules/delivery';
 import {
@@ -103,6 +104,7 @@ async function resolveQuotedCoords(
     longitude: store.longitude,
     freeDeliveryRadiusMeters: store.freeDeliveryRadiusMeters,
     fixedDeliveryFeeCents: store.fixedDeliveryFeeCents,
+    maxDeliveryRadiusMeters: MAX_DELIVERY_RADIUS_METERS,
     addressLine: store.addressLine,
     city: store.city,
     state: store.state,
@@ -197,7 +199,7 @@ export async function createSavedAddress(
       label: input.label?.trim() || null,
       street: input.street.trim(),
       number: input.number.trim(),
-      neighborhood: input.neighborhood.trim(),
+      neighborhood: input.neighborhood?.trim() ?? '',
       city: quoted.data.city,
       state: quoted.data.state,
       postal_code: quoted.data.postalCode ?? null,
@@ -242,7 +244,7 @@ export async function updateSavedAddress(
       label: input.label?.trim() || null,
       street: input.street.trim(),
       number: input.number.trim(),
-      neighborhood: input.neighborhood.trim(),
+      neighborhood: input.neighborhood?.trim() ?? '',
       city: quoted.data.city,
       state: quoted.data.state,
       postal_code: quoted.data.postalCode ?? null,

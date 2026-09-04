@@ -2,10 +2,10 @@ export { calcDeliveryFeeCents } from '@/modules/delivery/fee';
 export {
   PEREIRO_URBAN_NEIGHBORHOODS,
   findPereiroNeighborhood,
-  isPereiroUrbanNeighborhood,
 } from '@/modules/delivery/pereiro';
 export {
   quoteDelivery,
+  MAX_DELIVERY_RADIUS_METERS,
   type DeliveryAddressInput,
   type DeliveryQuote,
   type DeliveryQuoteSource,

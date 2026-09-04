@@ -101,7 +101,9 @@ function formatAddress(parts: {
   state: string;
   complement: string | null;
 }): string {
-  const base = `${parts.street}, ${parts.number} – ${parts.neighborhood}, ${parts.city}/${parts.state}`;
+  const base = parts.neighborhood
+    ? `${parts.street}, ${parts.number} – ${parts.neighborhood}, ${parts.city}/${parts.state}`
+    : `${parts.street}, ${parts.number} – ${parts.city}/${parts.state}`;
   return parts.complement ? `${base} · ${parts.complement}` : base;
 }
 

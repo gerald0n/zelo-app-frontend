@@ -5,7 +5,6 @@ import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { DeliveryMapConfirm } from '@/components/checkout/DeliveryMapConfirm';
 import { AddressAutocomplete } from '@/components/checkout/AddressAutocomplete';
 import { Input } from '@/components/ui/input';
-import { PEREIRO_URBAN_NEIGHBORHOODS } from '@/modules/delivery/pereiro';
 import type { ResolvedPlace } from '@/modules/delivery/places';
 import { checkoutFieldClass, pageCtaBaseClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
@@ -96,10 +95,7 @@ export function AccountAddressForm({
     initial?.latitude != null && initial?.longitude != null,
   );
 
-  const canQuote =
-    street.trim().length > 0 &&
-    number.trim().length > 0 &&
-    neighborhood.trim().length > 0;
+  const canQuote = street.trim().length > 0 && number.trim().length > 0;
 
   // Coordenada exata vinda do autocomplete (placeId → Place Details) ou do pin
   // do mapa. Presa à rua: sobrevive a edições de número/bairro; some quando a
@@ -128,9 +124,9 @@ export function AccountAddressForm({
       const result = await validateAddress({
         street,
         number,
-        neighborhood,
-        complement,
-        referencePoint,
+        neighborhood: '',
+        complement: '',
+        referencePoint: '',
         latitude: placeCoords?.latitude,
         longitude: placeCoords?.longitude,
       });
@@ -144,15 +140,9 @@ export function AccountAddressForm({
     }, 450);
 
     return () => window.clearTimeout(timer);
-  }, [
-    canQuote,
-    street,
-    number,
-    neighborhood,
-    complement,
-    referencePoint,
-    placeCoords,
-  ]);
+    // `neighborhood` fica de fora de propósito: é opcional e não muda a
+    // cotação (que vai por rua + número + coordenada).
+  }, [canQuote, street, number, placeCoords]);
 
   // Pin do mapa arrastado: guarda a coordenada; o Effect re-valida com ela.
   const handleCenterChange = (latitude: number, longitude: number) => {
@@ -218,18 +208,12 @@ export function AccountAddressForm({
           className={checkoutFieldClass}
         />
       </div>
-      <select
+      <Input
         value={neighborhood}
         onChange={(e) => setNeighborhood(e.target.value)}
+        placeholder="Bairro / localidade (opcional)"
         className={checkoutFieldClass}
-      >
-        <option value="">Bairro / localidade</option>
-        {PEREIRO_URBAN_NEIGHBORHOODS.map((item) => (
-          <option key={item.id} value={item.name}>
-            {item.name}
-          </option>
-        ))}
-      </select>
+      />
       <Input
         value={complement}
         onChange={(e) => setComplement(e.target.value)}
@@ -256,7 +240,7 @@ export function AccountAddressForm({
       {quoting ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
-          Calculando rota…
+          Calculando entrega…
         </div>
       ) : null}
 
@@ -272,7 +256,7 @@ export function AccountAddressForm({
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <p>
             {quote.message ??
-              'Fora da área urbana de Pereiro. Escolha outro endereço.'}
+              'Endereço fora da área de entrega.'}
           </p>
         </div>
       ) : null}
@@ -282,10 +266,7 @@ export function AccountAddressForm({
           {quote.routeDistanceMeters > 0 ? (
             <div className="flex items-start gap-2 rounded-md bg-muted p-2.5 text-sm text-muted-foreground">
               <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
-              <p>
-                Distância por rota:{' '}
-                {(quote.routeDistanceMeters / 1000).toFixed(1)} km
-              </p>
+              <p>A {(quote.routeDistanceMeters / 1000).toFixed(1)} km da loja</p>
             </div>
           ) : null}
           <DeliveryMapConfirm

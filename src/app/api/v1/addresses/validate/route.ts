@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getPublicStore } from '@/modules/catalog/catalog-repository';
-import { quoteDelivery } from '@/modules/delivery';
+import { quoteDelivery, MAX_DELIVERY_RADIUS_METERS } from '@/modules/delivery';
 import { httpStatusFor } from '@/lib/errors';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 const bodySchema = z.object({
   street: z.string().min(1),
   number: z.string().min(1),
-  neighborhood: z.string().min(1),
+  neighborhood: z.string().optional().default(''),
   complement: z.string().optional(),
   referencePoint: z.string().optional(),
   city: z.string().optional(),
@@ -59,6 +59,7 @@ export async function POST(request: Request) {
     longitude: store.longitude,
     freeDeliveryRadiusMeters: store.freeDeliveryRadiusMeters,
     fixedDeliveryFeeCents: store.fixedDeliveryFeeCents,
+    maxDeliveryRadiusMeters: MAX_DELIVERY_RADIUS_METERS,
     addressLine: store.addressLine,
     city: store.city,
     state: store.state,

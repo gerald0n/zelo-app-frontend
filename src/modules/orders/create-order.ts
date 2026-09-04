@@ -6,7 +6,7 @@ import { err, ok, type AppError, type Result } from '@/lib/errors';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
-import { quoteDelivery } from '@/modules/delivery';
+import { quoteDelivery, MAX_DELIVERY_RADIUS_METERS } from '@/modules/delivery';
 import { getPublicStore } from '@/modules/catalog/catalog-repository';
 import {
   clearCustomerCart,
@@ -44,7 +44,7 @@ const orderItemSchema = z.object({
 const addressSchema = z.object({
   street: z.string().min(1),
   number: z.string().min(1),
-  neighborhood: z.string().min(1),
+  neighborhood: z.string().optional().default(''),
   city: z.string().min(1),
   state: z.string().min(1),
   postalCode: z.string().optional(),
@@ -224,6 +224,7 @@ async function resolveDeliveryFee(body: CreateOrderBody): Promise<
       longitude: store.longitude,
       freeDeliveryRadiusMeters: store.freeDeliveryRadiusMeters,
       fixedDeliveryFeeCents: store.fixedDeliveryFeeCents,
+      maxDeliveryRadiusMeters: MAX_DELIVERY_RADIUS_METERS,
       addressLine: store.addressLine,
       city: store.city,
       state: store.state,

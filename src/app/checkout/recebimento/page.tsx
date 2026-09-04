@@ -290,8 +290,7 @@ export default function RecebimentoPage() {
   const canQuote =
     checkout.deliveryType === 'delivery' &&
     details.street.trim().length > 1 &&
-    details.number.trim().length > 0 &&
-    details.neighborhood.trim().length > 0;
+    details.number.trim().length > 0;
 
   const applyValidation = useEffectEvent((validation: ValidationResult) => {
     setQuoteMessage(validation.message ?? null);
@@ -387,9 +386,6 @@ export default function RecebimentoPage() {
     canQuote,
     details.street,
     details.number,
-    details.neighborhood,
-    details.complement,
-    details.referencePoint,
     details.city,
     details.state,
     details.postalCode,
@@ -693,7 +689,7 @@ export default function RecebimentoPage() {
                       ? deliveryFee === 0
                         ? 'Grátis'
                         : formatCatalogPrice(deliveryFee)
-                      : 'Grátis até 2 km'
+                      : 'Grátis até 1 km'
                     : 'Grátis'}
                 </span>
               </button>
@@ -739,7 +735,7 @@ export default function RecebimentoPage() {
                       )}
                     >
                       <span className="block font-semibold">
-                        {address.label || address.neighborhood}
+                        {address.label || address.neighborhood || address.street}
                       </span>
                       {address.street}, {address.number}
                     </button>
@@ -788,20 +784,14 @@ export default function RecebimentoPage() {
                   className={checkoutFieldClass}
                 />
               </div>
-              <select
+              <Input
                 value={details.neighborhood}
                 onChange={(e) =>
                   setAddressDetails({ neighborhood: e.target.value })
                 }
+                placeholder="Bairro / localidade (opcional)"
                 className={checkoutFieldClass}
-              >
-                <option value="">Bairro / localidade</option>
-                {(options?.neighborhoods ?? []).map((item) => (
-                  <option key={item.id} value={item.name}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
+              />
               <Input
                 value={details.complement}
                 onChange={(e) =>
@@ -822,7 +812,7 @@ export default function RecebimentoPage() {
               {quoting ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="size-4 animate-spin" />
-                  Calculando rota…
+                  Calculando entrega…
                 </div>
               ) : null}
 
@@ -838,7 +828,7 @@ export default function RecebimentoPage() {
                   <AlertCircle className="mt-0.5 size-4 shrink-0" />
                   <p>
                     {quoteMessage ??
-                      'Fora da área urbana de Pereiro. Escolha retirada na loja.'}
+                      'Endereço fora da área de entrega. Escolha retirada na loja.'}
                   </p>
                 </div>
               ) : null}
@@ -859,13 +849,11 @@ export default function RecebimentoPage() {
                           ? 'Grátis'
                           : formatCatalogPrice(deliveryFee)}
                       </span>{' '}
-                      · Distância por rota:{' '}
-                      {(checkout.routeDistanceMeters / 1000).toFixed(1)} km
+                      · A {(checkout.routeDistanceMeters / 1000).toFixed(1)} km da
+                      loja
                       {checkout.deliveryQuoteSource === 'local_fallback'
-                        ? ' (estimativa local)'
-                        : checkout.deliveryQuoteSource === 'openstreetmap'
-                          ? ' (rota)'
-                          : null}
+                        ? ' (confirme o pin)'
+                        : null}
                     </p>
                   </div>
 
