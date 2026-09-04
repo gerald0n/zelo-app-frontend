@@ -878,6 +878,7 @@ export default function RecebimentoPage() {
                       onCenterChange={(lat, lng) => {
                         revalidateWithCoords(lat, lng);
                       }}
+                      addressPreview={checkout.addressDetails.formattedAddress}
                     />
                   ) : null}
                 </>

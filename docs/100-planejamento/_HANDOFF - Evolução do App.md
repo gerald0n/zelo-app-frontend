@@ -71,8 +71,8 @@ pasta.
   (`components=locality:Pereiro|administrative_area:CE|country:BR`, endereço
   **sem** cidade no texto — senão o Google casa "Centro, CE" com Sobral) →
   Nominatim (viewbox recentrado em Pereiro real) → centroide de bairro fixo.
-- Mapa: `DeliveryLeafletMap` = Leaflet + **tiles raster do OSM**, ~180px. Pin
-  fixo no centro. **Ainda não trocado por Google** (item 105-c).
+- Mapa: `DeliveryGoogleMap` = **Google Maps JS API** (satélite/híbrido), pin
+  fixo no centro, ~256-320px. **Leaflet removido** (item 105-c, ver §10).
 - Distância: **Google Routes API** (`routes.googleapis.com/directions/v2:computeRoutes`,
   `maps.ts:getDrivingDistanceMeters`) → fallback **linha reta × 1,3**
   (`geo.ts:estimateRoadDistanceMeters`). OSRM de demonstração **removido**.
@@ -113,7 +113,7 @@ pasta.
 | --- | --- | --- |
 | **103 — Evolução do Painel Administrativo** | Kanban de pedidos, estoque, comanda manual, impressão térmica + melhorias menores (troco/obs/histórico/WhatsApp, catálogo, config, relatórios, push) | escrito; decisões travadas; falta 3 decisões (impressora, MEI/nota, agendados-automático) |
 | **104 — Promoções, Cupons e Controle Financeiro** | Promoções por especificidade; cupons %/fixo/frete-grátis sem acúmulo; financeiro com taxa real do MP | escrito; **todas as decisões travadas** |
-| **105 — Precisão do Cálculo de Frete** | Ligar Google Maps de verdade: Places Autocomplete, mapa Google com satélite, Routes API, tratar confiança, origem da loja por pin | **item (a) FEITO e em produção**; (b)–(f) pendentes. Ver §8. |
+| **105 — Precisão do Cálculo de Frete** | Ligar Google Maps de verdade: Places Autocomplete, mapa Google com satélite, Routes API, tratar confiança, origem da loja por pin | **(a)-(c) feitos** (a/produção, b/c em `develop`); (d)–(f) pendentes. Ver §8/§10. |
 | **106 — Avaliações e Depoimentos** | Fase 1: avaliação do pedido + depoimentos curados. Fase 2: nota por produto (pós login SMS) | escrito; 3 decisões menores em aberto |
 
 ### 103 em uma linha cada
@@ -212,9 +212,10 @@ pasta.
    Ordem interna: **(a) chave Google + geocodificação — ✅ em produção**;
    **(b) autocomplete — ✅ em produção**; **(área de entrega por raio +
    bairro opcional + raio máx/grátis editáveis no admin — ✅ em produção,
-   PR #31, ver §9)**; (c) mapa Google + satélite + reverse geocode + mapa
-   grande; (d) tratar confiança (rooftop/interpolado); (e) suavizar a taxa
-   (faixas/km); (f) extrair componente único.
+   PR #31, ver §9)**; **(c) mapa Google + satélite + reverse geocode + mapa
+   grande — ✅ em `develop`, ver §10, pendente deploy**; (d) tratar confiança
+   (rooftop/interpolado); (e) suavizar a taxa (faixas/km); (f) extrair
+   componente único.
 2. **104 — Promoções** (necessária para o lançamento: loja toda −10%).
 3. **103 — Bloco 1 (quadros de pedidos)** e demais blocos.
 4. **104 — Cupons + Financeiro** (após o Bloco 3; cupons de preferência após o
@@ -228,19 +229,32 @@ pasta.
 
 ## 7. Próximo passo
 
-**Itens (b) + área por raio — ✅ EM PRODUÇÃO** (PR #31, deploy 04/09/2026).
+**Itens (a) + (b) + área por raio — ✅ EM PRODUÇÃO** (PR #31, deploy 04/09/2026).
 Verificado no ar: CSP com `places.googleapis.com`; migração `20260904120000`
 aplicada; `stores` com `free_delivery_radius_meters=1000` e
 `max_delivery_radius_meters=3000`; `/api/v1/addresses/validate` a 0,4/2,0/5,0 km
-→ grátis / R$5 / fora da área. Falta só o teste visual do autocomplete no
-navegador de produção.
+→ grátis / R$5 / fora da área.
 
-Próximo: **item 105-(c) — mapa Google + satélite** no lugar do Leaflet (reverse
-geocode ao arrastar o pin, mapa maior, CSP dos domínios do Maps JS) ou
-**(e) suavizar a taxa** (hoje ainda tem o degrau em 1 km).
+**Item (c) — mapa Google + satélite pronto em `develop`, falta subir pra produção.**
+No deploy:
+1. `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` da Vercel com **Places API (New)** e
+   **Maps JavaScript API** habilitadas (a chave já tem restrição de API
+   Maps JS + Places desde o item a — conferir se "Maps JavaScript API" está
+   mesmo ativada no Google Cloud, não só permitida na restrição da chave).
+2. CSP em produção ganhou `places.googleapis.com`, `maps.gstatic.com`,
+   `khms0/khms1.googleapis.com` no `connect-src`/`img-src`.
+3. Corrigir `GOOGLE_MAPS_API_KEY` (servidor) na Vercel — o valor atual tem um
+   caractere inválido (bullet `•`), o que quebrava as chamadas à Routes API
+   em produção (Sentry ZELO-APP-3). A função que a usava
+   (`getDrivingDistanceMeters`) virou código morto com a área por raio e foi
+   removida; a chave segue necessária para geocodificação.
+4. Arrastar o pin manualmente num aparelho real após o deploy (não confirmado
+   por automação nesta sessão — ver §10).
 
-Depois, **item 105-(c) — mapa Google + satélite** no lugar do Leaflet: reverse
-geocode ao arrastar o pin, mapa maior, e CSP para os domínios do Maps JS.
+Depois disso, **(e) suavizar a taxa** (hoje ainda tem o degrau em 1 km).
+
+Depois, **item 105-(d) — tratar confiança do geocode** (rooftop/interpolado/
+aproximado; obrigar confirmar pin quando a precisão for baixa).
 
 ---
 
@@ -370,5 +384,77 @@ passou a ser raio a partir da loja** (a coordenada já vem do autocomplete/pin).
 
 ### Falta / fast-follow
 - Suavizar a taxa (faixas por km / R$ por km) — hoje ainda tem o degrau em 1 km.
-- `maps.ts:getDrivingDistanceMeters` e `geo.ts:estimateRoadDistanceMeters` ficaram
-  sem uso (guardados para o item c).
+- `maps.ts:getDrivingDistanceMeters` e `geo.ts:estimateRoadDistanceMeters` seguem
+  sem uso (ficaram de fora quando a área virou raio em vez de rota — não é
+  o item c: esse já usa a Geocoding API via `reverseGeocodeCoords`, não a
+  Routes API).
+
+---
+
+## 10. Item 105-(c) — mapa Google + satélite + reverse geocode (sessão 2026-09-04, `develop`)
+
+Trocado o mapa de confirmação (checkout + cadastro de endereço da conta) de
+Leaflet/OSM para a **Google Maps JavaScript API**, em modo híbrido
+(satélite + rótulos). Pacote `leaflet`/`@types/leaflet` removido;
+`@types/google.maps` (dev) adicionado.
+
+- `src/modules/delivery/google-maps-loader.ts` (novo, client-safe): injeta o
+  `<script>` da Maps JS API uma única vez por página (`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`,
+  `v=weekly`, `loading=async` + callback), com `loadPromise` singleton.
+- `src/components/checkout/DeliveryGoogleMap.tsx` (novo, substitui
+  `DeliveryLeafletMap.tsx`, **removido**): mesma interface/props (`latitude`,
+  `longitude`, `onReady`, `onError`, `onCenterChange`); `mapTypeId: HYBRID`,
+  `disableDefaultUI` + `zoomControl`, `gestureHandling: 'greedy'`. Pin fica fixo
+  no centro (overlay `<MapPin>` do Lucide, como antes) — o mapa arrasta por
+  baixo; `dragstart`/`dragend` + debounce de 280 ms + limiar de 8 m disparam
+  `onCenterChange`, replicando 1:1 a lógica do Leaflet.
+- `src/modules/delivery/maps.ts`: nova `reverseGeocodeCoords(lat, lng)`
+  (Geocoding API, parâmetro `latlng`). `quote.ts`: quando a coordenada já vem
+  pronta (autocomplete ou pin arrastado) e há chave de servidor, `resolveCoordinates`
+  agora chama o reverse geocode de verdade em vez de ecoar o texto digitado —
+  `formattedAddress` reflete o endereço real do ponto. Sem chave de servidor
+  (dev local sem `GOOGLE_MAPS_API_KEY`), cai no fallback anterior (compõe a
+  partir dos campos do formulário).
+- `DeliveryMapConfirm.tsx`: mapa maior (`h-44/h-52` → `h-64/h-80`); nova prop
+  `addressPreview` mostra o `formattedAddress` abaixo do mapa ("Local do pin:
+  ..."), passada pelo checkout (`checkout.addressDetails.formattedAddress`) e
+  pelo `AccountAddressForm` (`quote.formattedAddress`, novo campo em
+  `QuotePreview`).
+- `LockMobileZoom.tsx`: a checagem de "isso é a área do mapa" (que libera
+  pinch-zoom no mobile) trocou de `.leaflet-container` (classe do Leaflet) para
+  `[data-map-container]` — atributo próprio no `<div>` do mapa, independente da
+  lib. Reaproveitável se o mapa mudar de novo no futuro.
+- CSP (`security-headers.ts`): `connect-src`/`img-src` ganharam
+  `maps.gstatic.com`, `khms0/khms1.googleapis.com` (tiles de satélite);
+  `script-src` (branch sem nonce) ganhou `maps.googleapis.com`. O script
+  injetado dinamicamente pelo loader já era coberto por `strict-dynamic` no
+  branch com nonce (produção).
+- Verificado no dev (Supabase local, sem `GOOGLE_MAPS_API_KEY` de servidor):
+  autocomplete → quote grátis/0,1 km → mapa carrega em satélite, pin centrado,
+  zoom +/− funcionam, `addressPreview` mostra o endereço composto (fallback
+  sem chave de servidor). `pnpm typecheck && pnpm lint && pnpm build` limpos.
+
+### Pegadinha nova
+- `@types/google.maps` declara `google.maps` como namespace ambiente global,
+  mas neste projeto (TS "^6", `moduleResolution: "bundler"`) não é pego
+  automaticamente por inclusão implícita de `@types/*` — precisou de
+  `/// <reference types="google.maps" />` explícito no topo dos dois arquivos
+  que usam o tipo (`google-maps-loader.ts`, `DeliveryGoogleMap.tsx`).
+
+### Não verificado (ambiente sem servidor local com a chave)
+- O `reverseGeocodeCoords` (parte nova do item c) não foi exercitado de fato
+  em dev porque `.env.local` só tem a chave de navegador — precisa da chave de
+  servidor (`GOOGLE_MAPS_API_KEY`) para testar. Já está coberto pelo fallback
+  existente; validar em preview/produção antes de confiar no texto do
+  `addressPreview` vindo de reverse geocode real.
+- Arrastar o pin (`dragstart`/`dragend` → `onCenterChange`) não foi confirmado
+  por interação real nesta sessão — a ferramenta de automação do navegador
+  travou ao simular arraste sobre o canvas do Google Maps (limitação da
+  ferramenta, não reproduzida fora do mapa). A lógica é idêntica à do Leaflet
+  (já validada em produção) e usa eventos padrão e documentados da Maps JS API;
+  ainda assim, vale um arrasto manual num tablet/celular real antes do deploy.
+
+### Falta no 105
+- (d) tratar confiança (rooftop/interpolado; obrigar confirmar pin) ·
+  (e) suavizar a taxa (faixas por km / R$ por km) · (f) extrair componente
+  único (checkout + comanda manual).

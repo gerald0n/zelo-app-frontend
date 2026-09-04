@@ -26,6 +26,7 @@ type QuotePreview = {
   routeDistanceMeters: number;
   latitude: number;
   longitude: number;
+  formattedAddress?: string;
   message?: string;
 };
 
@@ -275,6 +276,7 @@ export function AccountAddressForm({
             confirmed={confirmed}
             onConfirm={() => setConfirmed(true)}
             onCenterChange={handleCenterChange}
+            addressPreview={quote.formattedAddress}
           />
         </>
       ) : null}

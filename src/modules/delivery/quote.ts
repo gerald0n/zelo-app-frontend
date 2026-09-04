@@ -1,6 +1,10 @@
 import { err, ok, type Result } from '@/lib/errors';
 import { calcDeliveryFeeCents } from '@/modules/delivery/fee';
-import { geocodeAddress, hasGoogleMapsServerKey } from '@/modules/delivery/maps';
+import {
+  geocodeAddress,
+  reverseGeocodeCoords,
+  hasGoogleMapsServerKey,
+} from '@/modules/delivery/maps';
 import { geocodeAddressOsm } from '@/modules/delivery/osm';
 import { haversineDistanceMeters } from '@/modules/delivery/geo';
 
@@ -90,6 +94,24 @@ async function resolveCoordinates(input: DeliveryAddressInput): Promise<{
   source: DeliveryQuoteSource;
 }> {
   if (input.latitude != null && input.longitude != null) {
+    // Coordenada vem do autocomplete (placeId) ou do pin arrastado no mapa —
+    // reverse geocode traz o endereço real do ponto em vez de ecoar o texto
+    // digitado (útil sobretudo quando o cliente arrasta o pin).
+    if (hasGoogleMapsServerKey()) {
+      const reverse = await reverseGeocodeCoords({
+        latitude: input.latitude,
+        longitude: input.longitude,
+      });
+      if (reverse.ok) {
+        return {
+          latitude: input.latitude,
+          longitude: input.longitude,
+          formattedAddress: reverse.data.formattedAddress,
+          source: 'google_maps',
+        };
+      }
+    }
+
     return {
       latitude: input.latitude,
       longitude: input.longitude,

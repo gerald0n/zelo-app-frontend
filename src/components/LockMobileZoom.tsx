@@ -6,14 +6,14 @@ const MOBILE_QUERY = '(max-width: 1023px)';
 
 function isMapTarget(target: EventTarget | null) {
   return (
-    target instanceof Element && Boolean(target.closest('.leaflet-container'))
+    target instanceof Element && Boolean(target.closest('[data-map-container]'))
   );
 }
 
 /**
  * Reforça o bloqueio de zoom só no mobile — o Safari iOS ignora
  * `user-scalable=no` do <meta viewport>. Desktop mantém zoom normal.
- * O mapa de entrega (Leaflet) continua com pinch-zoom próprio.
+ * O mapa de entrega (Google Maps) continua com pinch-zoom próprio.
  */
 export default function LockMobileZoom() {
   useEffect(() => {
