@@ -12,6 +12,5 @@ export {
 } from '@/modules/delivery/quote';
 export {
   geocodeAddress,
-  getDrivingDistanceMeters,
   hasGoogleMapsServerKey,
 } from '@/modules/delivery/maps';
