@@ -113,7 +113,7 @@ pasta.
 | --- | --- | --- |
 | **103 — Evolução do Painel Administrativo** | Kanban de pedidos, estoque, comanda manual, impressão térmica + melhorias menores (troco/obs/histórico/WhatsApp, catálogo, config, relatórios, push) | escrito; decisões travadas; falta 3 decisões (impressora, MEI/nota, agendados-automático) |
 | **104 — Promoções, Cupons e Controle Financeiro** | Promoções por especificidade; cupons %/fixo/frete-grátis sem acúmulo; financeiro com taxa real do MP | escrito; **todas as decisões travadas** |
-| **105 — Precisão do Cálculo de Frete** | Ligar Google Maps de verdade: Places Autocomplete, mapa Google com satélite, Routes API, tratar confiança, origem da loja por pin | **(a)-(c) feitos** (a/produção, b/c em `develop`); (d)–(f) pendentes. Ver §8/§10. |
+| **105 — Precisão do Cálculo de Frete** | Ligar Google Maps de verdade: Places Autocomplete, mapa Google com satélite, Routes API, tratar confiança, origem da loja por pin | **(a)-(c) em produção**; **(d) implementado, falta subir**; (e)-(f) pendentes. Ver §8/§10/§11. |
 | **106 — Avaliações e Depoimentos** | Fase 1: avaliação do pedido + depoimentos curados. Fase 2: nota por produto (pós login SMS) | escrito; 3 decisões menores em aberto |
 
 ### 103 em uma linha cada
@@ -213,9 +213,9 @@ pasta.
    **(b) autocomplete — ✅ em produção**; **(área de entrega por raio +
    bairro opcional + raio máx/grátis editáveis no admin — ✅ em produção,
    PR #31, ver §9)**; **(c) mapa Google + satélite + reverse geocode + mapa
-   grande — ✅ em `develop`, ver §10, pendente deploy**; (d) tratar confiança
-   (rooftop/interpolado); (e) suavizar a taxa (faixas/km); (f) extrair
-   componente único.
+   grande — ✅ em produção, PR #32, ver §10**; **(d) tratar confiança do
+   geocode — ✅ implementado, pendente commit/deploy, ver §11**; (e) suavizar
+   a taxa (faixas/km); (f) extrair componente único.
 2. **104 — Promoções** (necessária para o lançamento: loja toda −10%).
 3. **103 — Bloco 1 (quadros de pedidos)** e demais blocos.
 4. **104 — Cupons + Financeiro** (após o Bloco 3; cupons de preferência após o
@@ -235,26 +235,23 @@ aplicada; `stores` com `free_delivery_radius_meters=1000` e
 `max_delivery_radius_meters=3000`; `/api/v1/addresses/validate` a 0,4/2,0/5,0 km
 → grátis / R$5 / fora da área.
 
-**Item (c) — mapa Google + satélite pronto em `develop`, falta subir pra produção.**
-No deploy:
-1. `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` da Vercel com **Places API (New)** e
-   **Maps JavaScript API** habilitadas (a chave já tem restrição de API
-   Maps JS + Places desde o item a — conferir se "Maps JavaScript API" está
-   mesmo ativada no Google Cloud, não só permitida na restrição da chave).
-2. CSP em produção ganhou `places.googleapis.com`, `maps.gstatic.com`,
-   `khms0/khms1.googleapis.com` no `connect-src`/`img-src`.
-3. Corrigir `GOOGLE_MAPS_API_KEY` (servidor) na Vercel — o valor atual tem um
-   caractere inválido (bullet `•`), o que quebrava as chamadas à Routes API
-   em produção (Sentry ZELO-APP-3). A função que a usava
-   (`getDrivingDistanceMeters`) virou código morto com a área por raio e foi
-   removida; a chave segue necessária para geocodificação.
-4. Arrastar o pin manualmente num aparelho real após o deploy (não confirmado
-   por automação nesta sessão — ver §10).
+**Item (c) — mapa Google + satélite — ✅ EM PRODUÇÃO** (PR #32, merge direto
+`develop → main`, confirmado por fora nesta sessão via `curl` na produção:
+CSP com `maps.gstatic.com`/`khms0/khms1.googleapis.com`; `POST
+/api/v1/addresses/validate` com `latitude`/`longitude` devolve
+`formattedAddress` de reverse geocode real, não o texto digitado). Falta só
+**arrastar o pin manualmente num aparelho real** — não confirmado por
+automação em nenhuma das duas sessões (a ferramenta de navegador trava ao
+simular arraste sobre o canvas do Google Maps; ver §10). A lógica em si (usa
+os mesmos eventos padrão da Maps JS API) e o endpoint por trás dela (reverse
+geocode, testado por `curl`) estão verificados — falta só a interação humana
+de fato.
 
-Depois disso, **(e) suavizar a taxa** (hoje ainda tem o degrau em 1 km).
+**Item (d) — tratar confiança do geocode — ✅ implementado nesta sessão**
+(ver §11), ainda não commitado/subido.
 
-Depois, **item 105-(d) — tratar confiança do geocode** (rooftop/interpolado/
-aproximado; obrigar confirmar pin quando a precisão for baixa).
+Depois, **(e) suavizar a taxa** (hoje ainda tem o degrau em 1 km) e
+**(f) extrair componente único** (checkout + comanda manual).
 
 ---
 
@@ -441,20 +438,84 @@ Leaflet/OSM para a **Google Maps JavaScript API**, em modo híbrido
   `/// <reference types="google.maps" />` explícito no topo dos dois arquivos
   que usam o tipo (`google-maps-loader.ts`, `DeliveryGoogleMap.tsx`).
 
-### Não verificado (ambiente sem servidor local com a chave)
-- O `reverseGeocodeCoords` (parte nova do item c) não foi exercitado de fato
-  em dev porque `.env.local` só tem a chave de navegador — precisa da chave de
-  servidor (`GOOGLE_MAPS_API_KEY`) para testar. Já está coberto pelo fallback
-  existente; validar em preview/produção antes de confiar no texto do
-  `addressPreview` vindo de reverse geocode real.
-- Arrastar o pin (`dragstart`/`dragend` → `onCenterChange`) não foi confirmado
-  por interação real nesta sessão — a ferramenta de automação do navegador
-  travou ao simular arraste sobre o canvas do Google Maps (limitação da
-  ferramenta, não reproduzida fora do mapa). A lógica é idêntica à do Leaflet
-  (já validada em produção) e usa eventos padrão e documentados da Maps JS API;
-  ainda assim, vale um arrasto manual num tablet/celular real antes do deploy.
+### Atualização (sessão seguinte, mesmo dia): verificado em produção
+Depois do deploy (PR #32, merge direto em `main`), confirmado **por fora**
+(sem abrir o app, só `curl`):
+- CSP ao vivo já traz `maps.gstatic.com`/`khms0/khms1.googleapis.com`.
+- `POST https://cardapio.zeloconfeitaria.com.br/api/v1/addresses/validate`
+  com `latitude`/`longitude` (simulando pin arrastado) devolve
+  `formattedAddress` de **reverse geocode real** (ex.: `"R. Cel. José Freire,
+  87 - Pereiro, CE, 63460-000, Brasil"`), não o texto de rua/número enviado —
+  prova que `reverseGeocodeCoords` funciona de ponta a ponta em produção
+  (`GOOGLE_MAPS_API_KEY` de servidor está correta lá).
+- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` responde no endpoint da Maps JS API
+  (`maps.googleapis.com/maps/api/js`) — Maps JavaScript API está habilitada.
 
-### Falta no 105
-- (d) tratar confiança (rooftop/interpolado; obrigar confirmar pin) ·
-  (e) suavizar a taxa (faixas por km / R$ por km) · (f) extrair componente
-  único (checkout + comanda manual).
+**Ainda não confirmado**: arrastar o pin de fato (`dragstart`/`dragend` →
+`onCenterChange`) por interação humana/real. A ferramenta de automação do
+navegador travou nas duas tentativas ao simular arraste sobre o canvas do
+Google Maps (mouse-down parece nunca soltar) — limitação da ferramenta em uso
+nesta sessão, não reproduzida fora da área do mapa (cliques normais fora do
+canvas funcionam). Como o endpoint por trás do gesto já foi validado por
+`curl` e o código usa os eventos padrão e documentados da Maps JS API
+(idênticos aos que o Leaflet já usava, validados em produção antes), o risco
+residual é baixo — mas vale um arrasto manual num tablet/celular real.
+
+### Falta no 105 (antes do item d)
+- (e) suavizar a taxa (faixas por km / R$ por km) · (f) extrair componente
+  único (checkout + comanda manual). Item (d) — ver §11.
+
+---
+
+## 11. Item 105-(d) — tratar confiança do geocode (sessão seguinte, mesmo dia)
+
+Contexto: o checkout **já** exigia clicar "Confirmar localização no mapa" pra
+qualquer endereço de entrega (`deliveryReady` em `recebimento/page.tsx` checa
+`checkout.locationConfirmed` sempre, não só quando a confiança é baixa) — essa
+parte de "obrigar confirmar pin" já existia antes deste item. O que faltava
+era **explicar por que** confirmar importa: hoje o cliente não tem nenhum
+sinal de que o Google "chutou" a localização vs. achou o endereço exato.
+
+- `src/modules/delivery/maps.ts`: `GeocodeResult` ganhou `locationType`
+  (`ROOFTOP` / `RANGE_INTERPOLATED` / `GEOMETRIC_CENTER` / `APPROXIMATE`, o
+  `geometry.location_type` da Geocoding API), parseado em `geocodeAddress`
+  (a chamada por **texto**, antes de existir um pin). `reverseGeocodeCoords`
+  não ganhou o campo de propósito — uma vez que o cliente já apontou o pin
+  (autocomplete ou arrasto), a posição é confiável por definição, reverse
+  geocode ali só traz o endereço em texto.
+- `src/modules/delivery/quote.ts`: novo tipo `LocationPrecision = 'high' | 'low'`
+  em `DeliveryQuote`. `resolveCoordinates` decide a precisão por ramo:
+  - coordenada já pronta (autocomplete/pin) → sempre `'high'` (o cliente
+    apontou o lugar; não tem "chute" a avaliar).
+  - geocode por texto via Google → `'low'` só se `locationType` for
+    `GEOMETRIC_CENTER`/`APPROXIMATE`; `ROOFTOP`/`RANGE_INTERPOLATED` → `'high'`.
+  - Nominatim (OSM) → sempre `'low'` (não devolve um sinal de precisão
+    comparável ao do Google).
+  - âncora no centro de Pereiro (`local_fallback`) → sempre `'low'` (já tinha
+    mensagem própria, mantida como estava).
+  - Quando `inServiceArea` é `true` e a precisão é `'low'` (e não é o caso
+    `local_fallback`, que já tem sua mensagem), `message` vira "Localização
+    aproximada — confira com atenção se o pin está no lugar certo.".
+- Checkout (`recebimento/page.tsx`) e conta (`AccountAddressForm.tsx`): a
+  caixa de aviso (`quoteMessage`/`quote.message`) agora aparece **também** no
+  caminho de sucesso (`inServiceArea === true`), não só no de "fora da área".
+  Removida a sufixo `(confirme o pin)` que só cobria o caso `local_fallback` —
+  a caixa de mensagem agora cobre os dois casos (fallback e baixa precisão) de
+  forma consistente.
+- `DeliveryQuote`/`ValidationResult`/`QuotePreview` ganharam o campo
+  `locationPrecision` (tipado, ainda não usado na UI além do `message` já
+  computado no servidor — reservado pra uma eventual diferenciação visual
+  futura, ex. ícone diferente).
+- Verificado:
+  - Local (`curl` no dev): endereço sem pin cai no `local_fallback` (sem
+    `GOOGLE_MAPS_API_KEY` de servidor no `.env.local` e sem acesso à internet
+    pro Nominatim no sandbox) → `locationPrecision: "low"`, mensagem exibida.
+  - Produção (`curl`, antes deste deploy — baseline): pin com coordenada →
+    `source: "google_maps"`, sem `locationPrecision`/`message` (comportamento
+    anterior a este item; será `"high"`/sem mensagem depois do deploy).
+  - `pnpm typecheck && pnpm lint && pnpm build` limpos.
+- **Não verificado**: um caso real de `locationType` `APPROXIMATE`/
+  `GEOMETRIC_CENTER` vindo do Google em produção (difícil de forçar sem um
+  endereço ambíguo de verdade) — a lógica segue a documentação oficial do
+  campo `geometry.location_type`, mas vale conferir com um endereço de fato
+  impreciso depois do deploy.

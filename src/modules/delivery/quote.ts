@@ -31,6 +31,14 @@ export type DeliveryAddressInput = {
   longitude?: number;
 };
 
+/**
+ * `low` quando a coordenada é um "chute" (Google aproximado/centro de área,
+ * OSM ou âncora local) — o cliente precisa conferir o pin com atenção.
+ * `high` quando veio de rooftop/interpolação, do autocomplete (placeId) ou de
+ * um pin que o próprio cliente já posicionou.
+ */
+export type LocationPrecision = 'high' | 'low';
+
 export type DeliveryQuote = {
   inServiceArea: boolean;
   /** Distância loja→cliente em linha reta, em metros (nome mantido por schema). */
@@ -40,6 +48,7 @@ export type DeliveryQuote = {
   longitude: number;
   formattedAddress: string;
   source: DeliveryQuoteSource;
+  locationPrecision: LocationPrecision;
   message?: string;
 };
 
@@ -87,16 +96,24 @@ function geocodeComponents(input: DeliveryAddressInput): string {
   return `locality:${locality}|administrative_area:${area}|country:BR`;
 }
 
+/** `location_type` da Geocoding API que indica um "chute" impreciso. */
+const LOW_CONFIDENCE_LOCATION_TYPES = new Set([
+  'GEOMETRIC_CENTER',
+  'APPROXIMATE',
+]);
+
 async function resolveCoordinates(input: DeliveryAddressInput): Promise<{
   latitude: number;
   longitude: number;
   formattedAddress: string;
   source: DeliveryQuoteSource;
+  locationPrecision: LocationPrecision;
 }> {
   if (input.latitude != null && input.longitude != null) {
     // Coordenada vem do autocomplete (placeId) ou do pin arrastado no mapa —
-    // reverse geocode traz o endereço real do ponto em vez de ecoar o texto
-    // digitado (útil sobretudo quando o cliente arrasta o pin).
+    // em ambos os casos o cliente já apontou o lugar certo, então a precisão
+    // é sempre alta. Reverse geocode só traz o endereço real do ponto em vez
+    // de ecoar o texto digitado.
     if (hasGoogleMapsServerKey()) {
       const reverse = await reverseGeocodeCoords({
         latitude: input.latitude,
@@ -108,6 +125,7 @@ async function resolveCoordinates(input: DeliveryAddressInput): Promise<{
           longitude: input.longitude,
           formattedAddress: reverse.data.formattedAddress,
           source: 'google_maps',
+          locationPrecision: 'high',
         };
       }
     }
@@ -117,6 +135,7 @@ async function resolveCoordinates(input: DeliveryAddressInput): Promise<{
       longitude: input.longitude,
       formattedAddress: composeAddress(input),
       source: hasGoogleMapsServerKey() ? 'google_maps' : 'openstreetmap',
+      locationPrecision: 'high',
     };
   }
 
@@ -130,6 +149,11 @@ async function resolveCoordinates(input: DeliveryAddressInput): Promise<{
         longitude: geo.data.longitude,
         formattedAddress: geo.data.formattedAddress,
         source: 'google_maps',
+        locationPrecision:
+          geo.data.locationType &&
+          LOW_CONFIDENCE_LOCATION_TYPES.has(geo.data.locationType)
+            ? 'low'
+            : 'high',
       };
     }
   }
@@ -141,6 +165,9 @@ async function resolveCoordinates(input: DeliveryAddressInput): Promise<{
       longitude: osm.data.longitude,
       formattedAddress: osm.data.formattedAddress,
       source: 'openstreetmap',
+      // Nominatim não devolve um sinal de precisão comparável ao Google —
+      // trata como baixa confiança por padrão.
+      locationPrecision: 'low',
     };
   }
 
@@ -150,6 +177,7 @@ async function resolveCoordinates(input: DeliveryAddressInput): Promise<{
     longitude: PEREIRO_CENTER.longitude,
     formattedAddress: composeAddress(input),
     source: 'local_fallback',
+    locationPrecision: 'low',
   };
 }
 
@@ -188,6 +216,7 @@ export async function quoteDelivery(
       longitude: resolved.longitude,
       formattedAddress: resolved.formattedAddress,
       source: resolved.source,
+      locationPrecision: resolved.locationPrecision,
       message: `Endereço a ${formatDistance(straightMeters)} da loja — fora da área de entrega (até ${formatDistance(store.maxDeliveryRadiusMeters)}). Você pode concluir por retirada na loja.`,
     });
   }
@@ -204,9 +233,12 @@ export async function quoteDelivery(
     longitude: resolved.longitude,
     formattedAddress: resolved.formattedAddress,
     source: resolved.source,
+    locationPrecision: resolved.locationPrecision,
     message:
       resolved.source === 'local_fallback'
         ? 'Não localizamos o endereço exato. Arraste o pin no mapa até o local.'
-        : undefined,
+        : resolved.locationPrecision === 'low'
+          ? 'Localização aproximada — confira com atenção se o pin está no lugar certo.'
+          : undefined,
   });
 }
