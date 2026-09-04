@@ -131,10 +131,15 @@ export default function ProductCard({
           <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted-foreground">
             {product.description}
           </p>
-          <div className="mt-1.5 flex min-w-0 items-baseline gap-1.5">
+          <div className="mt-1.5 flex min-w-0 flex-wrap items-baseline gap-1.5">
             <span className="font-serif text-base font-semibold tabular-nums text-primary">
               {formatCatalogPrice(product.price)}
             </span>
+            {product.originalPrice != null ? (
+              <span className="text-xs tabular-nums text-muted-foreground line-through">
+                {formatCatalogPrice(product.originalPrice)}
+              </span>
+            ) : null}
             {product.weight ? (
               <span className="text-xs text-muted-foreground">
                 · {product.weight}

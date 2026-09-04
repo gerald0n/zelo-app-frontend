@@ -72,6 +72,22 @@ export type AdminAddon = {
   isAvailable: boolean;
 };
 
+export type PromotionScope = 'store' | 'category' | 'products';
+
+export type AdminPromotion = {
+  id: string;
+  name: string;
+  scope: PromotionScope;
+  discountPercent: number;
+  startsAt: string | null;
+  endsAt: string | null;
+  isActive: boolean;
+  /** Presente só quando `scope === 'category'`. */
+  categoryIds: string[];
+  /** Presente só quando `scope === 'products'`. */
+  productIds: string[];
+};
+
 export type AdminBlackout = {
   id: string;
   startsAt: string;

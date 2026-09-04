@@ -115,8 +115,13 @@ export default function ProdutoClient({
           <p className="mt-1 text-base text-muted-foreground">
             {product.description}
           </p>
-          <p className="mt-1.5 text-xl font-bold tabular-nums">
+          <p className="mt-1.5 flex flex-wrap items-baseline gap-2 text-xl font-bold tabular-nums">
             {formatCatalogPrice(product.price)}
+            {product.originalPrice != null ? (
+              <span className="text-sm font-medium text-muted-foreground line-through">
+                {formatCatalogPrice(product.originalPrice)}
+              </span>
+            ) : null}
           </p>
 
           {quantityInCart > 0 ? (

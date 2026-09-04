@@ -3,11 +3,14 @@ import { logger } from '@/lib/logger';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { hasSupabasePublicConfig } from '@/config/env';
 import { mapCategory, mapProduct, mapStore } from '@/modules/catalog/mappers';
+import type { ActivePromotion } from '@/modules/catalog/promotions';
 import type {
   CatalogCategory,
   CatalogProduct,
   CatalogStore,
 } from '@/modules/catalog/types';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database';
 
 const PRODUCT_SELECT = `
   *,
@@ -18,11 +21,45 @@ const PRODUCT_SELECT = `
   )
 `;
 
+const PROMOTIONS_SELECT = `
+  scope,
+  discount_percent,
+  promotion_categories ( category_id ),
+  promotion_products ( product_id )
+`;
+
 function notConfigured<T>(): Result<T> {
   return err(
     'INTEGRATION_UNAVAILABLE',
     'Catálogo indisponível: configure o Supabase no ambiente.',
   );
+}
+
+/**
+ * Promoções ativas e dentro do período de vigência — a policy
+ * `promotions_public_read` já filtra isso, então um `select` simples basta.
+ * Falha em silêncio (loga e devolve `[]`): uma promoção fora do ar não deve
+ * derrubar o catálogo inteiro.
+ */
+async function listActivePromotions(
+  supabase: SupabaseClient<Database>,
+): Promise<ActivePromotion[]> {
+  const { data, error } = await supabase
+    .from('promotions')
+    .select(PROMOTIONS_SELECT)
+    .eq('is_active', true);
+
+  if (error) {
+    logger.error('Falha ao ler promoções ativas', { message: error.message });
+    return [];
+  }
+
+  return (data ?? []).map((row) => ({
+    scope: row.scope as ActivePromotion['scope'],
+    discountPercent: Number(row.discount_percent),
+    categoryIds: (row.promotion_categories ?? []).map((c) => c.category_id),
+    productIds: (row.promotion_products ?? []).map((p) => p.product_id),
+  }));
 }
 
 export async function getPublicStore(): Promise<Result<CatalogStore | null>> {
@@ -125,12 +162,15 @@ export async function listPublicProducts(): Promise<Result<CatalogProduct[]>> {
 
   try {
     const supabase = await createServerSupabaseClient();
-    const { data, error } = await supabase
-      .from('products')
-      .select(PRODUCT_SELECT)
-      .eq('is_active', true)
-      .is('archived_at', null)
-      .order('sort_order', { ascending: true });
+    const [{ data, error }, promotions] = await Promise.all([
+      supabase
+        .from('products')
+        .select(PRODUCT_SELECT)
+        .eq('is_active', true)
+        .is('archived_at', null)
+        .order('sort_order', { ascending: true }),
+      listActivePromotions(supabase),
+    ]);
 
     if (error) {
       logger.error('Falha ao ler produtos', { message: error.message });
@@ -141,7 +181,7 @@ export async function listPublicProducts(): Promise<Result<CatalogProduct[]>> {
       );
     }
 
-    return ok((data ?? []).map(mapProduct));
+    return ok((data ?? []).map((row) => mapProduct(row, promotions)));
   } catch (cause) {
     return err('INTERNAL_ERROR', 'Erro ao carregar o cardápio.', { cause });
   }
@@ -171,7 +211,9 @@ export async function getPublicProductBySlugOrId(
       );
     }
 
-    if (bySlug.data) return ok(mapProduct(bySlug.data));
+    if (bySlug.data) {
+      return ok(mapProduct(bySlug.data, await listActivePromotions(supabase)));
+    }
 
     const byId = await supabase
       .from('products')
@@ -189,7 +231,8 @@ export async function getPublicProductBySlugOrId(
       );
     }
 
-    return ok(byId.data ? mapProduct(byId.data) : null);
+    if (!byId.data) return ok(null);
+    return ok(mapProduct(byId.data, await listActivePromotions(supabase)));
   } catch (cause) {
     return err('INTERNAL_ERROR', 'Erro ao carregar o produto.', { cause });
   }

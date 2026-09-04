@@ -18,7 +18,12 @@ export type CatalogProduct = {
   slug: string;
   name: string;
   description: string;
+  /** Preço final — já com o desconto de uma promoção ativa aplicado. */
   price: number;
+  /** Preço de tabela, presente só quando há desconto ativo (`price` difere). */
+  originalPrice?: number;
+  /** Percentual da promoção ativa aplicada a `price`, se houver. */
+  discountPercent?: number;
   /** Public URL of the primary photo, or null. */
   image: string | null;
   imageAlt: string | null;

@@ -154,8 +154,15 @@ export default function HomeCatalog({
                     </p>
                   </div>
                   <div className="mt-2 flex flex-col gap-2">
-                    <span className="font-serif text-base font-semibold text-primary">
-                      {formatCatalogPrice(product.price)}
+                    <span className="flex flex-wrap items-baseline gap-1.5">
+                      <span className="font-serif text-base font-semibold text-primary">
+                        {formatCatalogPrice(product.price)}
+                      </span>
+                      {product.originalPrice != null ? (
+                        <span className="text-xs text-muted-foreground line-through">
+                          {formatCatalogPrice(product.originalPrice)}
+                        </span>
+                      ) : null}
                     </span>
                     {quantityInCart > 0 ? (
                       <CatalogCartControls

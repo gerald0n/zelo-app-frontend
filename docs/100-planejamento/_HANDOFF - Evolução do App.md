@@ -112,7 +112,7 @@ pasta.
 | Doc | Assunto | Status |
 | --- | --- | --- |
 | **103 — Evolução do Painel Administrativo** | Kanban de pedidos, estoque, comanda manual, impressão térmica + melhorias menores (troco/obs/histórico/WhatsApp, catálogo, config, relatórios, push) | escrito; decisões travadas; falta 3 decisões (impressora, MEI/nota, agendados-automático) |
-| **104 — Promoções, Cupons e Controle Financeiro** | Promoções por especificidade; cupons %/fixo/frete-grátis sem acúmulo; financeiro com taxa real do MP | escrito; **todas as decisões travadas** |
+| **104 — Promoções, Cupons e Controle Financeiro** | Promoções por especificidade; cupons %/fixo/frete-grátis sem acúmulo; financeiro com taxa real do MP | **Promoções implementadas, falta subir** (ver §12); Cupons e Financeiro pendentes |
 | **105 — Precisão do Cálculo de Frete** | Ligar Google Maps de verdade: Places Autocomplete, mapa Google com satélite, Routes API, tratar confiança, origem da loja por pin | **(a)-(c) em produção**; **(d) implementado, falta subir**; (e)-(f) pendentes. Ver §8/§10/§11. |
 | **106 — Avaliações e Depoimentos** | Fase 1: avaliação do pedido + depoimentos curados. Fase 2: nota por produto (pós login SMS) | escrito; 3 decisões menores em aberto |
 
@@ -214,9 +214,13 @@ pasta.
    bairro opcional + raio máx/grátis editáveis no admin — ✅ em produção,
    PR #31, ver §9)**; **(c) mapa Google + satélite + reverse geocode + mapa
    grande — ✅ em produção, PR #32, ver §10**; **(d) tratar confiança do
-   geocode — ✅ implementado, pendente commit/deploy, ver §11**; (e) suavizar
-   a taxa (faixas/km); (f) extrair componente único.
-2. **104 — Promoções** (necessária para o lançamento: loja toda −10%).
+   geocode — ✅ implementado, pendente commit/deploy, ver §11**; **(e) suavizar
+   a taxa — adiado a pedido do dono** (sem fórmula/faixas definidas ainda;
+   retomar quando houver uma decisão de preço); (f) extrair componente único
+   (bloqueado até existir comanda manual, 103).
+2. **104 — Promoções — ✅ implementado, pendente commit/deploy, ver §12**
+   (a promoção do lançamento, "loja toda −10%", já pode ser cadastrada pelo
+   admin assim que subir).
 3. **103 — Bloco 1 (quadros de pedidos)** e demais blocos.
 4. **104 — Cupons + Financeiro** (após o Bloco 3; cupons de preferência após o
    login por SMS).
@@ -519,3 +523,109 @@ sinal de que o Google "chutou" a localização vs. achou o endereço exato.
   endereço ambíguo de verdade) — a lógica segue a documentação oficial do
   campo `geometry.location_type`, mas vale conferir com um endereço de fato
   impreciso depois do deploy.
+
+---
+
+## 12. Item 104 — Promoções (sessão seguinte, mesmo dia)
+
+Implementadas as promoções por especificidade (decisões do §4): abrangência
+loja toda / categorias / produtos; uma efetiva por produto (produto >
+categoria > loja toda, sem acúmulo); arredondamento por unidade em centavos;
+admin bloqueado de criar duas promoções do mesmo nível cobrindo o mesmo alvo
+no mesmo período.
+
+- Migration `supabase/migrations/20260904170000_promotions.sql`: tabelas
+  `promotions` (`scope` check `store|category|products`, `discount_percent`
+  numeric 0-100, `starts_at`/`ends_at` opcionais, `is_active`),
+  `promotion_categories` e `promotion_products` (junções N:N, já que
+  `products.category_id` é 1:1 — a "categoria" de uma promoção de escopo
+  `category` é uma lista arbitrária de categorias, não a do produto). RLS no
+  mesmo padrão de `categories`/`products` (`_public_read` com `is_active` +
+  período; `_admin_manage` via `private.is_admin()`).
+- `private.effective_price_cents(price_cents, category_id, product_id)`
+  (nova função `stable`): resolve o desconto por especificidade entre
+  promoções ativas e dentro do período (`now() between starts_at/ends_at`,
+  null = sem limite), arredonda com `round()`. Empate no mesmo nível pega o
+  maior desconto (defensivo — a validação do admin já devia impedir).
+- `private.create_order` foi **redefinido por inteiro** nesta migration (só
+  assim dá pra `create or replace function`) trocando as duas leituras de
+  `v_product.price_cents` cru pelos dois loops por
+  `private.effective_price_cents(...)`, guardado em `v_unit_price` novo. Todo
+  o resto da função é idêntico ao original
+  (`20260809144928_initial_schema.sql`) — só essa troca pontual. É a fonte de
+  verdade: o preço gravado em `order_items.unit_price_cents` já sai correto.
+- **Catálogo público** (`src/modules/catalog/`):
+  - `promotions.ts` (novo): `resolveDiscountPercent` (mesma especificidade em
+    TS) + `applyDiscount` (mesmo arredondamento) — usados só para **exibir**
+    o preço com desconto no catálogo/carrinho/checkout; o pedido em si sempre
+    recalcula pela função SQL.
+  - `catalog-repository.ts`: `listActivePromotions()` (novo) faz um select em
+    `promotions` (a RLS pública já filtra ativa+no período) com
+    `promotion_categories`/`promotion_products` aninhados; chamado em paralelo
+    com a query de produtos em `listPublicProducts` e
+    `getPublicProductBySlugOrId`.
+  - `mappers.ts::mapProduct` ganhou um 2º parâmetro opcional `promotions`;
+    calcula `discountPercent` e devolve `price` já com desconto,
+    `originalPrice`/`discountPercent` só quando há desconto ativo.
+  - `types.ts::CatalogProduct` ganhou `originalPrice?`/`discountPercent?`.
+    **Carrinho e checkout não precisaram mudar** — já consomem `product.price`
+    (o preço final), então herdam o desconto automaticamente
+    (`cart-store.ts`, `revalidate-cart.ts`, `persist-cart.ts`).
+  - UI: `ProductCard.tsx`, `HomeCatalog.tsx` (destaques) e `ProdutoClient.tsx`
+    (página do produto) ganharam o preço original riscado ao lado do preço
+    com desconto, quando `originalPrice` existe.
+- **Admin**:
+  - `src/modules/admin/promotions.ts` (novo, mesmo padrão de `catalog.ts`):
+    `listAdminPromotions`, `createAdminPromotion`, `updateAdminPromotion`,
+    `deleteAdminPromotion`. Validação de forma (categoria/produto exige lista
+    não vazia; fim > início) + `findOverlapConflict` (busca outras promoções
+    ativas do mesmo `scope`, calcula sobreposição de período em JS tratando
+    `null` como sem limite, e para `category`/`products` checa interseção de
+    IDs) — mensagem de erro nomeia a promoção conflitante.
+  - Rotas `src/app/api/v1/admin/promotions/{route.ts,[promotionId]/route.ts}`
+    no padrão usual (zod no topo, `Result` → `httpStatusFor`).
+  - `GET /api/v1/admin/catalog` (agregador que a página já usa) ganhou
+    `promotions` na resposta — sem endpoint novo pro front buscar.
+  - Aba **"Promoções"** nova em `admin/catalogo/page.tsx` (entre Categorias e
+    Adicionais): mesmo padrão inline-form das outras abas (sem modal); campo
+    de abrangência muda o formulário (mostra checklist de categorias ou de
+    produtos); datas em `<input type="datetime-local">` convertidas para
+    ISO só no submit.
+- **Tipos gerados**: `src/types/database.ts` regenerado via
+  `npx supabase gen types typescript --local` (supabase CLI não está
+  instalado globalmente neste ambiente, mas roda via `npx`; sem isso o
+  arquivo teria que ser editado à mão). Cuidado ao gerar: mandar só o stdout
+  pro arquivo (`> arquivo.ts`, nunca `2>&1 > arquivo.ts`) — o CLI novo
+  imprime "Connecting to db..." no stderr, que polui o arquivo se for
+  redirecionado junto; e rodar `prettier --write` depois, porque a versão do
+  CLI usada aqui (2.116) gera sem `;` (formatação antiga do arquivo tinha
+  `;`, então um `git diff` cru fica gigante por reformatação se pular esse
+  passo).
+- Verificado de ponta a ponta no dev (Supabase local via Docker):
+  - `private.effective_price_cents` direto por `psql`: loja 10% → categoria
+    20% (vence) → produto 50% (vence) — especificidade correta; produto sem
+    vínculo próprio ainda pega o desconto de categoria (não "vaza" pra loja
+    toda incorretamente, só quando não há categoria nem produto aplicável).
+  - Admin → aba Promoções → criou "Loja toda -10% no lançamento" → catálogo
+    (`/`) mostrou `R$ 6,30` riscado `R$ 7,00` em todos os produtos, na home
+    (destaques) e na grade principal — `curl /api/v1/catalog/products`
+    confirmou `price`/`originalPrice`/`discountPercent` no JSON.
+  - Carrinho já com 1 item antes da promoção existir: ao abrir `/carrinho`
+    depois, o preço já apareceu atualizado (R$ 6,30) — o mecanismo de
+    revalidação do carrinho (`revalidateCartAgainstCatalog`) absorveu o
+    desconto sem precisar de código novo.
+  - Tentativa de criar uma 2ª promoção "loja toda" ativa: bloqueada com
+    `"Já existe uma promoção ativa para a loja toda no mesmo período
+    (\"Loja toda -10% no lançamento\")."` — confirma a validação de
+    sobreposição.
+  - `pnpm typecheck && pnpm lint && pnpm build` limpos (0 erros; os 456
+    warnings pré-existentes de `react-hooks/set-state-in-effect` não mudaram).
+- **Não verificado**: um pedido completo (`private.create_order`) com uma
+  promoção ativa — testei a função de preço isoladamente por `psql` e revisei
+  a substituição na função, mas não finalizei um checkout de ponta a ponta
+  pelo navegador nesta sessão para ver o total do pedido gravado. Vale
+  conferir antes de anunciar a promoção do lançamento.
+
+### Falta em 104
+- Cupons (%/fixo/frete-grátis, sem acúmulo com promoção) e Controle
+  Financeiro (taxa real do MP) — decisões já travadas no §4, não implementado.

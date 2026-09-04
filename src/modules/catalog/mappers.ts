@@ -2,6 +2,11 @@ import type { Database } from '@/types/database';
 import { productImagePublicUrl } from '@/lib/constants';
 import { normalizeSlotTimes } from '@/modules/scheduling/slot-times';
 import {
+  applyDiscount,
+  resolveDiscountPercent,
+  type ActivePromotion,
+} from '@/modules/catalog/promotions';
+import {
   formatWeightGrams,
   type CatalogAddon,
   type CatalogBlackout,
@@ -45,7 +50,10 @@ export function mapAddon(row: AddonRow): CatalogAddon {
   };
 }
 
-export function mapProduct(row: ProductJoinRow): CatalogProduct {
+export function mapProduct(
+  row: ProductJoinRow,
+  promotions: ActivePromotion[] = [],
+): CatalogProduct {
   const images = [...(row.product_images ?? [])].sort(
     (a, b) =>
       Number(b.is_primary) - Number(a.is_primary) ||
@@ -61,13 +69,26 @@ export function mapProduct(row: ProductJoinRow): CatalogProduct {
     })
     .filter((addon): addon is CatalogAddon => addon !== null);
 
+  const discountPercent = resolveDiscountPercent(
+    promotions,
+    row.category_id,
+    row.id,
+  );
+  const price =
+    discountPercent === null
+      ? row.price_cents
+      : applyDiscount(row.price_cents, discountPercent);
+
   return {
     id: row.id,
     categoryId: row.category_id,
     slug: row.slug,
     name: row.name,
     description: row.description ?? '',
-    price: row.price_cents,
+    price,
+    ...(discountPercent !== null
+      ? { originalPrice: row.price_cents, discountPercent }
+      : {}),
     image: primary ? productImagePublicUrl(primary.storage_path) : null,
     imageAlt: primary?.alt_text ?? null,
     available: row.is_available && row.is_active && !row.archived_at,
