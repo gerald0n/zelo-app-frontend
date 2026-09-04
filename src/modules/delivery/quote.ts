@@ -66,8 +66,19 @@ function composeAddress(input: DeliveryAddressInput): string {
 }
 
 /**
+ * Só rua + número + bairro, sem cidade/estado. Para a Geocoding API do Google
+ * com filtro `components`: se o texto trouxer "Centro, CE, Brasil" o Google
+ * ignora o filtro e casa com o Centro de Sobral (~250 km).
+ */
+function composeStreetAddress(input: DeliveryAddressInput): string {
+  return [input.street, input.number, input.neighborhood]
+    .filter(Boolean)
+    .join(', ');
+}
+
+/**
  * Trava a geocodificação na cidade da loja. Sem isso o Google resolve
- * "Centro, CE" como Sobral (cidade grande ~250 km a noroeste).
+ * "Centro" como Sobral (cidade grande ~250 km a noroeste).
  */
 function geocodeComponents(input: DeliveryAddressInput): string {
   const locality = input.city ?? 'Pereiro';
@@ -94,7 +105,7 @@ async function resolveCoordinates(
   }
 
   if (hasGoogleMapsServerKey()) {
-    const geo = await geocodeAddress(composeAddress(input), {
+    const geo = await geocodeAddress(composeStreetAddress(input), {
       components: geocodeComponents(input),
     });
     if (geo.ok) {
