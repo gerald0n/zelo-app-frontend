@@ -2,6 +2,13 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import { config as configureZod } from 'zod';
+
+// A CSP de produção bloqueia `eval`/`new Function`. Sem isso, o Zod ainda
+// funciona (ele mesmo captura a falha e cai no caminho interpretado), mas a
+// sondagem `new Function("")` do fast-path dispara um report de violação de
+// CSP mesmo assim — `jitless` desliga a sondagem na raiz.
+configureZod({ jitless: true });
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CheckoutProvider } from '@/contexts/CheckoutContext';
 import { ShopExperienceProvider } from '@/contexts/ShopExperienceContext';
