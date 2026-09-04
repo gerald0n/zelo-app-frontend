@@ -19,6 +19,13 @@ import { useAdminOrdersRealtime } from '@/modules/realtime/hooks';
 import { adminContainerClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 
+function formatClock(iso: string) {
+  return new Date(iso).toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export default function AdminPedidoPage({
   params,
 }: {
@@ -221,6 +228,11 @@ export default function AdminPedidoPage({
                         + {addon.name}
                       </p>
                     ))}
+                    {item.note ? (
+                      <p className="mt-0.5 text-2xs text-muted-foreground">
+                        Obs.: {item.note}
+                      </p>
+                    ) : null}
                   </div>
                   <span className="text-xs font-semibold">
                     {formatCatalogPrice(item.lineTotalCents)}
@@ -246,6 +258,23 @@ export default function AdminPedidoPage({
                   <p className="mt-0.5 text-xs">
                     {order.address?.formatted ?? 'Retirada na Zelo'}
                   </p>
+                  {order.address?.referencePoint ? (
+                    <p className="mt-0.5 text-2xs text-muted-foreground">
+                      Referência: {order.address.referencePoint}
+                    </p>
+                  ) : null}
+                  {order.scheduledFor ? (
+                    <p className="mt-0.5 text-2xs text-muted-foreground">
+                      Agendado para:{' '}
+                      {new Date(order.scheduledFor).toLocaleString('pt-BR', {
+                        weekday: 'short',
+                        day: '2-digit',
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  ) : null}
                 </div>
               </div>
               <div className="flex gap-2.5">
@@ -272,6 +301,11 @@ export default function AdminPedidoPage({
                         }`
                       : ''}
                   </p>
+                  {order.needsChange && order.changeForAmountCents != null ? (
+                    <p className="mt-0.5 text-2xs text-muted-foreground">
+                      Troco para {formatCatalogPrice(order.changeForAmountCents)}
+                    </p>
+                  ) : null}
                 </div>
               </div>
               {order.customer ? (
@@ -281,10 +315,58 @@ export default function AdminPedidoPage({
               ) : null}
             </section>
 
+            {order.customerNote ? (
+              <section className="space-y-1 rounded-lg border border-border p-3.5">
+                <h2 className="text-sm font-bold">Observação do cliente</h2>
+                <p className="text-xs text-muted-foreground">
+                  {order.customerNote}
+                </p>
+              </section>
+            ) : null}
+
             {order.internalNote ? (
               <section className="rounded-lg border border-transparent bg-tone-warning p-3.5 text-tone-warning-foreground">
                 <h2 className="text-sm font-bold">Nota interna</h2>
                 <p className="mt-1 text-xs opacity-80">{order.internalNote}</p>
+              </section>
+            ) : null}
+
+            {order.status === 'cancelled' && order.cancellationReason ? (
+              <section className="rounded-lg border border-destructive/40 p-3.5">
+                <h2 className="text-sm font-bold text-destructive">
+                  Pedido cancelado
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Motivo: {order.cancellationReason}
+                </p>
+              </section>
+            ) : null}
+
+            {order.history.length > 0 ? (
+              <section className="space-y-2 rounded-lg border border-border p-3.5">
+                <h2 className="text-sm font-bold">Histórico</h2>
+                <ul className="space-y-1.5">
+                  {order.history.map((entry) => (
+                    <li
+                      key={entry.id}
+                      className="flex items-start justify-between gap-3 text-xs"
+                    >
+                      <div>
+                        <p className="font-semibold">
+                          {statusLabel(entry.newStatus)}
+                        </p>
+                        {entry.reason ? (
+                          <p className="mt-0.5 text-2xs text-muted-foreground">
+                            {entry.reason}
+                          </p>
+                        ) : null}
+                      </div>
+                      <time className="shrink-0 text-2xs text-muted-foreground">
+                        {formatClock(entry.createdAt)}
+                      </time>
+                    </li>
+                  ))}
+                </ul>
               </section>
             ) : null}
           </div>
