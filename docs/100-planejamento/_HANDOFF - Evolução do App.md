@@ -3,10 +3,11 @@
 Resumo para abrir uma sessão nova sem re-explorar o código. Cobre a evolução
 do painel admin + frete + promoções/cupons/financeiro + avaliações. Reescrito
 em 2026-09-04 para condensar o histórico acumulado de sessões anteriores —
-o que importa é o **estado atual**, não a ordem em que foi feito. Os planos
-originais e mais detalhados estão nos docs **103, 104, 105, 106** desta
-pasta (nunca chegaram a existir como arquivos — o conteúdo deles vive só
-aqui).
+o que importa é o **estado atual**, não a ordem em que foi feito. Atualizado
+de novo mais tarde no mesmo dia (2026-09-04) após estoque básico, melhorias
+na tela do pedido e comanda manual. Os planos originais e mais detalhados
+estão nos docs **103, 104, 105, 106** desta pasta (nunca chegaram a existir
+como arquivos — o conteúdo deles vive só aqui).
 
 ---
 
@@ -24,14 +25,16 @@ aqui).
   `pnpm typecheck && pnpm lint && pnpm build`. Commits Conventional em pt-BR,
   uma linha, sempre encerrando com `Co-Authored-By: Claude Sonnet 5
   <noreply@anthropic.com>`.
-- **Fluxo de deploy:** o assistente commita local em `develop`; quem faz
-  `push`/PR/merge para `main` e o deploy de fato é o dono (via Vercel, ligado
-  ao git). Não presumir que um commit local já está em produção sem
-  confirmar (`git log origin/main`, ou testar a URL de produção).
+- **Fluxo de deploy:** o assistente commita local em `develop` e faz `push`
+  pra `origin/develop`; quem faz o **merge para `main`** e o deploy de fato é
+  o dono (via Vercel, ligado ao git). Não presumir que um commit em
+  `develop` já está em produção sem confirmar (`git log main..develop`, ou
+  testar a URL de produção).
 - **Regra de escopo herdada da 102:** mexer só em apresentação quando
   possível; não tocar em `modules/`, rotas de API e migrations sem
-  necessidade — mas os itens abaixo (frete, promoções, kanban) já exigiram
-  migrations e mudanças de módulo quando o recurso pedia.
+  necessidade — mas vários itens abaixo (frete, promoções, kanban, estoque,
+  comanda manual) já exigiram migrations e mudanças de módulo quando o
+  recurso pedia.
 
 ---
 
@@ -43,8 +46,8 @@ aqui).
   out_for_delivery] → delivered`; mais `cancelled`.
 - **Transições são forward-only + cancelar**, validadas em
   `private.transition_order_status` (schema definido na migration inicial,
-  função redefinida por inteiro na migration de promoções — ver §4). Não há
-  volta nem desfazer sem migration nova. `nextAdminStatus(status,
+  função redefinida por inteiro nas migrations de promoções e de estoque —
+  ver §4). Não há volta nem desfazer sem migration nova. `nextAdminStatus(status,
   deliveryMethod)` (`src/modules/admin/types.ts`) já resolve a bifurcação
   pickup/delivery e o resto da cadeia até `delivered`.
 - `delivery_method ∈ {pickup, delivery}`; `timing ∈ {immediate, scheduled}` +
@@ -56,22 +59,32 @@ aqui).
   `idle/connecting/subscribed/reconnecting/error` (usado no indicador "ao
   vivo" do kanban, ver §5).
 - `getAdminOrder` devolve `history`, `needsChange`/`changeForAmountCents`,
-  `customerNote`, `address.referencePoint`, `customer.phoneE164` — a tela
-  `pedido/[id]/page.tsx` ainda não renderiza tudo isso.
+  `customerNote`, `address.referencePoint`, `customer.phoneE164`, `guest`
+  (nome/telefone avulso quando o pedido não tem `customer` vinculado) e
+  `isGuest` — a tela `pedido/[id]/page.tsx` **já renderiza tudo isso**
+  (implementado, ver §4).
 - Não há sistema de toast no projeto (só `AppDialogContext`:
   `confirm`/`prompt`/`alert` modais).
 
 ### Pedido / pagamento
 - `private.create_order(payload jsonb)` recalcula todos os totais no
-  servidor — inclusive o preço com desconto de promoções (§4).
-- `orders.customer_id` é NOT NULL → `customers` → `auth.users`. Comanda
-  manual (103, não iniciado) precisa de mudança de schema pra "cliente sem
-  conta".
-- `products` não tem coluna de estoque. `product_images` já suporta várias
-  imagens + `is_primary` + `sort_order` (a UI só faz upload de uma).
+  servidor — inclusive o preço com desconto de promoções e o
+  estoque (§4).
+- `orders.customer_id` agora é **nullable**. Pedido de **comanda manual**
+  (admin cria pra cliente sem conta) grava `guest_name`/`guest_phone_e164`
+  em vez de `customer_id` — a não ser que o telefone já bata com um
+  `customers.phone_e164` existente, caso em que vincula normalmente
+  (implementado, ver §4). `customers.id` continua exigindo `auth.users`
+  correspondente — pedido avulso nunca cria linha em `customers`.
+- `products.stock_quantity` (integer nullable, `null` = ilimitado) —
+  **implementado** (ver §4). `product_images` já suporta várias imagens +
+  `is_primary` + `sort_order` (a UI só faz upload de uma).
 - Pix: `orders.mp_order_id`; `payment_events` guarda o payload completo do MP
   em jsonb, mas o código não extrai a taxa (item financeiro do 104, não
   iniciado). Estorno existe (`refundOrderPixPayment`).
+- **Comanda manual** (admin) só aceita `payment_method` `cash`/`card` —
+  Pix fica de fora desse fluxo (não dá pra gerar cobrança dinâmica sem o
+  checkout do cliente).
 
 ### Frete / mapas — Google Maps Platform, 100% migrado
 - `src/modules/delivery/{quote,maps,osm,pereiro,fee,geo,places,
@@ -100,7 +113,8 @@ aqui).
   `calcDeliveryFeeCents` ainda é **binário** (sem/com taxa fixa) — suavizar
   em faixas está adiado a pedido do dono, sem fórmula definida ainda.
   Bairro é `<Input>` opcional, só rótulo pro entregador, não entra na
-  cotação.
+  cotação. **Entrega de comanda manual** (admin) não passa por essa
+  cotação — endereço digitado livre + taxa digitada pelo admin (ver §4).
 - **Confiança do geocode**: `LocationPrecision = 'high'|'low'` em
   `DeliveryQuote` — `'low'` quando o Google geocodifica por texto com baixa
   precisão, ou quando cai em OSM/âncora local; sempre `'high'` quando a
@@ -122,8 +136,8 @@ aqui).
 - `private.effective_price_cents(price_cents, category_id, product_id)`
   resolve por especificidade (produto > categoria > loja toda, nunca
   acumula) e arredonda por unidade em centavos — chamada dentro de
-  `private.create_order`, que é a fonte de verdade do preço gravado no
-  pedido.
+  `private.create_order` e `private.create_manual_order`, que são a fonte
+  de verdade do preço gravado no pedido.
 - Catálogo público espelha a mesma resolução em TypeScript
   (`src/modules/catalog/promotions.ts`) só pra exibir preço com desconto —
   carrinho/checkout herdam automaticamente via `CatalogProduct.price`
@@ -131,6 +145,20 @@ aqui).
   aparecem só quando há desconto ativo, usados pra mostrar preço riscado).
 - Admin: aba **Promoções** em `admin/catalogo` — bloqueia duas promoções do
   mesmo nível (mesmo escopo) cobrindo o mesmo alvo no mesmo período.
+
+### Estoque — implementado
+- `products.stock_quantity` (integer nullable). `null` = ilimitado/não
+  controlado (ex.: bolo sob encomenda); preenchido = quantidade controlada.
+- `private.create_order`/`private.create_manual_order` checam
+  disponibilidade com `for update` (trava a linha) e decrementam com um
+  `UPDATE ... where stock_quantity >= v_qty` que também serve de validação
+  atômica final (cobre o caso de duas linhas do mesmo produto no mesmo
+  pedido). Estoque zerado → `is_available = false` automaticamente.
+- `private.transition_order_status`: ao cancelar, devolve a soma das
+  quantidades por produto (agregada) e reativa `is_available` se o estoque
+  voltar a ficar > 0.
+- Admin: campo "Estoque (deixe vazio para ilimitado)" no formulário de
+  produto (`admin/catalogo`) + badge de estoque atual/esgotado na listagem.
 
 ### Painel de pedidos — kanban
 - `/admin/pedidos` é um kanban com 3 abas: **Retirada**, **Delivery**
@@ -144,6 +172,8 @@ aqui).
   /api/v1/admin/orders/[id]/status`); só aceita mover pra frente. Cancelar é
   um botão que abre um `prompt()` pedindo o motivo (mín. 3 caracteres).
   Avanço é **otimista** no cliente (reverte se a chamada falhar).
+- Botão **"Nova comanda"** no header do kanban abre `/admin/pedidos/novo`
+  (comanda manual — ver §4).
 - Régua de urgência: borda do card muda de cor por minutos parado, usando
   `orders.updated_at` como proxy de "tempo no status atual" (não é exato —
   qualquer update no pedido reseta; ≥15 min aviso, ≥30 min crítico — chute
@@ -154,12 +184,30 @@ aqui).
 - Checkbox "Ocultar entregues" tira a coluna `delivered` da vista — é a
   versão simplificada de "recolhível + filtro de foco" (não é colapso por
   coluna individual).
+- Cards mostram badge **"Avulso"** quando o pedido é de comanda manual sem
+  vínculo com customer (`order.isGuest`).
 - Mobile (abaixo de `lg`, 1024px): pills de status + lista de um status por
   vez, sem drag (o card não entra em `DndContext` nesse modo).
 - Fetch: quadros usam `scope=all` (200 pedidos mais recentes) filtrados por
-  `deliveryMethod` no cliente; Agenda usa `scope=scheduled`. Nenhuma
-  migration nova — só `updated_at` passou a ser exposto no
-  `AdminOrderListItem`/`LIST_SELECT` (coluna já existia).
+  `deliveryMethod` no cliente; Agenda usa `scope=scheduled`.
+
+### Comanda manual — implementada
+- `/admin/pedidos/novo`: admin cria pedido pra cliente sem conta (liga,
+  aparece na loja, pede por WhatsApp).
+- Se o telefone digitado já bater com um `customers.phone_e164` existente,
+  o pedido vincula a esse `customer_id` (aparece no histórico do cliente no
+  app). Senão fica avulso (`guest_name`/`guest_phone_e164`).
+- `private.create_manual_order(payload)` (nova RPC, admin-only via
+  `private.is_admin()`) é uma cópia adaptada de `private.create_order` —
+  mesma lógica de preço/promoção/estoque, mas sem `auth.uid()`/carrinho, com
+  `payment_method` restrito a `cash`/`card`, e opção "já pago" que grava
+  `payment_status = 'confirmed'` direto na criação.
+- Suporta retirada, entrega (endereço digitado, sem geocodificação — usa
+  lat/lng da loja como placeholder e taxa digitada pelo admin) e
+  agendamento, igual o pedido normal do cliente.
+- UI: `AdminManualOrderItemPicker` (`src/components/admin/`) monta os itens
+  a partir do catálogo (`GET /api/v1/admin/catalog`), com seleção de
+  adicionais permitidos por produto.
 
 ### Outros
 - Roadmap Fase 14 = login do cliente por SMS (Twilio Verify). Hoje a
@@ -168,9 +216,9 @@ aqui).
 - `docs/00-produto-e-dominio/00 - Produto.md` → "Evoluções Futuras" já lista
   fidelidade, cupons, promoções, favoritos, gateways, confirmação automática
   de Pix, WhatsApp, financeiro, relatórios, múltiplas lojas. Não lista:
-  avaliações, estoque, comanda manual, impressão térmica. "Controle
-  detalhado de estoque" e "sistema financeiro completo" estão fora de
-  escopo — estoque básico e relatório financeiro simples são ok.
+  avaliações, comanda manual, impressão térmica (estoque básico já saiu
+  desta lista, foi implementado). "Controle detalhado de estoque" e
+  "sistema financeiro completo" continuam fora de escopo.
 
 ---
 
@@ -178,15 +226,22 @@ aqui).
 
 | Doc | Assunto | Status |
 | --- | --- | --- |
-| **103 — Painel Administrativo** | Kanban de pedidos, estoque, comanda manual, impressão térmica + melhorias menores | **Bloco 1 (quadro de pedidos) pronto, commitado localmente, falta subir.** Resto (estoque, comanda manual, impressão, dentro-do-pedido, catálogo, loja/relatórios, push) não iniciado. Faltam 3 decisões — ver §5. |
-| **104 — Promoções, Cupons e Financeiro** | Promoções por especificidade; cupons; financeiro com taxa real do MP | **Promoções prontas, commitadas localmente, falta subir.** Cupons e Financeiro não iniciados (decisões já travadas — ver §4). |
-| **105 — Precisão do Frete** | Google Maps: autocomplete, mapa satélite, tratar confiança, origem da loja por pin | **(a)-(d) prontos.** (a)-(c) confirmados em produção; (d) commitado localmente, falta subir. (e) suavizar taxa **adiado a pedido do dono**; (f) extrair componente único **bloqueado** até existir comanda manual (103). |
+| **103 — Painel Administrativo** | Kanban de pedidos, estoque, comanda manual, impressão térmica + melhorias menores | **Kanban, estoque, melhorias na tela do pedido e comanda manual prontos** — commitados e enviados a `origin/develop`, falta merge/deploy pra `main`. Restam: impressão térmica (bloqueada por decisão do dono, ver §5), catálogo (resto), loja/relatórios, push. |
+| **104 — Promoções, Cupons e Financeiro** | Promoções por especificidade; cupons; financeiro com taxa real do MP | **Promoções prontas**, commitadas e enviadas a `origin/develop`, falta merge/deploy pra `main`. Cupons e Financeiro não iniciados (decisões já travadas — ver §4). |
+| **105 — Precisão do Frete** | Google Maps: autocomplete, mapa satélite, tratar confiança, origem da loja por pin | **(a)-(d) prontos**, todos já enviados a `origin/develop`. (a)-(c) confirmados em produção; (d) falta merge/deploy pra `main`. (e) suavizar taxa **adiado a pedido do dono**; (f) extrair componente único de endereço agora **desbloqueado** (comanda manual já existe), mas não iniciado. |
 | **106 — Avaliações e Depoimentos** | Fase 1: avaliação do pedido + depoimentos curados. Fase 2: nota por produto (pós login SMS) | Não iniciado. 3 decisões menores em aberto — ver §5. |
 
-**Commits pendentes de push/deploy** (todos em `develop`, local):
-`8dc207d` (105-d), `e1b0a41` (104 promoções), `601fd10` (103 kanban).
-Confira `git log origin/develop..develop` no início da sessão pra saber se
-já foram subidos.
+**Commits em `develop` que ainda não foram pro `main`** (já enviados a
+`origin/develop`, faltando só o merge/deploy do dono):
+`efdc964` (docs handoff), `335a5ca` (fix CSP), `ad31fe4` (103-estoque),
+`69f2180` (103-melhorias no pedido), `da908e7` (103-comanda manual).
+Confira `git log main..develop` no início da sessão pra saber se já foram
+mergeados.
+
+**Migrations novas desde o último deploy confirmado** (precisam de
+`supabase db push` no deploy): `20260904170000_promotions.sql`,
+`20260904180000_product_stock_quantity.sql`,
+`20260904190000_manual_orders.sql`.
 
 ---
 
@@ -200,6 +255,32 @@ já foram subidos.
 - Régua de urgência (card muda de cor por tempo parado) — **implementado**
   com `updated_at` como proxy.
 - Celular: um fluxo por vez, em lista — **implementado**.
+
+### Estoque (103)
+- Campo único `stock_quantity` nullable em `products` (vazio = ilimitado,
+  não um checkbox "controla estoque" separado) — **implementado**.
+- Estoque zerado marca `is_available = false` (reaproveita a UI existente,
+  não esconde o produto do catálogo público) — **implementado**.
+- Cancelar pedido devolve o estoque debitado e reativa `is_available` —
+  **implementado**.
+
+### Melhorias na tela do pedido (103)
+- Expor no admin tudo que `getAdminOrder` já retornava e a tela não
+  mostrava: observação por item, ponto de referência do endereço,
+  agendamento, troco, observação do cliente, motivo de cancelamento,
+  histórico de status — **implementado** (mudança só de apresentação, sem
+  schema/API nova).
+
+### Comanda manual (103)
+- Telefone que já bate com customer existente **vincula** o pedido a essa
+  conta (aparece no histórico do cliente no app); senão fica avulso — **implementado**.
+- Admin marca "já pago" (dinheiro/cartão físico) → `payment_status` direto
+  `confirmed`; Pix fica fora do escopo (`payment_method` restrito a
+  `cash`/`card`) — **implementado**.
+- Botão "Nova comanda" no header do kanban de `/admin/pedidos` —
+  **implementado**.
+- Suporta retirada, entrega (endereço digitado sem geocodificação, taxa
+  digitada pelo admin) e agendamento — **implementado**.
 
 ### Promoções (104)
 - Uma promoção efetiva por produto, por especificidade: produto > categoria
@@ -239,13 +320,10 @@ já foram subidos.
 
 ### 103
 1. **Impressora — conexão:** USB no tablet, cabo de rede ou Wi-Fi? Define
-   impressão silenciosa × com janelinha.
+   impressão silenciosa × com janelinha. **Bloqueia o início do bloco de
+   impressão térmica.**
 2. **Nota — dados do MEI:** quais entram (CNPJ, nome empresarial, endereço)?
    Emite NFC-e/NF-e hoje ou é só comprovante interno?
-3. ~~Agendados: aparecem sozinhos no quadro no dia, ou só manual?~~
-   **Resolvido por padrão como "só manual"** ao implementar o kanban (painel
-   Agenda com botão "Passar para produção") — revisar com o dono se ele
-   preferir o outro modo.
 
 ### 106
 1. Nome no depoimento: primeiro nome + inicial (sugestão) / completo /
@@ -258,26 +336,25 @@ já foram subidos.
 
 ## 6. Ordem de prioridade e próximos passos
 
-1. **Subir os 3 commits pendentes** (`develop` → PR → `main` → deploy):
-   105-(d), 104-Promoções, 103-kanban. Nenhum deles tem migration que exija
-   passo manual extra além do deploy normal (Vercel + `supabase db push`
-   das migrations `20260904170000_promotions.sql` — a única nova desde o
-   último deploy confirmado).
+1. **Merge/deploy de `develop` pra `main`**: 5 commits pendentes (ver §3) —
+   inclui 3 migrations novas que precisam de `supabase db push` no deploy.
 2. **105-(c) drag do pin** e **103-kanban drag-and-drop**: verificar num
    aparelho real (tablet/celular ou mouse de verdade) — não foram
    confirmados por automação em nenhuma sessão (ver §7, "Limitações de
    teste").
-3. Depois de subir: **103 — demais blocos** (estoque, comanda manual,
-   impressão térmica, melhorias dentro do pedido, catálogo, loja/relatórios,
-   push) ou **104 — Cupons + Financeiro** — a ordem entre os dois não está
-   travada; comanda manual (103) e financeiro (104) dependem de frete
-   preciso (105), que já está pronto, então ambos estão desbloqueados.
-4. **106 — Avaliações**: Fase 1 pode entrar a qualquer momento (barata);
+3. **103 — impressão térmica**: pergunte ao dono sobre a conexão da
+   impressora (decisão em aberto §5) antes de planejar.
+4. **103 — resto**: catálogo, loja/relatórios, push — sem decisões
+   pendentes conhecidas, pode entrar a qualquer momento.
+5. **104 — Cupons + Financeiro**: decisões já travadas, desbloqueado (frete
+   preciso e comanda manual, dependências do 103, já prontos).
+6. **106 — Avaliações**: Fase 1 pode entrar a qualquer momento (barata);
    Fase 2 depende do login por SMS (Fase 14 do roadmap).
-5. A **repaginação visual do admin** (primitivos, tokens, skeletons —
+7. A **repaginação visual do admin** (primitivos, tokens, skeletons —
    pendência do redesign 102) ainda não aconteceu em nenhuma tela nova
-   (catálogo, promoções, kanban incluídos) — o admin inteiro ainda usa
-   `<button>`/`<div>` crus, não os primitivos de `src/components/ui`.
+   (catálogo, promoções, kanban, pedido, comanda manual incluídos) — o
+   admin inteiro ainda usa `<button>`/`<div>` crus, não os primitivos de
+   `src/components/ui`.
 
 ---
 
@@ -295,12 +372,37 @@ já foram subidos.
   types="google.maps" />` explícito no topo de qualquer arquivo novo que use
   `google.maps.*` sem importar o pacote.
 - **`supabase` CLI não está instalado globalmente** neste ambiente, mas roda
-  via `npx supabase ...`. Pra regenerar `src/types/database.ts`:
-  `npx supabase gen types typescript --local > src/types/database.ts`
-  (nunca `2>&1 >` — o CLI novo escreve "Connecting to db..." no stderr, que
-  polui o arquivo se for redirecionado junto) e depois `npx prettier --write`
-  (a versão 2.116 do CLI gera sem `;`, então pular o prettier infla o diff
-  à toa).
+  via `npx supabase ...`. Pra aplicar migration local: `npx supabase
+  migration up`. Pra regenerar `src/types/database.ts`: `pnpm gen:types`
+  (script já configurado, equivalente a `supabase gen types typescript
+  --local > src/types/database.ts` — nunca `2>&1 >`, o CLI escreve
+  "Connecting to db..." no stderr, que polui o arquivo se for redirecionado
+  junto).
+- **`pnpm format` roda `prettier --write .` no repo INTEIRO** — se a
+  versão/config local do prettier divergir levemente do que gerou o último
+  commit, reformata dezenas de arquivos não relacionados com diffs de puro
+  estilo (aconteceu em 2026-09-04). Preferir `npx prettier --write
+  <arquivos específicos>` escopado só aos arquivos tocados na tarefa. Se
+  `pnpm format` já rodou sem querer: comparar `git status`, confirmar por
+  amostragem que os diffs extras são só estilo (`git diff <arquivo>`), e
+  restaurar com `git checkout --pathspec-from-file=<lista> --pathspec-file-nul --`
+  (gerar a lista com `tr '\n' '\0'` — nomes de arquivo com acento/espaço
+  quebram o parsing padrão de `--pathspec-from-file`).
+- **Testar RPCs SQL isoladamente via `psql`**, sem precisar montar UI:
+  `docker exec -i supabase_db_zelo psql -U postgres -d postgres` (container
+  do Supabase local). Pra simular um usuário autenticado (customer ou
+  admin) dentro de uma transação: inserir a linha correspondente em
+  `auth.users` (+ `customers`/`admin_profiles` conforme o caso), depois
+  `perform set_config('request.jwt.claims', json_build_object('sub',
+  v_user_id, 'role', 'authenticated')::text, true); perform
+  set_config('role', 'authenticated', true);` antes de chamar a função
+  `public.*`. Rodar em `begin`/`rollback` quando for só teste, pra não
+  sujar o banco.
+- **Rodar `pnpm build` derruba temporariamente o dev server de outra sessão
+  ativa** (compartilham `.next/`) — o dev server se recupera sozinho no
+  próximo request, mas pode exigir limpar service worker/cache do browser
+  (`navigator.serviceWorker.getRegistrations()` + `caches.keys()`) e
+  recarregar com força.
 - **Place Details (GET `places/{id}`) exige `X-Goog-FieldMask`** — sem ele é
   400. No autocomplete (POST) o field mask é opcional.
 - **Em Pereiro o Google não devolve bairro** (`sublocality*`) pros
