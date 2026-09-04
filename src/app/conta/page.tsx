@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { setAuthReturnTo } from '@/modules/auth/auth-return';
-import { ADMIN_PHONE_E164 } from '@/config/admin';
+import { ADMIN_PHONES_E164 } from '@/config/admin';
 import { usePwaInstall } from '@/contexts/PwaInstallContext';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 import { Separator } from '@/components/ui/separator';
@@ -78,7 +78,7 @@ export default function ContaPage() {
       label: 'Meus pedidos',
       href: '/pedidos',
     },
-    ...(user?.phone === ADMIN_PHONE_E164
+    ...(user?.phone && ADMIN_PHONES_E164.includes(user.phone)
       ? [
           {
             icon: ShieldCheck,
