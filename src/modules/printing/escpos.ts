@@ -52,6 +52,38 @@ export class ReceiptBuilder {
     return this.push(0x1d, 0x21, on ? 0x11 : 0x00);
   }
 
+  /**
+   * Só o dobro da altura (largura normal) — dá destaque sem estourar as 48
+   * colunas, então serve pra linha de item e observação.
+   */
+  doubleHeight(on: boolean) {
+    return this.push(0x1d, 0x21, on ? 0x01 : 0x00);
+  }
+
+  /**
+   * Imagem raster (`GS v 0`) — bitmap 1bpp, MSB primeiro, bit 1 = ponto
+   * preto. Respeita o `align()` corrente. `atob` existe no browser e no
+   * Node 16+, então serve nos dois lados.
+   */
+  image(bitmap: { widthBytes: number; height: number; data: string }) {
+    const binary = atob(bitmap.data);
+    const { widthBytes, height } = bitmap;
+    this.push(
+      0x1d,
+      0x76,
+      0x30,
+      0x00,
+      widthBytes & 0xff,
+      (widthBytes >> 8) & 0xff,
+      height & 0xff,
+      (height >> 8) & 0xff,
+    );
+    for (let i = 0; i < binary.length; i += 1) {
+      this.chunks.push(binary.charCodeAt(i));
+    }
+    return this;
+  }
+
   text(value: string) {
     this.chunks.push(...encodeWpc1252(value));
     return this;

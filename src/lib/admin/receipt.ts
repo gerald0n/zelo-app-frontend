@@ -28,6 +28,15 @@ export function orderToKitchenTicket(
     timing: order.timing,
     scheduledFor: order.scheduledFor,
     isGuest: order.isGuest,
+    customerName: order.customer?.name ?? order.guest?.name ?? null,
+    customerPhone: order.customer?.phoneE164 ?? order.guest?.phoneE164 ?? null,
+    address:
+      order.deliveryMethod === 'delivery' && order.address
+        ? {
+            formatted: order.address.formatted,
+            referencePoint: order.address.referencePoint,
+          }
+        : null,
     items: mapItems(order),
     customerNote: order.customerNote,
     internalNote: order.internalNote,

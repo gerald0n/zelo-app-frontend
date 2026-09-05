@@ -7,3 +7,6 @@ coverage
 supabase/.temp
 supabase/.branches
 .env.example
+
+# Gerado por scripts/prepare-receipt-logo.mjs
+src/modules/printing/logo.ts

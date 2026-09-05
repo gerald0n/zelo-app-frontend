@@ -19,7 +19,8 @@
     "db:status": "supabase status",
     "gen:types": "supabase gen types typescript --local > src/types/database.ts",
     "gen:seal": "node scripts/prepare-brand-seal.mjs",
-    "gen:icons": "node scripts/prepare-brand-seal.mjs && node scripts/generate-pwa-icons.mjs"
+    "gen:icons": "node scripts/prepare-brand-seal.mjs && node scripts/generate-pwa-icons.mjs",
+    "gen:receipt-logo": "node scripts/prepare-receipt-logo.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

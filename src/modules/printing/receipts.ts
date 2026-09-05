@@ -1,5 +1,6 @@
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import { ReceiptBuilder } from '@/modules/printing/escpos';
+import { RECEIPT_LOGO } from '@/modules/printing/logo';
 import type {
   DeliverySlipData,
   KitchenTicketData,
@@ -32,34 +33,95 @@ function writeItems(builder: ReceiptBuilder, items: ReceiptItem[]) {
   }
 }
 
-/** Comanda de cozinha — só o que precisa ser feito, sem preço nem endereço. */
+function writeKitchenItems(builder: ReceiptBuilder, items: ReceiptItem[]) {
+  items.forEach((item, index) => {
+    if (index > 0) builder.line();
+    builder
+      .doubleHeight(true)
+      .bold(true)
+      .line(`${item.quantity}x ${item.name}`)
+      .bold(false)
+      .doubleHeight(false);
+    for (const addOn of item.addOns) {
+      builder.line(`   + ${addOn.quantity}x ${addOn.name}`);
+    }
+    if (item.note) {
+      builder.bold(true).line(`   Obs.: ${item.note}`).bold(false);
+    }
+  });
+}
+
+/**
+ * Comanda de cozinha — só o que precisa ser feito. Sem preço; endereço só
+ * quando é entrega. Texto grande de propósito, pra ler de longe na bancada.
+ */
 export function buildKitchenTicket(data: KitchenTicketData): Uint8Array {
   const builder = new ReceiptBuilder().init().align('center');
 
-  builder.doubleSize(true).bold(true).line('COMANDA').bold(false).doubleSize(false);
-  builder.line(`Pedido ${data.orderNumber}`);
-  builder.line(formatDateTime(data.createdAt));
-  builder.align('left').divider();
+  builder.image(RECEIPT_LOGO).feed(1);
 
-  builder.bold(true);
-  builder.line(
-    data.deliveryMethod === 'delivery' ? 'ENTREGA' : 'RETIRADA',
-  );
-  builder.bold(false);
-  if (data.timing === 'scheduled' && data.scheduledFor) {
-    builder.line(`Agendado: ${formatDateTime(data.scheduledFor)}`);
-  }
-  if (data.isGuest) builder.line('Cliente avulso (sem cadastro)');
+  builder
+    .doubleSize(true)
+    .bold(true)
+    .line(`PEDIDO ${data.orderNumber}`)
+    .bold(false)
+    .doubleSize(false);
+  builder.line(formatDateTime(data.createdAt));
   builder.divider();
 
-  writeItems(builder, data.items);
+  builder
+    .doubleSize(true)
+    .bold(true)
+    .line(data.deliveryMethod === 'delivery' ? 'ENTREGA' : 'RETIRADA')
+    .bold(false)
+    .doubleSize(false);
+  if (data.timing === 'scheduled' && data.scheduledFor) {
+    builder
+      .doubleHeight(true)
+      .bold(true)
+      .line(`AGENDADO ${formatDateTime(data.scheduledFor)}`)
+      .bold(false)
+      .doubleHeight(false);
+  }
+  if (data.isGuest) builder.line('(cliente avulso, sem cadastro)');
+
+  builder.align('left').divider();
+
+  if (data.customerName) {
+    builder.bold(true).line(`Cliente: ${data.customerName}`).bold(false);
+  }
+  if (data.customerPhone) builder.line(`Tel: ${data.customerPhone}`);
+  if (data.address) {
+    builder.bold(true).line('Endereço:').bold(false);
+    builder.line(data.address.formatted);
+    if (data.address.referencePoint) {
+      builder.line(`Ref.: ${data.address.referencePoint}`);
+    }
+  }
+  if (data.customerName || data.customerPhone || data.address) {
+    builder.divider();
+  }
+
+  writeKitchenItems(builder, data.items);
   builder.divider();
 
   if (data.customerNote) {
-    builder.line('Obs. cliente:').line(data.customerNote).divider();
+    builder
+      .bold(true)
+      .line('OBS. DO CLIENTE')
+      .doubleHeight(true)
+      .line(data.customerNote)
+      .doubleHeight(false)
+      .bold(false)
+      .divider();
   }
   if (data.internalNote) {
-    builder.line('Recado interno:').line(data.internalNote).divider();
+    builder
+      .bold(true)
+      .line('RECADO INTERNO')
+      .line(data.internalNote)
+      .bold(false)
+      .divider();
   }
 
   return builder.cut().toBytes();
@@ -86,6 +148,7 @@ function paymentStatusLabel(status: string): string {
 export function buildDeliverySlip(data: DeliverySlipData): Uint8Array {
   const builder = new ReceiptBuilder().init().align('center');
 
+  builder.image(RECEIPT_LOGO).feed(1);
   builder.bold(true).line(data.store.name).bold(false);
   builder.line('DOCUMENTO NÃO FISCAL');
   if (data.store.cnpj) builder.line(`CNPJ ${data.store.cnpj} · MEI`);
@@ -131,9 +194,12 @@ export function buildTestPrint(): Uint8Array {
   return new ReceiptBuilder()
     .init()
     .align('center')
+    .image(RECEIPT_LOGO)
+    .feed(1)
     .bold(true)
     .line('Teste de impressão OK')
     .bold(false)
+    .line('Acentuação: ção, ãäé, R$ 1,00')
     .line(new Date().toLocaleString('pt-BR'))
     .cut()
     .toBytes();
