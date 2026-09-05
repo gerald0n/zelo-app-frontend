@@ -9,10 +9,17 @@ import {
   ArrowRight,
   Loader2,
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Printer } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { useRequireAdmin } from '@/hooks/useRequireAdmin';
 import { useAppDialog } from '@/contexts/AppDialogContext';
-import { formatCatalogPrice } from '@/modules/catalog/types';
+import { usePrinter } from '@/contexts/PrinterContext';
+import { apiJson } from '@/lib/api';
+import { adminKeys } from '@/lib/query-keys';
+import { orderToDeliverySlip, orderToKitchenTicket } from '@/lib/admin/receipt';
+import { buildDeliverySlip, buildKitchenTicket } from '@/modules/printing/receipts';
+import { formatCatalogPrice, type CatalogStore } from '@/modules/catalog/types';
 import { statusLabel, type OrderStatus } from '@/modules/orders/types';
 import { nextAdminStatus, type AdminOrderDetail } from '@/modules/admin/types';
 import { useAdminOrdersRealtime } from '@/modules/realtime/hooks';
@@ -34,6 +41,7 @@ export default function AdminPedidoPage({
   const { id } = use(params);
   const { isAuthenticated, ready } = useRequireAdmin();
   const { prompt, alert } = useAppDialog();
+  const printer = usePrinter();
   const [order, setOrder] = useState<AdminOrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -41,6 +49,13 @@ export default function AdminPedidoPage({
   const { version: realtimeVersion } = useAdminOrdersRealtime(
     ready && isAuthenticated,
   );
+
+  const storeQuery = useQuery({
+    queryKey: adminKeys.store(),
+    enabled: ready && isAuthenticated,
+    queryFn: () =>
+      apiJson<{ store: CatalogStore | null }>('/api/v1/admin/store'),
+  });
 
   const loadOrder = useCallback(
     async (opts?: { background?: boolean }) => {
@@ -154,6 +169,21 @@ export default function AdminPedidoPage({
           'Reenvie o estorno pelo botão "Tentar estorno do Pix de novo" ou estorne manualmente no painel do Mercado Pago.',
       });
     }
+  };
+
+  const reprintTicket = async () => {
+    if (!order) return;
+    const bytes = buildKitchenTicket(orderToKitchenTicket(order));
+    const result = await printer.printRaw(bytes);
+    if (!result.ok) setError(result.reason);
+  };
+
+  const reprintSlip = async () => {
+    const store = storeQuery.data?.store;
+    if (!order || !store) return;
+    const bytes = buildDeliverySlip(orderToDeliverySlip(order, store));
+    const result = await printer.printRaw(bytes);
+    if (!result.ok) setError(result.reason);
   };
 
   const retryRefund = async () => {
@@ -418,6 +448,33 @@ export default function AdminPedidoPage({
                 Cancelar pedido
               </button>
             ) : null}
+
+            {printer.status === 'ready' ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => void reprintTicket()}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-border py-3 text-sm font-semibold"
+                >
+                  <Printer className="size-4" />
+                  Reimprimir comanda
+                </button>
+                <button
+                  type="button"
+                  disabled={!storeQuery.data?.store}
+                  onClick={() => void reprintSlip()}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-border py-3 text-sm font-semibold disabled:opacity-60"
+                >
+                  <Printer className="size-4" />
+                  Reimprimir pedido
+                </button>
+              </>
+            ) : (
+              <p className="text-2xs text-muted-foreground">
+                Impressora não pareada — pareie em Configurações pra
+                reimprimir.
+              </p>
+            )}
 
             {order.status === 'cancelled' &&
             order.paymentMethod === 'pix' &&

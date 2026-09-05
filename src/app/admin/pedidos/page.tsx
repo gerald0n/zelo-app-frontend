@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   DndContext,
@@ -18,18 +18,28 @@ import AdminOrderKanbanCard from '@/components/admin/AdminOrderKanbanCard';
 import AdminKanbanColumn from '@/components/admin/AdminKanbanColumn';
 import { Input } from '@/components/ui/input';
 import { useAppDialog } from '@/contexts/AppDialogContext';
+import { usePrinter } from '@/contexts/PrinterContext';
 import { useRequireAdmin } from '@/hooks/useRequireAdmin';
 import { ApiError, apiJson } from '@/lib/api';
 import { adminKeys } from '@/lib/query-keys';
 import { cn } from '@/lib/cn';
 import { BOARD_COLUMNS, type BoardKind } from '@/lib/admin/order-columns';
 import { playNewOrderChime } from '@/lib/admin/notification-sound';
+import { orderToDeliverySlip, orderToKitchenTicket } from '@/lib/admin/receipt';
+import { buildDeliverySlip, buildKitchenTicket } from '@/modules/printing/receipts';
+import type { CatalogStore } from '@/modules/catalog/types';
 import {
   nextAdminStatus,
+  type AdminOrderDetail,
   type AdminOrderListItem,
 } from '@/modules/admin/types';
 import { statusLabel, type OrderStatus } from '@/modules/orders/types';
 import { useAdminOrdersRealtime } from '@/modules/realtime/hooks';
+
+const DELIVERY_SLIP_STATUSES: OrderStatus[] = [
+  'ready_for_delivery',
+  'ready_for_pickup',
+];
 
 type Board = BoardKind | 'agenda';
 
@@ -42,6 +52,7 @@ const BOARD_LABELS: Record<Board, string> = {
 export default function AdminPedidosPage() {
   const queryClient = useQueryClient();
   const { prompt } = useAppDialog();
+  const printer = usePrinter();
   const { isAuthenticated, ready } = useRequireAdmin();
   const [board, setBoard] = useState<Board>('pickup');
   const [query, setQuery] = useState('');
@@ -53,9 +64,19 @@ export default function AdminPedidosPage() {
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
   const knownIdsRef = useRef<Record<string, Set<string>>>({});
+  const knownStatusRef = useRef<Record<string, Record<string, OrderStatus>>>(
+    {},
+  );
 
   const { version: realtimeVersion, status: realtimeStatus } =
     useAdminOrdersRealtime(ready && isAuthenticated);
+
+  const storeQuery = useQuery({
+    queryKey: adminKeys.store(),
+    enabled: ready && isAuthenticated,
+    queryFn: () =>
+      apiJson<{ store: CatalogStore | null }>('/api/v1/admin/store'),
+  });
 
   const scope = board === 'agenda' ? 'scheduled' : 'all';
   const ordersQuery = useQuery({
@@ -75,18 +96,87 @@ export default function AdminPedidosPage() {
     [ordersQuery.data],
   );
 
-  // Som de pedido novo — compara com o fetch anterior do mesmo escopo, sem
-  // alarme no primeiro carregamento.
+  // Busca o pedido completo (a lista do kanban não tem itens/adicionais
+  // nem endereço) e manda pra impressora — silencioso em qualquer falha,
+  // nunca deve travar o quadro.
+  const fetchOrderDetail = useCallback(async (orderId: string) => {
+    try {
+      const json = await apiJson<{ order: AdminOrderDetail }>(
+        `/api/v1/admin/orders/${orderId}`,
+      );
+      return json.order;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const printKitchenTicket = useCallback(
+    async (orderId: string) => {
+      const order = await fetchOrderDetail(orderId);
+      if (!order) return;
+      await printer.printRaw(buildKitchenTicket(orderToKitchenTicket(order)));
+    },
+    [fetchOrderDetail, printer],
+  );
+
+  const printDeliverySlip = useCallback(
+    async (orderId: string) => {
+      const store = storeQuery.data?.store;
+      if (!store) return;
+      const order = await fetchOrderDetail(orderId);
+      if (!order) return;
+      await printer.printRaw(
+        buildDeliverySlip(orderToDeliverySlip(order, store)),
+      );
+    },
+    [fetchOrderDetail, printer, storeQuery.data],
+  );
+
+  // Som + comanda de pedido novo, e impressão do pedido ao ficar pronto —
+  // compara com o fetch anterior do mesmo escopo, sem disparar nada no
+  // primeiro carregamento.
   useEffect(() => {
     if (!ordersQuery.data) return;
     const currentIds = new Set(allOrders.map((order) => order.id));
-    const previous = knownIdsRef.current[scope];
-    if (previous) {
-      const hasNew = [...currentIds].some((id) => !previous.has(id));
-      if (hasNew) playNewOrderChime();
+    const currentStatus: Record<string, OrderStatus> = {};
+    for (const order of allOrders) currentStatus[order.id] = order.status;
+
+    const previousIds = knownIdsRef.current[scope];
+    const previousStatus = knownStatusRef.current[scope];
+
+    if (previousIds) {
+      const newIds = [...currentIds].filter((id) => !previousIds.has(id));
+      if (newIds.length > 0) playNewOrderChime();
+
+      if (printer.status === 'ready') {
+        for (const id of newIds) {
+          void printKitchenTicket(id);
+        }
+        if (previousStatus) {
+          for (const order of allOrders) {
+            const was = previousStatus[order.id];
+            if (
+              was &&
+              was !== order.status &&
+              DELIVERY_SLIP_STATUSES.includes(order.status)
+            ) {
+              void printDeliverySlip(order.id);
+            }
+          }
+        }
+      }
     }
+
     knownIdsRef.current[scope] = currentIds;
-  }, [ordersQuery.data, allOrders, scope]);
+    knownStatusRef.current[scope] = currentStatus;
+  }, [
+    ordersQuery.data,
+    allOrders,
+    scope,
+    printer.status,
+    printKitchenTicket,
+    printDeliverySlip,
+  ]);
 
   const displayStatusFor = (order: AdminOrderListItem): OrderStatus =>
     optimisticStatus[order.id] ?? order.status;

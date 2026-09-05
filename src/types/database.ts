@@ -1227,6 +1227,7 @@ export type Database = {
           accepts_pix: boolean;
           address_line: string;
           city: string;
+          cnpj: string | null;
           created_at: string;
           fixed_delivery_fee_cents: number;
           free_delivery_radius_meters: number;
@@ -1251,6 +1252,7 @@ export type Database = {
           accepts_pix?: boolean;
           address_line: string;
           city: string;
+          cnpj?: string | null;
           created_at?: string;
           fixed_delivery_fee_cents?: number;
           free_delivery_radius_meters?: number;
@@ -1275,6 +1277,7 @@ export type Database = {
           accepts_pix?: boolean;
           address_line?: string;
           city?: string;
+          cnpj?: string | null;
           created_at?: string;
           fixed_delivery_fee_cents?: number;
           free_delivery_radius_meters?: number;

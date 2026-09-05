@@ -14,6 +14,7 @@ const patchSchema = z
   .object({
     acceptingOrders: z.boolean().optional(),
     name: z.string().trim().min(1).max(120).optional(),
+    cnpj: z.string().trim().max(20).nullable().optional(),
     phoneE164: z.string().trim().min(8).max(20).optional(),
     whatsappE164: z.string().trim().min(8).max(20).optional(),
     addressLine: z.string().trim().min(1).max(200).optional(),

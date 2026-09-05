@@ -18,6 +18,9 @@ import { WEEKDAY_LABELS } from '@/lib/constants';
 import { adminFormContainerClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 import { adminKeys } from '@/lib/query-keys';
+import { usePrinter } from '@/contexts/PrinterContext';
+import { buildTestPrint } from '@/modules/printing/receipts';
+import type { PrinterStatus } from '@/modules/printing/types';
 import type {
   AdminAuditLog,
   AdminBlackout,
@@ -25,9 +28,60 @@ import type {
 } from '@/modules/admin/types';
 import type { CatalogStore } from '@/modules/catalog/types';
 
+const PRINTER_STATUS_LABEL: Record<PrinterStatus, string> = {
+  ready: 'Conectada',
+  unpaired: 'Não conectada',
+  error: 'Erro na última impressão',
+  unsupported: 'Não suportado neste navegador',
+};
+
+function PrinterSection() {
+  const printer = usePrinter();
+  const [testError, setTestError] = useState<string | null>(null);
+
+  const runTest = async () => {
+    setTestError(null);
+    const result = await printer.printRaw(buildTestPrint());
+    if (!result.ok) setTestError(result.reason);
+  };
+
+  return (
+    <section className="space-y-3 rounded-lg border border-border bg-card p-3.5">
+      <p className="text-sm font-semibold">Impressora térmica</p>
+      <p className="text-xs text-muted-foreground">
+        Status: {PRINTER_STATUS_LABEL[printer.status]}
+      </p>
+      {testError ? (
+        <p className="text-2xs text-destructive">{testError}</p>
+      ) : null}
+      <div className="flex flex-wrap gap-2">
+        {printer.status !== 'unsupported' ? (
+          <button
+            type="button"
+            onClick={() => void printer.pair()}
+            className="rounded-md border border-border px-3 py-2 text-xs font-semibold"
+          >
+            Parear impressora
+          </button>
+        ) : null}
+        {printer.status === 'ready' ? (
+          <button
+            type="button"
+            onClick={() => void runTest()}
+            className="rounded-md border border-border px-3 py-2 text-xs font-semibold"
+          >
+            Imprimir teste
+          </button>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
 const storeSchema = z
   .object({
     name: z.string().trim().min(1, 'Informe o nome.'),
+    cnpj: z.string().optional(),
     phoneE164: z.string().trim().min(8, 'Telefone inválido.'),
     whatsappE164: z.string().trim().min(8, 'WhatsApp inválido.'),
     addressLine: z.string().trim().min(1, 'Informe o endereço.'),
@@ -137,6 +191,7 @@ export default function AdminConfiguracoesPage() {
       city: '',
       state: 'CE',
       postalCode: '',
+      cnpj: '',
       latitude: 0,
       longitude: 0,
       freeDeliveryRadiusMeters: 1000,
@@ -184,6 +239,7 @@ export default function AdminConfiguracoesPage() {
     if (!store) return;
     storeForm.reset({
       name: store.name,
+      cnpj: store.cnpj ?? '',
       phoneE164: store.phoneE164,
       whatsappE164: store.whatsappE164,
       addressLine: store.addressLine,
@@ -226,6 +282,7 @@ export default function AdminConfiguracoesPage() {
         method: 'PATCH',
         body: JSON.stringify({
           name: values.name,
+          cnpj: values.cnpj?.trim() || null,
           phoneE164: values.phoneE164,
           whatsappE164: values.whatsappE164,
           addressLine: values.addressLine,
@@ -397,6 +454,7 @@ export default function AdminConfiguracoesPage() {
             {(
               [
                 ['name', 'Nome'],
+                ['cnpj', 'CNPJ (MEI)'],
                 ['phoneE164', 'Telefone'],
                 ['whatsappE164', 'WhatsApp'],
                 ['addressLine', 'Endereço'],
@@ -446,6 +504,8 @@ export default function AdminConfiguracoesPage() {
             {storeMutation.isPending ? 'Salvando…' : 'Salvar loja'}
           </button>
         </form>
+
+        <PrinterSection />
 
         <form
           onSubmit={hoursForm.handleSubmit((values) =>

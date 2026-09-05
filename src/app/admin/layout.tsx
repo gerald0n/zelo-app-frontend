@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { AdminProvider } from '@/contexts/AdminContext';
+import { PrinterProvider } from '@/contexts/PrinterContext';
 import AdminBottomNav from '@/components/admin/AdminBottomNav';
 import { cn } from '@/lib/cn';
 
@@ -23,16 +24,18 @@ export default function AdminLayout({
 
   return (
     <AdminProvider>
-      <div
-        className={cn(
-          // Folga p/ a navbar flutuante do admin (mobile). Login não tem navbar.
-          !isLogin &&
-            'max-lg:pb-[calc(84px+env(safe-area-inset-bottom,0px))] lg:pb-0',
-        )}
-      >
-        {children}
-      </div>
-      <AdminBottomNav />
+      <PrinterProvider>
+        <div
+          className={cn(
+            // Folga p/ a navbar flutuante do admin (mobile). Login não tem navbar.
+            !isLogin &&
+              'max-lg:pb-[calc(84px+env(safe-area-inset-bottom,0px))] lg:pb-0',
+          )}
+        >
+          {children}
+        </div>
+        <AdminBottomNav />
+      </PrinterProvider>
     </AdminProvider>
   );
 }

@@ -913,6 +913,7 @@ export async function getAdminStore(): Promise<Result<CatalogStore | null>> {
 
 export async function updateAdminStore(input: {
   name?: string;
+  cnpj?: string | null;
   phoneE164?: string;
   whatsappE164?: string;
   addressLine?: string;
@@ -971,6 +972,9 @@ export async function updateAdminStore(input: {
 
   const patch: StoreUpdate = {};
   if (typeof input.name === 'string') patch.name = input.name.trim();
+  if (input.cnpj !== undefined) {
+    patch.cnpj = input.cnpj?.trim() || null;
+  }
   if (typeof input.phoneE164 === 'string') {
     patch.phone_e164 = input.phoneE164.trim();
   }

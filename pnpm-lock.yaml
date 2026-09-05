@@ -98,6 +98,9 @@ devDependencies:
   '@types/react-dom':
     specifier: ^19
     version: 19.2.4(@types/react@19.2.18)
+  '@types/w3c-web-usb':
+    specifier: ^1.0.14
+    version: 1.0.14
   '@types/web-push':
     specifier: ^3.6.4
     version: 3.6.4
@@ -3380,6 +3383,10 @@ packages:
     resolution: {integrity: sha512-AnzbBERsrLKtk2XSfTbYRLjQPdy116Sty4q+T+Bp3IC4l6jNBvreVPAHmpq9qhXQM7CXZPjLVmGMw9sy+hxQ3w==}
     dependencies:
       csstype: 3.2.3
+
+  /@types/w3c-web-usb@1.0.14:
+    resolution: {integrity: sha512-Qu3Nn6JFuF4+sHKYl+IcX9vYiI40ogleXzFFSxoE1W94rG98o/kXs8uJ0QSfFzuwBCZWlGfUGpPkgwuuX4PchA==}
+    dev: true
 
   /@types/web-push@3.6.4:
     resolution: {integrity: sha512-GnJmSr40H3RAnj0s34FNTcJi1hmWFV5KXugE0mYWnYhgTAHLJ/dJKAwDmvPJYMke0RplY2XE9LnM4hqSqKIjhQ==}

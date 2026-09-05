@@ -58,6 +58,8 @@ export type CatalogPaymentMethods = {
 export type CatalogStore = {
   id: string;
   name: string;
+  /** CNPJ do MEI, exibido no cabeçalho do comprovante impresso. */
+  cnpj: string | null;
   phoneE164: string;
   whatsappE164: string;
   addressLine: string;
