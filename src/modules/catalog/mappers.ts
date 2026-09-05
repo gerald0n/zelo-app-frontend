@@ -130,6 +130,7 @@ export function mapStore(
   return {
     id: row.id,
     name: row.name,
+    cnpj: row.cnpj,
     phoneE164: row.phone_e164,
     whatsappE164: row.whatsapp_e164,
     addressLine: row.address_line,
