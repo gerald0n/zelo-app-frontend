@@ -34,7 +34,7 @@ não pesar o contexto de toda sessão nova.
 
 | Doc | Assunto | Status |
 | --- | --- | --- |
-| [103](103%20-%20Painel%20Administrativo.md) | Painel admin: kanban, estoque, comanda manual, impressão, melhorias | Kanban, estoque, melhorias no pedido e comanda manual **implementados**. Impressão térmica bloqueada por decisão do dono; catálogo/loja/relatórios/push não iniciados. |
+| [103](103%20-%20Painel%20Administrativo.md) | Painel admin: kanban, estoque, comanda manual, impressão, melhorias | Kanban, estoque, melhorias no pedido, comanda manual e impressão térmica (WebUSB) **implementados** — impressão falta validar em hardware. Catálogo/loja/relatórios/push não iniciados. |
 | [104](104%20-%20Promoções,%20Cupons%20e%20Financeiro.md) | Promoções, cupons, financeiro | Promoções **implementadas**. Cupons e Financeiro não iniciados (decisões travadas). |
 | [105](105%20-%20Precisão%20do%20Frete.md) | Google Maps: geocodificação, mapa, área de entrega | (a)-(d) **implementados**. (e) suavizar taxa adiado; (f) componente único de endereço desbloqueado, não iniciado. |
 | [106](106%20-%20Avaliações%20e%20Depoimentos.md) | Avaliações de pedido + depoimentos | Não iniciado. 3 decisões em aberto. |
@@ -57,8 +57,9 @@ confirmado.
    pin do mapa (doc 105) e drag-and-drop do kanban (doc 103) — nunca
    confirmados por gesto real, só por revisão de código + endpoint
    funcionando.
-3. **103 — impressão térmica**: perguntar ao dono sobre a conexão da
-   impressora antes de planejar (decisão bloqueante).
+3. **103 — impressão térmica**: implementada via WebUSB/USB. Falta testar
+   com a EPSON TM-T20X de verdade — corte, largura de 48 col, acentuação
+   (code page WPC1252) e endpoint bulk-out.
 4. **103 — resto** (catálogo, loja/relatórios, push) ou **104 — Cupons +
    Financeiro**: ambos desbloqueados, sem ordem travada entre si.
 5. **106 — Avaliações**: Fase 1 pode entrar a qualquer momento; Fase 2

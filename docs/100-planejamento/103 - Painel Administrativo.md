@@ -12,7 +12,7 @@ painel `/admin`.
 | Estoque básico | **Implementado.** |
 | Melhorias na tela do pedido | **Implementado.** |
 | Comanda manual | **Implementado.** |
-| Impressão térmica | Não iniciado — bloqueado por decisão do dono (ver §Decisões em aberto). |
+| Impressão térmica | **Implementado** (WebUSB/USB). Falta validar em hardware. |
 | Catálogo (resto) | Não iniciado, sem decisões pendentes conhecidas. |
 | Loja/relatórios | Não iniciado, sem decisões pendentes conhecidas. |
 | Push | Não iniciado, sem decisões pendentes conhecidas. |
@@ -137,11 +137,55 @@ Migration: `supabase/migrations/20260904190000_manual_orders.sql`.
 
 ---
 
-## Impressão térmica (não iniciado)
+## Impressão térmica
 
-Bloqueada pela decisão de conexão da impressora (ver §Decisões em aberto).
-EPSON TM-T20X, comprovante de 80mm, automático a cada pedido + botão
-"reimprimir".
+EPSON TM-T20X, bobina de 80mm (48 colunas em Font A). Conexão decidida:
+**USB direto via WebUSB** (Chrome/Edge; não existe em Safari/Firefox). Sem
+impressora de rede, então ePOS-Print não se aplica.
+
+- `src/modules/printing/`:
+  - `webusb-printer.ts` — wrapper da WebUSB: `isWebUsbSupported`,
+    `findPairedPrinter` (pareamento persiste por origem), `requestPrinterPairing`
+    (tem que ser chamado direto de um clique, sem `await` antes na cadeia) e
+    `printBytes` (abre → `transferOut` → fecha; não segura a interface entre
+    impressões).
+  - `escpos.ts` — `ReceiptBuilder`, primitivos ESC/POS. `init()` manda
+    `ESC @` + `ESC t 16` (code page WPC1252 / Windows-1252); o texto é
+    codificado "code point → byte" (Latin-1), acento fora disso vira `?`.
+  - `receipts.ts` — `buildKitchenTicket`, `buildDeliverySlip`, `buildTestPrint`.
+  - `src/lib/admin/receipt.ts` — converte `AdminOrderDetail` (+ `CatalogStore`)
+    nos DTOs de impressão.
+- `PrinterContext` (`src/contexts/PrinterContext.tsx`), provider em
+  `admin/layout.tsx`: expõe `{ status, pair, printRaw }` com status
+  `unsupported | unpaired | ready | error`. Re-detecta a impressora nos
+  eventos `connect`/`disconnect` da WebUSB.
+- Parear + "imprimir teste" ficam na tela de Configurações (seção
+  "Impressora térmica").
+- Impressão automática (só com o painel aberto, mesmo tablet do alerta
+  sonoro): o kanban (`admin/pedidos/page.tsx`) compara os fetches do mesmo
+  `scope` e, com a impressora `ready`, imprime a **comanda** de todo pedido
+  novo e o **comprovante** quando um pedido passa pra `ready_for_delivery`/
+  `ready_for_pickup`. Toda falha é silenciosa — nunca trava o quadro.
+- Reimprimir: botões "Reimprimir comanda" / "Reimprimir pedido" na tela do
+  pedido (`admin/pedido/[id]/page.tsx`).
+- Dados do MEI no comprovante: só **CNPJ** (campo novo `stores.cnpj`,
+  nullable — migration `20260905120000_store_cnpj.sql`; editável em
+  Configurações). Nome/endereço/telefone reaproveitam os campos que já
+  existiam. Não emite NFC-e/NF-e — é comprovante interno ("DOCUMENTO NÃO
+  FISCAL").
+- Dep nova: `@types/w3c-web-usb` (devDependency; os arquivos usam
+  `/// <reference types="w3c-web-usb" />`).
+
+**Pendências:**
+- Validar em hardware: corte (`GS V 1`), largura real (48 col), acentuação
+  (WPC1252 x code page de fábrica da unidade), endpoint bulk-out.
+- Confirmar que o build de produção não quebra sem o `@types/*` em dev.
+
+**Decisões travadas:**
+- Conexão: USB via WebUSB (sem rede/ePOS-Print).
+- Dados do MEI: só CNPJ; comprovante interno, sem nota fiscal.
+- Automático com painel aberto + botão de reimpressão; falha de impressão
+  nunca bloqueia o fluxo.
 
 Modelo do comprovante:
 
@@ -226,8 +270,5 @@ alerta sonoro do kanban).
 
 ## Decisões em aberto
 
-1. **Impressora — conexão:** USB no tablet, cabo de rede ou Wi-Fi? Define
-   impressão silenciosa × com janelinha. **Bloqueia o início do bloco de
-   impressão térmica.**
-2. **Nota — dados do MEI:** quais entram (CNPJ, nome empresarial, endereço)?
-   Emite NFC-e/NF-e hoje ou é só comprovante interno?
+Nenhuma no momento. (Impressão térmica: conexão e dados do MEI decididos —
+ver §Impressão térmica.)
