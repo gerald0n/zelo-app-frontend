@@ -79,9 +79,14 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
         await printBytes(device, bytes);
         setHasError(false);
         return { ok: true as const };
-      } catch {
+      } catch (err) {
         setHasError(true);
-        return { ok: false as const, reason: 'Falha ao imprimir.' };
+        console.error('[printer] falha na impressão', err);
+        const detail = err instanceof Error ? err.message : String(err);
+        return {
+          ok: false as const,
+          reason: `Falha ao imprimir: ${detail}`,
+        };
       }
     },
     [device],

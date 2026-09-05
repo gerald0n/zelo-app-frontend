@@ -15,6 +15,13 @@ export type KitchenTicketData = {
   timing: 'immediate' | 'scheduled';
   scheduledFor: string | null;
   isGuest: boolean;
+  customerName: string | null;
+  customerPhone: string | null;
+  /** Só pra entrega — a cozinha usa pra conferir/separar. */
+  address: {
+    formatted: string;
+    referencePoint: string | null;
+  } | null;
   items: ReceiptItem[];
   customerNote: string | null;
   internalNote: string | null;
