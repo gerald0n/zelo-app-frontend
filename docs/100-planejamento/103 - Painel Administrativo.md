@@ -137,6 +137,93 @@ Migration: `supabase/migrations/20260904190000_manual_orders.sql`.
 
 ---
 
+## Impressão térmica (não iniciado)
+
+Bloqueada pela decisão de conexão da impressora (ver §Decisões em aberto).
+EPSON TM-T20X, comprovante de 80mm, automático a cada pedido + botão
+"reimprimir".
+
+Modelo do comprovante:
+
+```
+        ZELO CONFEITARIA
+     DOCUMENTO NÃO FISCAL
+  CNPJ 00.000.000/0001-00 · MEI
+  Rua ..., nº ... - Cidade/UF
+  Tel/WhatsApp: (00) 00000-0000
+--------------------------------
+Pedido #123        04/09 14:32
+Tipo: ENTREGA
+Cliente: Maria Silva
+Tel: (85) 9 9999-9999
+Endereço: Rua X, 100 - Bairro
+Referência: casa amarela
+--------------------------------
+2x Bolo de chocolate M
+   + recheio extra
+1x Brigadeiro (cx 12)
+--------------------------------
+Obs. cliente: sem lactose
+--------------------------------
+Subtotal:               R$ 90,00
+Entrega:                R$  5,00
+TOTAL:                  R$ 95,00
+Pagamento: Dinheiro
+Levar troco para R$ 100,00
+--------------------------------
+     Obrigado pela preferência!
+```
+
+Duas formas de conectar, a decidir quando a impressora chegar:
+- **Rede (cabo/Wi-Fi):** impressão automática silenciosa via ePOS-Print
+  (recurso próprio da Epson), sem caixa de diálogo.
+- **Fallback simples:** modelo em página normal + `imprimir` do navegador →
+  sai pela impressora configurada no SO, com janelinha a cada vez.
+
+Config nova necessária: dados do MEI (CNPJ, nome, endereço) e endereço de
+rede da impressora, na tela de Configurações. Impressão automática só
+funciona com o painel aberto no tablet (mesma tela que fica ligada pro
+alerta sonoro do kanban).
+
+---
+
+## Catálogo (resto) (não iniciado)
+
+- **"Acabou" num toque** — tirar/repor um produto sem abrir o formulário
+  inteiro.
+- **Reordenar produtos e categorias arrastando** — hoje se digita um número
+  de ordem.
+- **Várias fotos por produto** — hoje só cabe uma; banco já suporta, falta
+  a tela (escolher principal, apagar, reordenar).
+- **Duplicar produto** — criar "Bolo G" a partir do "Bolo M" sem redigitar
+  tudo.
+
+---
+
+## Loja/relatórios (não iniciado)
+
+- **Pausar a loja com tempo e motivo** — "pausar por 1 hora" em vez de
+  pausar e esquecer ligado.
+- **Configurações em abas** — hoje é uma página só, tudo empilhado (loja,
+  horários, pagamento, entrega, conta, auditoria).
+- **Faturamento por período** — hoje/semana/mês, nº de pedidos, ticket
+  médio, gráfico simples.
+- **Resumo de produção do dia** — soma dos itens de todos os pedidos do
+  dia ("8 bolos, 3 tortas, 12 doces").
+- **Relatório de cancelamentos** — quantos e por quais motivos.
+- **Tela de auditoria de verdade** — hoje são linhas cruas no fim de
+  Configurações; virar tela com filtro por tipo e período.
+
+---
+
+## Push (não iniciado)
+
+- Notificação no celular quando entra pedido novo, mesmo com o painel
+  fechado. Mexe no banco: hoje o envio de notificação só existe pro
+  cliente, não pro admin.
+
+---
+
 ## Decisões em aberto
 
 1. **Impressora — conexão:** USB no tablet, cabo de rede ou Wi-Fi? Define
