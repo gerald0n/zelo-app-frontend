@@ -112,9 +112,13 @@ export class ReceiptBuilder {
     return this.push(0x1b, 0x64, lines);
   }
 
-  /** Corte parcial — a maioria dos modelos Epson usa `GS V 1`. */
+  /**
+   * Corte parcial — a maioria dos modelos Epson usa `GS V 1`. Avança bem
+   * antes de cortar pra sobrar papel em branco depois da última linha (e o
+   * corte não comer o fim do texto).
+   */
   cut() {
-    return this.feed(2).push(0x1d, 0x56, 1);
+    return this.feed(6).push(0x1d, 0x56, 1);
   }
 
   toBytes(): Uint8Array {
