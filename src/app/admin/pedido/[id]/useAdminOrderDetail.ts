@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRequireAdmin } from '@/hooks/useRequireAdmin';
 import { useAppDialog } from '@/contexts/AppDialogContext';
@@ -26,12 +26,17 @@ export function useAdminOrderDetail(id: string) {
   const { prompt, alert } = useAppDialog();
   const printer = usePrinter();
   const [order, setOrder] = useState<AdminOrderDetail | null>(null);
-  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { version: realtimeVersion } = useAdminOrdersRealtime(
     ready && isAuthenticated,
   );
+
+  // Spinner = já autenticado, mas ainda não temos o pedido DESTE id e sem erro.
+  // Derivado do render, não de um effect; refetch de Realtime não reativa
+  // porque `order.id` continua igual.
+  const loading =
+    ready && isAuthenticated && order?.id !== id && error === null;
 
   const storeQuery = useQuery({
     queryKey: adminKeys.store(),
@@ -40,43 +45,50 @@ export function useAdminOrderDetail(id: string) {
       apiJson<{ store: CatalogStore | null }>('/api/v1/admin/store'),
   });
 
-  const loadOrder = useCallback(
-    async (opts?: { background?: boolean }) => {
+  // Busca pura: sempre vê o `id` atual, não faz setState.
+  const fetchOrder = useEffectEvent(
+    async (): Promise<
+      { order: AdminOrderDetail } | { error: string }
+    > => {
       try {
         const response = await fetch(`/api/v1/admin/orders/${id}`, {
           cache: 'no-store',
         });
         const json = await response.json();
         if (!response.ok) {
-          setError(json?.error?.message ?? 'Pedido não encontrado.');
-          setOrder(null);
-          return;
+          return { error: json?.error?.message ?? 'Pedido não encontrado.' };
         }
-        setOrder(json.order as AdminOrderDetail);
-        setError(null);
+        return { order: json.order as AdminOrderDetail };
       } catch {
-        setError('Falha de rede.');
-      } finally {
-        // Só a carga inicial controla o spinner; refetch de Realtime nunca,
-        // senão uma reconexão do socket trava a tela em "carregando".
-        if (!opts?.background) setLoading(false);
+        return { error: 'Falha de rede.' };
       }
     },
-    [id],
   );
 
-  // Carga inicial: dona do `loading`, roda ao ficar pronto e ao trocar de pedido.
+  const applyResult = (
+    result: { order: AdminOrderDetail } | { error: string },
+  ) => {
+    if ('error' in result) {
+      setError(result.error);
+      setOrder(null);
+      return;
+    }
+    setOrder(result.order);
+    setError(null);
+  };
+
+  // Carga inicial (ao ficar pronto e ao trocar de pedido) + refetch de Realtime.
   useEffect(() => {
     if (!ready || !isAuthenticated) return;
-    setLoading(true);
-    void loadOrder();
-  }, [ready, isAuthenticated, loadOrder]);
-
-  // Atualização via Realtime: refetch em segundo plano, sem tocar no `loading`.
-  useEffect(() => {
-    if (!ready || !isAuthenticated || realtimeVersion === 0) return;
-    void loadOrder({ background: true });
-  }, [ready, isAuthenticated, realtimeVersion, loadOrder]);
+    let cancelled = false;
+    void (async () => {
+      const result = await fetchOrder();
+      if (!cancelled) applyResult(result);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, isAuthenticated, id, realtimeVersion]);
 
   const advance = async () => {
     if (!order) return;
