@@ -1,43 +1,32 @@
 import 'server-only';
 
-import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { err, ok, type Result } from '@/lib/errors';
 import { logger } from '@/lib/logger';
+import { getMercadoPagoAccessToken } from '@/config/env';
 import {
-  getMercadoPagoAccessToken,
-  getMercadoPagoWebhookSecret,
-} from '@/config/env';
+  firstPayment,
+  normalizePaymentStatus,
+  snapshotFromOrder,
+  type MercadoPagoSnapshot,
+  type MpOrder,
+  type MpPayment,
+  type PixCharge,
+} from '@/modules/payments/mercadopago-types';
+
+export {
+  normalizePaymentStatus,
+  type MercadoPagoSnapshot,
+  type NormalizedPaymentStatus,
+  type PixCharge,
+} from '@/modules/payments/mercadopago-types';
+export {
+  newIdempotencyKey,
+  verifyWebhookSignature,
+} from '@/modules/payments/mercadopago-signature';
 
 const API_BASE = 'https://api.mercadopago.com';
 const REQUEST_TIMEOUT_MS = 10_000;
 const DEFAULT_EXPIRATION_MINUTES = 30;
-
-/** Status de pagamento normalizado para o nosso enum `payment_status`. */
-export type NormalizedPaymentStatus =
-  | 'pending'
-  | 'confirmed'
-  | 'failed'
-  | 'refunded';
-
-export type PixCharge = {
-  mpOrderId: string;
-  mpPaymentId: string | null;
-  qrCode: string;
-  qrCodeBase64: string;
-  ticketUrl: string | null;
-  /** Instante absoluto de expiração calculado no momento da criação. */
-  expiresAt: string;
-  status: NormalizedPaymentStatus;
-};
-
-export type MercadoPagoSnapshot = {
-  mpOrderId: string | null;
-  mpPaymentId: string | null;
-  externalReference: string | null;
-  status: NormalizedPaymentStatus;
-  rawStatus: string | null;
-  rawStatusDetail: string | null;
-};
 
 type CreatePixChargeInput = {
   /** UUID do pedido — vira o `external_reference` no Mercado Pago. */
@@ -51,32 +40,6 @@ type CreatePixChargeInput = {
    * "gerar novo código" crie uma ordem nova sem duplicar a anterior.
    */
   attempt?: number;
-};
-
-// --- Tipos parciais da resposta da Orders API -----------------------------
-
-type MpPaymentMethod = {
-  id?: string;
-  type?: string;
-  qr_code?: string;
-  qr_code_base64?: string;
-  ticket_url?: string;
-};
-
-type MpPayment = {
-  id?: string;
-  status?: string;
-  status_detail?: string;
-  external_reference?: string;
-  payment_method?: MpPaymentMethod;
-};
-
-type MpOrder = {
-  id?: string;
-  external_reference?: string;
-  status?: string;
-  status_detail?: string;
-  transactions?: { payments?: MpPayment[] };
 };
 
 const UNAVAILABLE_MESSAGE =
@@ -93,34 +56,6 @@ function amountString(cents: number): string {
 /** Converte minutos em duração ISO 8601 (`PT30M`). */
 function isoDuration(minutes: number): string {
   return `PT${Math.max(1, Math.round(minutes))}M`;
-}
-
-/**
- * Mapeia o status cru do Mercado Pago para o nosso enum.
- * Referência: `approved`/`accredited` = pago; `rejected`/`cancelled`/`expired`
- * = falha; qualquer outro (`pending`, `action_required`, `in_process`) = aguardando.
- */
-export function normalizePaymentStatus(
-  raw: string | undefined | null,
-): NormalizedPaymentStatus {
-  switch ((raw ?? '').toLowerCase()) {
-    case 'approved':
-    case 'accredited':
-    case 'processed':
-    case 'paid':
-      return 'confirmed';
-    case 'rejected':
-    case 'cancelled':
-    case 'canceled':
-    case 'expired':
-    case 'failed':
-      return 'failed';
-    case 'refunded':
-    case 'charged_back':
-      return 'refunded';
-    default:
-      return 'pending';
-  }
 }
 
 async function mpFetch(
@@ -144,10 +79,6 @@ async function mpFetch(
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     cache: 'no-store',
   });
-}
-
-function firstPayment(order: MpOrder): MpPayment | undefined {
-  return order.transactions?.payments?.[0];
 }
 
 /**
@@ -240,19 +171,6 @@ export async function createPixCharge(
   });
 }
 
-function snapshotFromOrder(order: MpOrder): MercadoPagoSnapshot {
-  const payment = firstPayment(order);
-  return {
-    mpOrderId: order.id ?? null,
-    mpPaymentId: payment?.id ?? null,
-    externalReference:
-      payment?.external_reference ?? order.external_reference ?? null,
-    status: normalizePaymentStatus(payment?.status ?? order.status),
-    rawStatus: payment?.status ?? order.status ?? null,
-    rawStatusDetail: payment?.status_detail ?? order.status_detail ?? null,
-  };
-}
-
 /** Consulta o estado atual de uma ordem (`ORD...`) no Mercado Pago. */
 export async function getMercadoPagoOrder(
   mpOrderId: string,
@@ -286,10 +204,7 @@ export async function getMercadoPagoPayment(
     );
     const json: unknown = await response.json().catch(() => null);
     if (!response.ok) {
-      return err(
-        'INTEGRATION_UNAVAILABLE',
-        'Falha ao consultar pagamento Pix.',
-      );
+      return err('INTEGRATION_UNAVAILABLE', 'Falha ao consultar pagamento Pix.');
     }
     const payment = (json ?? {}) as MpPayment & {
       order?: { id?: string };
@@ -351,70 +266,4 @@ export async function refundMercadoPagoOrder(
       cause,
     });
   }
-}
-
-// --- Validação da assinatura do webhook ----------------------------------
-
-type ParsedSignature = { ts: string; v1: string };
-
-function parseSignatureHeader(header: string | null): ParsedSignature | null {
-  if (!header) return null;
-  let ts = '';
-  let v1 = '';
-  for (const part of header.split(',')) {
-    const [rawKey, rawValue] = part.split('=');
-    const key = rawKey?.trim();
-    const value = rawValue?.trim();
-    if (!key || !value) continue;
-    if (key === 'ts') ts = value;
-    else if (key === 'v1') v1 = value;
-  }
-  if (!ts || !v1) return null;
-  return { ts, v1 };
-}
-
-function safeEqualHex(a: string, b: string): boolean {
-  const bufA = Buffer.from(a, 'hex');
-  const bufB = Buffer.from(b, 'hex');
-  if (bufA.length === 0 || bufA.length !== bufB.length) return false;
-  return timingSafeEqual(bufA, bufB);
-}
-
-/**
- * Valida o header `x-signature` do webhook do Mercado Pago.
- * Manifesto: `id:<data.id>;request-id:<x-request-id>;ts:<ts>;`
- * (segmentos ausentes são omitidos, inclusive o rótulo).
- */
-export function verifyWebhookSignature(params: {
-  signatureHeader: string | null;
-  requestIdHeader: string | null;
-  dataId: string | null;
-}): boolean {
-  const secret = getMercadoPagoWebhookSecret();
-  if (!secret) {
-    logger.error('MERCADOPAGO_WEBHOOK_SECRET ausente; webhook rejeitado');
-    return false;
-  }
-
-  const parsed = parseSignatureHeader(params.signatureHeader);
-  if (!parsed) return false;
-
-  // O Mercado Pago normaliza ids alfanuméricos para minúsculas no manifesto.
-  const dataId = params.dataId ? params.dataId.toLowerCase() : null;
-
-  let manifest = '';
-  if (dataId) manifest += `id:${dataId};`;
-  if (params.requestIdHeader) {
-    manifest += `request-id:${params.requestIdHeader};`;
-  }
-  manifest += `ts:${parsed.ts};`;
-
-  const expected = createHmac('sha256', secret).update(manifest).digest('hex');
-
-  return safeEqualHex(expected, parsed.v1);
-}
-
-/** Chave de idempotência avulsa para chamadas que não têm um pedido de origem. */
-export function newIdempotencyKey(): string {
-  return randomUUID();
 }
