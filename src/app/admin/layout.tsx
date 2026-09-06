@@ -1,10 +1,8 @@
-'use client';
-
-import { usePathname } from 'next/navigation';
 import { AdminProvider } from '@/contexts/AdminContext';
+import { AdminRealtimeProvider } from '@/contexts/AdminRealtimeContext';
+import { AdminNewOrderProvider } from '@/contexts/AdminNewOrderContext';
 import { PrinterProvider } from '@/contexts/PrinterContext';
-import AdminBottomNav from '@/components/admin/AdminBottomNav';
-import { cn } from '@/lib/cn';
+import AdminShell from '@/components/admin/AdminShell';
 
 /**
  * Tudo do painel fica isolado nesta rota.
@@ -19,22 +17,14 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const isLogin = pathname === '/admin/login';
-
   return (
     <AdminProvider>
       <PrinterProvider>
-        <div
-          className={cn(
-            // Folga p/ a navbar flutuante do admin (mobile). Login não tem navbar.
-            !isLogin &&
-              'max-lg:pb-[calc(84px+env(safe-area-inset-bottom,0px))] lg:pb-0',
-          )}
-        >
-          {children}
-        </div>
-        <AdminBottomNav />
+        <AdminRealtimeProvider>
+          <AdminNewOrderProvider>
+            <AdminShell>{children}</AdminShell>
+          </AdminNewOrderProvider>
+        </AdminRealtimeProvider>
       </PrinterProvider>
     </AdminProvider>
   );

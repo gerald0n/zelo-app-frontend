@@ -1,37 +1,15 @@
 'use client';
 
-import { use, useCallback, useEffect, useState } from 'react';
+import { use } from 'react';
 import Link from 'next/link';
-import {
-  Bike,
-  ShoppingBag,
-  CreditCard,
-  ArrowRight,
-  Loader2,
-} from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { Printer } from 'lucide-react';
-import AdminHeader from '@/components/admin/AdminHeader';
-import { useRequireAdmin } from '@/hooks/useRequireAdmin';
-import { useAppDialog } from '@/contexts/AppDialogContext';
-import { usePrinter } from '@/contexts/PrinterContext';
-import { apiJson } from '@/lib/api';
-import { adminKeys } from '@/lib/query-keys';
-import { orderToDeliverySlip, orderToKitchenTicket } from '@/lib/admin/receipt';
-import { buildDeliverySlip, buildKitchenTicket } from '@/modules/printing/receipts';
-import { formatCatalogPrice, type CatalogStore } from '@/modules/catalog/types';
-import { statusLabel, type OrderStatus } from '@/modules/orders/types';
-import { nextAdminStatus, type AdminOrderDetail } from '@/modules/admin/types';
-import { useAdminOrdersRealtime } from '@/modules/realtime/hooks';
+import { Loader2 } from 'lucide-react';
+import AdminPageTitle from '@/components/admin/AdminPageTitle';
+import { statusLabel } from '@/modules/orders/types';
 import { adminContainerClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
-
-function formatClock(iso: string) {
-  return new Date(iso).toLocaleTimeString('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
+import { useAdminOrderDetail } from '@/app/admin/pedido/[id]/useAdminOrderDetail';
+import { OrderDetailMain } from '@/app/admin/pedido/[id]/_components/OrderDetailMain';
+import { OrderDetailActions } from '@/app/admin/pedido/[id]/_components/OrderDetailActions';
 
 export default function AdminPedidoPage({
   params,
@@ -39,175 +17,25 @@ export default function AdminPedidoPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { isAuthenticated, ready } = useRequireAdmin();
-  const { prompt, alert } = useAppDialog();
-  const printer = usePrinter();
-  const [order, setOrder] = useState<AdminOrderDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { version: realtimeVersion } = useAdminOrdersRealtime(
-    ready && isAuthenticated,
-  );
-
-  const storeQuery = useQuery({
-    queryKey: adminKeys.store(),
-    enabled: ready && isAuthenticated,
-    queryFn: () =>
-      apiJson<{ store: CatalogStore | null }>('/api/v1/admin/store'),
-  });
-
-  const loadOrder = useCallback(
-    async (opts?: { background?: boolean }) => {
-      try {
-        const response = await fetch(`/api/v1/admin/orders/${id}`, {
-          cache: 'no-store',
-        });
-        const json = await response.json();
-        if (!response.ok) {
-          setError(json?.error?.message ?? 'Pedido não encontrado.');
-          setOrder(null);
-          return;
-        }
-        setOrder(json.order as AdminOrderDetail);
-        setError(null);
-      } catch {
-        setError('Falha de rede.');
-      } finally {
-        // Só a carga inicial controla o spinner; refetch de Realtime nunca,
-        // senão uma reconexão do socket trava a tela em "carregando".
-        if (!opts?.background) setLoading(false);
-      }
-    },
-    [id],
-  );
-
-  // Carga inicial: dona do `loading`, roda ao ficar pronto e ao trocar de pedido.
-  useEffect(() => {
-    if (!ready || !isAuthenticated) return;
-    setLoading(true);
-    void loadOrder();
-  }, [ready, isAuthenticated, loadOrder]);
-
-  // Atualização via Realtime: refetch em segundo plano, sem tocar no `loading`.
-  useEffect(() => {
-    if (!ready || !isAuthenticated || realtimeVersion === 0) return;
-    void loadOrder({ background: true });
-  }, [ready, isAuthenticated, realtimeVersion, loadOrder]);
-
-  const advance = async () => {
-    if (!order) return;
-    const next = nextAdminStatus(order.status, order.deliveryMethod);
-    if (!next) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/v1/admin/orders/${id}/status`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newStatus: next }),
-      });
-      const json = await response.json();
-      if (!response.ok) {
-        setError(json?.error?.message ?? 'Não foi possível atualizar.');
-        return;
-      }
-      setOrder(json.order as AdminOrderDetail);
-    } catch {
-      setError('Falha de rede ao atualizar status.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  // Chama a rota de cancelamento. Serve tanto para cancelar o pedido quanto,
-  // num pedido já cancelado, para reenviar só o estorno do Pix (o backend
-  // detecta o estado e faz a coisa certa).
-  const postCancel = async (reason: string, netError: string) => {
-    setBusy(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/v1/admin/orders/${id}/cancel`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: reason.trim() }),
-      });
-      const json = await response.json();
-      if (!response.ok) {
-        setError(json?.error?.message ?? netError);
-        return;
-      }
-      setOrder(json.order as AdminOrderDetail);
-      return json.refund as 'done' | 'already' | 'failed' | undefined;
-    } catch {
-      setError(netError);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const cancel = async () => {
-    if (!order) return;
-    const reason = await prompt({
-      title: 'Cancelar pedido',
-      description: 'Informe o motivo do cancelamento administrativo.',
-      placeholder: 'Motivo do cancelamento',
-      minLength: 3,
-      confirmLabel: 'Cancelar pedido',
-    });
-    if (!reason) return;
-    const refund = await postCancel(reason, 'Falha de rede ao cancelar.');
-    if (refund === 'done') {
-      await alert({
-        title: 'Pedido cancelado',
-        description: 'O estorno do Pix foi solicitado ao Mercado Pago.',
-      });
-    } else if (refund === 'failed') {
-      await alert({
-        title: 'Pedido cancelado, mas o estorno falhou',
-        description:
-          'Reenvie o estorno pelo botão "Tentar estorno do Pix de novo" ou estorne manualmente no painel do Mercado Pago.',
-      });
-    }
-  };
-
-  const reprintTicket = async () => {
-    if (!order) return;
-    const bytes = buildKitchenTicket(orderToKitchenTicket(order));
-    const result = await printer.printRaw(bytes);
-    if (!result.ok) setError(result.reason);
-  };
-
-  const reprintSlip = async () => {
-    const store = storeQuery.data?.store;
-    if (!order || !store) return;
-    const bytes = buildDeliverySlip(orderToDeliverySlip(order, store));
-    const result = await printer.printRaw(bytes);
-    if (!result.ok) setError(result.reason);
-  };
-
-  const retryRefund = async () => {
-    if (!order) return;
-    const refund = await postCancel(
-      'Reenvio do estorno Pix',
-      'Falha de rede ao estornar.',
-    );
-    if (refund === 'done' || refund === 'already') {
-      await alert({
-        title: 'Estorno enviado',
-        description: 'O estorno do Pix foi enviado ao Mercado Pago.',
-      });
-    } else if (refund === 'failed') {
-      await alert({
-        title: 'O estorno falhou de novo',
-        description: 'Estorne manualmente pelo painel do Mercado Pago.',
-      });
-    }
-  };
+  const {
+    ready,
+    isAuthenticated,
+    order,
+    loading,
+    busy,
+    error,
+    hasStore,
+    printerReady,
+    advance,
+    cancel,
+    retryRefund,
+    reprintTicket,
+    reprintSlip,
+  } = useAdminOrderDetail(id);
 
   if (!ready || !isAuthenticated || loading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-background lg:pl-52">
+      <div className="flex min-h-dvh items-center justify-center">
         <Loader2 className="size-5 animate-spin text-muted-foreground" />
       </div>
     );
@@ -215,7 +43,7 @@ export default function AdminPedidoPage({
 
   if (!order) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-background lg:pl-52">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-3">
         <p>{error ?? 'Pedido não encontrado.'}</p>
         <Link href="/admin/pedidos" className="text-primary">
           Voltar aos pedidos
@@ -224,272 +52,33 @@ export default function AdminPedidoPage({
     );
   }
 
-  const next = nextAdminStatus(order.status, order.deliveryMethod);
-
   return (
-    <div className="min-h-dvh bg-background lg:pl-52">
-      <AdminHeader
-        title={order.number}
-        subtitle={statusLabel(order.status)}
-        backTo="/admin/pedidos"
-      />
-      <div className={cn('p-3 pb-8 md:px-6 md:pt-6', adminContainerClass)}>
+    <div className="min-h-dvh">
+      <div
+        className={cn(
+          'space-y-3 p-3 pb-8 md:px-6 md:pt-6',
+          adminContainerClass,
+        )}
+      >
+        <AdminPageTitle
+          title={order.number}
+          subtitle={statusLabel(order.status)}
+          backTo="/admin/pedidos"
+        />
         <div className="flex flex-wrap">
-          <div className="w-full space-y-3 px-0 lg:w-2/3 lg:pr-3">
-            <section className="space-y-[13px] rounded-lg border border-border p-3.5">
-              <h2 className="text-sm font-bold">Itens</h2>
-              {order.items.map((item) => (
-                <div key={item.id} className="flex items-start gap-2.5">
-                  <span className="flex size-[31px] items-center justify-center rounded-md bg-muted text-2xs font-bold">
-                    {item.quantity}×
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold">{item.name}</p>
-                    {item.addOns.map((addon) => (
-                      <p
-                        key={`${addon.id}-${addon.name}`}
-                        className="mt-0.5 text-2xs text-muted-foreground"
-                      >
-                        + {addon.name}
-                      </p>
-                    ))}
-                    {item.note ? (
-                      <p className="mt-0.5 text-2xs text-muted-foreground">
-                        Obs.: {item.note}
-                      </p>
-                    ) : null}
-                  </div>
-                  <span className="text-xs font-semibold">
-                    {formatCatalogPrice(item.lineTotalCents)}
-                  </span>
-                </div>
-              ))}
-            </section>
-
-            <section className="space-y-[13px] rounded-lg border border-border p-3.5">
-              <h2 className="text-sm font-bold">Recebimento</h2>
-              <div className="flex gap-2.5">
-                {order.deliveryMethod === 'delivery' ? (
-                  <Bike className="size-[18px] text-muted-foreground" />
-                ) : (
-                  <ShoppingBag className="size-[18px] text-muted-foreground" />
-                )}
-                <div>
-                  <p className="text-2xs text-muted-foreground">
-                    {order.deliveryMethod === 'delivery'
-                      ? 'Entrega'
-                      : 'Retirada'}
-                  </p>
-                  <p className="mt-0.5 text-xs">
-                    {order.address?.formatted ?? 'Retirada na Zelo'}
-                  </p>
-                  {order.address?.referencePoint ? (
-                    <p className="mt-0.5 text-2xs text-muted-foreground">
-                      Referência: {order.address.referencePoint}
-                    </p>
-                  ) : null}
-                  {order.scheduledFor ? (
-                    <p className="mt-0.5 text-2xs text-muted-foreground">
-                      Agendado para:{' '}
-                      {new Date(order.scheduledFor).toLocaleString('pt-BR', {
-                        weekday: 'short',
-                        day: '2-digit',
-                        month: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-              <div className="flex gap-2.5">
-                <CreditCard className="size-[18px] text-muted-foreground" />
-                <div>
-                  <p className="text-2xs text-muted-foreground">Pagamento</p>
-                  <p className="mt-0.5 text-xs">
-                    {order.paymentMethod === 'pix'
-                      ? 'Pix'
-                      : order.paymentMethod === 'cash'
-                        ? 'Dinheiro'
-                        : 'Cartão'}
-                    {order.paymentMethod === 'pix'
-                      ? ` · ${
-                          order.paymentStatus === 'confirmed'
-                            ? 'Pago'
-                            : order.paymentStatus === 'refunded'
-                              ? 'Estornado'
-                              : order.paymentStatus === 'failed'
-                                ? 'Não pago'
-                                : order.paymentStatus === 'cancelled'
-                                  ? 'Cancelado'
-                                  : 'Aguardando'
-                        }`
-                      : order.paymentStatus === 'confirmed'
-                        ? ' · Pago'
-                        : ''}
-                  </p>
-                  {order.needsChange && order.changeForAmountCents != null ? (
-                    <p className="mt-0.5 text-2xs text-muted-foreground">
-                      Troco para{' '}
-                      {formatCatalogPrice(order.changeForAmountCents)}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-              {order.customer ? (
-                <p className="text-xs text-muted-foreground">
-                  Cliente: {order.customer.name} · {order.customer.phoneE164}
-                </p>
-              ) : order.guest ? (
-                <p className="text-xs text-muted-foreground">
-                  Cliente: {order.guest.name} · {order.guest.phoneE164} · Avulso
-                </p>
-              ) : null}
-            </section>
-
-            {order.customerNote ? (
-              <section className="space-y-1 rounded-lg border border-border p-3.5">
-                <h2 className="text-sm font-bold">Observação do cliente</h2>
-                <p className="text-xs text-muted-foreground">
-                  {order.customerNote}
-                </p>
-              </section>
-            ) : null}
-
-            {order.internalNote ? (
-              <section className="rounded-lg border border-transparent bg-tone-warning p-3.5 text-tone-warning-foreground">
-                <h2 className="text-sm font-bold">Nota interna</h2>
-                <p className="mt-1 text-xs opacity-80">{order.internalNote}</p>
-              </section>
-            ) : null}
-
-            {order.status === 'cancelled' && order.cancellationReason ? (
-              <section className="rounded-lg border border-destructive/40 p-3.5">
-                <h2 className="text-sm font-bold text-destructive">
-                  Pedido cancelado
-                </h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Motivo: {order.cancellationReason}
-                </p>
-              </section>
-            ) : null}
-
-            {order.history.length > 0 ? (
-              <section className="space-y-2 rounded-lg border border-border p-3.5">
-                <h2 className="text-sm font-bold">Histórico</h2>
-                <ul className="space-y-1.5">
-                  {order.history.map((entry) => (
-                    <li
-                      key={entry.id}
-                      className="flex items-start justify-between gap-3 text-xs"
-                    >
-                      <div>
-                        <p className="font-semibold">
-                          {statusLabel(entry.newStatus)}
-                        </p>
-                        {entry.reason ? (
-                          <p className="mt-0.5 text-2xs text-muted-foreground">
-                            {entry.reason}
-                          </p>
-                        ) : null}
-                      </div>
-                      <time className="shrink-0 text-2xs text-muted-foreground">
-                        {formatClock(entry.createdAt)}
-                      </time>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ) : null}
-          </div>
-
-          <div className="mt-3 w-full space-y-3 lg:mt-0 lg:w-1/3 lg:pl-3">
-            <section className="space-y-2 rounded-lg border border-border p-3.5">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span>{formatCatalogPrice(order.subtotalCents)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Entrega</span>
-                <span>
-                  {order.deliveryFeeCents === 0
-                    ? 'Grátis'
-                    : formatCatalogPrice(order.deliveryFeeCents)}
-                </span>
-              </div>
-              <div className="flex justify-between border-t border-border pt-2 text-sm font-bold">
-                <span>Total</span>
-                <span>{formatCatalogPrice(order.totalCents)}</span>
-              </div>
-            </section>
-
-            {error ? <p className="text-xs text-destructive">{error}</p> : null}
-
-            {next ? (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void advance()}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3.5 text-sm font-semibold text-white disabled:opacity-60"
-              >
-                {busy ? <Loader2 className="size-4 animate-spin" /> : null}
-                Avançar para &quot;{statusLabel(next as OrderStatus)}&quot;
-                <ArrowRight className="size-4" />
-              </button>
-            ) : null}
-
-            {order.status !== 'delivered' && order.status !== 'cancelled' ? (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void cancel()}
-                className="w-full rounded-lg border border-destructive/40 py-3 text-sm font-semibold text-destructive disabled:opacity-60"
-              >
-                Cancelar pedido
-              </button>
-            ) : null}
-
-            {printer.status === 'ready' ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => void reprintTicket()}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-border py-3 text-sm font-semibold"
-                >
-                  <Printer className="size-4" />
-                  Reimprimir comanda
-                </button>
-                <button
-                  type="button"
-                  disabled={!storeQuery.data?.store}
-                  onClick={() => void reprintSlip()}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-border py-3 text-sm font-semibold disabled:opacity-60"
-                >
-                  <Printer className="size-4" />
-                  Reimprimir pedido
-                </button>
-              </>
-            ) : (
-              <p className="text-2xs text-muted-foreground">
-                Impressora não pareada — pareie em Configurações pra
-                reimprimir.
-              </p>
-            )}
-
-            {order.status === 'cancelled' &&
-            order.paymentMethod === 'pix' &&
-            order.paymentStatus === 'confirmed' ? (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void retryRefund()}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-destructive/40 py-3 text-sm font-semibold text-destructive disabled:opacity-60"
-              >
-                {busy ? <Loader2 className="size-4 animate-spin" /> : null}
-                Tentar estorno do Pix de novo
-              </button>
-            ) : null}
-          </div>
+          <OrderDetailMain order={order} />
+          <OrderDetailActions
+            order={order}
+            busy={busy}
+            error={error}
+            hasStore={hasStore}
+            printerReady={printerReady}
+            onAdvance={() => void advance()}
+            onCancel={() => void cancel()}
+            onRetryRefund={() => void retryRefund()}
+            onReprintTicket={() => void reprintTicket()}
+            onReprintSlip={() => void reprintSlip()}
+          />
         </div>
       </div>
     </div>

@@ -1,8 +1,7 @@
 'use client';
 
-import { Suspense, use, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, use, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
   CheckCircle2,
   Copy,
@@ -13,7 +12,6 @@ import {
   XCircle,
 } from 'lucide-react';
 import { formatCatalogPrice } from '@/modules/catalog/types';
-import { useCustomerOrderRealtime } from '@/modules/realtime/hooks';
 import {
   pageBodyPadClass,
   pageHeaderBarClass,
@@ -21,20 +19,7 @@ import {
   checkoutDesktopContainerClass,
 } from '@/lib/layout';
 import { cn } from '@/lib/cn';
-
-type PixView = {
-  orderId: string;
-  orderNumber: number;
-  totalCents: number;
-  status: string;
-  paymentStatus: string;
-  pix: {
-    qrCode: string;
-    qrCodeBase64: string;
-    ticketUrl: string | null;
-    expiresAt: string;
-  } | null;
-};
+import { usePixPayment } from '@/app/checkout/pix/[orderId]/usePixPayment';
 
 function formatCountdown(msLeft: number): string {
   const total = Math.max(0, Math.floor(msLeft / 1000));
@@ -44,76 +29,9 @@ function formatCountdown(msLeft: number): string {
 }
 
 function PixContent({ orderId }: { orderId: string }) {
-  const router = useRouter();
-  const [view, setView] = useState<PixView | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { view, loading, error, now, regenerating, regenerate, setError } =
+    usePixPayment(orderId);
   const [copied, setCopied] = useState(false);
-  const [regenerating, setRegenerating] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
-  const redirectedRef = useRef(false);
-
-  const { version: realtimeVersion } = useCustomerOrderRealtime(orderId, true);
-
-  const load = useCallback(
-    async (opts?: { background?: boolean }) => {
-      try {
-        const response = await fetch(`/api/v1/orders/${orderId}/pix`, {
-          cache: 'no-store',
-        });
-        const json = await response.json();
-        if (!response.ok) {
-          setError(json?.error?.message ?? 'Não foi possível carregar o Pix.');
-          return;
-        }
-        setView(json as PixView);
-        setError(null);
-      } catch {
-        setError('Falha de rede ao carregar o pagamento.');
-      } finally {
-        if (!opts?.background) setLoading(false);
-      }
-    },
-    [orderId],
-  );
-
-  // Carga inicial.
-  useEffect(() => {
-    setLoading(true);
-    void load();
-  }, [load]);
-
-  // Sinal do Realtime → refetch em segundo plano.
-  useEffect(() => {
-    if (realtimeVersion === 0) return;
-    void load({ background: true });
-  }, [realtimeVersion, load]);
-
-  // Fallback: enquanto aguardando pagamento, refetch a cada 5s.
-  useEffect(() => {
-    if (view?.paymentStatus && view.paymentStatus !== 'pending') return;
-    const timer = window.setInterval(() => {
-      void load({ background: true });
-    }, 5_000);
-    return () => window.clearInterval(timer);
-  }, [view?.paymentStatus, load]);
-
-  // Relógio do contador.
-  useEffect(() => {
-    const tick = window.setInterval(() => setNow(Date.now()), 1_000);
-    return () => window.clearInterval(tick);
-  }, []);
-
-  // Pagamento confirmado → tela de pedido recebido.
-  useEffect(() => {
-    if (!view || redirectedRef.current) return;
-    if (view.paymentStatus === 'confirmed') {
-      redirectedRef.current = true;
-      router.replace(
-        `/pedido-recebido?orderId=${encodeURIComponent(view.orderId)}&orderNumber=${view.orderNumber}`,
-      );
-    }
-  }, [view, router]);
 
   const handleCopy = async () => {
     if (!view?.pix) return;
@@ -126,28 +44,7 @@ function PixContent({ orderId }: { orderId: string }) {
     }
   };
 
-  const handleRegenerate = async () => {
-    if (regenerating) return;
-    setRegenerating(true);
-    try {
-      const response = await fetch(`/api/v1/orders/${orderId}/pix`, {
-        method: 'POST',
-      });
-      const json = await response.json();
-      if (!response.ok) {
-        setError(
-          json?.error?.message ?? 'Não foi possível gerar um novo código.',
-        );
-        return;
-      }
-      setView(json as PixView);
-      setError(null);
-    } catch {
-      setError('Falha de rede ao gerar um novo código.');
-    } finally {
-      setRegenerating(false);
-    }
-  };
+  const handleRegenerate = regenerate;
 
   if (loading && !view) {
     return (

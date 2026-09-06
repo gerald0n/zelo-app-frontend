@@ -19,17 +19,19 @@ export default function EnderecosPage() {
   const { user, identityReady } = useAuth();
   const { confirm } = useAppDialog();
   const [addresses, setAddresses] = useState<SavedAddress[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [pending, setPending] = useState(true);
+
+  // Derivado: ainda resolvendo a identidade, ou tem usuário e o fetch não
+  // terminou. Sem `setState` no corpo do effect para o caso "sem usuário"
+  // (aí o AuthGate assume e a lista nem renderiza).
+  const loading = !identityReady || (Boolean(user) && pending);
 
   useEffect(() => {
-    if (!identityReady || !user) {
-      setLoading(false);
-      return;
-    }
+    if (!identityReady || !user) return;
     let cancelled = false;
     (async () => {
-      setLoading(true);
+      setPending(true);
       setError('');
       try {
         const response = await fetch('/api/v1/addresses', { cache: 'no-store' });
@@ -44,7 +46,7 @@ export default function EnderecosPage() {
       } catch {
         if (!cancelled) setError('Falha de rede ao carregar endereços.');
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setPending(false);
       }
     })();
     return () => {

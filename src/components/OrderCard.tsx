@@ -70,7 +70,13 @@ export default function OrderCard({
   );
 
   return (
-    <div className="mx-3 mb-2 space-y-1.5 rounded-lg border border-border bg-card p-3">
+    <div
+      className={cn(
+        'mx-3 mb-2 space-y-1.5 rounded-lg border border-border bg-card p-3',
+        href &&
+          'transition-colors duration-150 hover:border-foreground/15 hover:bg-accent/30',
+      )}
+    >
       {href ? (
         <Link href={href} className="block space-y-1.5">
           {content}

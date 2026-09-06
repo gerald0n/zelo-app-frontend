@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { httpStatusFor } from '@/lib/errors';
-import { cancelAdminOrder } from '@/modules/admin/orders';
+import { cancelAdminOrder } from '@/modules/admin/admin-orders-cancel';
 
 export const dynamic = 'force-dynamic';
 

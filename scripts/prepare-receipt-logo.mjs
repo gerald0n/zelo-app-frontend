@@ -19,9 +19,9 @@ const SRC = existsSync(WORDMARK)
   : path.resolve('public/brand/zelo-selo-full.jpg');
 const OUT = path.resolve('src/modules/printing/logo.ts');
 
-// Largura do ponto na TM-T20X é 512; o wordmark é largo e baixo, então cabe
-// numa faixa maior; o selo circular fica melhor menor.
-const WIDTH = SRC === WORDMARK ? 448 : 288;
+// Largura do ponto na TM-T20X é 512. Logo enxuta no topo: ~300 pro
+// wordmark (largo e baixo), menor ainda pro selo circular.
+const WIDTH = SRC === WORDMARK ? 300 : 260;
 // Abaixo disso o pixel conta como tinta (fundo branco ~255, traço ~0).
 const INK = 160;
 const PAD = 16; // px de respiro em volta do wordmark, na resolução da fonte.

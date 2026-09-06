@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useShopExperience } from '@/contexts/ShopExperienceContext';
 import { AccountAuthGate } from '@/components/account/AccountAuthGate';
@@ -19,13 +19,12 @@ import {
 export default function DadosPessoaisPage() {
   const { user, updateProfile } = useAuth();
   const { notify } = useShopExperience();
-  const [name, setName] = useState('');
+  // `name` deriva: a edição do usuário (quando existe) vence; senão o nome
+  // carregado da conta (que chega async); senão vazio. Sem effect de sync.
+  const [editedName, setEditedName] = useState<string | null>(null);
+  const name = editedName ?? user?.name ?? '';
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (user?.name) setName(user.name);
-  }, [user?.name]);
 
   const handleSave = async () => {
     const trimmed = name.trim();
@@ -57,7 +56,7 @@ export default function DadosPessoaisPage() {
               <Label className="mb-1.5 block text-xs font-semibold">Nome</Label>
               <Input
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => setEditedName(e.target.value)}
                 className={checkoutFieldClass}
               />
             </div>

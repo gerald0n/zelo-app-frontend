@@ -55,6 +55,62 @@
   --sidebar-ring: oklch(0.42 0.15 8);
 }
 
+/*
+ * Tema escuro — ativado pela classe `.dark` no <html> (ver `useThemeToggle`).
+ * Só reescreve os tokens de cor; tudo que usa `var(--*)` acompanha sozinho.
+ * Precisa vir DEPOIS de `:root` (mesma especificidade, ganha por ordem).
+ */
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.19 0.012 60);
+  --foreground: oklch(0.92 0.014 78);
+  --card: oklch(0.23 0.014 58);
+  --card-foreground: oklch(0.92 0.014 78);
+  --popover: oklch(0.23 0.014 58);
+  --popover-foreground: oklch(0.92 0.014 78);
+  --primary: oklch(0.62 0.16 12);
+  --primary-foreground: oklch(0.98 0.012 80);
+  --secondary: oklch(0.3 0.02 55);
+  --secondary-foreground: oklch(0.9 0.02 75);
+  --muted: oklch(0.27 0.014 58);
+  --muted-foreground: oklch(0.69 0.03 60);
+  --accent: oklch(0.33 0.03 55);
+  --accent-foreground: oklch(0.9 0.03 70);
+  --destructive: oklch(0.62 0.2 25);
+  --border: oklch(0.33 0.016 58);
+  --input: oklch(0.33 0.016 58);
+  --ring: oklch(0.62 0.16 12);
+  --caramel: oklch(0.72 0.12 62);
+  --caramel-foreground: oklch(0.96 0.02 80);
+  --pistachio: oklch(0.78 0.08 128);
+  --pistachio-foreground: oklch(0.96 0.02 130);
+  --success: oklch(0.62 0.13 140);
+  --success-foreground: oklch(0.98 0.012 80);
+  --tone-neutral: oklch(0.28 0.008 70);
+  --tone-neutral-foreground: oklch(0.78 0.02 65);
+  --tone-positive: oklch(0.31 0.05 145);
+  --tone-positive-foreground: oklch(0.83 0.12 145);
+  --tone-warning: oklch(0.34 0.06 80);
+  --tone-warning-foreground: oklch(0.86 0.1 85);
+  --tone-critical: oklch(0.32 0.08 25);
+  --tone-critical-foreground: oklch(0.85 0.12 25);
+  --tone-info: oklch(0.3 0.05 245);
+  --tone-info-foreground: oklch(0.83 0.09 240);
+  --chart-1: oklch(0.62 0.16 12);
+  --chart-2: oklch(0.72 0.12 62);
+  --chart-3: oklch(0.78 0.08 128);
+  --chart-4: oklch(0.66 0.12 30);
+  --chart-5: oklch(0.6 0.1 350);
+  --sidebar: oklch(0.21 0.014 58);
+  --sidebar-foreground: oklch(0.92 0.014 78);
+  --sidebar-primary: oklch(0.62 0.16 12);
+  --sidebar-primary-foreground: oklch(0.98 0.012 80);
+  --sidebar-accent: oklch(0.33 0.03 55);
+  --sidebar-accent-foreground: oklch(0.9 0.03 70);
+  --sidebar-border: oklch(0.33 0.016 58);
+  --sidebar-ring: oklch(0.62 0.16 12);
+}
+
 @theme inline {
   --font-sans: var(--font-geist);
   --font-serif: var(--font-fraunces);
@@ -187,6 +243,67 @@ body {
 
   ::selection {
     background: color-mix(in oklch, var(--primary) 22%, transparent);
+  }
+
+  /* --- Affordância de clique padrão -------------------------------------
+     Tailwind v4 removeu `cursor: pointer` do Preflight e o app tem muitos
+     alvos clicáveis (botões-toggle, cards que são <Link>, ícones-ação) sem
+     nenhum `hover:`/`active:` próprio. Aqui damos um piso: cursor + um
+     brilho sutil no hover + leve recuo no active.
+
+     Fica no `@layer base`, então QUALQUER utilitário Tailwind
+     (`hover:bg-*`, `active:scale-*`, …) sobrescreve — os componentes que
+     já têm feedback próprio continuam mandando. */
+  :where(
+    button:not(:disabled),
+    [role='button']:not([aria-disabled='true']),
+    [role='tab']:not([aria-disabled='true']),
+    [role='switch'],
+    [role='option'],
+    [role='menuitem'],
+    label:has(> input:is([type='checkbox'], [type='radio'])),
+    label[for],
+    summary,
+    select:not(:disabled),
+    a[href]
+  ):not(.liquid-glass-item) {
+    cursor: pointer;
+    transition:
+      filter 140ms ease,
+      transform 140ms ease;
+  }
+
+  @media (hover: hover) {
+    :where(
+        button:not(:disabled),
+        [role='button']:not([aria-disabled='true']),
+        [role='tab']:not([aria-disabled='true']),
+        [role='switch'],
+        [role='option'],
+        [role='menuitem'],
+        label:has(> input:is([type='checkbox'], [type='radio'])),
+        label[for],
+        summary,
+        select:not(:disabled),
+        a[href]
+      ):not(.liquid-glass-item):hover {
+      filter: brightness(0.97);
+    }
+  }
+
+  :where(
+      button:not(:disabled),
+      [role='button']:not([aria-disabled='true']),
+      [role='tab']:not([aria-disabled='true']),
+      summary,
+      a[href]
+    ):not(.liquid-glass-item):active {
+    transform: scale(0.985);
+  }
+
+  button:disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
   }
 }
 

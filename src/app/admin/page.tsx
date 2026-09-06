@@ -1,33 +1,32 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  Receipt,
-  Flame,
-  Wallet,
-  Store,
-  Pause,
-  ChevronRight,
-  Loader2,
-} from 'lucide-react';
-import AdminHeader from '@/components/admin/AdminHeader';
+import { useQuery } from '@tanstack/react-query';
+import { ChevronRight, Loader2 } from 'lucide-react';
 import AdminOrderCard from '@/components/admin/AdminOrderCard';
 import { useRequireAdmin } from '@/hooks/useRequireAdmin';
 import { apiJson } from '@/lib/api';
 import { adminContainerClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 import { adminKeys } from '@/lib/query-keys';
-import { formatCatalogPrice } from '@/modules/catalog/types';
 import type { AdminOrderListItem } from '@/modules/admin/types';
-import { useAdminOrdersRealtime } from '@/modules/realtime/hooks';
+import { useAdminRealtime } from '@/contexts/AdminRealtimeContext';
+import {
+  buildDashboard,
+  PERIOD_LABEL,
+  type DashboardPeriod,
+} from '@/app/admin/_components/dashboard-metrics';
+import { DashboardStats } from '@/app/admin/_components/DashboardStats';
+import { SalesChart } from '@/app/admin/_components/SalesChart';
+import { TopProducts } from '@/app/admin/_components/TopProducts';
+
+const PERIODS: DashboardPeriod[] = ['today', '7d', '30d'];
 
 export default function AdminDashboardPage() {
-  const queryClient = useQueryClient();
   const { isAuthenticated, ready } = useRequireAdmin();
-  const { version: realtimeVersion } = useAdminOrdersRealtime(
-    ready && isAuthenticated,
-  );
+  const { version: realtimeVersion } = useAdminRealtime();
+  const [period, setPeriod] = useState<DashboardPeriod>('today');
 
   const ordersQuery = useQuery({
     queryKey: [...adminKeys.orders('all'), realtimeVersion],
@@ -38,130 +37,102 @@ export default function AdminDashboardPage() {
       ),
   });
 
-  const storeQuery = useQuery({
-    queryKey: adminKeys.store(),
-    enabled: ready && isAuthenticated,
-    queryFn: () =>
-      apiJson<{ acceptingOrders: boolean }>('/api/v1/admin/store'),
-  });
-
-  const toggleMutation = useMutation({
-    mutationFn: (acceptingOrders: boolean) =>
-      apiJson('/api/v1/admin/store', {
-        method: 'PATCH',
-        body: JSON.stringify({ acceptingOrders }),
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: adminKeys.store() });
-    },
-  });
+  const orders = useMemo(
+    () => ordersQuery.data?.orders ?? [],
+    [ordersQuery.data],
+  );
+  const data = useMemo(() => buildDashboard(orders, period), [orders, period]);
+  const active = useMemo(
+    () =>
+      orders.filter(
+        (order) => !['delivered', 'cancelled'].includes(order.status),
+      ),
+    [orders],
+  );
 
   if (!ready || !isAuthenticated) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-background lg:pl-52">
+      <div className="flex min-h-dvh items-center justify-center">
         <Loader2 className="size-5 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
-  const orders = ordersQuery.data?.orders ?? [];
-  const acceptingOrders = storeQuery.data?.acceptingOrders ?? true;
-  const active = orders.filter(
-    (order) => !['delivered', 'cancelled'].includes(order.status),
-  );
-  const production = orders.filter(
-    (order) => order.status === 'in_production',
-  ).length;
-  const revenue = orders
-    .filter((order) => order.status !== 'cancelled')
-    .reduce((sum, order) => sum + order.totalCents, 0);
-
-  const metrics = [
-    { label: 'Na fila', value: String(active.length), icon: Receipt },
-    { label: 'Em produção', value: String(production), icon: Flame },
-    {
-      label: 'Vendas',
-      value: formatCatalogPrice(revenue),
-      icon: Wallet,
-    },
-  ];
-
   return (
-    <div className="min-h-dvh bg-background lg:pl-52">
-      <AdminHeader title="Visão geral" subtitle="Operação ao vivo" />
-      <div
-        className={cn(
-          'space-y-[18px] p-3.5 pb-8 md:px-6 md:pt-6',
-          adminContainerClass,
-        )}
-      >
-        <button
-          type="button"
-          onClick={() => toggleMutation.mutate(!acceptingOrders)}
-          className={cn(
-            'flex w-full items-center gap-[11px] rounded-lg border p-[13px] text-left',
-            acceptingOrders
-              ? 'border-success/40 bg-success/10'
-              : 'border-destructive/40 bg-destructive/10',
-          )}
-        >
-          <span
-            className={cn(
-              'flex size-9 items-center justify-center rounded-lg',
-              acceptingOrders ? 'bg-success' : 'bg-destructive',
-            )}
-          >
-            {acceptingOrders ? (
-              <Store className="size-[18px] text-success-foreground" />
-            ) : (
-              <Pause className="size-[18px] text-primary-foreground" />
-            )}
-          </span>
-          <div className="flex-1">
-            <p className="text-sm font-semibold">
-              {acceptingOrders ? 'Loja recebendo pedidos' : 'Loja pausada'}
-            </p>
-            <p className="mt-0.5 text-2xs text-muted-foreground">
-              Toque para {acceptingOrders ? 'pausar' : 'retomar'} a operação
-            </p>
-          </div>
-        </button>
-
-        <div className="grid grid-cols-3 gap-2">
-          {metrics.map((metric) => (
-            <div
-              key={metric.label}
-              className="rounded-lg border border-border bg-card p-3"
+    <div
+      className={cn(
+        'min-h-dvh space-y-4 p-3.5 pb-24 md:px-6 md:pt-6',
+        adminContainerClass,
+      )}
+    >
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-2xs font-bold uppercase tracking-widest text-primary">
+            Gestão operacional e desempenho
+          </p>
+          <h1 className="mt-1 font-serif text-2xl font-bold tracking-tight">
+            Visão geral do ateliê
+          </h1>
+          <p className="mt-1 max-w-prose text-xs text-muted-foreground">
+            Faturamento, volume de pedidos e velocidade de atendimento em tempo
+            real.
+          </p>
+        </div>
+        <div className="flex rounded-lg border border-border bg-card p-0.5">
+          {PERIODS.map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => setPeriod(item)}
+              className={cn(
+                'rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
+                period === item
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
             >
-              <metric.icon className="size-4 text-primary" />
-              <p className="mt-2 text-lg font-bold">{metric.value}</p>
-              <p className="text-2xs text-muted-foreground">{metric.label}</p>
-            </div>
+              {PERIOD_LABEL[item]}
+            </button>
           ))}
         </div>
+      </header>
 
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold">Pedidos ativos</h2>
-          <Link
-            href="/admin/pedidos"
-            className="flex items-center gap-0.5 text-xs font-semibold text-primary"
-          >
-            Ver todos <ChevronRight className="size-4" />
-          </Link>
+      {ordersQuery.isLoading ? (
+        <div className="flex justify-center py-16">
+          <Loader2 className="size-5 animate-spin text-muted-foreground" />
         </div>
+      ) : (
+        <>
+          <DashboardStats data={data} activeCount={active.length} />
 
-        {ordersQuery.isLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          <div className="grid gap-3 lg:grid-cols-[1.6fr_1fr]">
+            <SalesChart buckets={data.buckets} dense={period === '30d'} />
+            <TopProducts products={data.topProducts} />
           </div>
-        ) : active.length ? (
-          active.slice(0, 5).map((order) => (
-            <AdminOrderCard key={order.id} order={order} />
-          ))
-        ) : (
-          <p className="text-sm text-muted-foreground">Nenhum pedido na fila.</p>
-        )}
-      </div>
+
+          <div className="flex items-center justify-between pt-1">
+            <h2 className="font-serif text-base font-bold">Pedidos ativos</h2>
+            <Link
+              href="/admin/pedidos"
+              className="flex items-center gap-0.5 text-xs font-semibold text-primary"
+            >
+              Ver quadro <ChevronRight className="size-4" />
+            </Link>
+          </div>
+
+          {active.length ? (
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              {active.slice(0, 6).map((order) => (
+                <AdminOrderCard key={order.id} order={order} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Nenhum pedido na fila.
+            </p>
+          )}
+        </>
+      )}
     </div>
   );
 }

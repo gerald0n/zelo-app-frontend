@@ -1,22 +1,15 @@
 import 'server-only';
 
-import { z } from 'zod';
 import { hasCustomerName } from '@/modules/auth/customer-name';
-import { err, ok, type AppError, type Result } from '@/lib/errors';
+import { err, ok, type Result } from '@/lib/errors';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
-import { quoteDelivery } from '@/modules/delivery';
 import { getPublicStore } from '@/modules/catalog/catalog-repository';
 import {
   clearCustomerCart,
   getCustomerCartId,
 } from '@/modules/carts/persist-cart';
-import {
-  canPlaceImmediateOrder,
-  listAvailableScheduleDates,
-  listAvailableScheduleTimes,
-} from '@/modules/scheduling/schedule';
+import { canPlaceImmediateOrder } from '@/modules/scheduling/schedule';
 import {
   ensureCustomerRecord,
   findIdempotentResponse,
@@ -25,341 +18,29 @@ import {
   saveIdempotentResponse,
 } from '@/modules/orders/customer';
 import { createOrderPixCharge } from '@/modules/payments';
-import type { CatalogStore } from '@/modules/catalog/types';
+import {
+  createOrderBodySchema,
+  type CreateOrderBody,
+  type CreatedOrderPix,
+  type CreatedOrderSummary,
+} from '@/modules/orders/create-order-schema';
+import {
+  resolveDeliveryFee,
+  validatePaymentMethod,
+  validateScheduling,
+} from '@/modules/orders/create-order-validation';
+import {
+  fetchOrderSummary,
+  invokeCreateOrder,
+  toRpcPayload,
+} from '@/modules/orders/create-order-rpc';
 
-const orderItemSchema = z.object({
-  productId: z.string().uuid(),
-  quantity: z.number().int().positive(),
-  customerNote: z.string().max(500).optional(),
-  addOns: z
-    .array(
-      z.object({
-        addOnId: z.string().uuid(),
-        quantity: z.number().int().positive().default(1),
-      }),
-    )
-    .default([]),
-});
-
-const addressSchema = z.object({
-  street: z.string().min(1),
-  number: z.string().min(1),
-  neighborhood: z.string().optional().default(''),
-  city: z.string().min(1),
-  state: z.string().min(1),
-  postalCode: z.string().optional(),
-  complement: z.string().optional(),
-  referencePoint: z.string().optional(),
-  latitude: z.number(),
-  longitude: z.number(),
-});
-
-export const createOrderBodySchema = z.object({
-  timing: z.enum(['immediate', 'scheduled']),
-  scheduledFor: z.string().optional(),
-  deliveryMethod: z.enum(['delivery', 'pickup']),
-  paymentMethod: z.enum(['pix', 'cash', 'card']),
-  needsChange: z.boolean().optional(),
-  changeForAmountCents: z.number().int().positive().optional(),
-  customerNote: z.string().max(1000).optional(),
-  address: addressSchema.optional(),
-  items: z.array(orderItemSchema).min(1),
-});
-
-export type CreateOrderBody = z.infer<typeof createOrderBodySchema>;
-
-export type CreatedOrderSummary = {
-  id: string;
-  orderNumber: number;
-  status: string;
-  totalCents: number;
-  deliveryFeeCents: number;
-  subtotalCents: number;
-  routeDistanceMeters: number | null;
+export {
+  createOrderBodySchema,
+  type CreateOrderBody,
+  type CreatedOrderPix,
+  type CreatedOrderSummary,
 };
-
-export type CreatedOrderPix = {
-  qrCode: string;
-  qrCodeBase64: string;
-  ticketUrl: string | null;
-  expiresAt: string;
-};
-
-function mapRpcError(message: string): AppError {
-  const lower = message.toLowerCase();
-  if (lower.includes('não autenticado') || lower.includes('autorizado')) {
-    return {
-      code: 'UNAUTHENTICATED',
-      message: 'Faça login para concluir o pedido.',
-    };
-  }
-  if (lower.includes('indisponível') || lower.includes('inválido')) {
-    return { code: 'PRODUCT_UNAVAILABLE', message };
-  }
-  if (lower.includes('endereço') || lower.includes('área')) {
-    return { code: 'OUT_OF_DELIVERY_AREA', message };
-  }
-  if (lower.includes('troco')) {
-    return { code: 'VALIDATION_ERROR', message };
-  }
-  if (lower.includes('agend')) {
-    return { code: 'STORE_CLOSED', message };
-  }
-  return {
-    code: 'INTERNAL_ERROR',
-    message: 'Não foi possível criar o pedido.',
-  };
-}
-
-async function validateScheduling(
-  body: CreateOrderBody,
-): Promise<Result<{ scheduledFor: string | null }>> {
-  const storeResult = await getPublicStore();
-  if (!storeResult.ok) return storeResult;
-  if (!storeResult.data) {
-    return err('NOT_FOUND', 'Loja não encontrada.');
-  }
-  const store = storeResult.data;
-
-  if (body.timing === 'immediate') {
-    if (!canPlaceImmediateOrder(store)) {
-      return err(
-        'STORE_CLOSED',
-        'A loja está fechada. Escolha um horário para agendar.',
-      );
-    }
-    return ok({ scheduledFor: null });
-  }
-
-  if (!body.scheduledFor) {
-    return err('VALIDATION_ERROR', 'Informe data e horário do agendamento.');
-  }
-
-  const scheduled = new Date(body.scheduledFor);
-  if (Number.isNaN(scheduled.getTime())) {
-    return err('VALIDATION_ERROR', 'Data de agendamento inválida.');
-  }
-
-  const dateIso = body.scheduledFor.slice(0, 10);
-  const time = body.scheduledFor.slice(11, 16);
-  const dates = listAvailableScheduleDates(store, {
-    deliveryMethod: body.deliveryMethod,
-  });
-  if (!dates.includes(dateIso)) {
-    return err('VALIDATION_ERROR', 'Data de agendamento indisponível.');
-  }
-  const times = listAvailableScheduleTimes(store, dateIso, body.deliveryMethod);
-  if (!times.includes(time)) {
-    return err('VALIDATION_ERROR', 'Horário de agendamento indisponível.');
-  }
-
-  return ok({ scheduledFor: body.scheduledFor });
-}
-
-function isPaymentAccepted(
-  store: CatalogStore,
-  method: CreateOrderBody['paymentMethod'],
-) {
-  return store.acceptsPayments[method];
-}
-
-async function validatePaymentMethod(
-  body: CreateOrderBody,
-): Promise<Result<true>> {
-  const storeResult = await getPublicStore();
-  if (!storeResult.ok) return storeResult;
-  if (!storeResult.data) {
-    return err('NOT_FOUND', 'Loja não encontrada.');
-  }
-  if (!isPaymentAccepted(storeResult.data, body.paymentMethod)) {
-    return err(
-      'VALIDATION_ERROR',
-      'Esta forma de pagamento não está disponível no momento.',
-    );
-  }
-  return ok(true);
-}
-
-async function resolveDeliveryFee(body: CreateOrderBody): Promise<
-  Result<{
-    deliveryFeeCents: number;
-    routeDistanceMeters: number | null;
-    address: CreateOrderBody['address'];
-  }>
-> {
-  if (body.deliveryMethod === 'pickup') {
-    return ok({
-      deliveryFeeCents: 0,
-      routeDistanceMeters: null,
-      address: undefined,
-    });
-  }
-
-  if (!body.address) {
-    return err('VALIDATION_ERROR', 'Endereço é obrigatório para entrega.');
-  }
-
-  const storeResult = await getPublicStore();
-  if (!storeResult.ok) return storeResult;
-  if (!storeResult.data) {
-    return err('NOT_FOUND', 'Loja não encontrada.');
-  }
-  const store = storeResult.data;
-
-  const quote = await quoteDelivery(
-    {
-      street: body.address.street,
-      number: body.address.number,
-      neighborhood: body.address.neighborhood,
-      complement: body.address.complement,
-      referencePoint: body.address.referencePoint,
-      city: body.address.city,
-      state: body.address.state,
-      postalCode: body.address.postalCode,
-      latitude: body.address.latitude,
-      longitude: body.address.longitude,
-    },
-    {
-      latitude: store.latitude,
-      longitude: store.longitude,
-      freeDeliveryRadiusMeters: store.freeDeliveryRadiusMeters,
-      fixedDeliveryFeeCents: store.fixedDeliveryFeeCents,
-      maxDeliveryRadiusMeters: store.maxDeliveryRadiusMeters,
-      addressLine: store.addressLine,
-      city: store.city,
-      state: store.state,
-    },
-  );
-
-  if (!quote.ok) return quote;
-
-  if (!quote.data.inServiceArea) {
-    return err(
-      'OUT_OF_DELIVERY_AREA',
-      quote.data.message ??
-        'Endereço fora da área urbana. Escolha retirada na loja.',
-    );
-  }
-
-  return ok({
-    deliveryFeeCents: quote.data.deliveryFeeCents,
-    routeDistanceMeters: quote.data.routeDistanceMeters,
-    address: {
-      ...body.address,
-      latitude: quote.data.latitude,
-      longitude: quote.data.longitude,
-    },
-  });
-}
-
-function toRpcPayload(
-  body: CreateOrderBody,
-  delivery: {
-    deliveryFeeCents: number;
-    routeDistanceMeters: number | null;
-    address: CreateOrderBody['address'];
-  },
-  scheduledFor: string | null,
-  cartId: string | null,
-) {
-  return {
-    cart_id: cartId,
-    timing: body.timing,
-    scheduled_for: scheduledFor,
-    delivery_method: body.deliveryMethod,
-    payment_method: body.paymentMethod,
-    needs_change:
-      body.paymentMethod === 'cash' ? Boolean(body.needsChange) : false,
-    change_for_amount_cents:
-      body.paymentMethod === 'cash' && body.needsChange
-        ? body.changeForAmountCents
-        : null,
-    customer_note: body.customerNote ?? null,
-    delivery_fee_cents: delivery.deliveryFeeCents,
-    route_distance_meters: delivery.routeDistanceMeters,
-    address:
-      body.deliveryMethod === 'delivery' && delivery.address
-        ? {
-            street: delivery.address.street,
-            number: delivery.address.number,
-            neighborhood: delivery.address.neighborhood,
-            city: delivery.address.city,
-            state: delivery.address.state,
-            postal_code: delivery.address.postalCode ?? null,
-            complement: delivery.address.complement ?? null,
-            reference_point: delivery.address.referencePoint ?? null,
-            latitude: delivery.address.latitude,
-            longitude: delivery.address.longitude,
-          }
-        : null,
-    items: body.items.map((item) => ({
-      product_id: item.productId,
-      quantity: item.quantity,
-      customer_note: item.customerNote ?? null,
-      add_ons: item.addOns.map((addon) => ({
-        add_on_id: addon.addOnId,
-        quantity: addon.quantity,
-      })),
-    })),
-  };
-}
-
-async function fetchOrderSummary(
-  orderId: string,
-): Promise<Result<CreatedOrderSummary>> {
-  const admin = createAdminSupabaseClient();
-  const { data, error } = await admin
-    .from('orders')
-    .select(
-      'id, order_number, status, total_cents, delivery_fee_cents, subtotal_cents, add_ons_total_cents',
-    )
-    .eq('id', orderId)
-    .maybeSingle();
-
-  if (error || !data) {
-    return err(
-      'INTERNAL_ERROR',
-      'Pedido criado, mas falhou ao carregar resumo.',
-      {
-        cause: error,
-      },
-    );
-  }
-
-  const address = await admin
-    .from('order_addresses')
-    .select('route_distance_meters')
-    .eq('order_id', orderId)
-    .maybeSingle();
-
-  return ok({
-    id: data.id,
-    orderNumber: data.order_number,
-    status: data.status,
-    totalCents: data.total_cents,
-    deliveryFeeCents: data.delivery_fee_cents,
-    subtotalCents: data.subtotal_cents + data.add_ons_total_cents,
-    routeDistanceMeters: address.data?.route_distance_meters ?? null,
-  });
-}
-
-async function invokeCreateOrder(
-  rpcPayload: Record<string, unknown>,
-): Promise<Result<string>> {
-  const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase.rpc('create_order', {
-    payload: rpcPayload as never,
-  });
-
-  if (error || !data) {
-    logger.error('create_order falhou', { message: error?.message });
-    return {
-      ok: false,
-      error: mapRpcError(error?.message ?? 'Falha ao criar pedido'),
-    };
-  }
-  return ok(data);
-}
 
 export async function createOrderFromCheckout(options: {
   body: CreateOrderBody;

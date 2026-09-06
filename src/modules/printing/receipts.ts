@@ -36,6 +36,7 @@ function writeItems(builder: ReceiptBuilder, items: ReceiptItem[]) {
 function writeKitchenItems(builder: ReceiptBuilder, items: ReceiptItem[]) {
   items.forEach((item, index) => {
     if (index > 0) builder.line();
+    // Altura dobrada (não largura) — nome de produto comprido não quebra.
     builder
       .doubleHeight(true)
       .bold(true)
@@ -43,17 +44,26 @@ function writeKitchenItems(builder: ReceiptBuilder, items: ReceiptItem[]) {
       .bold(false)
       .doubleHeight(false);
     for (const addOn of item.addOns) {
-      builder.line(`   + ${addOn.quantity}x ${addOn.name}`);
+      builder
+        .doubleHeight(true)
+        .line(`  + ${addOn.quantity}x ${addOn.name}`)
+        .doubleHeight(false);
     }
     if (item.note) {
-      builder.bold(true).line(`   Obs.: ${item.note}`).bold(false);
+      builder
+        .doubleHeight(true)
+        .bold(true)
+        .line(`  Obs.: ${item.note}`)
+        .bold(false)
+        .doubleHeight(false);
     }
   });
 }
 
 /**
  * Comanda de cozinha — só o que precisa ser feito. Sem preço; endereço só
- * quando é entrega. Texto grande de propósito, pra ler de longe na bancada.
+ * quando é entrega. Tudo em corpo grande de propósito, pra ler de longe na
+ * bancada.
  */
 export function buildKitchenTicket(data: KitchenTicketData): Uint8Array {
   const builder = new ReceiptBuilder().init().align('center');
@@ -64,9 +74,11 @@ export function buildKitchenTicket(data: KitchenTicketData): Uint8Array {
     .doubleSize(true)
     .bold(true)
     .line(`PEDIDO ${data.orderNumber}`)
-    .bold(false)
-    .doubleSize(false);
-  builder.line(formatDateTime(data.createdAt));
+    .doubleSize(false)
+    .doubleHeight(true)
+    .line(formatDateTime(data.createdAt))
+    .doubleHeight(false)
+    .bold(false);
   builder.divider();
 
   builder
@@ -77,16 +89,18 @@ export function buildKitchenTicket(data: KitchenTicketData): Uint8Array {
     .doubleSize(false);
   if (data.timing === 'scheduled' && data.scheduledFor) {
     builder
-      .doubleHeight(true)
+      .doubleSize(true)
       .bold(true)
-      .line(`AGENDADO ${formatDateTime(data.scheduledFor)}`)
+      .line('AGENDADO')
+      .line(formatDateTime(data.scheduledFor))
       .bold(false)
-      .doubleHeight(false);
+      .doubleSize(false);
   }
   if (data.isGuest) builder.line('(cliente avulso, sem cadastro)');
 
   builder.align('left').divider();
 
+  builder.doubleHeight(true);
   if (data.customerName) {
     builder.bold(true).line(`Cliente: ${data.customerName}`).bold(false);
   }
@@ -98,6 +112,7 @@ export function buildKitchenTicket(data: KitchenTicketData): Uint8Array {
       builder.line(`Ref.: ${data.address.referencePoint}`);
     }
   }
+  builder.doubleHeight(false);
   if (data.customerName || data.customerPhone || data.address) {
     builder.divider();
   }
@@ -107,8 +122,10 @@ export function buildKitchenTicket(data: KitchenTicketData): Uint8Array {
 
   if (data.customerNote) {
     builder
+      .doubleSize(true)
       .bold(true)
-      .line('OBS. DO CLIENTE')
+      .line('OBS. CLIENTE')
+      .doubleSize(false)
       .doubleHeight(true)
       .line(data.customerNote)
       .doubleHeight(false)
@@ -118,8 +135,10 @@ export function buildKitchenTicket(data: KitchenTicketData): Uint8Array {
   if (data.internalNote) {
     builder
       .bold(true)
+      .doubleHeight(true)
       .line('RECADO INTERNO')
       .line(data.internalNote)
+      .doubleHeight(false)
       .bold(false)
       .divider();
   }
@@ -196,10 +215,15 @@ export function buildTestPrint(): Uint8Array {
     .align('center')
     .image(RECEIPT_LOGO)
     .feed(1)
+    .doubleSize(true)
     .bold(true)
-    .line('Teste de impressão OK')
+    .line('TESTE OK')
     .bold(false)
-    .line('Acentuação: ção, ãäé, R$ 1,00')
+    .doubleSize(false)
+    .doubleHeight(true)
+    .line('Acentuação: ção, ãäé')
+    .line('R$ 1,00')
+    .doubleHeight(false)
     .line(new Date().toLocaleString('pt-BR'))
     .cut()
     .toBytes();

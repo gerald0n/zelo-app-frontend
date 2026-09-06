@@ -73,3 +73,6 @@ package-lock.json
 # Pix, coordenadas). Não vai pro repo. `seed-operacional.sql` (com placeholders
 # <<<PREENCHA>>>) fica versionado como modelo.
 /supabase/seed-operacional.prod.sql
+
+# previews locais de comanda (scripts/preview-receipt.mjs)
+receipt-preview-*.png
