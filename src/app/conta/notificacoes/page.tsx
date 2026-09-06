@@ -24,25 +24,33 @@ type PushUiState =
   | 'on'
   | 'working';
 
+type PushSubscriptionState = Awaited<
+  ReturnType<typeof getPushSubscriptionState>
+>;
+
+function uiStateFor(current: PushSubscriptionState): PushUiState {
+  if (current.permission === 'unsupported') return 'unsupported';
+  if (current.permission === 'denied') return 'denied';
+  return current.subscribed ? 'on' : 'off';
+}
+
 export default function NotificacoesPage() {
   const { notify } = useShopExperience();
   const [state, setState] = useState<PushUiState>('loading');
 
   const refresh = async () => {
-    const current = await getPushSubscriptionState();
-    if (current.permission === 'unsupported') {
-      setState('unsupported');
-      return;
-    }
-    if (current.permission === 'denied') {
-      setState('denied');
-      return;
-    }
-    setState(current.subscribed ? 'on' : 'off');
+    setState(uiStateFor(await getPushSubscriptionState()));
   };
 
   useEffect(() => {
-    void refresh();
+    let cancelled = false;
+    void (async () => {
+      const next = uiStateFor(await getPushSubscriptionState());
+      if (!cancelled) setState(next);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const enable = async () => {
