@@ -27,9 +27,9 @@ const eslintConfig = defineConfig([
       // para "error": nenhum arquivo passa de 350 linhas.
       'quality/max-lines': ['error', { max: 350 }],
       'quality/no-direct-console': [
-        // 2 violações na linha de base (src/config/env.ts,
-        // src/contexts/PrinterContext.tsx). Volta para "error" quando zerar.
-        'warn',
+        // Linha de base zerada (prompt 02): PrinterContext usa o logger,
+        // env.ts está no bloco `off` abaixo (bootstrap, ciclo com o logger).
+        'error',
         { logger: 'o logger de src/lib/logger.ts' },
       ],
       'quality/no-direct-data-access': [
@@ -67,12 +67,12 @@ const eslintConfig = defineConfig([
     files: ['**/*.{js,jsx,mjs,ts,tsx,mts,cts}'],
     plugins: { 'react-hooks': reactHooksPlugin },
     rules: {
-      // Dívida técnica pré-existente (11 ocorrências em checkout/conta/
-      // contexts). É um aviso de performance, não de correção — o React
-      // documenta como "não recomendado", não "quebrado". Rebaixado para
-      // `warn` para o CI poder barrar regressões novas; limpeza na Fase N.
-      // Ver docs/100-planejamento e o inventário de lint no PR.
-      'react-hooks/set-state-in-effect': 'warn',
+      // Linha de base zerada (prompt 02): estados sincronizados por effect
+      // viraram derivação no render, e as buscas viraram effect events que
+      // só retornam dado (setState de dentro de IIFE guardada). Uma única
+      // supressão pontual em PwaInstallContext (capacidade do navegador só
+      // conhecível pós-mount). Promovida para "error".
+      'react-hooks/set-state-in-effect': 'error',
     },
   },
   {
