@@ -39,8 +39,12 @@ export default function RecebimentoPage() {
 
   const [options, setOptions] = useState<CheckoutOptions | null>(null);
   const [optionsError, setOptionsError] = useState<string | null>(null);
-  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [fetchedAddresses, setFetchedAddresses] = useState<SavedAddress[]>([]);
   const [selectedSavedId, setSelectedSavedId] = useState<string | null>(null);
+
+  // Convidado (sem conta) nunca tem endereço salvo — derivado, sem setState
+  // no corpo do effect para o caso "sem usuário".
+  const savedAddresses = user ? fetchedAddresses : [];
 
   const storeOpen = options?.scheduling.storeOpen ?? false;
   const allowImmediate = storeOpen;
@@ -97,10 +101,7 @@ export default function RecebimentoPage() {
   }, []);
 
   useEffect(() => {
-    if (!user) {
-      setSavedAddresses([]);
-      return;
-    }
+    if (!user) return;
     let cancelled = false;
     (async () => {
       try {
@@ -109,7 +110,7 @@ export default function RecebimentoPage() {
         });
         const json = await response.json().catch(() => null);
         if (!response.ok || cancelled) return;
-        setSavedAddresses((json.addresses as SavedAddress[]) ?? []);
+        setFetchedAddresses((json.addresses as SavedAddress[]) ?? []);
       } catch {
         /* o formulário continua disponível */
       }
