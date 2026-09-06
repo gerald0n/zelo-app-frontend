@@ -23,9 +23,9 @@ const eslintConfig = defineConfig([
     rules: {
       // Teto de 350 linhas por arquivo. Copiado de
       // soumatheusgomes/vibe-coding-toolkit (prompt 08), regra byte-a-byte.
-      // Linha de base: 17 arquivos acima de 350 linhas (ver relatório do
-      // prompt 08). Fica em "warn" até zerar, aí volta para "error".
-      'quality/max-lines': ['warn', { max: 350 }],
+      // Linha de base zerada (prompt 09, 15 arquivos quebrados). Promovida
+      // para "error": nenhum arquivo passa de 350 linhas.
+      'quality/max-lines': ['error', { max: 350 }],
       'quality/no-direct-console': [
         // 2 violações na linha de base (src/config/env.ts,
         // src/contexts/PrinterContext.tsx). Volta para "error" quando zerar.
