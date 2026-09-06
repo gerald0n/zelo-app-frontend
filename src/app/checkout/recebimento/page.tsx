@@ -1,145 +1,30 @@
 'use client';
 
-import { useEffect, useMemo, useState, useEffectEvent, useRef } from 'react';
+import { useEffect, useMemo, useState, useEffectEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  ArrowLeft,
-  Zap,
-  Calendar,
-  Clock,
-  Check,
-  Bike,
-  ShoppingBag,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
-} from 'lucide-react';
+import { ArrowLeft, Bike, ShoppingBag, AlertCircle } from 'lucide-react';
 import { useCheckout } from '@/contexts/CheckoutContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { checkoutContinuePath } from '@/modules/auth/checkout-path';
-import { Input } from '@/components/ui/input';
 import CheckoutProgress from '@/components/CheckoutProgress';
-import { DeliveryMapConfirm } from '@/components/checkout/DeliveryMapConfirm';
-import { AddressAutocomplete } from '@/components/checkout/AddressAutocomplete';
 import { formatCatalogPrice } from '@/modules/catalog/types';
-import type { DeliveryQuoteSource } from '@/modules/delivery';
 import type { SavedAddress } from '@/modules/customers/addresses';
 import { cn } from '@/lib/cn';
 import {
-  checkoutFieldClass,
   checkoutFooterClass,
   checkoutDesktopContainerClass,
   pageHeaderBarClass,
   pageBodyPadClass,
   pageCtaBaseClass,
 } from '@/lib/layout';
-
-type CheckoutOptions = {
-  store: {
-    id: string;
-    name: string;
-    addressLine: string;
-    city: string;
-    state: string;
-    latitude: number;
-    longitude: number;
-    freeDeliveryRadiusMeters: number;
-    fixedDeliveryFeeCents: number;
-  };
-  neighborhoods: Array<{ id: string; name: string }>;
-  scheduling: {
-    storeOpen: boolean;
-    availableDates: string[];
-    timesByDate: Record<string, { delivery: string[]; pickup: string[] }>;
-  };
-};
-
-type ValidationResult = {
-  inServiceArea: boolean;
-  routeDistanceMeters: number;
-  deliveryFeeCents: number;
-  latitude: number;
-  longitude: number;
-  formattedAddress: string;
-  source: DeliveryQuoteSource;
-  locationPrecision: 'high' | 'low';
-  message?: string;
-};
-
-function todayIso(): string {
-  return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD, hora local
-}
-
-/** "800 m" / "1 km" / "1,5 km". */
-function formatRadius(meters: number): string {
-  if (meters < 1000) return `${meters} m`;
-  const km = meters / 1000;
-  return `${(Number.isInteger(km) ? km.toString() : km.toFixed(1)).replace('.', ',')} km`;
-}
-
-function relativeDayLabel(iso: string): string | null {
-  const today = new Date(`${todayIso()}T12:00:00`);
-  const target = new Date(`${iso}T12:00:00`);
-  const diffDays = Math.round(
-    (target.getTime() - today.getTime()) / 86_400_000,
-  );
-  if (diffDays === 0) return 'Hoje';
-  if (diffDays === 1) return 'Amanhã';
-  return null;
-}
-
-function scheduleDateParts(iso: string): {
-  weekday: string;
-  day: string;
-  month: string;
-} {
-  const date = new Date(`${iso}T12:00:00`);
-  return {
-    weekday: date
-      .toLocaleDateString('pt-BR', { weekday: 'short' })
-      .replace('.', ''),
-    day: date.toLocaleDateString('pt-BR', { day: '2-digit' }),
-    month: date
-      .toLocaleDateString('pt-BR', { month: 'short' })
-      .replace('.', ''),
-  };
-}
-
-function formatScheduleSummary(iso: string, time: string): string {
-  const date = new Date(`${iso}T12:00:00`);
-  const relative = relativeDayLabel(iso);
-  const label = date.toLocaleDateString('pt-BR', {
-    // Com rótulo relativo ("Amanhã") o dia da semana vira redundância.
-    weekday: relative ? undefined : 'long',
-    day: '2-digit',
-    month: 'long',
-  });
-  const prefix = relative ? `${relative}, ` : '';
-  return `${prefix}${label} às ${time}`;
-}
-
-/** Agrupa horários em manhã / tarde / noite para leitura mais fácil. */
-function groupTimesByPeriod(
-  times: string[],
-): Array<{ id: string; label: string; times: string[] }> {
-  const buckets: Record<string, string[]> = {
-    manha: [],
-    tarde: [],
-    noite: [],
-  };
-  for (const time of times) {
-    const hour = Number(time.slice(0, 2));
-    if (hour < 12) buckets.manha.push(time);
-    else if (hour < 18) buckets.tarde.push(time);
-    else buckets.noite.push(time);
-  }
-  return [
-    { id: 'manha', label: 'Manhã', times: buckets.manha },
-    { id: 'tarde', label: 'Tarde', times: buckets.tarde },
-    { id: 'noite', label: 'Noite', times: buckets.noite },
-  ].filter((group) => group.times.length > 0);
-}
+import {
+  formatRadius,
+  type CheckoutOptions,
+} from '@/app/checkout/recebimento/recebimento-helpers';
+import { useDeliveryQuote } from '@/app/checkout/recebimento/useDeliveryQuote';
+import { ScheduleSection } from '@/app/checkout/recebimento/_sections/ScheduleSection';
+import { DeliveryAddressSection } from '@/app/checkout/recebimento/_sections/DeliveryAddressSection';
 
 export default function RecebimentoPage() {
   const router = useRouter();
@@ -149,23 +34,19 @@ export default function RecebimentoPage() {
     setScheduleType,
     setScheduledDate,
     setScheduledTime,
-    setAddressDetails,
-    setDeliveryQuote,
-    clearDeliveryQuote,
-    setLocationConfirmed,
   } = useCheckout();
   const { user, identityReady } = useAuth();
 
   const [options, setOptions] = useState<CheckoutOptions | null>(null);
   const [optionsError, setOptionsError] = useState<string | null>(null);
-  const [quoting, setQuoting] = useState(false);
-  const [quoteError, setQuoteError] = useState<string | null>(null);
-  const [quoteMessage, setQuoteMessage] = useState<string | null>(null);
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [selectedSavedId, setSelectedSavedId] = useState<string | null>(null);
 
   const storeOpen = options?.scheduling.storeOpen ?? false;
   const allowImmediate = storeOpen;
+
+  const { quoting, quoteError, quoteMessage, revalidateWithCoords } =
+    useDeliveryQuote();
 
   const onOptionsLoaded = useEffectEvent((data: CheckoutOptions) => {
     setOptions(data);
@@ -239,29 +120,6 @@ export default function RecebimentoPage() {
   }, [user]);
 
   useEffect(() => {
-    if (!user) {
-      setSavedAddresses([]);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const response = await fetch('/api/v1/addresses', {
-          cache: 'no-store',
-        });
-        const json = await response.json().catch(() => null);
-        if (!response.ok || cancelled) return;
-        setSavedAddresses((json.addresses as SavedAddress[]) ?? []);
-      } catch {
-        /* o formulário continua disponível */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
-
-  useEffect(() => {
     if (!storeOpen && checkout.scheduleType === 'now') {
       setScheduleType('scheduled');
     }
@@ -293,136 +151,6 @@ export default function RecebimentoPage() {
     checkout.scheduledTime,
     setScheduledTime,
   ]);
-
-  const details = checkout.addressDetails;
-  const canQuote =
-    checkout.deliveryType === 'delivery' &&
-    details.street.trim().length > 1 &&
-    details.number.trim().length > 0;
-
-  const applyValidation = useEffectEvent((validation: ValidationResult) => {
-    setQuoteMessage(validation.message ?? null);
-    setDeliveryQuote({
-      routeDistanceMeters: validation.routeDistanceMeters,
-      deliveryFeeCents: validation.deliveryFeeCents,
-      inServiceArea: validation.inServiceArea,
-      source: validation.source,
-      latitude: validation.latitude,
-      longitude: validation.longitude,
-      formattedAddress: validation.formattedAddress,
-      locationConfirmed: false,
-    });
-  });
-
-  const lastValidationKeyRef = useRef<string | null>(null);
-
-  const buildValidationKey = useEffectEvent(
-    (coords?: { latitude?: number; longitude?: number }) =>
-      JSON.stringify({
-        street: details.street.trim(),
-        number: details.number.trim(),
-        neighborhood: details.neighborhood.trim(),
-        complement: details.complement.trim(),
-        referencePoint: details.referencePoint.trim(),
-        city: details.city || 'Pereiro',
-        state: details.state || 'CE',
-        postalCode: details.postalCode.trim(),
-        latitude: coords?.latitude ?? details.latitude ?? null,
-        longitude: coords?.longitude ?? details.longitude ?? null,
-      }),
-  );
-
-  const runValidation = useEffectEvent(
-    async (coords?: { latitude?: number; longitude?: number }) => {
-      if (!canQuote) return;
-
-      const validationKey = buildValidationKey(coords);
-      if (validationKey === lastValidationKeyRef.current) return;
-      lastValidationKeyRef.current = validationKey;
-
-      setQuoting(true);
-      setQuoteError(null);
-      try {
-        const response = await fetch('/api/v1/addresses/validate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            street: details.street,
-            number: details.number,
-            neighborhood: details.neighborhood,
-            complement: details.complement || undefined,
-            referencePoint: details.referencePoint || undefined,
-            city: details.city || 'Pereiro',
-            state: details.state || 'CE',
-            postalCode: details.postalCode || undefined,
-            latitude: coords?.latitude ?? details.latitude,
-            longitude: coords?.longitude ?? details.longitude,
-          }),
-        });
-        const json = await response.json();
-        if (!response.ok) {
-          lastValidationKeyRef.current = null;
-          clearDeliveryQuote();
-          setQuoteError(
-            json?.error?.message ?? 'Não foi possível validar o endereço.',
-          );
-          return;
-        }
-        applyValidation(json.validation as ValidationResult);
-      } catch {
-        lastValidationKeyRef.current = null;
-        clearDeliveryQuote();
-        setQuoteError('Falha de rede ao validar o endereço.');
-      } finally {
-        setQuoting(false);
-      }
-    },
-  );
-
-  useEffect(() => {
-    if (!canQuote) {
-      lastValidationKeyRef.current = null;
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      void runValidation();
-    }, 450);
-
-    return () => window.clearTimeout(timer);
-  }, [
-    canQuote,
-    details.street,
-    details.number,
-    details.city,
-    details.state,
-    details.postalCode,
-  ]);
-
-  const pendingCoordsRef = useRef<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
-  const [coordsRevalidateNonce, setCoordsRevalidateNonce] = useState(0);
-
-  const revalidateWithCoords = (latitude: number, longitude: number) => {
-    setAddressDetails({ latitude, longitude });
-    setLocationConfirmed(false);
-    pendingCoordsRef.current = { latitude, longitude };
-    setCoordsRevalidateNonce((nonce) => nonce + 1);
-  };
-
-  // Dispara a validação a partir de coordenadas do mapa. Passa por um nonce
-  // para que `runValidation` (useEffectEvent) só seja chamado de dentro de
-  // um Effect — nunca direto do handler.
-  useEffect(() => {
-    if (coordsRevalidateNonce === 0) return;
-    const timer = window.setTimeout(() => {
-      const coords = pendingCoordsRef.current;
-      if (coords) void runValidation(coords);
-    }, 450);
-    return () => window.clearTimeout(timer);
-  }, [coordsRevalidateNonce]);
 
   const deliveryFee =
     checkout.deliveryType === 'delivery' ? checkout.deliveryFeeCents : 0;
@@ -472,181 +200,11 @@ export default function RecebimentoPage() {
             </div>
           ) : null}
 
-          <p className="text-base font-semibold">Quando?</p>
-          <div className="flex min-w-0 gap-2.5">
-            <button
-              type="button"
-              disabled={!allowImmediate}
-              onClick={() => allowImmediate && setScheduleType('now')}
-              className={cn(
-                'flex flex-1 flex-col items-center gap-1.5 rounded-md border-[1.5px] py-3.5 transition-[background-color,border-color,transform] duration-100 active:scale-[0.98]',
-                checkout.scheduleType === 'now'
-                  ? 'border-primary bg-primary/[0.07]'
-                  : 'border-border bg-card',
-                !allowImmediate && 'opacity-40',
-              )}
-            >
-              <Zap
-                className={cn(
-                  'size-[22px]',
-                  checkout.scheduleType === 'now'
-                    ? 'text-primary'
-                    : 'text-muted-foreground',
-                )}
-              />
-              <span
-                className={cn(
-                  'text-sm',
-                  checkout.scheduleType === 'now'
-                    ? 'font-semibold text-primary'
-                    : 'text-foreground',
-                )}
-              >
-                Agora
-              </span>
-              {!allowImmediate ? (
-                <span className="text-2xs text-muted-foreground">
-                  Loja fechada
-                </span>
-              ) : null}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setScheduleType('scheduled')}
-              className={cn(
-                'flex flex-1 flex-col items-center gap-1.5 rounded-md border-[1.5px] py-3.5 transition-[background-color,border-color,transform] duration-100 active:scale-[0.98]',
-                checkout.scheduleType === 'scheduled'
-                  ? 'border-primary bg-primary/[0.07]'
-                  : 'border-border bg-card',
-              )}
-            >
-              <Calendar
-                className={cn(
-                  'size-[22px]',
-                  checkout.scheduleType === 'scheduled'
-                    ? 'text-primary'
-                    : 'text-muted-foreground',
-                )}
-              />
-              <span
-                className={cn(
-                  'text-sm',
-                  checkout.scheduleType === 'scheduled'
-                    ? 'font-semibold text-primary'
-                    : 'text-foreground',
-                )}
-              >
-                Agendar
-              </span>
-            </button>
-          </div>
-
-          {checkout.scheduleType === 'scheduled' ? (
-            <div className="mt-1 space-y-3">
-              <p className="text-sm font-semibold">Escolha o dia</p>
-              <div className="no-scrollbar -mx-3 flex snap-x snap-mandatory gap-2 overflow-x-auto px-3 pb-1">
-                {availableDates.map((key) => {
-                  const selected = checkout.scheduledDate === key;
-                  const parts = scheduleDateParts(key);
-                  const relative = relativeDayLabel(key);
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setScheduledDate(key)}
-                      aria-pressed={selected}
-                      className={cn(
-                        'flex w-[62px] shrink-0 snap-start flex-col items-center gap-0.5 rounded-xl border-[1.5px] py-2 transition-[background-color,border-color,transform] duration-100 active:scale-[0.97]',
-                        selected
-                          ? 'border-primary bg-primary text-white'
-                          : 'border-border bg-card text-foreground',
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          'text-[10px] font-semibold uppercase tracking-wide',
-                          selected ? 'text-white/80' : 'text-muted-foreground',
-                        )}
-                      >
-                        {relative ?? parts.weekday}
-                      </span>
-                      <span className="text-lg font-bold leading-none tabular-nums">
-                        {parts.day}
-                      </span>
-                      <span
-                        className={cn(
-                          'text-[10px] font-medium uppercase',
-                          selected ? 'text-white/80' : 'text-muted-foreground',
-                        )}
-                      >
-                        {parts.month}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <p className="text-sm font-semibold">Escolha o horário</p>
-              {availableTimes.length === 0 ? (
-                <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-                  <AlertCircle className="mt-0.5 size-4 shrink-0" />
-                  <p>Sem horários para esta data. Tente outro dia.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {groupTimesByPeriod(availableTimes).map((group) => (
-                    <div key={group.id} className="space-y-1.5">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                        {group.label}
-                      </p>
-                      <div className="grid grid-cols-3 gap-2">
-                        {group.times.map((time) => {
-                          const selected = checkout.scheduledTime === time;
-                          return (
-                            <button
-                              key={time}
-                              type="button"
-                              onClick={() => setScheduledTime(time)}
-                              aria-pressed={selected}
-                              className={cn(
-                                'flex items-center justify-center gap-1 rounded-lg border-[1.5px] py-2 text-sm font-semibold tabular-nums transition-[background-color,border-color,transform] duration-100 active:scale-[0.97]',
-                                selected
-                                  ? 'border-primary bg-primary text-white'
-                                  : 'border-border bg-card text-foreground',
-                              )}
-                            >
-                              {selected ? (
-                                <Check className="size-3.5" />
-                              ) : null}
-                              {time}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {checkout.scheduledDate && checkout.scheduledTime ? (
-                <div className="flex items-center gap-2 rounded-lg border border-primary/25 bg-primary/[0.06] px-3 py-2.5 text-sm">
-                  <Clock className="size-4 shrink-0 text-primary" />
-                  <p className="leading-snug">
-                    {checkout.deliveryType === 'pickup'
-                      ? 'Retirada '
-                      : 'Entrega '}
-                    <span className="font-semibold">
-                      {formatScheduleSummary(
-                        checkout.scheduledDate,
-                        checkout.scheduledTime,
-                      )}
-                    </span>
-                  </p>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
+          <ScheduleSection
+            allowImmediate={allowImmediate}
+            availableDates={availableDates}
+            availableTimes={availableTimes}
+          />
 
           <p className="mt-2 text-base font-semibold">Como?</p>
           <div className="flex min-w-0 gap-2.5">
@@ -716,179 +274,16 @@ export default function RecebimentoPage() {
           ) : null}
 
           {checkout.deliveryType === 'delivery' ? (
-            <div className="mt-2 min-w-0 space-y-2.5">
-              <p className="text-base font-semibold">Endereço de entrega</p>
-              {savedAddresses.length > 0 ? (
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {savedAddresses.map((address) => (
-                    <button
-                      key={address.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedSavedId(address.id);
-                        setAddressDetails({
-                          street: address.street,
-                          number: address.number,
-                          neighborhood: address.neighborhood,
-                          complement: address.complement ?? '',
-                          referencePoint: address.referencePoint ?? '',
-                          city: address.city,
-                          state: address.state,
-                          postalCode: address.postalCode ?? '',
-                          latitude: address.latitude,
-                          longitude: address.longitude,
-                        });
-                      }}
-                      className={cn(
-                        'shrink-0 rounded-md border px-3 py-2 text-left text-xs leading-4',
-                        selectedSavedId === address.id
-                          ? 'border-primary bg-primary/[0.07] font-semibold text-primary'
-                          : 'border-border bg-card text-foreground',
-                      )}
-                    >
-                      <span className="block font-semibold">
-                        {address.label || address.neighborhood || address.street}
-                      </span>
-                      {address.street}, {address.number}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-              <div className="grid min-w-0 grid-cols-3 gap-2">
-                <AddressAutocomplete
-                  className="col-span-2"
-                  inputClassName={checkoutFieldClass}
-                  value={details.street}
-                  onChange={(text) =>
-                    setAddressDetails({
-                      street: text,
-                      latitude: undefined,
-                      longitude: undefined,
-                    })
-                  }
-                  onResolve={(place) =>
-                    setAddressDetails({
-                      street: place.street || details.street,
-                      number: place.number || details.number,
-                      neighborhood: place.neighborhood || details.neighborhood,
-                      city: 'Pereiro',
-                      state: 'CE',
-                      latitude: Number.isFinite(place.latitude)
-                        ? place.latitude
-                        : undefined,
-                      longitude: Number.isFinite(place.longitude)
-                        ? place.longitude
-                        : undefined,
-                    })
-                  }
-                  bias={options?.store}
-                  placeholder="Rua"
-                  aria-label="Rua"
-                />
-                <Input
-                  value={details.number}
-                  onChange={(e) =>
-                    // Não limpa lat/lng: a coordenada está presa à rua (definida
-                    // pelo autocomplete ou pelo pin), não ao número.
-                    setAddressDetails({ number: e.target.value })
-                  }
-                  placeholder="Nº"
-                  className={checkoutFieldClass}
-                />
-              </div>
-              <Input
-                value={details.neighborhood}
-                onChange={(e) =>
-                  setAddressDetails({ neighborhood: e.target.value })
-                }
-                placeholder="Bairro / localidade (opcional)"
-                className={checkoutFieldClass}
-              />
-              <Input
-                value={details.complement}
-                onChange={(e) =>
-                  setAddressDetails({ complement: e.target.value })
-                }
-                placeholder="Complemento (opcional)"
-                className={checkoutFieldClass}
-              />
-              <Input
-                value={details.referencePoint}
-                onChange={(e) =>
-                  setAddressDetails({ referencePoint: e.target.value })
-                }
-                placeholder="Ponto de referência"
-                className={checkoutFieldClass}
-              />
-
-              {quoting ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="size-4 animate-spin" />
-                  Calculando entrega…
-                </div>
-              ) : null}
-
-              {quoteError ? (
-                <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-2.5 text-sm text-destructive">
-                  <AlertCircle className="mt-0.5 size-4 shrink-0" />
-                  <p>{quoteError}</p>
-                </div>
-              ) : null}
-
-              {checkout.deliveryInServiceArea === false ? (
-                <div className="flex items-start gap-2 rounded-md border border-transparent bg-tone-warning p-2.5 text-sm text-tone-warning-foreground">
-                  <AlertCircle className="mt-0.5 size-4 shrink-0" />
-                  <p>
-                    {quoteMessage ??
-                      'Endereço fora da área de entrega. Escolha retirada na loja.'}
-                  </p>
-                </div>
-              ) : null}
-
-              {checkout.deliveryInServiceArea === true &&
-              checkout.routeDistanceMeters != null ? (
-                <>
-                  <div className="flex items-start gap-2 rounded-md bg-muted p-2.5">
-                    {deliveryFee === 0 ? (
-                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
-                    ) : (
-                      <Bike className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                    )}
-                    <p className="min-w-0 flex-1 text-sm leading-snug break-words text-muted-foreground">
-                      Taxa de entrega:{' '}
-                      <span className="font-semibold text-foreground">
-                        {deliveryFee === 0
-                          ? 'Grátis'
-                          : formatCatalogPrice(deliveryFee)}
-                      </span>{' '}
-                      · A {(checkout.routeDistanceMeters / 1000).toFixed(1)} km da
-                      loja
-                    </p>
-                  </div>
-
-                  {quoteMessage ? (
-                    <div className="flex items-start gap-2 rounded-md bg-tone-warning p-2.5 text-sm text-tone-warning-foreground">
-                      <AlertCircle className="mt-0.5 size-4 shrink-0" />
-                      <p>{quoteMessage}</p>
-                    </div>
-                  ) : null}
-
-                  {checkout.addressDetails.latitude != null &&
-                  checkout.addressDetails.longitude != null ? (
-                    <DeliveryMapConfirm
-                      latitude={checkout.addressDetails.latitude}
-                      longitude={checkout.addressDetails.longitude}
-                      confirmed={checkout.locationConfirmed}
-                      onConfirm={() => setLocationConfirmed(true)}
-                      onCenterChange={(lat, lng) => {
-                        revalidateWithCoords(lat, lng);
-                      }}
-                      addressPreview={checkout.addressDetails.formattedAddress}
-                    />
-                  ) : null}
-                </>
-              ) : null}
-            </div>
+            <DeliveryAddressSection
+              options={options}
+              savedAddresses={savedAddresses}
+              selectedSavedId={selectedSavedId}
+              onSelectSaved={setSelectedSavedId}
+              quoting={quoting}
+              quoteError={quoteError}
+              quoteMessage={quoteMessage}
+              revalidateWithCoords={revalidateWithCoords}
+            />
           ) : null}
 
           <div className={checkoutFooterClass}>
