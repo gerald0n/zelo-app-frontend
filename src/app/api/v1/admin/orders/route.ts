@@ -2,10 +2,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { httpStatusFor } from '@/lib/errors';
 import { toPhoneE164 } from '@/lib/phone';
-import {
-  createManualAdminOrder,
-  listAdminOrders,
-} from '@/modules/admin/orders';
+import { listAdminOrders } from '@/modules/admin/orders';
+import { createManualAdminOrder } from '@/modules/admin/admin-orders-manual';
 
 export const dynamic = 'force-dynamic';
 

@@ -3,8 +3,8 @@ export {
   listAdminOrders,
   getAdminOrder,
   transitionAdminOrderStatus,
-  cancelAdminOrder,
 } from '@/modules/admin/orders';
+export { cancelAdminOrder } from '@/modules/admin/admin-orders-cancel';
 export {
   listAdminCategories,
   createAdminCategory,
