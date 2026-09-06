@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next';
 import { networkInterfaces } from 'node:os';
 import { withSentryConfig } from '@sentry/nextjs';
-import { buildSecurityHeaders } from './src/config/security-headers';
+import { buildSecurityHeaders } from '../../packages/shared/src/config/security-headers';
 
 function localLanHosts(): string[] {
   const hosts: string[] = [];
@@ -32,6 +32,7 @@ function lanDevOrigins(): string[] {
 const nextConfig: NextConfig = {
   allowedDevOrigins: lanDevOrigins(),
   poweredByHeader: false,
+  transpilePackages: ['@zelo/shared'],
   async headers() {
     return [
       {

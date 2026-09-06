@@ -1,0 +1,35 @@
+{
+  "name": "zelo-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:client": "pnpm --filter @zelo/client dev",
+    "dev:admin": "pnpm --filter @zelo/admin dev",
+    "build": "pnpm -r --filter=./apps/* build",
+    "build:client": "pnpm --filter @zelo/client build",
+    "build:admin": "pnpm --filter @zelo/admin build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:status": "supabase status",
+    "gen:types": "supabase gen types typescript --local > packages/shared/src/types/database.ts"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.6",
+    "supabase": "^2.116.0"
+  },
+  "packageManager": "pnpm@8.15.6",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "nanoid": ">=3.3.18",
+      "fast-uri": ">=3.1.6"
+    }
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "name": "zelo",
+  "name": "@zelo/client",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -15,11 +15,6 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "db:start": "supabase start",
-    "db:stop": "supabase stop",
-    "db:reset": "supabase db reset",
-    "db:status": "supabase status",
-    "gen:types": "supabase gen types typescript --local > src/types/database.ts",
     "gen:seal": "node scripts/prepare-brand-seal.mjs",
     "gen:icons": "node scripts/prepare-brand-seal.mjs && node scripts/generate-pwa-icons.mjs",
     "gen:receipt-logo": "node scripts/prepare-receipt-logo.mjs"
@@ -31,6 +26,7 @@
     "@supabase/supabase-js": "^2.112.4",
     "@tanstack/react-query": "^5.102.8",
     "@vercel/analytics": "^2.0.1",
+    "@zelo/shared": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.29.0",
@@ -59,18 +55,10 @@
     "eslint-config-next": "16.3.3",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.9.6",
-    "supabase": "^2.116.0",
     "tailwindcss": "^4",
     "typescript": "^6"
   },
-  "packageManager": "pnpm@8.15.6",
   "engines": {
     "node": ">=22.0.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "nanoid": ">=3.3.18",
-      "fast-uri": ">=3.1.6"
-    }
   }
 }

@@ -1,0 +1,40 @@
+{
+  "name": "@zelo/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sentry/nextjs": "^10.69.0",
+    "@supabase/ssr": "^0.12.5",
+    "@supabase/supabase-js": "^2.112.4",
+    "@tanstack/react-query": "^5.102.8",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "radix-ui": "^1.6.7",
+    "server-only": "^0.0.1",
+    "tailwind-merge": "^3.6.0",
+    "web-push": "^3.6.7",
+    "zod": "^4.4.3",
+    "zustand": "^5.0.15"
+  },
+  "peerDependencies": {
+    "next": ">=16",
+    "react": ">=19",
+    "react-dom": ">=19"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.0",
+    "@types/react": "^19",
+    "@types/web-push": "^3.6.4",
+    "next": "16.3.3",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "typescript": "^6"
+  }
+}

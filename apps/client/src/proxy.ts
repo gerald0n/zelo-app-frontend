@@ -1,25 +1,18 @@
-import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import type { Database } from '@/types/database';
-import {
-  getSupabasePublishableKey,
-  getSupabaseServerUrl,
-  hasSupabasePublicConfig,
-  isProductionLike,
-} from '@/config/env';
+import { isProductionLike } from '@/config/env';
 import {
   buildContentSecurityPolicy,
   reportingEndpointsHeader,
 } from '@/config/security-headers';
-import { supabaseAuthCookieOptions } from '@/lib/supabase/cookie-options';
 
 /**
  * A cada request:
  * 1. Redireciona HTTP→HTTPS em produção.
  * 2. Emite a `Content-Security-Policy` com um `nonce` único (o Next injeta o
  *    nonce nos próprios scripts, dispensando `script-src 'unsafe-inline'`).
- * 3. Checagem otimista das rotas `/admin/*` — a autorização real continua no
- *    servidor via `requireAdmin()`.
+ *
+ * O painel administrativo vive em outra aplicação (`apps/admin`,
+ * `admin.zeloconfeitaria.com.br`); esta app é só o cardápio do cliente.
  */
 export default async function proxy(request: NextRequest) {
   if (isProductionLike()) {
@@ -40,60 +33,10 @@ export default async function proxy(request: NextRequest) {
   // O Next lê este header do request para extrair o nonce durante o SSR.
   requestHeaders.set('Content-Security-Policy', csp);
 
-  const nextWithHeaders = () =>
-    NextResponse.next({ request: { headers: requestHeaders } });
-
-  const withCsp = (response: NextResponse) => {
-    response.headers.set('Content-Security-Policy', csp);
-    if (reporting) response.headers.set('Reporting-Endpoints', reporting);
-    return response;
-  };
-
-  const { pathname } = request.nextUrl;
-  const needsAdminCheck =
-    pathname.startsWith('/admin') &&
-    pathname !== '/admin/login' &&
-    hasSupabasePublicConfig();
-
-  if (!needsAdminCheck) {
-    return withCsp(nextWithHeaders());
-  }
-
-  let response = nextWithHeaders();
-  const authCookies = supabaseAuthCookieOptions();
-
-  const supabase = createServerClient<Database>(
-    getSupabaseServerUrl(),
-    getSupabasePublishableKey(),
-    {
-      cookieOptions: authCookies,
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => {
-            request.cookies.set(name, value);
-          });
-          response = nextWithHeaders();
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, { ...options, ...authCookies });
-          });
-        },
-      },
-    },
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    const loginUrl = new URL('/admin/login', request.url);
-    return withCsp(NextResponse.redirect(loginUrl));
-  }
-
-  return withCsp(response);
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set('Content-Security-Policy', csp);
+  if (reporting) response.headers.set('Reporting-Endpoints', reporting);
+  return response;
 }
 
 export const config = {

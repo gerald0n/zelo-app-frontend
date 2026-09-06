@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   ChevronRight,
-  ShieldCheck,
   User,
   MapPin,
   Bell,
@@ -16,7 +15,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { setAuthReturnTo } from '@/modules/auth/auth-return';
-import { ADMIN_PHONES_E164 } from '@/config/admin';
 import { usePwaInstall } from '@/contexts/PwaInstallContext';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 import { Separator } from '@/components/ui/separator';
@@ -78,15 +76,6 @@ export default function ContaPage() {
       label: 'Meus pedidos',
       href: '/pedidos',
     },
-    ...(user?.phone && ADMIN_PHONES_E164.includes(user.phone)
-      ? [
-          {
-            icon: ShieldCheck,
-            label: 'Painel administrativo',
-            href: '/admin/login',
-          } satisfies MenuItem,
-        ]
-      : []),
     {
       icon: User,
       label: 'Dados pessoais',
