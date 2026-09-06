@@ -104,15 +104,18 @@ export default function AdminConfiguracoesPage() {
     defaultValues: { startsAt: '', endsAt: '', reason: '' },
   });
 
+  const serverSlotTimes = storeQuery.data?.store?.scheduleSlotTimes;
   const [slotTimes, setSlotTimes] = useState<string[]>([]);
+  // Re-semeia a lista editável sempre que a query traz uma referência nova
+  // (carga inicial ou refetch pós-save). Ajuste de estado no render, não em
+  // effect.
+  const [seededFrom, setSeededFrom] = useState<string[] | undefined>(undefined);
+  if (serverSlotTimes && serverSlotTimes !== seededFrom) {
+    setSeededFrom(serverSlotTimes);
+    setSlotTimes(serverSlotTimes);
+  }
   const slotsDirty =
-    JSON.stringify(slotTimes) !==
-    JSON.stringify(storeQuery.data?.store?.scheduleSlotTimes ?? []);
-
-  useEffect(() => {
-    const times = storeQuery.data?.store?.scheduleSlotTimes;
-    if (times) setSlotTimes(times);
-  }, [storeQuery.data]);
+    JSON.stringify(slotTimes) !== JSON.stringify(serverSlotTimes ?? []);
 
   useEffect(() => {
     const store = storeQuery.data?.store;
