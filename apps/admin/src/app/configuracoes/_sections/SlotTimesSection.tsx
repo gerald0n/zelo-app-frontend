@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { SLOT_TIME_RE } from '@/app/admin/configuracoes/configuracoes-forms';
+import { SLOT_TIME_RE } from '@/app/configuracoes/configuracoes-forms';
 
 type Props = {
   slotTimes: string[];

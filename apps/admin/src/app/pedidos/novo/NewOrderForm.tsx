@@ -18,12 +18,12 @@ import {
   manualOrderSchema,
   type CatalogResponse,
   type ManualOrderForm,
-} from '@/app/admin/pedidos/novo/nova-comanda-form';
-import { NewOrderStepper } from '@/app/admin/pedidos/novo/NewOrderStepper';
+} from '@/app/pedidos/novo/nova-comanda-form';
+import { NewOrderStepper } from '@/app/pedidos/novo/NewOrderStepper';
 import {
   IdentificationFields,
   PaymentFields,
-} from '@/app/admin/pedidos/novo/NewOrderFields';
+} from '@/app/pedidos/novo/NewOrderFields';
 
 type Props = {
   enabled?: boolean;

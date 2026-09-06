@@ -12,7 +12,7 @@ import { ApiError, apiJson } from '@/lib/api';
 import {
   categorySchema,
   type CategoryForm,
-} from '@/app/admin/catalogo/catalog-forms';
+} from '@/app/catalogo/catalog-forms';
 import type { AdminCategory } from '@/modules/admin/types';
 
 type Props = {

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/cn';
-import type { ProductForm } from '@/app/admin/catalogo/catalog-forms';
+import type { ProductForm } from '@/app/catalogo/catalog-forms';
 import type { AdminAddon, AdminCategory } from '@/modules/admin/types';
 
 type Props = {

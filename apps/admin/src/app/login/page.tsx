@@ -54,7 +54,7 @@ export default function AdminLoginPage() {
       });
       if (result.ok) {
         setRedirecting(true);
-        router.replace('/admin');
+        router.replace('/');
       } else {
         setError(result.message);
       }

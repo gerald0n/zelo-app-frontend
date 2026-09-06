@@ -4,7 +4,7 @@ import type { UseFormReturn, Path } from 'react-hook-form';
 import { Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/cn';
-import type { StoreForm as StoreFormValues } from '@/app/admin/configuracoes/configuracoes-forms';
+import type { StoreForm as StoreFormValues } from '@/app/configuracoes/configuracoes-forms';
 
 type Props = {
   form: UseFormReturn<StoreFormValues>;

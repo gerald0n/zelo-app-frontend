@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import {
   toLocalInputValue,
   type BlackoutForm,
-} from '@/app/admin/configuracoes/configuracoes-forms';
+} from '@/app/configuracoes/configuracoes-forms';
 import type { AdminBlackout } from '@/modules/admin/types';
 
 type Props = {

@@ -15,7 +15,7 @@ import {
   centsToReais,
   reaisToCents,
   type AddonForm,
-} from '@/app/admin/catalogo/catalog-forms';
+} from '@/app/catalogo/catalog-forms';
 import type { AdminAddon } from '@/modules/admin/types';
 
 type Props = {

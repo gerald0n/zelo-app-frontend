@@ -2,15 +2,15 @@
 
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useConfiguracoes } from '@/app/admin/configuracoes/useConfiguracoes';
-import { AdminPasswordForm } from '@/app/admin/configuracoes/_sections/AdminPasswordForm';
-import { AuditLogSection } from '@/app/admin/configuracoes/_sections/AuditLogSection';
-import { BlackoutsSection } from '@/app/admin/configuracoes/_sections/BlackoutsSection';
-import { LogoutButton } from '@/app/admin/configuracoes/_sections/LogoutButton';
-import { BusinessHoursForm } from '@/app/admin/configuracoes/_sections/BusinessHoursForm';
-import { PrinterSection } from '@/app/admin/configuracoes/_sections/PrinterSection';
-import { SlotTimesSection } from '@/app/admin/configuracoes/_sections/SlotTimesSection';
-import { StoreForm } from '@/app/admin/configuracoes/_sections/StoreForm';
+import { useConfiguracoes } from '@/app/configuracoes/useConfiguracoes';
+import { AdminPasswordForm } from '@/app/configuracoes/_sections/AdminPasswordForm';
+import { AuditLogSection } from '@/app/configuracoes/_sections/AuditLogSection';
+import { BlackoutsSection } from '@/app/configuracoes/_sections/BlackoutsSection';
+import { LogoutButton } from '@/app/configuracoes/_sections/LogoutButton';
+import { BusinessHoursForm } from '@/app/configuracoes/_sections/BusinessHoursForm';
+import { PrinterSection } from '@/app/configuracoes/_sections/PrinterSection';
+import { SlotTimesSection } from '@/app/configuracoes/_sections/SlotTimesSection';
+import { StoreForm } from '@/app/configuracoes/_sections/StoreForm';
 import { adminContainerClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 

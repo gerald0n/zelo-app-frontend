@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import {
   promotionScopeLabels,
   type PromotionForm,
-} from '@/app/admin/catalogo/catalog-forms';
+} from '@/app/catalogo/catalog-forms';
 import type { AdminCategory, AdminProduct, PromotionScope } from '@/modules/admin/types';
 
 type Props = {

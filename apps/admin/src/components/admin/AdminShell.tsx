@@ -17,7 +17,7 @@ const COLLAPSE_KEY = 'zelo:admin-sidebar-collapsed';
  */
 export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const isLogin = pathname === '/admin/login';
+  const isLogin = pathname === '/login';
   const [raw, setRaw] = useUiPref(COLLAPSE_KEY, '0');
   const collapsed = raw === '1';
 

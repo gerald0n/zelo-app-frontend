@@ -29,7 +29,7 @@ export function LogoutButton({ logout }: Props) {
         setLoggingOut(true);
         await logout();
         // Sem resetar `loggingOut`: a navegação desmonta a tela.
-        router.replace('/admin/login');
+        router.replace('/login');
       }}
       className="flex w-full items-center justify-center gap-2 rounded-lg border border-border py-3 text-sm font-semibold text-destructive disabled:opacity-60"
     >

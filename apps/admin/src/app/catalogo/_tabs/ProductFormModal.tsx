@@ -4,8 +4,8 @@ import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import type { UseFormReturn } from 'react-hook-form';
-import { ProductFormCard } from '@/app/admin/catalogo/_tabs/ProductFormCard';
-import type { ProductForm } from '@/app/admin/catalogo/catalog-forms';
+import { ProductFormCard } from '@/app/catalogo/_tabs/ProductFormCard';
+import type { ProductForm } from '@/app/catalogo/catalog-forms';
 import type { AdminAddon, AdminCategory } from '@/modules/admin/types';
 
 type Props = {

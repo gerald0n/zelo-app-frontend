@@ -1,0 +1,463 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: light;
+  --background: oklch(0.975 0.014 78);
+  --foreground: oklch(0.29 0.035 40);
+  --card: oklch(0.995 0.008 85);
+  --card-foreground: oklch(0.29 0.035 40);
+  --popover: oklch(0.995 0.008 85);
+  --popover-foreground: oklch(0.29 0.035 40);
+  --primary: oklch(0.43 0.135 10);
+  --primary-foreground: oklch(0.98 0.012 80);
+  --secondary: oklch(0.93 0.03 75);
+  --secondary-foreground: oklch(0.38 0.05 45);
+  --muted: oklch(0.94 0.02 78);
+  --muted-foreground: oklch(0.52 0.04 50);
+  --accent: oklch(0.9 0.05 70);
+  --accent-foreground: oklch(0.38 0.06 45);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.9 0.025 70);
+  --input: oklch(0.9 0.025 70);
+  --ring: oklch(0.42 0.15 8);
+  --caramel: oklch(0.74 0.12 62);
+  --caramel-foreground: oklch(0.3 0.05 45);
+  --pistachio: oklch(0.83 0.08 128);
+  --pistachio-foreground: oklch(0.35 0.06 130);
+  --success: oklch(0.45 0.12 130);
+  --success-foreground: oklch(0.98 0.012 80);
+  /* Superfícies pastel dessaturadas para status/badges (fundo + texto). */
+  --tone-neutral: oklch(0.95 0.006 80);
+  --tone-neutral-foreground: oklch(0.44 0.02 60);
+  --tone-positive: oklch(0.94 0.03 145);
+  --tone-positive-foreground: oklch(0.42 0.07 145);
+  --tone-warning: oklch(0.95 0.05 85);
+  --tone-warning-foreground: oklch(0.46 0.08 70);
+  --tone-critical: oklch(0.95 0.03 25);
+  --tone-critical-foreground: oklch(0.48 0.13 25);
+  --tone-info: oklch(0.94 0.03 240);
+  --tone-info-foreground: oklch(0.45 0.08 245);
+  --whatsapp: #25d366;
+  --whatsapp-foreground: oklch(0.98 0.012 80);
+  --chart-1: oklch(0.42 0.15 8);
+  --chart-2: oklch(0.74 0.12 62);
+  --chart-3: oklch(0.83 0.08 128);
+  --chart-4: oklch(0.6 0.12 30);
+  --chart-5: oklch(0.5 0.1 350);
+  --radius: 0.5rem;
+  --sidebar: oklch(0.995 0.008 85);
+  --sidebar-foreground: oklch(0.29 0.035 40);
+  --sidebar-primary: oklch(0.42 0.15 8);
+  --sidebar-primary-foreground: oklch(0.98 0.012 80);
+  --sidebar-accent: oklch(0.9 0.05 70);
+  --sidebar-accent-foreground: oklch(0.38 0.06 45);
+  --sidebar-border: oklch(0.9 0.025 70);
+  --sidebar-ring: oklch(0.42 0.15 8);
+}
+
+/*
+ * Tema escuro — ativado pela classe `.dark` no <html> (ver `useThemeToggle`).
+ * Só reescreve os tokens de cor; tudo que usa `var(--*)` acompanha sozinho.
+ * Precisa vir DEPOIS de `:root` (mesma especificidade, ganha por ordem).
+ */
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.19 0.012 60);
+  --foreground: oklch(0.92 0.014 78);
+  --card: oklch(0.23 0.014 58);
+  --card-foreground: oklch(0.92 0.014 78);
+  --popover: oklch(0.23 0.014 58);
+  --popover-foreground: oklch(0.92 0.014 78);
+  --primary: oklch(0.62 0.16 12);
+  --primary-foreground: oklch(0.98 0.012 80);
+  --secondary: oklch(0.3 0.02 55);
+  --secondary-foreground: oklch(0.9 0.02 75);
+  --muted: oklch(0.27 0.014 58);
+  --muted-foreground: oklch(0.69 0.03 60);
+  --accent: oklch(0.33 0.03 55);
+  --accent-foreground: oklch(0.9 0.03 70);
+  --destructive: oklch(0.62 0.2 25);
+  --border: oklch(0.33 0.016 58);
+  --input: oklch(0.33 0.016 58);
+  --ring: oklch(0.62 0.16 12);
+  --caramel: oklch(0.72 0.12 62);
+  --caramel-foreground: oklch(0.96 0.02 80);
+  --pistachio: oklch(0.78 0.08 128);
+  --pistachio-foreground: oklch(0.96 0.02 130);
+  --success: oklch(0.62 0.13 140);
+  --success-foreground: oklch(0.98 0.012 80);
+  --tone-neutral: oklch(0.28 0.008 70);
+  --tone-neutral-foreground: oklch(0.78 0.02 65);
+  --tone-positive: oklch(0.31 0.05 145);
+  --tone-positive-foreground: oklch(0.83 0.12 145);
+  --tone-warning: oklch(0.34 0.06 80);
+  --tone-warning-foreground: oklch(0.86 0.1 85);
+  --tone-critical: oklch(0.32 0.08 25);
+  --tone-critical-foreground: oklch(0.85 0.12 25);
+  --tone-info: oklch(0.3 0.05 245);
+  --tone-info-foreground: oklch(0.83 0.09 240);
+  --chart-1: oklch(0.62 0.16 12);
+  --chart-2: oklch(0.72 0.12 62);
+  --chart-3: oklch(0.78 0.08 128);
+  --chart-4: oklch(0.66 0.12 30);
+  --chart-5: oklch(0.6 0.1 350);
+  --sidebar: oklch(0.21 0.014 58);
+  --sidebar-foreground: oklch(0.92 0.014 78);
+  --sidebar-primary: oklch(0.62 0.16 12);
+  --sidebar-primary-foreground: oklch(0.98 0.012 80);
+  --sidebar-accent: oklch(0.33 0.03 55);
+  --sidebar-accent-foreground: oklch(0.9 0.03 70);
+  --sidebar-border: oklch(0.33 0.016 58);
+  --sidebar-ring: oklch(0.62 0.16 12);
+}
+
+@theme inline {
+  --font-sans: var(--font-geist);
+  --font-serif: var(--font-fraunces);
+  --font-mono: var(--font-geist-mono);
+
+  /* Escala tipográfica editorial. Base 15px (mobile-first).
+     Tracking negativo cresce com o tamanho; leading aperta no display. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+  --text-2xs--letter-spacing: 0.005em;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.1rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.0625rem;
+  --text-lg--line-height: 1.4rem;
+  --text-lg--letter-spacing: -0.006em;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.55rem;
+  --text-xl--letter-spacing: -0.014em;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.7rem;
+  --text-2xl--letter-spacing: -0.02em;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.05rem;
+  --text-3xl--letter-spacing: -0.025em;
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 2.35rem;
+  --text-4xl--letter-spacing: -0.03em;
+
+  /* Sombras quase invisíveis, tingidas de quente (hue 40). */
+  --shadow-2xs: 0 1px 2px oklch(0.28 0.04 40 / 0.04);
+  --shadow-xs: 0 1px 2px oklch(0.28 0.04 40 / 0.04);
+  --shadow-sm: 0 1px 3px oklch(0.28 0.04 40 / 0.05);
+  --shadow-md: 0 2px 8px oklch(0.28 0.04 40 / 0.05);
+  --shadow-lg: 0 6px 20px oklch(0.28 0.04 40 / 0.06);
+  --shadow-xl: 0 10px 32px oklch(0.28 0.04 40 / 0.07);
+
+  --color-tone-neutral: var(--tone-neutral);
+  --color-tone-neutral-foreground: var(--tone-neutral-foreground);
+  --color-tone-positive: var(--tone-positive);
+  --color-tone-positive-foreground: var(--tone-positive-foreground);
+  --color-tone-warning: var(--tone-warning);
+  --color-tone-warning-foreground: var(--tone-warning-foreground);
+  --color-tone-critical: var(--tone-critical);
+  --color-tone-critical-foreground: var(--tone-critical-foreground);
+  --color-tone-info: var(--tone-info);
+  --color-tone-info-foreground: var(--tone-info-foreground);
+  --color-caramel: var(--caramel);
+  --color-caramel-foreground: var(--caramel-foreground);
+  --color-pistachio: var(--pistachio);
+  --color-pistachio-foreground: var(--pistachio-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-whatsapp: var(--whatsapp);
+  --color-whatsapp-foreground: var(--whatsapp-foreground);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+@layer base {
+  /* Serif de display já vem com tracking apertado pela escala; aqui só
+     garantimos quebra de linha decente e sem órfãs. */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Números alinhados em qualquer lugar que peça `tabular-nums`. */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 22%, transparent);
+  }
+
+  /* --- Affordância de clique padrão -------------------------------------
+     Tailwind v4 removeu `cursor: pointer` do Preflight e o app tem muitos
+     alvos clicáveis (botões-toggle, cards que são <Link>, ícones-ação) sem
+     nenhum `hover:`/`active:` próprio. Aqui damos um piso: cursor + um
+     brilho sutil no hover + leve recuo no active.
+
+     Fica no `@layer base`, então QUALQUER utilitário Tailwind
+     (`hover:bg-*`, `active:scale-*`, …) sobrescreve — os componentes que
+     já têm feedback próprio continuam mandando. */
+  :where(
+    button:not(:disabled),
+    [role='button']:not([aria-disabled='true']),
+    [role='tab']:not([aria-disabled='true']),
+    [role='switch'],
+    [role='option'],
+    [role='menuitem'],
+    label:has(> input:is([type='checkbox'], [type='radio'])),
+    label[for],
+    summary,
+    select:not(:disabled),
+    a[href]
+  ):not(.liquid-glass-item) {
+    cursor: pointer;
+    transition:
+      filter 140ms ease,
+      transform 140ms ease;
+  }
+
+  @media (hover: hover) {
+    :where(
+        button:not(:disabled),
+        [role='button']:not([aria-disabled='true']),
+        [role='tab']:not([aria-disabled='true']),
+        [role='switch'],
+        [role='option'],
+        [role='menuitem'],
+        label:has(> input:is([type='checkbox'], [type='radio'])),
+        label[for],
+        summary,
+        select:not(:disabled),
+        a[href]
+      ):not(.liquid-glass-item):hover {
+      filter: brightness(0.97);
+    }
+  }
+
+  :where(
+      button:not(:disabled),
+      [role='button']:not([aria-disabled='true']),
+      [role='tab']:not([aria-disabled='true']),
+      summary,
+      a[href]
+    ):not(.liquid-glass-item):active {
+    transform: scale(0.985);
+  }
+
+  button:disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/*
+ * Sem app shell no mobile: o documento rola normalmente (a barra de URL do
+ * navegador aparece/some como em qualquer site). Tentar prender o viewport
+ * com `height: 100svh` + `overflow: hidden` reintroduzia a "faixa morta" de
+ * ~100px no Chrome iOS aberto por link/QR.
+ *
+ * O bloqueio de zoom continua: <meta viewport> (Chrome) + LockMobileZoom
+ * (Safari iOS). O PWA instalado ganha tela cheia pelo `display: standalone`
+ * do manifest, sem depender de CSS.
+ */
+
+/* Leaflet dentro de containers com borda arredondada */
+.leaflet-container {
+  width: 100%;
+  max-width: 100%;
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes zelo-toast-drawer-in {
+  from {
+    transform: translate3d(0, 100%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes zelo-toast-drawer-out {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 100%, 0);
+  }
+}
+
+.zelo-toast-drawer-in,
+.zelo-toast-drawer-out {
+  will-change: transform;
+}
+
+.zelo-toast-drawer-in {
+  animation: zelo-toast-drawer-in 520ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.zelo-toast-drawer-out {
+  animation: zelo-toast-drawer-out 440ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zelo-toast-drawer-in,
+  .zelo-toast-drawer-out {
+    animation: none;
+  }
+}
+
+/* Entrada em cascata de listas — sutil, cortada em 8 itens, respeita
+   reduced-motion. Use com style={{ '--i': index }}. */
+@keyframes zelo-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .reveal-rise {
+    animation: zelo-rise-in 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(min(var(--i, 0), 8) * 42ms);
+  }
+}
+
+/*
+ * Vidro real da navbar: translúcido de verdade — dá pra ver o conteúdo
+ * borrado passando atrás. Sem `saturate()`, que era o que puxava o tom
+ * rosado ("blush").
+ */
+.liquid-glass {
+  overflow: hidden;
+  background: rgba(255, 252, 249, 0.48);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 6px 22px oklch(0.28 0.04 40 / 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* Blur suave atrás da navbar flutuante, esmaecendo pra cima */
+.liquid-glass-veil {
+  pointer-events: none;
+  isolation: isolate;
+}
+
+.liquid-glass-veil::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(18px);
+  mask-image: linear-gradient(to top, black 45%, transparent 100%);
+}
+
+/* Fade mínimo só pra borda inferior da tela não cortar seco — sem cor/blush. */
+.liquid-glass-veil::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(249, 243, 233, 0.5) 0%,
+    transparent 55%
+  );
+}
+
+.liquid-glass-item {
+  transition:
+    color 280ms ease,
+    transform 180ms ease;
+}
+
+.liquid-glass-bubble {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 8px oklch(0.28 0.04 40 / 0.08);
+  will-change: transform, width, height;
+}
+
+.liquid-glass-bubble-animate {
+  transition:
+    transform 480ms cubic-bezier(0.34, 1.45, 0.64, 1),
+    width 480ms cubic-bezier(0.34, 1.45, 0.64, 1),
+    height 480ms cubic-bezier(0.34, 1.45, 0.64, 1);
+}

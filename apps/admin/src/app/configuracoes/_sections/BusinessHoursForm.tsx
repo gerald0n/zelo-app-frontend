@@ -4,7 +4,7 @@ import { useWatch, type UseFormReturn } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { WEEKDAY_LABELS } from '@/lib/constants';
-import type { HourFormRow } from '@/app/admin/configuracoes/configuracoes-forms';
+import type { HourFormRow } from '@/app/configuracoes/configuracoes-forms';
 
 type HoursValues = { hours: HourFormRow[] };
 

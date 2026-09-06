@@ -13,8 +13,8 @@ import {
   promotionSchema,
   promotionScopeLabels,
   type PromotionForm,
-} from '@/app/admin/catalogo/catalog-forms';
-import { PromotionFormCard } from '@/app/admin/catalogo/_tabs/PromotionFormCard';
+} from '@/app/catalogo/catalog-forms';
+import { PromotionFormCard } from '@/app/catalogo/_tabs/PromotionFormCard';
 import type {
   AdminCategory,
   AdminProduct,

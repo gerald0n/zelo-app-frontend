@@ -12,11 +12,11 @@ import { adminKeys } from '@/lib/query-keys';
 import {
   type CatalogResponse,
   type Tab,
-} from '@/app/admin/catalogo/catalog-forms';
-import { AddonsTab } from '@/app/admin/catalogo/_tabs/AddonsTab';
-import { CategoriesTab } from '@/app/admin/catalogo/_tabs/CategoriesTab';
-import { ProductsTab } from '@/app/admin/catalogo/_tabs/ProductsTab';
-import { PromotionsTab } from '@/app/admin/catalogo/_tabs/PromotionsTab';
+} from '@/app/catalogo/catalog-forms';
+import { AddonsTab } from '@/app/catalogo/_tabs/AddonsTab';
+import { CategoriesTab } from '@/app/catalogo/_tabs/CategoriesTab';
+import { ProductsTab } from '@/app/catalogo/_tabs/ProductsTab';
+import { PromotionsTab } from '@/app/catalogo/_tabs/PromotionsTab';
 
 const tabs: Array<{ id: Tab; label: string }> = [
   { id: 'products', label: 'Produtos' },

@@ -5,7 +5,7 @@ import { ApiError, apiJson } from '@/lib/api';
 import {
   reaisToCents,
   type ProductForm,
-} from '@/app/admin/catalogo/catalog-forms';
+} from '@/app/catalogo/catalog-forms';
 import type { AdminProduct } from '@/modules/admin/types';
 
 type Options = {

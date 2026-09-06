@@ -24,29 +24,29 @@ import { cn } from '@/lib/cn';
 
 const NAV = [
   {
-    href: '/admin',
+    href: '/',
     label: 'Visão geral',
     icon: Grid2x2,
-    match: (p: string) => p === '/admin',
+    match: (p: string) => p === '/',
   },
   {
-    href: '/admin/pedidos',
+    href: '/pedidos',
     label: 'Pedidos',
     icon: Receipt,
     match: (p: string) =>
-      p.startsWith('/admin/pedidos') || p.startsWith('/admin/pedido'),
+      p.startsWith('/pedidos') || p.startsWith('/pedido'),
   },
   {
-    href: '/admin/catalogo',
+    href: '/catalogo',
     label: 'Catálogo',
     icon: UtensilsCrossed,
-    match: (p: string) => p.startsWith('/admin/catalogo'),
+    match: (p: string) => p.startsWith('/catalogo'),
   },
   {
-    href: '/admin/configuracoes',
+    href: '/configuracoes',
     label: 'Ajustes',
     icon: Settings,
-    match: (p: string) => p.startsWith('/admin/configuracoes'),
+    match: (p: string) => p.startsWith('/configuracoes'),
   },
 ];
 
@@ -77,7 +77,7 @@ export default function AdminSidebar({ collapsed, onToggle }: Props) {
     });
     if (!ok) return;
     await logout();
-    router.replace('/admin/login');
+    router.replace('/login');
   };
 
   return (

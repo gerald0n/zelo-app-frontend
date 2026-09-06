@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import { cn } from '@/lib/cn';
-import type { SalesBucket } from '@/app/admin/_components/dashboard-metrics';
+import type { SalesBucket } from '@/app/_components/dashboard-metrics';
 
 type Props = { buckets: SalesBucket[]; dense?: boolean };
 

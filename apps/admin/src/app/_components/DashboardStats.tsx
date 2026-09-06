@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import { cn } from '@/lib/cn';
-import type { DashboardData } from '@/app/admin/_components/dashboard-metrics';
+import type { DashboardData } from '@/app/_components/dashboard-metrics';
 
 type Props = { data: DashboardData; activeCount: number };
 

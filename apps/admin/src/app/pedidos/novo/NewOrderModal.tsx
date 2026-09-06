@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import { NewOrderForm } from '@/app/admin/pedidos/novo/NewOrderForm';
+import { NewOrderForm } from '@/app/pedidos/novo/NewOrderForm';
 
 type Props = {
   open: boolean;
@@ -11,7 +11,7 @@ type Props = {
   onCreated: (orderId: string) => void;
 };
 
-/** "Nova comanda" num modal — antes era a página `/admin/pedidos/novo`. */
+/** "Nova comanda" num modal — antes era a página `/pedidos/novo`. */
 export function NewOrderModal({ open, onClose, onCreated }: Props) {
   useEffect(() => {
     if (!open) return;

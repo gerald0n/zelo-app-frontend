@@ -24,7 +24,7 @@ export default function AdminOrderCard({ order }: Props) {
 
   return (
     <Link
-      href={`/admin/pedido/${order.id}`}
+      href={`/pedido/${order.id}`}
       className="block space-y-2.5 rounded-lg border border-border bg-card p-3.5 transition-colors duration-150 hover:border-foreground/15"
     >
       <div className="flex items-start justify-between">

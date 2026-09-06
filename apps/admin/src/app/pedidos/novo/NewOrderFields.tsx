@@ -3,8 +3,8 @@
 import { type UseFormReturn, useWatch } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { ManualOrderForm } from '@/app/admin/pedidos/novo/nova-comanda-form';
-import { DeliveryFields } from '@/app/admin/pedidos/novo/_components/DeliveryFields';
+import type { ManualOrderForm } from '@/app/pedidos/novo/nova-comanda-form';
+import { DeliveryFields } from '@/app/pedidos/novo/_components/DeliveryFields';
 
 type FieldProps = { form: UseFormReturn<ManualOrderForm> };
 

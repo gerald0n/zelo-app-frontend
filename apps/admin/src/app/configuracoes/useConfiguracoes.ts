@@ -14,7 +14,7 @@ import {
   type BlackoutForm,
   type HourFormRow,
   type StoreForm as StoreFormValues,
-} from '@/app/admin/configuracoes/configuracoes-forms';
+} from '@/app/configuracoes/configuracoes-forms';
 import type {
   AdminAuditLog,
   AdminBlackout,

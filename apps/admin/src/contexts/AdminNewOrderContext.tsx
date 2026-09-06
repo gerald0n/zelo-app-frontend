@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { NewOrderModal } from '@/app/admin/pedidos/novo/NewOrderModal';
+import { NewOrderModal } from '@/app/pedidos/novo/NewOrderModal';
 
 const AdminNewOrderContext = createContext<{ open: () => void }>({
   open: () => {},
@@ -16,7 +16,7 @@ const AdminNewOrderContext = createContext<{ open: () => void }>({
 
 /**
  * Disponibiliza o modal "Nova comanda" em qualquer tela do painel (a sidebar
- * chama `open()`). A rota `/admin/pedidos/novo` segue existindo para deep-link.
+ * chama `open()`). A rota `/pedidos/novo` segue existindo para deep-link.
  */
 export function AdminNewOrderProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -34,7 +34,7 @@ export function AdminNewOrderProvider({ children }: { children: ReactNode }) {
         onClose={close}
         onCreated={() => {
           setIsOpen(false);
-          if (pathname !== '/admin/pedidos') router.push('/admin/pedidos');
+          if (pathname !== '/pedidos') router.push('/pedidos');
         }}
       />
     </AdminNewOrderContext.Provider>

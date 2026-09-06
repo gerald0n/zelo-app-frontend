@@ -5,7 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { useRequireAdmin } from '@/hooks/useRequireAdmin';
 import { adminContainerClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
-import { NewOrderForm } from '@/app/admin/pedidos/novo/NewOrderForm';
+import { NewOrderForm } from '@/app/pedidos/novo/NewOrderForm';
 
 /**
  * Rota da nova comanda — mantida para deep-link. No fluxo normal a "Nova
@@ -29,8 +29,8 @@ export default function AdminNovaComandaPage() {
     >
       <div className="rounded-xl border border-border bg-card">
         <NewOrderForm
-          onCreated={(orderId) => router.push(`/admin/pedido/${orderId}`)}
-          onCancel={() => router.push('/admin/pedidos')}
+          onCreated={(orderId) => router.push(`/pedido/${orderId}`)}
+          onCancel={() => router.push('/pedidos')}
         />
       </div>
     </div>

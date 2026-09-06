@@ -19,7 +19,7 @@ export function TopProducts({ products }: Props) {
           </p>
         </div>
         <Link
-          href="/admin/catalogo"
+          href="/catalogo"
           aria-label="Abrir catálogo"
           className="text-muted-foreground transition-colors hover:text-foreground"
         >

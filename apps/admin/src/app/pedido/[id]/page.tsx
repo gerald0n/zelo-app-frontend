@@ -7,9 +7,9 @@ import AdminPageTitle from '@/components/admin/AdminPageTitle';
 import { statusLabel } from '@/modules/orders/types';
 import { adminContainerClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
-import { useAdminOrderDetail } from '@/app/admin/pedido/[id]/useAdminOrderDetail';
-import { OrderDetailMain } from '@/app/admin/pedido/[id]/_components/OrderDetailMain';
-import { OrderDetailActions } from '@/app/admin/pedido/[id]/_components/OrderDetailActions';
+import { useAdminOrderDetail } from '@/app/pedido/[id]/useAdminOrderDetail';
+import { OrderDetailMain } from '@/app/pedido/[id]/_components/OrderDetailMain';
+import { OrderDetailActions } from '@/app/pedido/[id]/_components/OrderDetailActions';
 
 export default function AdminPedidoPage({
   params,
@@ -45,7 +45,7 @@ export default function AdminPedidoPage({
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-3">
         <p>{error ?? 'Pedido não encontrado.'}</p>
-        <Link href="/admin/pedidos" className="text-primary">
+        <Link href="/pedidos" className="text-primary">
           Voltar aos pedidos
         </Link>
       </div>
@@ -63,7 +63,7 @@ export default function AdminPedidoPage({
         <AdminPageTitle
           title={order.number}
           subtitle={statusLabel(order.status)}
-          backTo="/admin/pedidos"
+          backTo="/pedidos"
         />
         <div className="flex flex-wrap">
           <OrderDetailMain order={order} />

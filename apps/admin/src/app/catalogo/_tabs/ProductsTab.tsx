@@ -10,19 +10,19 @@ import {
   emptyProductForm,
   productSchema,
   type ProductForm,
-} from '@/app/admin/catalogo/catalog-forms';
-import { ProductFormModal } from '@/app/admin/catalogo/_tabs/ProductFormModal';
-import { ProductListRow } from '@/app/admin/catalogo/_tabs/ProductListRow';
-import { ProductGridCard } from '@/app/admin/catalogo/_tabs/ProductGridCard';
-import { ProductStats } from '@/app/admin/catalogo/_tabs/ProductStats';
-import { ProductBulkBar } from '@/app/admin/catalogo/_tabs/ProductBulkBar';
-import { useProductMutations } from '@/app/admin/catalogo/_tabs/useProductMutations';
+} from '@/app/catalogo/catalog-forms';
+import { ProductFormModal } from '@/app/catalogo/_tabs/ProductFormModal';
+import { ProductListRow } from '@/app/catalogo/_tabs/ProductListRow';
+import { ProductGridCard } from '@/app/catalogo/_tabs/ProductGridCard';
+import { ProductStats } from '@/app/catalogo/_tabs/ProductStats';
+import { ProductBulkBar } from '@/app/catalogo/_tabs/ProductBulkBar';
+import { useProductMutations } from '@/app/catalogo/_tabs/useProductMutations';
 import {
   ProductToolbar,
   type ProductSort,
   type ProductStatusFilter,
   type ProductView,
-} from '@/app/admin/catalogo/_tabs/ProductToolbar';
+} from '@/app/catalogo/_tabs/ProductToolbar';
 import type {
   AdminAddon,
   AdminCategory,

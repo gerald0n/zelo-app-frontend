@@ -16,10 +16,10 @@ import {
   buildDashboard,
   PERIOD_LABEL,
   type DashboardPeriod,
-} from '@/app/admin/_components/dashboard-metrics';
-import { DashboardStats } from '@/app/admin/_components/DashboardStats';
-import { SalesChart } from '@/app/admin/_components/SalesChart';
-import { TopProducts } from '@/app/admin/_components/TopProducts';
+} from '@/app/_components/dashboard-metrics';
+import { DashboardStats } from '@/app/_components/DashboardStats';
+import { SalesChart } from '@/app/_components/SalesChart';
+import { TopProducts } from '@/app/_components/TopProducts';
 
 const PERIODS: DashboardPeriod[] = ['today', '7d', '30d'];
 
@@ -113,7 +113,7 @@ export default function AdminDashboardPage() {
           <div className="flex items-center justify-between pt-1">
             <h2 className="font-serif text-base font-bold">Pedidos ativos</h2>
             <Link
-              href="/admin/pedidos"
+              href="/pedidos"
               className="flex items-center gap-0.5 text-xs font-semibold text-primary"
             >
               Ver quadro <ChevronRight className="size-4" />

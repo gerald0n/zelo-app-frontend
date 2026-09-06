@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Loader2 } from 'lucide-react';
-import { useAdminOrderDetail } from '@/app/admin/pedido/[id]/useAdminOrderDetail';
+import { useAdminOrderDetail } from '@/app/pedido/[id]/useAdminOrderDetail';
 import OrderDetailModalBody from '@/components/admin/kanban/OrderDetailModalBody';
 
 type Props = { orderId: string | null; onClose: () => void };
@@ -11,7 +11,7 @@ type Props = { orderId: string | null; onClose: () => void };
 /**
  * Detalhes do pedido num modal — clicar num card do quadro abre aqui em vez
  * de navegar. Reaproveita `useAdminOrderDetail` (mesma busca e ações da
- * página `/admin/pedido/[id]`, que segue existindo para deep-link).
+ * página `/pedido/[id]`, que segue existindo para deep-link).
  */
 export default function AdminOrderDetailModal({ orderId, onClose }: Props) {
   const detail = useAdminOrderDetail(orderId);
