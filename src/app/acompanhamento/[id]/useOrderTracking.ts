@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/modules/carts';
 import { useShopExperience } from '@/contexts/ShopExperienceContext';
@@ -18,55 +18,67 @@ export function useOrderTracking(id: string) {
   const { notify } = useShopExperience();
 
   const [order, setOrder] = useState<CustomerOrder | null>(null);
-  const [loading, setLoading] = useState(true);
   const [reordering, setReordering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { version: realtimeVersion } = useCustomerOrderRealtime(id, true);
 
-  const loadOrder = useCallback(
-    async (opts?: { background?: boolean }) => {
+  // Skeleton = ainda não temos o pedido DESTE id e não deu erro. Derivado do
+  // render (não de um effect); refetch em segundo plano nunca o reativa porque
+  // `order.id` continua igual, e uma troca de `id` volta a mostrá-lo.
+  const loading = order?.id !== id && error === null;
+
+  // Busca pura: sempre vê o `id` atual, não faz setState.
+  const fetchOrder = useEffectEvent(
+    async (): Promise<{ order: CustomerOrder } | { error: string }> => {
       try {
         const response = await fetch(`/api/v1/orders/${id}`, {
           cache: 'no-store',
         });
         const json = await response.json();
         if (!response.ok) {
-          setError(json?.error?.message ?? 'Pedido não encontrado.');
-          setOrder(null);
-          return;
+          return { error: json?.error?.message ?? 'Pedido não encontrado.' };
         }
-        setOrder(json.order as CustomerOrder);
-        setError(null);
+        return { order: json.order as CustomerOrder };
       } catch {
-        setError('Falha de rede ao carregar o pedido.');
-      } finally {
-        // Só a carga inicial controla o skeleton; refetch em segundo plano
-        // nunca, senão uma oscilação do Realtime trava a tela.
-        if (!opts?.background) setLoading(false);
+        return { error: 'Falha de rede ao carregar o pedido.' };
       }
     },
-    [id],
   );
 
-  // Carga inicial: dona do `loading`, roda uma vez por pedido.
-  useEffect(() => {
-    setLoading(true);
-    void loadOrder();
-  }, [loadOrder]);
+  const applyResult = (
+    result: { order: CustomerOrder } | { error: string },
+  ) => {
+    if ('error' in result) {
+      setError(result.error);
+      setOrder(null);
+      return;
+    }
+    setOrder(result.order);
+    setError(null);
+  };
 
-  // Fallback periódico caso o Realtime falhe/desconecte — em segundo plano.
+  // Carga inicial (por pedido) + refetch por sinal do Realtime.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const result = await fetchOrder();
+      if (!cancelled) applyResult(result);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, realtimeVersion]);
+
+  // Fallback periódico caso o Realtime falhe/desconecte.
   useEffect(() => {
     const fallback = window.setInterval(() => {
-      void loadOrder({ background: true });
+      void (async () => {
+        const result = await fetchOrder();
+        applyResult(result);
+      })();
     }, 45_000);
     return () => window.clearInterval(fallback);
-  }, [loadOrder]);
-
-  // Sinal do Realtime: refetch em segundo plano, sem tocar no `loading`.
-  useEffect(() => {
-    if (realtimeVersion === 0) return;
-    void loadOrder({ background: true });
-  }, [realtimeVersion, loadOrder]);
+  }, []);
 
   const reorder = async () => {
     if (reordering) return;
