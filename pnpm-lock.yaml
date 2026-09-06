@@ -279,9 +279,21 @@ importers:
       '@types/web-push':
         specifier: ^3.6.4
         version: 3.6.4
+      eslint:
+        specifier: ^9
+        version: 9.39.5
+      eslint-config-next:
+        specifier: 16.3.3
+        version: 16.3.3(@typescript-eslint/parser@8.66.0)(eslint@9.39.5)(typescript@6.0.3)
+      eslint-config-prettier:
+        specifier: ^10.1.8
+        version: 10.1.8(eslint@9.39.5)
       next:
         specifier: 16.3.3
         version: 16.3.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(react-dom@19.2.8)(react@19.2.8)
+      prettier:
+        specifier: ^3.9.6
+        version: 3.9.6
       react:
         specifier: 19.2.8
         version: 19.2.8
