@@ -13,96 +13,22 @@ import React, {
 import { CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { randomUUID } from '@/lib/random-id';
+import {
+  getFavoritesSnapshot,
+  getServerFavoritesSnapshot,
+  subscribeFavorites,
+  writeFavorites,
+} from '@/contexts/shop-experience/favorites-store';
+import {
+  canGroup,
+  formatGroupedMessage,
+  parseNotify,
+  type ToastItem,
+} from '@/contexts/shop-experience/toast-grouping';
 
 const TOAST_MS = 2800;
 const TOAST_DRAWER_MS = 460;
 const MAX_TOASTS = 3;
-
-type ToastKind =
-  | 'cart-add'
-  | 'cart-remove'
-  | 'favorite-add'
-  | 'favorite-remove'
-  | 'generic';
-
-type ToastItem = {
-  id: string;
-  type: 'success' | 'error';
-  kind: ToastKind;
-  count: number;
-  names: string[];
-  message: string;
-};
-
-function parseNotify(message: string): {
-  kind: ToastKind;
-  count: number;
-  names: string[];
-} {
-  let match = message.match(/^(?:(\d+)× )?(.+) adicionado ao carrinho\.$/);
-  if (match) {
-    return {
-      kind: 'cart-add',
-      count: match[1] ? Number(match[1]) : 1,
-      names: [],
-    };
-  }
-  match = message.match(/^(.+) adicionado aos favoritos\.$/);
-  if (match) return { kind: 'favorite-add', count: 1, names: [match[1]] };
-  match = message.match(/^(.+) removido dos favoritos\.$/);
-  if (match) return { kind: 'favorite-remove', count: 1, names: [match[1]] };
-  match = message.match(/^(?:(\d+)× )?(.+) removido do carrinho\.$/);
-  if (match) {
-    return {
-      kind: 'cart-remove',
-      count: match[1] ? Number(match[1]) : 1,
-      names: [],
-    };
-  }
-  if (message === 'Itens adicionados ao carrinho.') {
-    return { kind: 'cart-add', count: 1, names: [] };
-  }
-  return { kind: 'generic', count: 1, names: [] };
-}
-
-function formatGroupedMessage(
-  kind: ToastKind,
-  count: number,
-  names: string[],
-  fallback: string,
-): string {
-  if (kind === 'cart-add') {
-    return count === 1
-      ? '1 item adicionado ao carrinho.'
-      : `${count} itens adicionados ao carrinho.`;
-  }
-  if (kind === 'cart-remove') {
-    return count === 1
-      ? '1 item removido do carrinho.'
-      : `${count} itens removidos do carrinho.`;
-  }
-  if (kind === 'favorite-add') {
-    if (count === 1 && names[0]) return `${names[0]} adicionado aos favoritos.`;
-    return count === 1
-      ? '1 item adicionado aos favoritos.'
-      : `${count} itens adicionados aos favoritos.`;
-  }
-  if (kind === 'favorite-remove') {
-    if (count === 1 && names[0]) return `${names[0]} removido dos favoritos.`;
-    return count === 1
-      ? '1 item removido dos favoritos.'
-      : `${count} itens removidos dos favoritos.`;
-  }
-  return fallback;
-}
-
-function canGroup(current: ToastItem, next: ToastItem): boolean {
-  return (
-    current.type === next.type &&
-    current.kind === next.kind &&
-    current.kind !== 'generic'
-  );
-}
 
 type ShopExperienceValue = {
   favorites: Set<string>;
@@ -111,57 +37,6 @@ type ShopExperienceValue = {
 };
 
 const ShopExperienceContext = createContext<ShopExperienceValue | null>(null);
-const FAVORITES_STORAGE_KEY = '@zelo/favorites:v1';
-const FAVORITES_EVENT = 'zelo-favorites';
-const EMPTY_FAVORITES: string[] = [];
-
-let cachedFavorites: string[] = EMPTY_FAVORITES;
-
-function readFavoritesFromStorage(): string[] {
-  try {
-    const stored = localStorage.getItem(FAVORITES_STORAGE_KEY);
-    return stored ? (JSON.parse(stored) as string[]) : EMPTY_FAVORITES;
-  } catch {
-    return EMPTY_FAVORITES;
-  }
-}
-
-function getFavoritesSnapshot(): string[] {
-  return cachedFavorites;
-}
-
-function getServerFavoritesSnapshot(): string[] {
-  return EMPTY_FAVORITES;
-}
-
-function writeFavorites(ids: string[]) {
-  const next = ids.length === 0 ? EMPTY_FAVORITES : ids;
-  cachedFavorites = next;
-  localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(next));
-  window.dispatchEvent(new Event(FAVORITES_EVENT));
-}
-
-function subscribeFavorites(onStoreChange: () => void) {
-  cachedFavorites = readFavoritesFromStorage();
-
-  const handle = () => {
-    const next = readFavoritesFromStorage();
-    const same =
-      next.length === cachedFavorites.length &&
-      next.every((id, index) => id === cachedFavorites[index]);
-    if (!same) {
-      cachedFavorites = next.length === 0 ? EMPTY_FAVORITES : next;
-      onStoreChange();
-    }
-  };
-
-  window.addEventListener('storage', handle);
-  window.addEventListener(FAVORITES_EVENT, handle);
-  return () => {
-    window.removeEventListener('storage', handle);
-    window.removeEventListener(FAVORITES_EVENT, handle);
-  };
-}
 
 export function ShopExperienceProvider({
   children,
