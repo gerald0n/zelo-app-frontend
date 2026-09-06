@@ -66,14 +66,18 @@ export function ShopExperienceProvider({
     };
   }, []);
 
-  useEffect(() => {
-    if (toasts.length > 0) {
-      setVisibleToasts(toasts);
-      setDrawer('open');
-      return;
-    }
-    setDrawer((current) => (current === 'closed' ? current : 'closing'));
-  }, [toasts]);
+  // Máquina do drawer derivada no render (padrão "adjusting state on change"
+  // do React), não em effect: toast na fila → 'open'; fila esvaziou → 'closing'
+  // até o timeout abaixo levar para 'closed'. `visibleToasts` segura o último
+  // conteúdo não-vazio durante a animação de saída.
+  const hasToasts = toasts.length > 0;
+  const nextDrawer = hasToasts
+    ? 'open'
+    : drawer === 'closed'
+      ? 'closed'
+      : 'closing';
+  if (nextDrawer !== drawer) setDrawer(nextDrawer);
+  if (hasToasts && visibleToasts !== toasts) setVisibleToasts(toasts);
 
   useEffect(() => {
     if (drawer !== 'closing') return;
