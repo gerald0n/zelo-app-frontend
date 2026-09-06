@@ -53,9 +53,12 @@ const eslintConfig = defineConfig([
     },
   },
   {
-    // O próprio adaptador de log pode usar console diretamente. Precisa vir
-    // DEPOIS do bloco que liga a regra (flat config aplica o último match).
-    files: ['src/lib/logger.ts'],
+    // O adaptador de log e o bootstrap de env podem usar console diretamente:
+    // logger.ts É o wrapper, e env.ts roda `assertProductionEnv()` no load do
+    // módulo, antes do logger estar disponível (logger.ts importa env.ts —
+    // usar o logger aqui criaria um ciclo). Precisa vir DEPOIS do bloco que
+    // liga a regra (flat config aplica o último match).
+    files: ['src/lib/logger.ts', 'src/config/env.ts'],
     rules: {
       'quality/no-direct-console': 'off',
     },

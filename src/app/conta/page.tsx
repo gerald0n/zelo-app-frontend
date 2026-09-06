@@ -69,7 +69,7 @@ export default function ContaPage() {
     } catch {
       /* fallback abaixo */
     }
-    window.location.href = '/loja';
+    router.push('/loja');
   };
 
   const menuItems: MenuItem[] = [

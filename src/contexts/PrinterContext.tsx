@@ -17,6 +17,7 @@ import {
   requestPrinterPairing,
 } from '@/modules/printing/webusb-printer';
 import type { PrinterStatus } from '@/modules/printing/types';
+import { logger } from '@/lib/logger';
 
 type PrinterContextType = {
   status: PrinterStatus;
@@ -81,8 +82,8 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
         return { ok: true as const };
       } catch (err) {
         setHasError(true);
-        console.error('[printer] falha na impressão', err);
         const detail = err instanceof Error ? err.message : String(err);
+        logger.error('[printer] falha na impressão', { detail });
         return {
           ok: false as const,
           reason: `Falha ao imprimir: ${detail}`,
