@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useEffectEvent, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRequireAdmin } from '@/hooks/useRequireAdmin';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 import { usePrinter } from '@/contexts/PrinterContext';
@@ -14,29 +14,37 @@ import {
 } from '@/modules/printing/receipts';
 import type { CatalogStore } from '@/modules/catalog/types';
 import { nextAdminStatus, type AdminOrderDetail } from '@/modules/admin/types';
-import { useAdminOrdersRealtime } from '@/modules/realtime/hooks';
+import { useAdminRealtime } from '@/contexts/AdminRealtimeContext';
 
 /**
  * Carrega o pedido do admin e o mantém fresco (carga inicial + Realtime em
  * segundo plano), além de encapsular todas as ações da tela: avançar status,
  * cancelar, reenviar estorno Pix e reimprimir comanda/pedido.
+ *
+ * `id` pode ser `null` (modal fechado) — nesse caso não busca nada.
  */
-export function useAdminOrderDetail(id: string) {
+export function useAdminOrderDetail(id: string | null) {
   const { isAuthenticated, ready } = useRequireAdmin();
   const { prompt, alert } = useAppDialog();
   const printer = usePrinter();
+  const queryClient = useQueryClient();
   const [order, setOrder] = useState<AdminOrderDetail | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { version: realtimeVersion } = useAdminOrdersRealtime(
-    ready && isAuthenticated,
-  );
+  const { version: realtimeVersion } = useAdminRealtime();
 
   // Spinner = já autenticado, mas ainda não temos o pedido DESTE id e sem erro.
   // Derivado do render, não de um effect; refetch de Realtime não reativa
   // porque `order.id` continua igual.
   const loading =
-    ready && isAuthenticated && order?.id !== id && error === null;
+    ready &&
+    isAuthenticated &&
+    id !== null &&
+    order?.id !== id &&
+    error === null;
+
+  const invalidateOrdersList = () =>
+    queryClient.invalidateQueries({ queryKey: [...adminKeys.all, 'orders'] });
 
   const storeQuery = useQuery({
     queryKey: adminKeys.store(),
@@ -47,9 +55,7 @@ export function useAdminOrderDetail(id: string) {
 
   // Busca pura: sempre vê o `id` atual, não faz setState.
   const fetchOrder = useEffectEvent(
-    async (): Promise<
-      { order: AdminOrderDetail } | { error: string }
-    > => {
+    async (): Promise<{ order: AdminOrderDetail } | { error: string }> => {
       try {
         const response = await fetch(`/api/v1/admin/orders/${id}`, {
           cache: 'no-store',
@@ -79,7 +85,7 @@ export function useAdminOrderDetail(id: string) {
 
   // Carga inicial (ao ficar pronto e ao trocar de pedido) + refetch de Realtime.
   useEffect(() => {
-    if (!ready || !isAuthenticated) return;
+    if (!ready || !isAuthenticated || id === null) return;
     let cancelled = false;
     void (async () => {
       const result = await fetchOrder();
@@ -108,6 +114,7 @@ export function useAdminOrderDetail(id: string) {
         return;
       }
       setOrder(json.order as AdminOrderDetail);
+      void invalidateOrdersList();
     } catch {
       setError('Falha de rede ao atualizar status.');
     } finally {
@@ -133,6 +140,7 @@ export function useAdminOrderDetail(id: string) {
         return;
       }
       setOrder(json.order as AdminOrderDetail);
+      void invalidateOrdersList();
       return json.refund as 'done' | 'already' | 'failed' | undefined;
     } catch {
       setError(netError);

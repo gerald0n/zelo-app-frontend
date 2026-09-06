@@ -70,6 +70,26 @@ export const promotionSchema = z
 
 export type CategoryForm = z.infer<typeof categorySchema>;
 export type ProductForm = z.infer<typeof productSchema>;
+
+/** Valores em branco do formulário de produto (novo cadastro). */
+export function emptyProductForm(
+  categoryId: string,
+  sortOrder = 0,
+): ProductForm {
+  return {
+    categoryId,
+    name: '',
+    description: '',
+    priceReais: 0,
+    sortOrder,
+    isActive: true,
+    isAvailable: true,
+    weightMinGrams: '',
+    weightMaxGrams: '',
+    stockQuantity: '',
+    addonIds: [],
+  };
+}
 export type AddonForm = z.infer<typeof addonSchema>;
 export type PromotionForm = z.infer<typeof promotionSchema>;
 

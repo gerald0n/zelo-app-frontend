@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
-import AdminHeader from '@/components/admin/AdminHeader';
+import Link from 'next/link';
+import { ExternalLink, Loader2 } from 'lucide-react';
 import { useRequireAdmin } from '@/hooks/useRequireAdmin';
 import { apiJson } from '@/lib/api';
 import { adminContainerClass } from '@/lib/layout';
@@ -60,7 +60,7 @@ export default function AdminCatalogoPage() {
 
   if (!ready || !isAuthenticated) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-background lg:pl-52">
+      <div className="flex min-h-dvh items-center justify-center">
         <Loader2 className="size-5 animate-spin text-muted-foreground" />
       </div>
     );
@@ -69,80 +69,102 @@ export default function AdminCatalogoPage() {
   const isLoading = catalogQuery.isLoading;
 
   return (
-    <div className="min-h-dvh bg-background lg:pl-52">
-      <AdminHeader
-        title="Catálogo"
-        subtitle={`${products.filter((item) => item.isAvailable).length} produtos disponíveis`}
-      />
-      <div
-        className={cn('space-y-4 p-3 pb-8 md:px-6 md:pt-6', adminContainerClass)}
-      >
-        <div className="flex gap-1.5">
-          {tabs.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setTab(item.id)}
-              className={cn(
-                'rounded-md border px-3 py-1.5 text-2xs font-semibold',
-                tab === item.id
-                  ? 'border-primary bg-primary text-white'
-                  : 'border-border bg-card',
-              )}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-
-        {formError ? (
-          <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-            {formError}
-          </p>
-        ) : null}
-
-        {isLoading ? (
-          <div className="flex justify-center py-16">
-            <Loader2 className="size-5 animate-spin text-muted-foreground" />
+    <div
+      className={cn(
+        'min-h-dvh space-y-4 p-3 pb-24 md:px-6 md:pt-6',
+        adminContainerClass,
+      )}
+    >
+      <header className="space-y-2">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-2xs font-bold uppercase tracking-widest text-primary">
+              Gestão de catálogo
+            </p>
+            <h1 className="mt-1 font-serif text-2xl font-bold tracking-tight">
+              Catálogo de produtos
+            </h1>
           </div>
-        ) : null}
+          <Link
+            href="/"
+            target="_blank"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold transition-colors hover:bg-accent"
+          >
+            <ExternalLink className="size-3.5" />
+            Ver cardápio
+          </Link>
+        </div>
+        <p className="max-w-prose text-xs text-muted-foreground">
+          Administre a vitrine digital, o estoque de fornadas, as fichas dos
+          produtos e a precificação do cardápio artesanal.
+        </p>
+      </header>
 
-        {tab === 'products' && !isLoading ? (
-          <ProductsTab
-            categories={categories}
-            products={products}
-            addons={addons}
-            invalidateCatalog={invalidateCatalog}
-            onError={setFormError}
-          />
-        ) : null}
-
-        {tab === 'categories' && !isLoading ? (
-          <CategoriesTab
-            categories={categories}
-            invalidateCatalog={invalidateCatalog}
-            onError={setFormError}
-          />
-        ) : null}
-
-        {tab === 'addons' && !isLoading ? (
-          <AddonsTab
-            addons={addons}
-            invalidateCatalog={invalidateCatalog}
-            onError={setFormError}
-          />
-        ) : null}
-
-        {tab === 'promotions' && !isLoading ? (
-          <PromotionsTab
-            categories={categories}
-            products={products}
-            promotions={promotions}
-            invalidateCatalog={invalidateCatalog}
-            onError={setFormError}
-          />
-        ) : null}
+      <div className="flex gap-1.5">
+        {tabs.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setTab(item.id)}
+            className={cn(
+              'rounded-full border px-3 py-1.5 text-2xs font-semibold transition-colors',
+              tab === item.id
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-border bg-card hover:bg-accent',
+            )}
+          >
+            {item.label}
+          </button>
+        ))}
       </div>
+
+      {formError ? (
+        <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          {formError}
+        </p>
+      ) : null}
+
+      {isLoading ? (
+        <div className="flex justify-center py-16">
+          <Loader2 className="size-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : null}
+
+      {tab === 'products' && !isLoading ? (
+        <ProductsTab
+          categories={categories}
+          products={products}
+          addons={addons}
+          invalidateCatalog={invalidateCatalog}
+          onError={setFormError}
+        />
+      ) : null}
+
+      {tab === 'categories' && !isLoading ? (
+        <CategoriesTab
+          categories={categories}
+          invalidateCatalog={invalidateCatalog}
+          onError={setFormError}
+        />
+      ) : null}
+
+      {tab === 'addons' && !isLoading ? (
+        <AddonsTab
+          addons={addons}
+          invalidateCatalog={invalidateCatalog}
+          onError={setFormError}
+        />
+      ) : null}
+
+      {tab === 'promotions' && !isLoading ? (
+        <PromotionsTab
+          categories={categories}
+          products={products}
+          promotions={promotions}
+          invalidateCatalog={invalidateCatalog}
+          onError={setFormError}
+        />
+      ) : null}
     </div>
   );
 }

@@ -31,11 +31,8 @@ export function ProductFormCard({
     useWatch({ control: form.control, name: 'addonIds' }) ?? [];
 
   return (
-    <form
-      onSubmit={form.handleSubmit(onSubmit)}
-      className="space-y-3 rounded-lg border border-border bg-card p-3.5"
-    >
-      <p className="text-sm font-semibold">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 p-4">
+      <p className="font-serif text-base font-bold">
         {editingProduct ? 'Editar produto' : 'Novo produto'}
       </p>
       <div className="grid gap-3 sm:grid-cols-2">

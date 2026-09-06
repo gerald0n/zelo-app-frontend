@@ -3,7 +3,7 @@
 import { use } from 'react';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
-import AdminHeader from '@/components/admin/AdminHeader';
+import AdminPageTitle from '@/components/admin/AdminPageTitle';
 import { statusLabel } from '@/modules/orders/types';
 import { adminContainerClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
@@ -35,7 +35,7 @@ export default function AdminPedidoPage({
 
   if (!ready || !isAuthenticated || loading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-background lg:pl-52">
+      <div className="flex min-h-dvh items-center justify-center">
         <Loader2 className="size-5 animate-spin text-muted-foreground" />
       </div>
     );
@@ -43,7 +43,7 @@ export default function AdminPedidoPage({
 
   if (!order) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-background lg:pl-52">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-3">
         <p>{error ?? 'Pedido não encontrado.'}</p>
         <Link href="/admin/pedidos" className="text-primary">
           Voltar aos pedidos
@@ -53,13 +53,18 @@ export default function AdminPedidoPage({
   }
 
   return (
-    <div className="min-h-dvh bg-background lg:pl-52">
-      <AdminHeader
-        title={order.number}
-        subtitle={statusLabel(order.status)}
-        backTo="/admin/pedidos"
-      />
-      <div className={cn('p-3 pb-8 md:px-6 md:pt-6', adminContainerClass)}>
+    <div className="min-h-dvh">
+      <div
+        className={cn(
+          'space-y-3 p-3 pb-8 md:px-6 md:pt-6',
+          adminContainerClass,
+        )}
+      >
+        <AdminPageTitle
+          title={order.number}
+          subtitle={statusLabel(order.status)}
+          backTo="/admin/pedidos"
+        />
         <div className="flex flex-wrap">
           <OrderDetailMain order={order} />
           <OrderDetailActions

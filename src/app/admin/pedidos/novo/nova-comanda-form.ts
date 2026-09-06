@@ -29,6 +29,7 @@ export const manualOrderSchema = z
     scheduledFor: z.string().optional(),
     paymentMethod: z.enum(['cash', 'card']),
     alreadyPaid: z.boolean(),
+    source: z.enum(['balcao', 'whatsapp', 'instagram']),
     customerNote: z.string().trim().optional(),
   })
   .superRefine((value, ctx) => {
@@ -59,6 +60,42 @@ export type ManualOrderForm = z.infer<typeof manualOrderSchema>;
 
 function reaisToCents(value: number) {
   return Math.round(value * 100);
+}
+
+/** Soma prevista dos itens (produto + adicionais) × quantidade. */
+export function draftSubtotalCents(
+  items: ManualOrderItemDraft[],
+  products: AdminProduct[],
+  addons: AdminAddon[],
+): number {
+  const productById = new Map(products.map((p) => [p.id, p]));
+  const addonById = new Map(addons.map((a) => [a.id, a]));
+  return items.reduce((sum, item) => {
+    const product = productById.get(item.productId);
+    if (!product) return sum;
+    const addonsSum = item.addOnIds.reduce(
+      (s, id) => s + (addonById.get(id)?.priceCents ?? 0),
+      0,
+    );
+    return sum + (product.priceCents + addonsSum) * item.quantity;
+  }, 0);
+}
+
+const SOURCE_LABEL: Record<ManualOrderForm['source'], string> = {
+  balcao: 'Balcão presencial',
+  whatsapp: 'WhatsApp',
+  instagram: 'Instagram',
+};
+
+/**
+ * O backend ainda não tem coluna de canal — registramos como primeira linha
+ * da observação para o canal aparecer na comanda e no detalhe do pedido.
+ */
+function noteWithSource(values: ManualOrderForm): string | null {
+  const note = values.customerNote?.trim() ?? '';
+  if (values.source === 'balcao') return note || null;
+  const prefix = `Canal: ${SOURCE_LABEL[values.source]}`;
+  return note ? `${prefix}\n${note}` : prefix;
 }
 
 /** Traduz o formulário + itens para o payload da rota POST /api/v1/admin/orders. */
@@ -99,6 +136,6 @@ export function buildManualOrderPayload(
         : undefined,
     paymentMethod: values.paymentMethod,
     alreadyPaid: values.alreadyPaid,
-    customerNote: values.customerNote || null,
+    customerNote: noteWithSource(values),
   };
 }
