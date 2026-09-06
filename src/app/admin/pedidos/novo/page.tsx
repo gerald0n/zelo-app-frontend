@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import AdminManualOrderItemPicker, {
@@ -18,66 +17,13 @@ import { ApiError, apiJson } from '@/lib/api';
 import { adminFormContainerClass } from '@/lib/layout';
 import { adminKeys } from '@/lib/query-keys';
 import { cn } from '@/lib/cn';
-import type {
-  AdminAddon,
-  AdminCategory,
-  AdminProduct,
-} from '@/modules/admin/types';
-
-type CatalogResponse = {
-  categories: AdminCategory[];
-  products: AdminProduct[];
-  addons: AdminAddon[];
-};
-
-const manualOrderSchema = z
-  .object({
-    guestName: z.string().trim().min(1, 'Informe o nome.'),
-    guestPhone: z.string().trim().min(8, 'Telefone inválido.'),
-    deliveryMethod: z.enum(['pickup', 'delivery']),
-    street: z.string().trim().optional(),
-    number: z.string().trim().optional(),
-    neighborhood: z.string().trim().optional(),
-    city: z.string().trim().optional(),
-    state: z.string().trim().optional(),
-    complement: z.string().trim().optional(),
-    referencePoint: z.string().trim().optional(),
-    deliveryFeeReais: z.number().min(0),
-    timing: z.enum(['immediate', 'scheduled']),
-    scheduledFor: z.string().optional(),
-    paymentMethod: z.enum(['cash', 'card']),
-    alreadyPaid: z.boolean(),
-    customerNote: z.string().trim().optional(),
-  })
-  .superRefine((value, ctx) => {
-    if (value.deliveryMethod === 'delivery') {
-      const required: Array<[keyof typeof value, string]> = [
-        ['street', 'Informe a rua.'],
-        ['number', 'Informe o número.'],
-        ['neighborhood', 'Informe o bairro.'],
-        ['city', 'Informe a cidade.'],
-        ['state', 'Informe a UF.'],
-      ];
-      for (const [field, message] of required) {
-        if (!value[field]) {
-          ctx.addIssue({ code: 'custom', message, path: [field] });
-        }
-      }
-    }
-    if (value.timing === 'scheduled' && !value.scheduledFor) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Informe data e hora do agendamento.',
-        path: ['scheduledFor'],
-      });
-    }
-  });
-
-type ManualOrderForm = z.infer<typeof manualOrderSchema>;
-
-function reaisToCents(value: number) {
-  return Math.round(value * 100);
-}
+import {
+  buildManualOrderPayload,
+  manualOrderSchema,
+  type CatalogResponse,
+  type ManualOrderForm,
+} from '@/app/admin/pedidos/novo/nova-comanda-form';
+import { DeliveryFields } from '@/app/admin/pedidos/novo/_components/DeliveryFields';
 
 export default function AdminNovaComandaPage() {
   const router = useRouter();
@@ -123,47 +69,11 @@ export default function AdminNovaComandaPage() {
   const timing = useWatch({ control: form.control, name: 'timing' });
 
   const mutation = useMutation({
-    mutationFn: async (values: ManualOrderForm) => {
-      const payload = {
-        guestName: values.guestName,
-        guestPhone: values.guestPhone,
-        items: items.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          customerNote: item.customerNote || null,
-          addOns: item.addOnIds.map((addOnId) => ({ addOnId, quantity: 1 })),
-        })),
-        deliveryMethod: values.deliveryMethod,
-        timing: values.timing,
-        scheduledFor:
-          values.timing === 'scheduled' && values.scheduledFor
-            ? new Date(values.scheduledFor).toISOString()
-            : null,
-        address:
-          values.deliveryMethod === 'delivery'
-            ? {
-                street: values.street ?? '',
-                number: values.number ?? '',
-                neighborhood: values.neighborhood ?? '',
-                city: values.city ?? '',
-                state: values.state ?? '',
-                complement: values.complement || null,
-                referencePoint: values.referencePoint || null,
-              }
-            : null,
-        deliveryFeeCents:
-          values.deliveryMethod === 'delivery'
-            ? reaisToCents(values.deliveryFeeReais)
-            : undefined,
-        paymentMethod: values.paymentMethod,
-        alreadyPaid: values.alreadyPaid,
-        customerNote: values.customerNote || null,
-      };
-      return apiJson<{ order: { id: string } }>('/api/v1/admin/orders', {
+    mutationFn: async (values: ManualOrderForm) =>
+      apiJson<{ order: { id: string } }>('/api/v1/admin/orders', {
         method: 'POST',
-        body: JSON.stringify(payload),
-      });
-    },
+        body: JSON.stringify(buildManualOrderPayload(values, items)),
+      }),
     onSuccess: async (data) => {
       await queryClient.invalidateQueries({
         queryKey: [...adminKeys.all, 'orders'],
@@ -279,83 +189,7 @@ export default function AdminNovaComandaPage() {
               Entrega
             </Label>
           </div>
-          {deliveryMethod === 'delivery' ? (
-            <div className="space-y-3">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Label className="block text-xs font-semibold">
-                  Rua
-                  <Input
-                    {...form.register('street')}
-                    className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
-                  />
-                </Label>
-                <Label className="block text-xs font-semibold">
-                  Número
-                  <Input
-                    {...form.register('number')}
-                    className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
-                  />
-                </Label>
-                <Label className="block text-xs font-semibold">
-                  Bairro
-                  <Input
-                    {...form.register('neighborhood')}
-                    className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
-                  />
-                </Label>
-                <Label className="block text-xs font-semibold">
-                  Cidade
-                  <Input
-                    {...form.register('city')}
-                    className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
-                  />
-                </Label>
-                <Label className="block text-xs font-semibold">
-                  UF
-                  <Input
-                    {...form.register('state')}
-                    maxLength={2}
-                    className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm uppercase"
-                  />
-                </Label>
-                <Label className="block text-xs font-semibold">
-                  Complemento
-                  <Input
-                    {...form.register('complement')}
-                    className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
-                  />
-                </Label>
-                <Label className="block text-xs font-semibold sm:col-span-2">
-                  Ponto de referência
-                  <Input
-                    {...form.register('referencePoint')}
-                    className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
-                  />
-                </Label>
-                <Label className="block text-xs font-semibold">
-                  Taxa de entrega (R$)
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min={0}
-                    {...form.register('deliveryFeeReais', {
-                      valueAsNumber: true,
-                    })}
-                    className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
-                  />
-                </Label>
-              </div>
-              {form.formState.errors.street ||
-              form.formState.errors.number ||
-              form.formState.errors.neighborhood ||
-              form.formState.errors.city ||
-              form.formState.errors.state ? (
-                <p className="text-2xs text-destructive">
-                  Preencha o endereço completo para entrega.
-                </p>
-              ) : null}
-            </div>
-          ) : null}
+          {deliveryMethod === 'delivery' ? <DeliveryFields form={form} /> : null}
         </section>
 
         <section className="space-y-3 rounded-lg border border-border bg-card p-3.5">
