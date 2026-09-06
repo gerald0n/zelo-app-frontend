@@ -39,8 +39,8 @@ export default function StoreHeader({ onHeightChange }: Props) {
   const scrollSampleRef = useRef({ y: 0, t: 0 });
 
   const [pinned, setPinned] = useState(false);
-  const [portalReady, setPortalReady] = useState(false);
-  /** Barra compacta no DOM (portal). */
+  /** Barra compacta no DOM (portal). Só vira `true` via scroll (pós-mount),
+   *  então quando ela existe já estamos no cliente — não precisa de flag SSR. */
   const [visible, setVisible] = useState(false);
 
   const storeOpen = useStoreOpen();
@@ -50,10 +50,6 @@ export default function StoreHeader({ onHeightChange }: Props) {
   useEffect(() => {
     onHeightChange?.(STORE_HEADER_COMPACT_HEIGHT);
   }, [onHeightChange]);
-
-  useEffect(() => {
-    setPortalReady(true);
-  }, []);
 
   useEffect(() => {
     if (!heroRef.current) return;
@@ -149,18 +145,16 @@ export default function StoreHeader({ onHeightChange }: Props) {
   useEffect(() => {
     if (pinned || !visible) return;
 
-    const panel = panelRef.current;
-    if (!panel) {
-      setVisible(false);
-      return;
-    }
-
     animRef.current?.cancel();
 
+    const panel = panelRef.current;
     const reduced = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches;
-    if (reduced) {
+
+    // Sem painel (não deveria acontecer) ou com "reduzir movimento": some na
+    // hora, sem animar.
+    if (!panel || reduced) {
       setVisible(false);
       return;
     }
@@ -190,7 +184,7 @@ export default function StoreHeader({ onHeightChange }: Props) {
   }, [pinned, visible]);
 
   const compactBar =
-    visible && portalReady ? (
+    visible ? (
       <div
         className="pointer-events-none fixed inset-x-0 top-0 z-[45] lg:hidden"
         aria-hidden={!pinned}
@@ -237,9 +231,7 @@ export default function StoreHeader({ onHeightChange }: Props) {
         />
       </div>
 
-      {portalReady && compactBar
-        ? createPortal(compactBar, document.body)
-        : null}
+      {compactBar ? createPortal(compactBar, document.body) : null}
     </div>
   );
 }
