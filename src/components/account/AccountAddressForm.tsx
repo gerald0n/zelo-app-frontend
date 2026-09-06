@@ -99,6 +99,19 @@ export function AccountAddressForm({
 
   const canQuote = street.trim().length > 0 && number.trim().length > 0;
 
+  // Endereço ficou incompleto → limpa a cotação obsoleta. Ajuste de estado no
+  // render (padrão "adjusting state when a prop changes" do React), não em
+  // effect, para não disparar set-state-in-effect.
+  const [wasQuotable, setWasQuotable] = useState(canQuote);
+  if (wasQuotable !== canQuote) {
+    setWasQuotable(canQuote);
+    if (!canQuote) {
+      setQuote(null);
+      setQuoteError('');
+      setConfirmed(false);
+    }
+  }
+
   // Coordenada exata vinda do autocomplete (placeId → Place Details) ou do pin
   // do mapa. Presa à rua: sobrevive a edições de número/bairro; some quando a
   // rua é redigitada à mão.
@@ -112,12 +125,7 @@ export function AccountAddressForm({
   );
 
   useEffect(() => {
-    if (!canQuote) {
-      setQuote(null);
-      setQuoteError('');
-      setConfirmed(false);
-      return;
-    }
+    if (!canQuote) return;
 
     const timer = window.setTimeout(async () => {
       setQuoting(true);
