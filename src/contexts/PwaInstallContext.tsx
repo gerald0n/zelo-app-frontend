@@ -50,10 +50,6 @@ export function PwaInstallProvider({ children }: { children: React.ReactNode }) 
     pathnameRef.current = pathname;
   }, [pathname]);
 
-  useEffect(() => {
-    setCanOfferInstall(!isStandaloneDisplay());
-  }, []);
-
   const dismiss = useCallback(() => {
     markPwaInstallDismissed();
     manualOpenRef.current = false;
@@ -135,6 +131,13 @@ export function PwaInstallProvider({ children }: { children: React.ReactNode }) 
 
     window.addEventListener('beforeinstallprompt', onBeforeInstall);
     window.addEventListener('appinstalled', onAppInstalled);
+
+    // Reflete uma capacidade do navegador só conhecível pós-mount (display-mode
+    // não é SSR-safe): não está instalado como app → pode oferecer "adicionar
+    // à tela inicial". No iOS o `beforeinstallprompt` nunca dispara, então este
+    // é o único caminho para `true` lá — não dá pra derivar no render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCanOfferInstall(true);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', onBeforeInstall);
