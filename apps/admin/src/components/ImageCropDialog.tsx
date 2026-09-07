@@ -92,13 +92,19 @@ function CropDialogBody({
 
         <p className="font-serif text-base font-bold">Recortar imagem (1:1)</p>
 
-        <div className="relative h-[min(60vh,360px)] overflow-hidden rounded-lg bg-muted">
+        {/* Container quadrado = área de recorte: com objectFit "cover" o que
+            aparece aqui é exatamente o que é salvo (WYSIWYG). O default
+            "contain" do react-easy-crop força zoom em fotos retrato e o
+            resultado não bate com o enquadramento. */}
+        <div className="relative mx-auto aspect-square w-full max-w-[340px] overflow-hidden rounded-lg bg-muted">
           <Cropper
             image={objectUrl}
             crop={crop}
             zoom={zoom}
             aspect={1}
+            objectFit="cover"
             showGrid={false}
+            restrictPosition
             onCropChange={setCrop}
             onZoomChange={setZoom}
             onCropComplete={(_area, pixels) => setAreaPixels(pixels)}
