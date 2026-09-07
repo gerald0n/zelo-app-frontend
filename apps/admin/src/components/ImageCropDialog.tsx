@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Cropper, { type Area, type Point } from 'react-easy-crop';
+// CSS do react-easy-crop (v6 não injeta mais sozinho). Sem ela o preflight do
+// Tailwind aplica `max-width:100%` na <img> do cropper e o modo "cover" quebra:
+// o que aparece na tela deixa de bater com a área recortada (`areaPixels`).
+import 'react-easy-crop/react-easy-crop.css';
 import { X } from 'lucide-react';
 import { cropImageToFile } from '@/lib/crop-image';
 
@@ -106,22 +110,22 @@ function CropDialogBody({
             resultado não bate com o enquadramento. */}
         <div className="relative mx-auto aspect-square w-full max-w-[340px] overflow-hidden rounded-lg bg-muted">
           {objectUrl ? (
-          <Cropper
-            image={objectUrl}
-            crop={crop}
-            zoom={zoom}
-            aspect={1}
-            objectFit="cover"
-            showGrid={false}
-            restrictPosition
-            onCropChange={setCrop}
-            onZoomChange={setZoom}
-            /* onCropAreaChange (não onCropComplete): dispara a cada frame,
+            <Cropper
+              image={objectUrl}
+              crop={crop}
+              zoom={zoom}
+              aspect={1}
+              objectFit="cover"
+              showGrid={false}
+              restrictPosition
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              /* onCropAreaChange (não onCropComplete): dispara a cada frame,
                inclusive no re-render final depois do mouseup, então
                `areaPixels` sempre reflete o enquadramento exato que ficou
                na tela. O onCropComplete pode chegar com o `crop` anterior. */
-            onCropAreaChange={(_area, pixels) => setAreaPixels(pixels)}
-          />
+              onCropAreaChange={(_area, pixels) => setAreaPixels(pixels)}
+            />
           ) : null}
         </div>
 
