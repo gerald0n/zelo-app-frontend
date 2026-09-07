@@ -56,16 +56,16 @@ export function ProductGridCard({
         selected ? 'border-primary ring-1 ring-primary' : 'border-border',
       )}
     >
-      <div className="relative aspect-[4/3] bg-muted">
+      <div className="relative aspect-square bg-muted">
         {product.images[0] ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={product.images[0].url}
             alt={product.images[0].altText}
-            className="size-full object-cover"
+            className="absolute inset-0 size-full object-cover"
           />
         ) : (
-          <div className="flex size-full items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center">
             <UtensilsCrossed className="size-6 text-muted-foreground" />
           </div>
         )}
