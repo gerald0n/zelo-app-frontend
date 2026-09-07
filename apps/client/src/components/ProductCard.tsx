@@ -56,8 +56,7 @@ export default function ProductCard({
       className={cn(
         'relative overflow-hidden rounded-xl border border-border bg-card transition-colors duration-150 hover:border-foreground/15',
         'flex items-center gap-3 p-2.5',
-        responsive &&
-          'lg:h-full lg:flex-col lg:items-stretch lg:gap-0 lg:p-0',
+        responsive && 'lg:h-full lg:flex-col lg:items-stretch lg:gap-0 lg:p-0',
         !product.available && 'opacity-60',
       )}
     >
@@ -68,7 +67,8 @@ export default function ProductCard({
           alt={product.imageAlt ?? product.name}
           className={cn(
             'size-20 rounded-lg',
-            responsive && 'lg:h-32 lg:w-full lg:rounded-none',
+            responsive &&
+              'lg:aspect-square lg:h-auto lg:w-full lg:rounded-none',
           )}
           iconClassName={cn('size-9', responsive && 'lg:size-10')}
         />
