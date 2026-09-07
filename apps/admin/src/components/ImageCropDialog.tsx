@@ -107,7 +107,11 @@ function CropDialogBody({
             restrictPosition
             onCropChange={setCrop}
             onZoomChange={setZoom}
-            onCropComplete={(_area, pixels) => setAreaPixels(pixels)}
+            /* onCropAreaChange (não onCropComplete): dispara a cada frame,
+               inclusive no re-render final depois do mouseup, então
+               `areaPixels` sempre reflete o enquadramento exato que ficou
+               na tela. O onCropComplete pode chegar com o `crop` anterior. */
+            onCropAreaChange={(_area, pixels) => setAreaPixels(pixels)}
           />
         </div>
 
