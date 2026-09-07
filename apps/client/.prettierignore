@@ -1,0 +1,12 @@
+.next
+node_modules
+pnpm-lock.yaml
+public
+coverage
+*.tsbuildinfo
+supabase/.temp
+supabase/.branches
+.env.example
+
+# Gerado por scripts/prepare-receipt-logo.mjs
+src/modules/printing/logo.ts

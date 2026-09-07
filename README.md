@@ -1,6 +1,17 @@
 # Zelo Confeitaria
 
-Cardápio online da Zelo Confeitaria (Next.js App Router + Supabase).
+Monorepo (pnpm workspaces) da Zelo Confeitaria — Next.js App Router + Supabase.
+
+| Pacote             | O quê                                                            | Domínio                          |
+| ------------------ | --------------------------------------------------------------- | -------------------------------- |
+| `apps/client`      | Cardápio do cliente (loja, carrinho, checkout, conta, PWA)     | `cardapio.zeloconfeitaria.com.br` |
+| `apps/admin`       | Painel administrativo (login e-mail/senha, kanban, catálogo)   | `admin.zeloconfeitaria.com.br`   |
+| `packages/shared`  | `@zelo/shared` — Supabase, tipos do banco, domínio, UI, config | —                               |
+| `supabase/`        | Migrations, seeds, config local (compartilhado)                | —                               |
+
+Cada app é um projeto Vercel separado com **Root Directory** `apps/client` / `apps/admin`
+e "Include source files outside of the Root Directory" habilitado. O código comum é
+resolvido pelo alias `@/*`, que cai em `packages/shared/src` quando não existe no app.
 
 Estado atual: **fases A–K implementadas** (catálogo, carrinho, checkout, pedidos, admin, realtime, push/PWA). Próximo passo: **Fase L — Deploy / produção**.
 
@@ -35,10 +46,12 @@ git pull origin develop
 ```bash
 pnpm install
 pnpm db:start
-pnpm dev
+pnpm dev:client   # loja  → http://localhost:3000
+pnpm dev:admin    # admin → http://localhost:3001
 ```
 
-Abra [http://localhost:3000](http://localhost:3000).
+Abra [http://localhost:3000](http://localhost:3000) (loja) ou
+[http://localhost:3001](http://localhost:3001) (admin).
 
 ### Outro dispositivo (mesmo Wi‑Fi, WSL2)
 
@@ -65,18 +78,24 @@ Se o IP Wi‑Fi mudar, rode o proxy de novo e reinicie `pnpm dev:lan`. Opcional:
 
 ## Scripts
 
-| Script              | Uso                         |
-| ------------------- | --------------------------- |
-| `pnpm dev`          | Servidor de desenvolvimento |
-| `pnpm dev:lan`      | Dev acessível no Wi‑Fi (WSL) |
-| `pnpm lan:info`     | Mostra IP/URL da LAN        |
-| `pnpm dev:https`    | Dev com HTTPS (testar push) |
-| `pnpm build`        | Build de produção           |
-| `pnpm start`        | Servir build                |
-| `pnpm lint`         | ESLint                      |
-| `pnpm typecheck`    | TypeScript (`tsc --noEmit`) |
-| `pnpm format`       | Prettier (escrever)         |
-| `pnpm format:check` | Prettier (verificar)        |
+Rodar da raiz do monorepo:
+
+| Script                | Uso                                        |
+| --------------------- | ------------------------------------------ |
+| `pnpm dev:client`     | Loja em dev (porta 3000)                   |
+| `pnpm dev:admin`      | Admin em dev (porta 3001)                  |
+| `pnpm build`          | Build de produção das duas apps            |
+| `pnpm build:client`   | Build só da loja                           |
+| `pnpm build:admin`    | Build só do admin                          |
+| `pnpm lint`           | ESLint em todos os pacotes (`-r`)          |
+| `pnpm typecheck`      | TypeScript em todos os pacotes (`-r`)      |
+| `pnpm format`         | Prettier (escrever)                        |
+| `pnpm db:start/stop`  | Supabase local                            |
+| `pnpm db:reset`       | Recria o banco (migrations + seeds)        |
+| `pnpm gen:types`      | Regenera `packages/shared/src/types/database.ts` |
+
+Scripts específicos da loja (`dev:lan`, `lan:info`, `dev:https`, `gen:icons`…)
+ficam em `apps/client` — rode com `pnpm --filter @zelo/client <script>`.
 
 ## Stack
 

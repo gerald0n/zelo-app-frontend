@@ -1,0 +1,7 @@
+/* Design system compartilhado entre apps/client e apps/admin. */
+@import '../../../../packages/shared/src/styles/globals.css';
+
+/* Tailwind v4 detecta as fontes a partir deste arquivo — inclui os
+   componentes de @zelo/shared além do próprio src desta app. */
+@source '../../src';
+@source '../../../../packages/shared/src';
