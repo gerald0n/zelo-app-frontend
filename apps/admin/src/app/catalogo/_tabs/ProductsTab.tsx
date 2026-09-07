@@ -11,6 +11,7 @@ import {
   productSchema,
   type ProductForm,
 } from '@/app/catalogo/catalog-forms';
+import { ImageCropDialog } from '@/components/ImageCropDialog';
 import { ProductFormModal } from '@/app/catalogo/_tabs/ProductFormModal';
 import { ProductListRow } from '@/app/catalogo/_tabs/ProductListRow';
 import { ProductGridCard } from '@/app/catalogo/_tabs/ProductGridCard';
@@ -75,6 +76,10 @@ export function ProductsTab({
     null,
   );
   const [showProductForm, setShowProductForm] = useState(false);
+  const [cropTarget, setCropTarget] = useState<{
+    productId: string;
+    file: File;
+  } | null>(null);
 
   const productForm = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
@@ -218,6 +223,21 @@ export function ProductsTab({
         ))}
       </div>
 
+      <ImageCropDialog
+        open={cropTarget != null}
+        file={cropTarget?.file ?? null}
+        onCancel={() => setCropTarget(null)}
+        onConfirm={(croppedFile) => {
+          if (cropTarget) {
+            uploadMutation.mutate({
+              productId: cropTarget.productId,
+              file: croppedFile,
+            });
+          }
+          setCropTarget(null);
+        }}
+      />
+
       <ProductFormModal
         open={showProductForm}
         form={productForm}
@@ -253,7 +273,7 @@ export function ProductsTab({
                 })
               }
               onUpload={(item, file) =>
-                uploadMutation.mutate({ productId: item.id, file })
+                setCropTarget({ productId: item.id, file })
               }
             />
           ))}
@@ -273,7 +293,7 @@ export function ProductsTab({
                 })
               }
               onUpload={(item, file) =>
-                uploadMutation.mutate({ productId: item.id, file })
+                setCropTarget({ productId: item.id, file })
               }
             />
           ))}
