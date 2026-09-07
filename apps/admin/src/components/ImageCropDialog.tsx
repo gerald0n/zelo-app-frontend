@@ -3,10 +3,6 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Cropper, { type Area, type Point } from 'react-easy-crop';
-// CSS do react-easy-crop (v6 não injeta mais sozinho). Sem ela o preflight do
-// Tailwind aplica `max-width:100%` na <img> do cropper e o modo "cover" quebra:
-// o que aparece na tela deixa de bater com a área recortada (`areaPixels`).
-import 'react-easy-crop/react-easy-crop.css';
 import { X } from 'lucide-react';
 import { cropImageToFile } from '@/lib/crop-image';
 

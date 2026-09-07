@@ -25,26 +25,27 @@ export async function cropImageToFile(
   try {
     const image = await loadImage(objectUrl);
 
-    const width = Math.round(areaPixels.width);
-    const height = Math.round(areaPixels.height);
+    // O card exibe 1:1, então o output tem que ser um quadrado exato. A área do
+    // react-easy-crop já chega ~quadrada; forçamos um único lado e travamos o
+    // recorte dentro dos limites reais da imagem pra o browser não esticar nada.
+    const side = Math.round(Math.min(areaPixels.width, areaPixels.height));
+    const sx = Math.max(
+      0,
+      Math.min(Math.round(areaPixels.x), image.naturalWidth - side),
+    );
+    const sy = Math.max(
+      0,
+      Math.min(Math.round(areaPixels.y), image.naturalHeight - side),
+    );
+
     const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
+    canvas.width = side;
+    canvas.height = side;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas indisponível neste navegador.');
 
-    ctx.drawImage(
-      image,
-      Math.round(areaPixels.x),
-      Math.round(areaPixels.y),
-      width,
-      height,
-      0,
-      0,
-      width,
-      height,
-    );
+    ctx.drawImage(image, sx, sy, side, side, 0, 0, side, side);
 
     const blob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob(resolve, type, 0.9);

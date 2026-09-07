@@ -28,6 +28,7 @@ export function ProductThumb({
   src,
   alt,
   width = 640,
+  height,
 }: {
   tone?: 'cookie' | 'pudim' | 'salgado';
   categoryId?: string;
@@ -37,6 +38,11 @@ export function ProductThumb({
   alt?: string | null;
   /** Largura-alvo para a transformação de imagem (produção). */
   width?: number;
+  /**
+   * Altura-alvo para a transformação (produção). Default = `width`, ou seja,
+   * a imagem servida já vem quadrada 1:1 (o mesmo enquadramento do card).
+   */
+  height?: number;
 }) {
   const resolvedTone =
     tone ??
@@ -46,7 +52,9 @@ export function ProductThumb({
         ? 'pudim'
         : 'salgado');
   const { bg, fg, Icon } = toneMap[resolvedTone];
-  const imageUrl = src ? productImagePublicUrl(src, { width }) : null;
+  const imageUrl = src
+    ? productImagePublicUrl(src, { width, height: height ?? width })
+    : null;
 
   return (
     <div

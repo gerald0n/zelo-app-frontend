@@ -40,11 +40,16 @@ export async function uploadProductImage(options: {
     if (!meta.width || !meta.height) {
       return err('VALIDATION_ERROR', 'Arquivo de imagem inválido.');
     }
+    // Toda imagem de produto é exibida 1:1 no card (admin e client). Gravamos
+    // um quadrado exato pra o que aparece no card ser sempre o que foi recortado
+    // — sem depender de a transformação da CDN reenquadrar. A imagem já vem
+    // recortada 1:1 do modal; o `cover` aqui só absorve arredondamento de 1px
+    // (e normaliza imagens antigas não-quadradas, cortando pelo centro).
+    const size = Math.min(meta.width, meta.height, 2000);
     normalized = await pipeline
-      .resize({
-        width: 2000,
-        height: 2000,
-        fit: 'inside',
+      .resize(size, size, {
+        fit: 'cover',
+        position: 'centre',
         withoutEnlargement: true,
       })
       .webp({ quality: 82 })
@@ -117,7 +122,7 @@ export async function uploadProductImage(options: {
     altText: data.alt_text,
     sortOrder: data.sort_order,
     isPrimary: data.is_primary,
-    url: productImagePublicUrl(data.storage_path, { width: 400 }),
+    url: productImagePublicUrl(data.storage_path, { width: 400, height: 400 }),
   });
 }
 
