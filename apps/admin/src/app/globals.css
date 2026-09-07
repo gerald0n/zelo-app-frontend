@@ -1,0 +1,5 @@
+/* Design system compartilhado entre apps/client e apps/admin. */
+@import '../../../../packages/shared/src/styles/globals.css';
+
+@source '../../src';
+@source '../../../../packages/shared/src';
