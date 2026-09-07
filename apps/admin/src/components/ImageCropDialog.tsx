@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Cropper, { type Area, type Point } from 'react-easy-crop';
 import { X } from 'lucide-react';
@@ -45,8 +45,16 @@ function CropDialogBody({
   onCancel: () => void;
   onConfirm: (croppedFile: File) => void;
 }) {
-  const objectUrl = useMemo(() => URL.createObjectURL(file), [file]);
-  useEffect(() => () => URL.revokeObjectURL(objectUrl), [objectUrl]);
+  // O object URL precisa nascer e morrer dentro do mesmo effect: assim, no
+  // ciclo mount→cleanup→mount do StrictMode, o segundo mount recria a URL em
+  // vez de reaproveitar uma já revogada (o que deixava o <img> do cropper 404).
+  const [objectUrl, setObjectUrl] = useState<string | null>(null);
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sincroniza o ciclo de vida de um recurso externo (blob URL)
+    setObjectUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
 
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -97,6 +105,7 @@ function CropDialogBody({
             "contain" do react-easy-crop força zoom em fotos retrato e o
             resultado não bate com o enquadramento. */}
         <div className="relative mx-auto aspect-square w-full max-w-[340px] overflow-hidden rounded-lg bg-muted">
+          {objectUrl ? (
           <Cropper
             image={objectUrl}
             crop={crop}
@@ -113,6 +122,7 @@ function CropDialogBody({
                na tela. O onCropComplete pode chegar com o `crop` anterior. */
             onCropAreaChange={(_area, pixels) => setAreaPixels(pixels)}
           />
+          ) : null}
         </div>
 
         <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
