@@ -41,7 +41,10 @@ export function mapAdminImages(
       altText: image.alt_text,
       sortOrder: image.sort_order,
       isPrimary: image.is_primary,
-      url: productImagePublicUrl(image.storage_path, { width: 400 }),
+      url: productImagePublicUrl(image.storage_path, {
+        width: 400,
+        height: 400,
+      }),
     }));
 }
 
