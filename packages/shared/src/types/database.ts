@@ -72,6 +72,53 @@ export type Database = {
         };
         Relationships: [];
       };
+      admin_push_subscriptions: {
+        Row: {
+          admin_id: string;
+          auth: string;
+          created_at: string;
+          endpoint: string;
+          id: string;
+          last_seen_at: string;
+          p256dh: string;
+          revoked_at: string | null;
+          updated_at: string;
+          user_agent: string | null;
+        };
+        Insert: {
+          admin_id: string;
+          auth: string;
+          created_at?: string;
+          endpoint: string;
+          id?: string;
+          last_seen_at?: string;
+          p256dh: string;
+          revoked_at?: string | null;
+          updated_at?: string;
+          user_agent?: string | null;
+        };
+        Update: {
+          admin_id?: string;
+          auth?: string;
+          created_at?: string;
+          endpoint?: string;
+          id?: string;
+          last_seen_at?: string;
+          p256dh?: string;
+          revoked_at?: string | null;
+          updated_at?: string;
+          user_agent?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'admin_push_subscriptions_admin_id_fkey';
+            columns: ['admin_id'];
+            isOneToOne: false;
+            referencedRelation: 'admin_profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       audit_logs: {
         Row: {
           action: string;

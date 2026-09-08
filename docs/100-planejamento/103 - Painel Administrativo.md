@@ -15,7 +15,7 @@ painel `/admin`.
 | Impressão térmica | **Implementado e validado em hardware** (WebUSB/USB, EPSON TM-T20X — 2026-09-08). |
 | Catálogo (resto) | **Feito** (2026-09-08). "Acabou num toque", duplicar produto, várias fotos por produto e reordenar (produtos + categorias, setas ↑/↓). |
 | Loja/relatórios | **Feito** (2026-09-08). Pausa com prazo/motivo, aba `/relatorios` (cancelamentos + produção), auditoria com filtros. Faturamento/abas já vinham prontos. |
-| Push | Não iniciado, sem decisões pendentes conhecidas. |
+| Push do painel | **Feito** (2026-09-08). Pedido novo notifica o celular do admin (tabela `admin_push_subscriptions`, SW próprio, toggle em Dispositivos). Falta validar ponta a ponta em aparelho + setar VAPID no Vercel `zelo-admin`. |
 
 ---
 
@@ -388,11 +388,39 @@ não funcionava em local ("Email logins are disabled"). Mudado pra `true`
 
 ---
 
-## Push (não iniciado)
+## Push do painel (feito — 2026-09-08)
 
-- Notificação no celular quando entra pedido novo, mesmo com o painel
-  fechado. Mexe no banco: hoje o envio de notificação só existe pro
-  cliente, não pro admin.
+Notificação no celular quando entra pedido novo, mesmo com o painel fechado.
+
+- **Migration** `20260908130000_admin_push_subscriptions.sql` — tabela nova
+  `admin_push_subscriptions` (separada da `push_subscriptions` do cliente,
+  que exige `customer_id`). Uma linha por aparelho; RLS por `private.is_admin()`.
+- **Servidor** (`packages/shared/src/modules/notifications/`):
+  `admin-subscriptions.ts` (upsert/revoke/list) e `notifyAdminNewOrder` em
+  `send.ts` — busca o pedido, monta "Novo pedido #N · R$ X · Retirada/Entrega
+  (· Agendado)" e envia pra cada assinatura ativa; endpoint morto (404/410)
+  é revogado.
+- **Gatilho**: dinheiro/cartão avisam na criação do pedido
+  (`create-order.ts:finalizeCheckout`); Pix espera a confirmação do
+  pagamento (`order-pix-webhook.ts`, ramo `confirmed`). Comanda manual do
+  admin **não** dispara (o admin fez o pedido). Falha no push nunca derruba
+  o checkout.
+- **Admin app**: SW próprio `apps/admin/public/sw.js` (só push, sem cache);
+  `sw.js` fora do matcher do `proxy.ts`. Rotas
+  `GET /api/v1/admin/push/config` (VAPID public key) e
+  `POST|DELETE /api/v1/admin/push/subscriptions` (`requireAdmin`).
+  Helper `src/lib/push-client.ts`; UI `PushSection` na aba
+  **Dispositivos** das Configurações ("Ativar neste aparelho").
+- **Env**: precisa de `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` /
+  `VAPID_SUBJECT` no projeto Vercel `zelo-admin` (nasceu sem — ver memória
+  de deploy). Podem ser as mesmas do `zelo-app` ou um par próprio.
+
+**Testado local (2026-09-08)**: assinar/re-assinar (upsert por endpoint),
+guard de auth (401), `notifyAdminNewOrder` roda e falha graciosamente com
+chave inválida (sem revogar por engano), `/sw.js` servido sem redirect.
+**Falta validar num aparelho real** o fluxo ponta a ponta (permissão →
+subscribe → push chega com o painel fechado) — não dá pra testar sem
+navegador com push real.
 
 ---
 

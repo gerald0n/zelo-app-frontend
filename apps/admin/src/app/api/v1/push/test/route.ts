@@ -3,21 +3,27 @@ import { z } from 'zod';
 import { getAppEnv, hasWebPushConfig } from '@/config/env';
 import { httpStatusFor } from '@/lib/errors';
 import { requireAdmin } from '@/modules/admin/auth';
-import { notifyOrderStatusChange } from '@/modules/notifications/send';
+import {
+  notifyAdminNewOrder,
+  notifyOrderStatusChange,
+} from '@/modules/notifications/send';
 
 export const dynamic = 'force-dynamic';
 
 const bodySchema = z.object({
   orderId: z.string().uuid(),
-  newStatus: z.enum([
-    'confirmed',
-    'in_production',
-    'ready_for_delivery',
-    'ready_for_pickup',
-    'out_for_delivery',
-    'delivered',
-    'cancelled',
-  ]),
+  /** Omitido = testa o push de pedido novo pro painel. */
+  newStatus: z
+    .enum([
+      'confirmed',
+      'in_production',
+      'ready_for_delivery',
+      'ready_for_pickup',
+      'out_for_delivery',
+      'delivered',
+      'cancelled',
+    ])
+    .optional(),
 });
 
 /**
@@ -54,17 +60,21 @@ export async function POST(request: Request) {
       {
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Informe orderId e newStatus válidos.',
+          message: 'Informe um orderId válido.',
         },
       },
       { status: 400 },
     );
   }
 
-  await notifyOrderStatusChange({
-    orderId: parsed.data.orderId,
-    newStatus: parsed.data.newStatus,
-  });
+  if (parsed.data.newStatus) {
+    await notifyOrderStatusChange({
+      orderId: parsed.data.orderId,
+      newStatus: parsed.data.newStatus,
+    });
+  } else {
+    await notifyAdminNewOrder({ orderId: parsed.data.orderId });
+  }
 
   return NextResponse.json({ ok: true });
 }
