@@ -82,12 +82,10 @@ frete, mapas ou endereço de entrega.
   endereços — foi o que motivou trocar a área de entrega de "lista de
   bairros" pra "raio a partir da loja".
 
-### Limitação de teste conhecida — arrastar o pin do mapa
+### Arrastar o pin do mapa — validado manualmente (2026-09-08)
 
-Em pelo menos duas sessões, a ferramenta de automação do navegador não
-conseguiu completar um **gesto de arrastar** (drag) de ponta a ponta sobre
-o canvas do Google Maps (trava por 30s, nenhum efeito). Não parece bug do
-app (a mesma lógica de destino funciona via clique). Só foi verificado por
-revisão de código + endpoint funcionando, nunca pelo gesto real — **testar
-manualmente num aparelho de verdade antes de confiar cegamente em
-produção.**
+O gesto de arrastar sobre o mapa de confirmação foi **testado à mão num
+aparelho real** e funciona (reverse geocode + recotação no `dragend`).
+Histórico: a automação de navegador nunca conseguiu completar esse drag
+(travava por 30s), então por um tempo só existia a verificação por código +
+endpoint — isso está resolvido.

@@ -4,6 +4,7 @@ import { httpStatusFor } from '@/lib/errors';
 import {
   createAdminProduct,
   listAdminProducts,
+  reorderAdminProducts,
 } from '@/modules/admin/catalog';
 
 export const dynamic = 'force-dynamic';
@@ -57,4 +58,28 @@ export async function POST(request: Request) {
     );
   }
   return NextResponse.json({ product: result.data }, { status: 201 });
+}
+
+const reorderSchema = z.object({
+  orderedIds: z.array(z.string().uuid()).min(1),
+});
+
+export async function PUT(request: Request) {
+  const json = await request.json().catch(() => null);
+  const parsed = reorderSchema.safeParse(json);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: { code: 'VALIDATION_ERROR', message: 'Dados inválidos.' } },
+      { status: 400 },
+    );
+  }
+
+  const result = await reorderAdminProducts(parsed.data);
+  if (!result.ok) {
+    return NextResponse.json(
+      { error: result.error },
+      { status: httpStatusFor(result.error.code) },
+    );
+  }
+  return NextResponse.json({ ok: true });
 }

@@ -104,13 +104,49 @@ export function useProductMutations({
     },
   });
 
+  const reorderProductsMutation = useMutation({
+    mutationFn: (orderedIds: string[]) =>
+      apiJson('/api/v1/admin/products', {
+        method: 'PUT',
+        body: JSON.stringify({ orderedIds }),
+      }),
+    onSuccess: async () => {
+      onError('');
+      await invalidateCatalog();
+    },
+    onError: (error) => {
+      onError(
+        error instanceof ApiError
+          ? error.message
+          : 'Falha ao reordenar os produtos.',
+      );
+    },
+  });
+
+  const duplicateMutation = useMutation({
+    mutationFn: (productId: string) =>
+      apiJson(`/api/v1/admin/products/${productId}/duplicate`, {
+        method: 'POST',
+      }),
+    onSuccess: async () => {
+      onError('');
+      await invalidateCatalog();
+    },
+    onError: (error) => {
+      onError(
+        error instanceof ApiError ? error.message : 'Falha ao duplicar produto.',
+      );
+    },
+  });
+
   const uploadMutation = useMutation({
     mutationFn: async (input: { productId: string; file: File }) => {
       const form = new FormData();
       form.set('productId', input.productId);
       form.set('file', input.file);
       form.set('altText', input.file.name);
-      form.set('isPrimary', 'true');
+      // Sem `isPrimary`: o servidor marca como principal só se for a primeira
+      // foto do produto. As demais entram no fim da galeria.
       return apiJson('/api/v1/admin/uploads/product-image', {
         method: 'POST',
         body: form,
@@ -122,5 +158,70 @@ export function useProductMutations({
     },
   });
 
-  return { productMutation, patchMutation, bulkMutation, uploadMutation };
+  const setPrimaryImageMutation = useMutation({
+    mutationFn: (input: { productId: string; imageId: string }) =>
+      apiJson(
+        `/api/v1/admin/products/${input.productId}/images/${input.imageId}`,
+        { method: 'PATCH', body: JSON.stringify({ isPrimary: true }) },
+      ),
+    onSuccess: async () => {
+      onError('');
+      await invalidateCatalog();
+    },
+    onError: (error) => {
+      onError(
+        error instanceof ApiError
+          ? error.message
+          : 'Falha ao definir a imagem principal.',
+      );
+    },
+  });
+
+  const reorderImagesMutation = useMutation({
+    mutationFn: (input: { productId: string; orderedIds: string[] }) =>
+      apiJson(`/api/v1/admin/products/${input.productId}/images`, {
+        method: 'PUT',
+        body: JSON.stringify({ orderedIds: input.orderedIds }),
+      }),
+    onSuccess: async () => {
+      onError('');
+      await invalidateCatalog();
+    },
+    onError: (error) => {
+      onError(
+        error instanceof ApiError
+          ? error.message
+          : 'Falha ao reordenar as imagens.',
+      );
+    },
+  });
+
+  const deleteImageMutation = useMutation({
+    mutationFn: (input: { productId: string; imageId: string }) =>
+      apiJson(
+        `/api/v1/admin/products/${input.productId}/images/${input.imageId}`,
+        { method: 'DELETE' },
+      ),
+    onSuccess: async () => {
+      onError('');
+      await invalidateCatalog();
+    },
+    onError: (error) => {
+      onError(
+        error instanceof ApiError ? error.message : 'Falha ao remover a imagem.',
+      );
+    },
+  });
+
+  return {
+    productMutation,
+    patchMutation,
+    bulkMutation,
+    duplicateMutation,
+    reorderProductsMutation,
+    uploadMutation,
+    setPrimaryImageMutation,
+    reorderImagesMutation,
+    deleteImageMutation,
+  };
 }

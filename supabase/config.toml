@@ -223,7 +223,11 @@ web3 = 30
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
-enable_signup = false
+# NOTA: no Supabase CLI este flag também liga/desliga o *provider* de e-mail
+# inteiro (GOTRUE_EXTERNAL_EMAIL_ENABLED). Com `false` o login por senha do
+# painel admin quebra em local ("Email logins are disabled"). Novos cadastros
+# continuam bloqueados pelo `[auth] enable_signup = false` acima.
+enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
