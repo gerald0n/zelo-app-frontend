@@ -3,7 +3,16 @@ export {
   revokePushSubscription,
   listActiveSubscriptionsForCustomer,
 } from '@/modules/notifications/subscriptions';
-export { notifyOrderStatusChange } from '@/modules/notifications/send';
+export {
+  upsertAdminPushSubscription,
+  revokeAdminPushSubscription,
+  listActiveAdminSubscriptions,
+  type AdminPushTarget,
+} from '@/modules/notifications/admin-subscriptions';
+export {
+  notifyOrderStatusChange,
+  notifyAdminNewOrder,
+} from '@/modules/notifications/send';
 export type {
   PushSubscriptionInput,
   StoredPushSubscription,

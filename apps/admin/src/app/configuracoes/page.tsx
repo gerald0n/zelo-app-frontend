@@ -9,6 +9,7 @@ import { BlackoutsSection } from '@/app/configuracoes/_sections/BlackoutsSection
 import { LogoutButton } from '@/app/configuracoes/_sections/LogoutButton';
 import { BusinessHoursForm } from '@/app/configuracoes/_sections/BusinessHoursForm';
 import { PrinterSection } from '@/app/configuracoes/_sections/PrinterSection';
+import { PushSection } from '@/app/configuracoes/_sections/PushSection';
 import { SlotTimesSection } from '@/app/configuracoes/_sections/SlotTimesSection';
 import { StoreForm } from '@/app/configuracoes/_sections/StoreForm';
 import { adminContainerClass } from '@/lib/layout';
@@ -110,7 +111,12 @@ export default function AdminConfiguracoesPage() {
         </div>
       ) : null}
 
-      {tab === 'dispositivos' ? <PrinterSection /> : null}
+      {tab === 'dispositivos' ? (
+        <div className="space-y-4">
+          <PushSection />
+          <PrinterSection />
+        </div>
+      ) : null}
 
       {tab === 'seguranca' ? (
         <div className="space-y-4">

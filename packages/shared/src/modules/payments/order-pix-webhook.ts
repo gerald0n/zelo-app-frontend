@@ -3,6 +3,7 @@ import 'server-only';
 import { err, ok, type Result } from '@/lib/errors';
 import { logger } from '@/lib/logger';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
+import { notifyAdminNewOrder } from '@/modules/notifications/send';
 import {
   getMercadoPagoOrder,
   getMercadoPagoPayment,
@@ -119,6 +120,8 @@ export async function applyStatus(
         cause: error,
       });
     }
+    // Pix confirmado: só agora o pedido entra pra produção — avisa o painel.
+    await notifyAdminNewOrder({ orderId });
     return ok('confirmed');
   }
 
