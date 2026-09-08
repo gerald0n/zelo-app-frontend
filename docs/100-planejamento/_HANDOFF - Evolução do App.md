@@ -35,7 +35,7 @@ não pesar o contexto de toda sessão nova.
 
 | Doc | Assunto | Status |
 | --- | --- | --- |
-| [103](103%20-%20Painel%20Administrativo.md) | Painel admin: kanban, estoque, comanda manual, impressão, melhorias | Kanban (reescrito 2026-09-06: 2 raias + coluna "Agendados", arraste próprio sem lib), estoque, melhorias no pedido, comanda manual, impressão térmica (WebUSB, **validada em hardware 2026-09-08**) e **Catálogo (resto)** — "acabou num toque", duplicar produto, várias fotos por produto, reordenar produtos+categorias (2026-09-08) — **implementados**. Loja/relatórios/push não iniciados. |
+| [103](103%20-%20Painel%20Administrativo.md) | Painel admin: kanban, estoque, comanda manual, impressão, melhorias | Kanban (reescrito 2026-09-06), estoque, melhorias no pedido, comanda manual, impressão térmica (WebUSB, **validada em hardware 2026-09-08**), **Catálogo (resto)** e **Loja/relatórios** (2026-09-08: pausa com prazo/motivo, aba `/relatorios`, auditoria com filtros) — **implementados**. Só **push** não iniciado. |
 | [104](104%20-%20Promoções,%20Cupons%20e%20Financeiro.md) | Promoções, cupons, financeiro | Promoções **implementadas**. Cupons e Financeiro não iniciados (decisões travadas). |
 | [105](105%20-%20Precisão%20do%20Frete.md) | Google Maps: geocodificação, mapa, área de entrega | (a)-(d) **implementados**, drag do pin **validado à mão 2026-09-08**. (e) suavizar taxa adiado; (f) componente único de endereço desbloqueado, não iniciado. |
 | [106](106%20-%20Avaliações%20e%20Depoimentos.md) | Avaliações de pedido + depoimentos | Não iniciado. 3 decisões em aberto. |
@@ -46,7 +46,8 @@ não pesar o contexto de toda sessão nova.
 
 **Migrations pendentes de `supabase db push` no próximo deploy** — checar
 `supabase/migrations/` por arquivos mais recentes que o último deploy
-confirmado.
+confirmado. Nova em 2026-09-08: `20260908120000_store_pause.sql`
+(`stores.paused_until` / `pause_reason`).
 
 ---
 
@@ -56,9 +57,10 @@ confirmado.
    ver acima).
 2. ~~Validar em aparelho real: drag do pin do mapa, drag do kanban,
    impressão térmica~~ — **feito em 2026-09-08**, tudo OK.
-3. ~~**103 — Catálogo (resto)**~~ — **feito em 2026-09-08** (4 frentes).
-4. **103 — loja/relatórios, push** ou **104 — Cupons + Financeiro**:
-   desbloqueados, sem ordem travada entre si.
+3. ~~**103 — Catálogo (resto)**~~ e ~~**loja/relatórios**~~ — **feitos em
+   2026-09-08**.
+4. **103 — push** ou **104 — Cupons + Financeiro**: desbloqueados, sem
+   ordem travada entre si.
 5. **106 — Avaliações**: Fase 1 pode entrar a qualquer momento; Fase 2
    depende do login por SMS (Fase 14 do roadmap).
 6. A **repaginação visual do admin** (primitivos/tokens do redesign 102)

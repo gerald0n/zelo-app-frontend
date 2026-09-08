@@ -14,7 +14,7 @@ painel `/admin`.
 | Comanda manual | **Implementado.** |
 | Impressão térmica | **Implementado e validado em hardware** (WebUSB/USB, EPSON TM-T20X — 2026-09-08). |
 | Catálogo (resto) | **Feito** (2026-09-08). "Acabou num toque", duplicar produto, várias fotos por produto e reordenar (produtos + categorias, setas ↑/↓). |
-| Loja/relatórios | Não iniciado, sem decisões pendentes conhecidas. |
+| Loja/relatórios | **Feito** (2026-09-08). Pausa com prazo/motivo, aba `/relatorios` (cancelamentos + produção), auditoria com filtros. Faturamento/abas já vinham prontos. |
 | Push | Não iniciado, sem decisões pendentes conhecidas. |
 
 ---
@@ -341,19 +341,50 @@ não funcionava em local ("Email logins are disabled"). Mudado pra `true`
 
 ---
 
-## Loja/relatórios (não iniciado)
+## Loja/relatórios (feito — 2026-09-08)
 
-- **Pausar a loja com tempo e motivo** — "pausar por 1 hora" em vez de
-  pausar e esquecer ligado.
-- **Configurações em abas** — hoje é uma página só, tudo empilhado (loja,
-  horários, pagamento, entrega, conta, auditoria).
-- **Faturamento por período** — hoje/semana/mês, nº de pedidos, ticket
-  médio, gráfico simples.
-- **Resumo de produção do dia** — soma dos itens de todos os pedidos do
-  dia ("8 bolos, 3 tortas, 12 doces").
-- **Relatório de cancelamentos** — quantos e por quais motivos.
-- **Tela de auditoria de verdade** — hoje são linhas cruas no fim de
-  Configurações; virar tela com filtro por tipo e período.
+- **Configurações em abas** — ✅ já vinha feito (`/configuracoes` tem 4
+  abas: Geral, Horários, Dispositivos, Segurança).
+- **Faturamento por período** — ✅ já vinha feito no dashboard `/` (Visão
+  geral): faturamento, nº de pedidos, ticket médio, variação vs. período
+  anterior, curva de vendas em barras CSS, split balcão/entrega
+  (hoje / 7d / 30d — `dashboard-metrics.ts`, `SalesChart`, `DashboardStats`).
+- **Pausar a loja com tempo e motivo** — ✅ **feito**. Migration
+  `20260908120000_store_pause.sql` (`stores.paused_until`,
+  `stores.pause_reason`). O toggle da sidebar (`AdminStoreToggle`) abre um
+  diálogo (`StorePauseDialog`) com presets — 30 min / 1 h / 2 h / 4 h / até
+  amanhã 8h / **sem previsão** — e motivo opcional. Pausa com prazo grava
+  `paused_until` e `is_open_override = null`; **volta sozinha** quando o
+  instante passa (a regra `isCatalogStoreOpenNow` em `packages/shared` checa
+  `paused_until` antes do resto). "Sem previsão" = `is_open_override = false`.
+  Retomar (ou marcar "aceitar pedidos" nas Configurações) limpa os dois.
+  `PATCH /api/v1/admin/store` com `{ pause: { until, reason } }` /
+  `{ resume: true }`. Audit `store.pause` / `store.resume`.
+- **Nova aba `/relatorios`** (item no menu lateral + bottom nav):
+  - **Cancelamentos** no período (hoje/7d/30d): total, valor não faturado,
+    e lista agrupada por motivo (texto do `cancellation_reason`, agrupado
+    sem diferenciar maiúsculas). Barras proporcionais em CSS, sem lib.
+  - **Produção**: soma de **todos** os itens (`order_items`) de pedidos não
+    cancelados do período — produto × quantidade, ordenado. É o "resumo de
+    produção do dia" na visão `Hoje` e escala pra 7d/30d.
+  - `GET /api/v1/admin/reports?period=` → `getOperationsReport`
+    (`src/modules/admin/reports.ts`). Query server-side com range de datas
+    (não usa o cap de "200 pedidos" do dashboard).
+- **Auditoria com filtros** — `AuditLogSection` virou uma tela filtrável
+  (não é rota própria, fica na aba Segurança das Configurações): filtro por
+  área (`product` / `category` / `store` / `order` / `promotion`, via
+  `LIKE 'prefixo%'`) e período (7 / 30 / 90 dias), com um resumo curto do
+  `metadata` por linha. `GET /api/v1/admin/audit-logs?action=&days=&limit=`.
+
+**Testado em 2026-09-08** (Supabase local, rotas HTTP reais):
+- Pausar com prazo / sem previsão / retomar → colunas certas; prazo no
+  passado → 400. `isCatalogStoreOpenNow` coberto por teste unitário
+  (prazo futuro fecha, prazo vencido cai no horário, prazo vence
+  `is_open_override=true`).
+- Relatórios: cancelamentos agrupados por motivo + valor; produção exclui
+  itens de pedidos cancelados; `today` vs `7d` com janelas certas.
+- Auditoria: `action=store` só devolve `store.*`; `action=product` pega
+  `product.*` (inclui `product.image.*`); filtros inválidos ignorados.
 
 ---
 
