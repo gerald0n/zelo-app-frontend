@@ -144,6 +144,8 @@ export function mapStore(
     maxDeliveryRadiusMeters: row.max_delivery_radius_meters,
     timezone: row.timezone,
     isOpenOverride: row.is_open_override,
+    pausedUntil: row.paused_until,
+    pauseReason: row.pause_reason,
     acceptsPayments: {
       pix: row.accepts_pix,
       cash: row.accepts_cash,

@@ -118,7 +118,7 @@ export default function AdminConfiguracoesPage() {
             Sessão: {config.admin?.displayName} ({config.admin?.email})
           </p>
           <AdminPasswordForm />
-          <AuditLogSection logs={config.auditLogs} />
+          <AuditLogSection />
           <LogoutButton logout={config.logout} />
         </div>
       ) : null}

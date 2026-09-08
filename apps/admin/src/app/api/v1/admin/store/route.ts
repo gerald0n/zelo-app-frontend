@@ -4,6 +4,8 @@ import { httpStatusFor } from '@/lib/errors';
 import {
   getAdminStore,
   getStoreAcceptingOrders,
+  pauseStore,
+  resumeStore,
   setStoreAcceptingOrders,
   updateAdminStore,
 } from '@/modules/admin/catalog';
@@ -13,6 +15,13 @@ export const dynamic = 'force-dynamic';
 const patchSchema = z
   .object({
     acceptingOrders: z.boolean().optional(),
+    resume: z.literal(true).optional(),
+    pause: z
+      .object({
+        until: z.string().datetime().nullable().optional(),
+        reason: z.string().trim().max(280).nullable().optional(),
+      })
+      .optional(),
     name: z.string().trim().min(1).max(120).optional(),
     cnpj: z.string().trim().max(20).nullable().optional(),
     phoneE164: z.string().trim().min(8).max(20).optional(),
@@ -86,6 +95,8 @@ export async function GET() {
   return NextResponse.json({
     store: store.data,
     acceptingOrders: accepting.data.acceptingOrders,
+    pausedUntil: accepting.data.pausedUntil,
+    pauseReason: accepting.data.pauseReason,
   });
 }
 
@@ -117,6 +128,22 @@ export async function PATCH(request: Request) {
     );
   }
 
+  if (parsed.data.resume || parsed.data.pause) {
+    const result = parsed.data.resume
+      ? await resumeStore()
+      : await pauseStore({
+          pausedUntil: parsed.data.pause?.until ?? null,
+          reason: parsed.data.pause?.reason ?? null,
+        });
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: result.error },
+        { status: httpStatusFor(result.error.code) },
+      );
+    }
+    return NextResponse.json(result.data);
+  }
+
   if (keys.length === 1 && typeof parsed.data.acceptingOrders === 'boolean') {
     const result = await setStoreAcceptingOrders(parsed.data.acceptingOrders);
     if (!result.ok) {
@@ -138,6 +165,9 @@ export async function PATCH(request: Request) {
 
   return NextResponse.json({
     store: result.data,
-    acceptingOrders: result.data.isOpenOverride !== false,
+    acceptingOrders:
+      result.data.isOpenOverride !== false && result.data.pausedUntil == null,
+    pausedUntil: result.data.pausedUntil,
+    pauseReason: result.data.pauseReason,
   });
 }
