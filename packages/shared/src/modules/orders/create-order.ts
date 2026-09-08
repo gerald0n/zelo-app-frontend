@@ -18,6 +18,7 @@ import {
   saveIdempotentResponse,
 } from '@/modules/orders/customer';
 import { createOrderPixCharge } from '@/modules/payments';
+import { notifyAdminNewOrder } from '@/modules/notifications/send';
 import {
   createOrderBodySchema,
   type CreateOrderBody,
@@ -123,6 +124,12 @@ export async function createOrderFromCheckout(options: {
 
   const summary = await fetchOrderSummary(created.data);
   if (!summary.ok) return summary;
+
+  // Pedido pago no ato (dinheiro/cartão) já entra pra produção — avisa o
+  // painel agora. Pix espera a confirmação do pagamento (webhook do MP).
+  if (options.body.paymentMethod !== 'pix') {
+    await notifyAdminNewOrder({ orderId: summary.data.id });
+  }
 
   let pix: CreatedOrderPix | undefined;
   if (options.body.paymentMethod === 'pix') {

@@ -5,9 +5,14 @@ import { logger } from '@/lib/logger';
 import { sendWebPushNotification } from '@/lib/push/web-push';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import {
+  listActiveAdminSubscriptions,
+  revokeAdminPushSubscriptionByEndpoint,
+} from '@/modules/notifications/admin-subscriptions';
+import {
   listActiveSubscriptionsForCustomer,
   revokePushSubscriptionByEndpoint,
 } from '@/modules/notifications/subscriptions';
+import { formatCatalogPrice } from '@/modules/catalog/types';
 import {
   statusLabel,
   STATUS_COPY,
@@ -23,6 +28,61 @@ const NOTIFIABLE: OrderStatus[] = [
   'delivered',
   'cancelled',
 ];
+
+/**
+ * Avisa os aparelhos do painel que entrou um pedido novo — mesmo com o
+ * painel fechado. Nunca lança: qualquer falha aqui não pode derrubar o
+ * checkout do cliente.
+ */
+export async function notifyAdminNewOrder(options: {
+  orderId: string;
+}): Promise<void> {
+  if (!hasWebPushConfig()) return;
+
+  try {
+    const admin = createAdminSupabaseClient();
+    const { data: order, error } = await admin
+      .from('orders')
+      .select('id, order_number, delivery_method, timing, total_cents')
+      .eq('id', options.orderId)
+      .maybeSingle();
+
+    if (error || !order) return;
+
+    const subscriptions = await listActiveAdminSubscriptions();
+    if (!subscriptions.length) return;
+
+    const method =
+      order.delivery_method === 'delivery' ? 'Entrega' : 'Retirada';
+    const scheduled = order.timing === 'scheduled' ? ' · Agendado' : '';
+    const title = `Novo pedido #${order.order_number}`;
+    const body = `${formatCatalogPrice(order.total_cents)} · ${method}${scheduled}`;
+
+    await Promise.all(
+      subscriptions.map(async (sub) => {
+        const result = await sendWebPushNotification({
+          endpoint: sub.endpoint,
+          p256dh: sub.p256dh,
+          auth: sub.auth,
+          payload: {
+            title,
+            body,
+            url: '/pedidos',
+            orderId: order.id,
+            tag: `admin-new-order-${order.id}`,
+          },
+        });
+        if (!result.ok && result.gone) {
+          await revokeAdminPushSubscriptionByEndpoint(sub.endpoint);
+        }
+      }),
+    );
+  } catch (error) {
+    logger.warn('Push admin: falha inesperada (não afeta o pedido)', {
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
 
 export async function notifyOrderStatusChange(options: {
   orderId: string;
