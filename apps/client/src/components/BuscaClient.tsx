@@ -28,7 +28,12 @@ export default function BuscaClient({
   }, [products, query]);
 
   return (
-    <div className={cn('flex min-h-dvh w-full flex-col bg-background', shellContentClass)}>
+    <div
+      className={cn(
+        'flex min-h-dvh w-full flex-col bg-background',
+        shellContentClass,
+      )}
+    >
       <header className={cn(pageHeaderBarClass, 'gap-3 lg:px-0')}>
         <Link href="/" aria-label="Voltar ao cardápio" className="lg:hidden">
           <ArrowLeft className="size-6" />
@@ -64,7 +69,7 @@ export default function BuscaClient({
               {results.length}{' '}
               {results.length === 1 ? 'resultado' : 'resultados'}
             </p>
-            <div className="flex flex-col gap-2.5 px-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:px-0 2xl:grid-cols-3">
+            <div className="flex flex-col gap-2.5 px-3 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] lg:gap-3 lg:px-0">
               {results.map((product) => (
                 <ProductCard key={product.id} product={product} responsive />
               ))}

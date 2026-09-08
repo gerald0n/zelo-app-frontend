@@ -134,63 +134,63 @@ export default function HomeCatalog({
               {popular.map((product) => {
                 const quantityInCart = quantityByProduct.get(product.id) ?? 0;
                 return (
-                <article
-                  key={product.id}
-                  className="flex w-[196px] shrink-0 flex-col rounded-xl border border-border bg-card p-2.5"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <ProductThumb
-                      tone={categoryTone(
-                        categoryNames[product.categoryId] ?? '',
-                      )}
-                      src={product.image}
-                      alt={product.imageAlt ?? product.name}
-                      className="size-12 shrink-0 rounded-lg"
-                      iconClassName="size-5"
-                      width={160}
-                    />
-                    <p className="text-sm font-semibold leading-tight text-card-foreground">
-                      {product.name}
-                    </p>
-                  </div>
-                  <div className="mt-2 flex flex-col gap-2">
-                    <span className="flex flex-wrap items-baseline gap-1.5">
-                      <span className="font-serif text-base font-semibold text-primary">
-                        {formatCatalogPrice(product.price)}
-                      </span>
-                      {product.originalPrice != null ? (
-                        <span className="text-xs text-muted-foreground line-through">
-                          {formatCatalogPrice(product.originalPrice)}
-                        </span>
-                      ) : null}
-                    </span>
-                    {quantityInCart > 0 ? (
-                      <CatalogCartControls
-                        compact
-                        className="w-full"
-                        productId={product.id}
-                        productName={product.name}
-                        quantity={quantityInCart}
-                        onIncrease={() => addProduct(product)}
+                  <article
+                    key={product.id}
+                    className="flex w-[196px] shrink-0 flex-col rounded-xl border border-border bg-card p-2.5 lg:w-[248px] lg:p-3"
+                  >
+                    <div className="flex items-center gap-2.5 lg:gap-3">
+                      <ProductThumb
+                        tone={categoryTone(
+                          categoryNames[product.categoryId] ?? '',
+                        )}
+                        src={product.image}
+                        alt={product.imageAlt ?? product.name}
+                        className="size-12 shrink-0 rounded-lg lg:size-16"
+                        iconClassName="size-5 lg:size-7"
+                        width={200}
                       />
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => addProduct(product)}
-                        className="inline-flex h-7 w-full items-center justify-center rounded-md bg-primary/10 px-2 text-2xs font-semibold text-primary transition-[background-color,transform] duration-100 hover:bg-primary/20 active:scale-[0.97]"
-                      >
-                        Adicionar
-                      </button>
-                    )}
-                  </div>
-                </article>
+                      <p className="text-sm font-semibold leading-tight text-card-foreground lg:text-base">
+                        {product.name}
+                      </p>
+                    </div>
+                    <div className="mt-2 flex flex-col gap-2 lg:mt-3">
+                      <span className="flex flex-wrap items-baseline gap-1.5">
+                        <span className="font-serif text-base font-semibold text-primary">
+                          {formatCatalogPrice(product.price)}
+                        </span>
+                        {product.originalPrice != null ? (
+                          <span className="text-xs text-muted-foreground line-through">
+                            {formatCatalogPrice(product.originalPrice)}
+                          </span>
+                        ) : null}
+                      </span>
+                      {quantityInCart > 0 ? (
+                        <CatalogCartControls
+                          compact
+                          className="w-full"
+                          productId={product.id}
+                          productName={product.name}
+                          quantity={quantityInCart}
+                          onIncrease={() => addProduct(product)}
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => addProduct(product)}
+                          className="inline-flex h-7 w-full items-center justify-center rounded-md bg-primary/10 px-2 text-2xs font-semibold text-primary transition-[background-color,transform] duration-100 hover:bg-primary/20 active:scale-[0.97] lg:h-9 lg:text-xs"
+                        >
+                          Adicionar
+                        </button>
+                      )}
+                    </div>
+                  </article>
                 );
               })}
             </div>
           </section>
         ) : null}
 
-        {(
+        {
           <div
             className="sticky z-30 mt-3 bg-background px-4 py-2 lg:hidden"
             style={{
@@ -247,7 +247,7 @@ export default function HomeCatalog({
               ))}
             </div>
           </div>
-        )}
+        }
 
         <section className="px-4 pt-2 pb-6" aria-labelledby="menu-heading">
           <h3
@@ -267,7 +267,7 @@ export default function HomeCatalog({
                 : 'Nenhum produto nesta categoria.'}
             </p>
           ) : (
-            <ul className="mt-2.5 flex flex-col gap-2.5 lg:grid lg:grid-cols-2 lg:gap-3 2xl:grid-cols-3">
+            <ul className="mt-2.5 flex flex-col gap-2.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] lg:gap-3">
               {filtered.map((product, index) => (
                 <li
                   key={product.id}
