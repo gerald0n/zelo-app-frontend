@@ -227,13 +227,16 @@ export function ProductsTab({
         open={cropTarget != null}
         file={cropTarget?.file ?? null}
         onCancel={() => setCropTarget(null)}
-        onConfirm={(croppedFile) => {
-          if (cropTarget) {
-            uploadMutation.mutate({
-              productId: cropTarget.productId,
-              file: croppedFile,
-            });
-          }
+        onConfirm={async (croppedFile) => {
+          if (!cropTarget) return;
+          // `mutateAsync` só resolve depois do `onSuccess` (invalidateCatalog),
+          // então quando fechamos o modal a imagem nova do card já chegou —
+          // nada de "fecha e some, aí de repente troca". Se der erro, rejeita
+          // e o próprio modal mostra a mensagem e continua aberto.
+          await uploadMutation.mutateAsync({
+            productId: cropTarget.productId,
+            file: croppedFile,
+          });
           setCropTarget(null);
         }}
       />
