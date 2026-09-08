@@ -12,58 +12,93 @@ painel `/admin`.
 | Estoque básico | **Implementado.** |
 | Melhorias na tela do pedido | **Implementado.** |
 | Comanda manual | **Implementado.** |
-| Impressão térmica | **Implementado** (WebUSB/USB). Falta validar em hardware. |
-| Catálogo (resto) | Não iniciado, sem decisões pendentes conhecidas. |
-| Loja/relatórios | Não iniciado, sem decisões pendentes conhecidas. |
+| Impressão térmica | **Implementado e validado em hardware** (WebUSB/USB, EPSON TM-T20X — 2026-09-08). |
+| Catálogo (resto) | **Feito** (2026-09-08). "Acabou num toque", duplicar produto, várias fotos por produto e reordenar (produtos + categorias, setas ↑/↓). |
+| Loja/relatórios | **Feito** (2026-09-08). Pausa com prazo/motivo, aba `/relatorios` (cancelamentos + produção), auditoria com filtros. Faturamento/abas já vinham prontos. |
 | Push | Não iniciado, sem decisões pendentes conhecidas. |
 
 ---
 
 ## Kanban de pedidos
 
-- `/admin/pedidos` é um kanban com 3 abas: **Retirada**, **Delivery**
-  (colunas por status; as 3 primeiras — `received/confirmed/in_production`
-  — são iguais nos dois quadros, a cauda muda pelo método de entrega) e
-  **Agenda** (pedidos `timing='scheduled' AND status='received'`, lista
-  simples com botão "Passar para produção" — 100% manual, não existe
-  "aparece sozinho no quadro no dia").
-- Arrastar (`@dnd-kit`, só no quadro desktop) ou o botão "avançar" em cada
-  card fazem a mesma transição (`nextAdminStatus` + `POST
-  /api/v1/admin/orders/[id]/status`); só aceita mover pra frente. Cancelar é
-  um botão que abre um `prompt()` pedindo o motivo (mín. 3 caracteres).
-  Avanço é **otimista** no cliente (reverte se a chamada falhar).
-- Botão **"Nova comanda"** no header do kanban abre `/admin/pedidos/novo`
-  (comanda manual — ver seção própria abaixo).
-- Régua de urgência: borda do card muda de cor por minutos parado, usando
-  `orders.updated_at` como proxy de "tempo no status atual" (não é exato —
-  qualquer update no pedido reseta; ≥15 min aviso, ≥30 min crítico — chute
-  razoável, ajustável).
-- Indicador "ao vivo" (ponto verde quando o realtime está `subscribed`) +
-  bipe (Web Audio API, sem arquivo de som) quando chega um pedido novo (por
-  diff de IDs entre fetches do mesmo `scope`).
-- Checkbox "Ocultar entregues" tira a coluna `delivered` da vista — é a
-  versão simplificada de "recolhível + filtro de foco" (não é colapso por
-  coluna individual).
-- Cards mostram badge **"Avulso"** quando o pedido é de comanda manual sem
-  vínculo com customer (`order.isGuest`).
-- Mobile (abaixo de `lg`, 1024px): pills de status + lista de um status por
-  vez, sem drag (o card não entra em `DndContext` nesse modo).
-- Fetch: quadros usam `scope=all` (200 pedidos mais recentes) filtrados por
-  `deliveryMethod` no cliente; Agenda usa `scope=scheduled`.
-- Realtime: `useAdminOrdersRealtime` (`src/modules/realtime/hooks.ts`) expõe
-  `{ version, status }` — `version` incrementa em qualquer mudança de
-  `orders`/`order_status_history` (sem dizer o quê mudou; comparar IDs no
-  cliente pra detectar pedido novo), `status` é
-  `idle/connecting/subscribed/reconnecting/error`.
+> Reescrito em 2026-09-06. A versão antiga usava `@dnd-kit` e tinha 3 abas
+> (Retirada / Delivery / Agenda como painel à parte). Hoje o pacote de
+> drag-and-drop foi **removido** do repo — o arraste é feito à mão com
+> eventos de ponteiro.
+
+- **Arquivos** (no app `apps/admin`): tela em `src/app/pedidos/page.tsx`;
+  quadro desktop `src/components/admin/kanban/AdminKanbanBoard.tsx`; lista
+  mobile `AdminKanbanMobile.tsx`; card compartilhado `AdminOrderCardBody.tsx`;
+  coluna `KanbanColumn.tsx`; modelo do quadro `src/lib/admin/kanban-board.ts`
+  (+ `src/lib/admin/order-columns.ts` para a ordem das colunas).
+- **Duas raias paralelas** (`LaneKey = 'pickup' | 'delivery'`), ambas sempre
+  visíveis, empilhadas no desktop. Não existe mais aba/painel "Agenda": o
+  pedido agendado ainda não iniciado (`timing==='scheduled' && status==='received'`)
+  aparece numa **coluna sintética "Agendados"** — a primeira de cada raia,
+  com cor própria (`tone-info`). Ele "gradua" para o pipeline normal quando
+  confirmado.
+- **Pipeline por raia** (`BOARD_COLUMNS`): as 3 primeiras colunas são iguais
+  (`received / confirmed / in_production`); a cauda muda —
+  Retirada: `ready_for_pickup → delivered`;
+  Delivery: `ready_for_delivery → out_for_delivery → delivered`, mas
+  `ready_for_delivery` é **apelidado** para a coluna `out_for_delivery`
+  (`COLUMN_ALIAS`), ou seja "Pronto para entrega" não tem coluna própria no
+  visual — o card salta de "Em produção" para "Saiu para entrega".
+- **Arraste feito à mão** (sem lib), só no quadro desktop: `onPointerDown`
+  no card inteiro → após um limiar de 8px (`DRAG_THRESHOLD`) o card "levanta"
+  num clone renderizado via portal no `<body>` e segue o cursor. Botões,
+  links e inputs dentro do card não iniciam arraste (`INTERACTIVE`). Um clique
+  curto (sem passar o limiar) abre o modal de detalhes.
+- **Avanço de um passo só.** Arrastar e soltar **na coluna imediatamente
+  seguinte da mesma raia** confirma a transição — qualquer outro destino
+  devolve o card ao lugar. O alvo é sempre `nextAdminStatus(from, deliveryMethod)`.
+  Cards na coluna "Agendados" (ou sem próximo status) não são arrastáveis.
+- O botão "avançar" no rodapé de cada card faz a **mesma** transição
+  (`nextAdminStatus`). Cancelar é um botão que abre um diálogo
+  (`useAppDialog().prompt`, mín. 3 caracteres) → `POST
+  /api/v1/admin/orders/[id]/cancel`. Avançar → `POST
+  /api/v1/admin/orders/[id]/status`. O avanço é **otimista**
+  (`optimisticStatus` no `page.tsx`, reverte se a chamada falhar).
+- **"Nova comanda"** não fica mais no header do quadro: no desktop é um item
+  da **sidebar** (`AdminSidebar` → `useNewOrder().open`); no mobile é um FAB
+  (`+`) fixo no canto (`lg:hidden`). Abre o modal, não navega para uma rota.
+- **Pausar/retomar a loja** saiu do `/admin` e virou `AdminStoreToggle` na
+  sidebar (`AdminPageTitle` substituiu o antigo `AdminHeader`).
+- Régua de urgência: borda do card muda de cor por minutos desde
+  `orders.updated_at` (proxy de "tempo no status atual"; qualquer update
+  reseta). `src/lib/admin/order-urgency.ts`: ≥15 min `warning`, ≥30 min
+  `critical`; estados terminais (`delivered`/`cancelled`) nunca ficam urgentes.
+  O card também mostra "há N min" quando ≥15.
+- Realtime: canal único compartilhado via `AdminRealtimeContext`
+  (`useAdminRealtime()` → `{ version, status }`), aberto uma vez no provider;
+  a sidebar mostra o status "Ao vivo". `version` incrementa em qualquer
+  mudança de `orders`/`order_status_history` (sem dizer o quê) e entra na
+  query key do quadro para forçar refetch. O `page.tsx` compara os IDs entre
+  fetches para tocar o bipe de pedido novo (`playNewOrderChime`, Web Audio,
+  sem arquivo) e disparar a impressão automática (ver §Impressão térmica).
+- Fetch: o quadro usa sempre `scope=all` (200 pedidos mais recentes) e separa
+  por `deliveryMethod` no cliente (`laneOf`). Busca (`q`) por número/cliente/
+  produto entra no mesmo endpoint.
+- Checkbox "Ocultar entregues" remove a coluna `delivered` da vista
+  (`columnsForLane(lane, hideDelivered)`).
+- Card mostra `· Avulso` ao lado do nome quando o pedido é de comanda manual
+  sem `customer` (`order.isGuest`), e um selo "Aguardando Pix" quando
+  `isAwaitingPixPayment(order)`.
+- Mobile (`AdminKanbanMobile`, abaixo de `lg`): escolhe a raia (segmented),
+  depois a coluna (pills com contagem), lista os cards — sem arraste, avanço
+  só pelo botão.
 
 **Decisões travadas:**
-- Dois quadros (Retirada/Delivery) + painel Agenda separado; agendado não se
-  mistura.
-- Arrastar e soltar forward-only, sem arrastar entre quadros; botão de
-  avançar no card; cancelar = botão no card.
-- Régua de urgência (card muda de cor por tempo parado), `updated_at` como
-  proxy.
-- Celular: um fluxo por vez, em lista.
+- Duas raias (Retirada/Delivery) sempre visíveis; "Agendados" é coluna, não
+  painel separado; agendado gradua para o pipeline ao ser confirmado.
+- Sem biblioteca de drag-and-drop — arraste próprio com eventos de ponteiro
+  + clone em portal.
+- Arrastar é forward-only, um passo, dentro da mesma raia; botão de avançar
+  no card faz o mesmo; cancelar = botão no card com diálogo de motivo.
+- Régua de urgência por `updated_at`; ≥15 aviso / ≥30 crítico.
+- Celular: um fluxo por vez, em lista, sem arraste.
+- "Nova comanda" e o toggle da loja vivem na sidebar (desktop) / FAB
+  (mobile), não num header do quadro.
 
 ---
 
@@ -176,10 +211,9 @@ impressora de rede, então ePOS-Print não se aplica.
 - Dep nova: `@types/w3c-web-usb` (devDependency; os arquivos usam
   `/// <reference types="w3c-web-usb" />`).
 
-**Pendências:**
-- Validar em hardware: corte (`GS V 1`), largura real (48 col), acentuação
-  (WPC1252 x code page de fábrica da unidade), endpoint bulk-out.
-- Confirmar que o build de produção não quebra sem o `@types/*` em dev.
+**Pendências:** nenhuma. Validado em hardware em 2026-09-08 (EPSON TM-T20X):
+corte (`GS V 1`), largura de 48 col, acentuação (WPC1252) e endpoint
+bulk-out OK.
 
 **Decisões travadas:**
 - Conexão: USB via WebUSB (sem rede/ePOS-Print).
@@ -218,45 +252,139 @@ Levar troco para R$ 100,00
      Obrigado pela preferência!
 ```
 
-Duas formas de conectar, a decidir quando a impressora chegar:
-- **Rede (cabo/Wi-Fi):** impressão automática silenciosa via ePOS-Print
-  (recurso próprio da Epson), sem caixa de diálogo.
-- **Fallback simples:** modelo em página normal + `imprimir` do navegador →
-  sai pela impressora configurada no SO, com janelinha a cada vez.
-
-Config nova necessária: dados do MEI (CNPJ, nome, endereço) e endereço de
-rede da impressora, na tela de Configurações. Impressão automática só
-funciona com o painel aberto no tablet (mesma tela que fica ligada pro
-alerta sonoro do kanban).
+> Histórico: a conexão chegou a ter duas opções em aberto (rede via
+> ePOS-Print × fallback de impressão do navegador). **Decidido: USB via
+> WebUSB** — ver §Impressão térmica acima. Impressão automática só funciona
+> com o painel aberto no tablet (mesma tela que fica ligada pro alerta
+> sonoro do kanban).
 
 ---
 
-## Catálogo (resto) (não iniciado)
+## Catálogo (resto) (em andamento — iniciado 2026-09-08)
 
-- **"Acabou" num toque** — tirar/repor um produto sem abrir o formulário
-  inteiro.
-- **Reordenar produtos e categorias arrastando** — hoje se digita um número
-  de ordem.
-- **Várias fotos por produto** — hoje só cabe uma; banco já suporta, falta
-  a tela (escolher principal, apagar, reordenar).
-- **Duplicar produto** — criar "Bolo G" a partir do "Bolo M" sem redigitar
-  tudo.
+Tela: `apps/admin/src/app/catalogo/` (abas `_tabs/*`), módulos em
+`src/modules/admin/catalog/*`.
+
+- **"Acabou" num toque** — ✅ **feito** (já vinha da fase do estoque). Toggle
+  `Disponível` (`role="switch"`) em cada card do grid e linha da lista
+  (`ProductGridCard` / `ProductListRow` → `patchMutation` com
+  `isAvailable`), pausar/retomar em lote (`ProductBulkBar`) e filtro
+  "Pausados / Estoque baixo" (`ProductToolbar`). Nada mais a fazer aqui.
+- **Reordenar produtos e categorias** — ✅ **feito** (2026-09-08). Setas ↑/↓
+  (não arraste — melhor no tablet; o repo não tem lib de DnD).
+  - Backend: `src/modules/admin/catalog/reorder.ts` — `reorderAdminProducts`
+    / `reorderAdminCategories` recebem a **lista completa** de ids na ordem
+    desejada e gravam `sort_order` 0..n; `PUT /api/v1/admin/products` e `PUT
+    /api/v1/admin/categories`. Lista que não bate com os registros ativos →
+    400. Audit `product.reorder` / `category.reorder`.
+  - **Categorias** (`CategoriesTab`): setas ↑/↓ em cada linha, sempre
+    visíveis (a lista já é a ordem). Tirei o "Ordem N" do texto da linha.
+  - **Produtos** (`ProductsTab` + `ProductCollection` + `ProductListRow`):
+    aparece a opção **"Ordenar: Manual"** (`sort='manual'` → ordena por
+    `sortOrder`). Com ela ativa **na visão em lista**, cada linha ganha
+    ↑/↓; na visão em grade sai um aviso pra trocar pra lista.
+  - Mover dentro de um filtro de categoria troca a posição com o **vizinho
+    visível**, mas o cliente manda a lista global inteira
+    (`product-reorder.ts:reorderedProductIds`) pro backend não embaralhar as
+    outras categorias.
+  - Nota: a 1ª reordenação normaliza os `sort_order` (o seed tinha valores
+    repetidos entre categorias) — a ordem exibida não muda.
+- **Várias fotos por produto** — ✅ **feito** (2026-09-08). Galeria
+  (`ProductImagesManager`) no topo do modal de edição do produto: lista
+  todas as fotos, botão "Adicionar" (mesmo fluxo de recorte 1:1), estrela
+  para definir a principal, lixeira para apagar, setas ← → para reordenar.
+  Endpoints novos: `PUT /api/v1/admin/products/[id]/images` (`{ orderedIds }`
+  → `reorderProductImages`) e `PATCH .../images/[imageId]` (`{ isPrimary:
+  true }` → `setPrimaryProductImage`; desmarca a principal antiga antes por
+  causa do índice único parcial). Upload da galeria/card **não** força mais
+  `isPrimary` — só vira principal se for a 1ª foto. O modal deriva o produto
+  em edição da lista (`editingProductId`), então a galeria reflete cada
+  mutação sem estado stale.
+  - Nota de UX: `mapAdminImages` (e o mapper do storefront) sempre ordena
+    a **principal primeiro**, depois por `sort_order`. Então a galeria fixa
+    a principal na 1ª posição e as setas reordenam o resto ao redor dela —
+    consistente com o que o cliente vê na loja. Se um dia quiserem ordem
+    livre com a principal só marcada por selo, é aqui que muda.
+- **Duplicar produto** — ✅ **feito** (2026-09-08). `duplicateAdminProduct`
+  (`src/modules/admin/catalog/products.ts`) → `POST
+  /api/v1/admin/products/[id]/duplicate`. Copia nome "X (cópia)", categoria,
+  preço, peso, estoque e adicionais; **não** copia imagens (evita duplicar
+  arquivos no storage). A cópia nasce **pausada** (`is_available = false`) e
+  com `sort_order` do original + 1. Botão de copiar (ícone `Copy`) no card do
+  grid e na linha da lista (`duplicateMutation` em `useProductMutations.ts`).
+
+**As 4 frentes do "Catálogo (resto)" estão feitas.** Próximo bloco do 103:
+loja/relatórios ou push (nenhum iniciado).
+
+**Testado em 2026-09-08** contra o Supabase local (rotas HTTP reais + DB +
+storage), logado como `admin@zeloconfeitaria.com.br`:
+- Duplicar: cópia com nome "… (cópia)", `is_available=false`, `sort_order`
+  do original + 1, adicionais copiados, sem imagens; audit `product.duplicate`
+  gravado.
+- Definir principal: troca a principal, mantém exatamente 1; imagem de
+  outro produto → 404.
+- Reordenar imagens: grava `sort_order` 0..n na ordem enviada; lista que não
+  bate → 400.
+- Apagar imagem: remove a linha **e** o objeto no storage; se era a
+  principal, promove a de menor `sort_order`.
+- Upload: 1ª foto do produto vira principal; nas seguintes entra como não
+  principal no fim.
+- Reordenar produtos e categorias: `PUT` regrava `sort_order` 0..n; lista
+  incompleta → 400; mover dentro de um filtro de categoria não mexe nas
+  outras (helper `reorderedProductIds` testado à parte).
+
+Pegadinha de ambiente encontrada: `supabase/config.toml` tinha
+`[auth.email] enable_signup = false`, e o CLI do Supabase usa esse flag pra
+ligar/desligar o **provider de e-mail inteiro** → login por senha do admin
+não funcionava em local ("Email logins are disabled"). Mudado pra `true`
+(cadastro novo continua bloqueado pelo `[auth] enable_signup = false`).
 
 ---
 
-## Loja/relatórios (não iniciado)
+## Loja/relatórios (feito — 2026-09-08)
 
-- **Pausar a loja com tempo e motivo** — "pausar por 1 hora" em vez de
-  pausar e esquecer ligado.
-- **Configurações em abas** — hoje é uma página só, tudo empilhado (loja,
-  horários, pagamento, entrega, conta, auditoria).
-- **Faturamento por período** — hoje/semana/mês, nº de pedidos, ticket
-  médio, gráfico simples.
-- **Resumo de produção do dia** — soma dos itens de todos os pedidos do
-  dia ("8 bolos, 3 tortas, 12 doces").
-- **Relatório de cancelamentos** — quantos e por quais motivos.
-- **Tela de auditoria de verdade** — hoje são linhas cruas no fim de
-  Configurações; virar tela com filtro por tipo e período.
+- **Configurações em abas** — ✅ já vinha feito (`/configuracoes` tem 4
+  abas: Geral, Horários, Dispositivos, Segurança).
+- **Faturamento por período** — ✅ já vinha feito no dashboard `/` (Visão
+  geral): faturamento, nº de pedidos, ticket médio, variação vs. período
+  anterior, curva de vendas em barras CSS, split balcão/entrega
+  (hoje / 7d / 30d — `dashboard-metrics.ts`, `SalesChart`, `DashboardStats`).
+- **Pausar a loja com tempo e motivo** — ✅ **feito**. Migration
+  `20260908120000_store_pause.sql` (`stores.paused_until`,
+  `stores.pause_reason`). O toggle da sidebar (`AdminStoreToggle`) abre um
+  diálogo (`StorePauseDialog`) com presets — 30 min / 1 h / 2 h / 4 h / até
+  amanhã 8h / **sem previsão** — e motivo opcional. Pausa com prazo grava
+  `paused_until` e `is_open_override = null`; **volta sozinha** quando o
+  instante passa (a regra `isCatalogStoreOpenNow` em `packages/shared` checa
+  `paused_until` antes do resto). "Sem previsão" = `is_open_override = false`.
+  Retomar (ou marcar "aceitar pedidos" nas Configurações) limpa os dois.
+  `PATCH /api/v1/admin/store` com `{ pause: { until, reason } }` /
+  `{ resume: true }`. Audit `store.pause` / `store.resume`.
+- **Nova aba `/relatorios`** (item no menu lateral + bottom nav):
+  - **Cancelamentos** no período (hoje/7d/30d): total, valor não faturado,
+    e lista agrupada por motivo (texto do `cancellation_reason`, agrupado
+    sem diferenciar maiúsculas). Barras proporcionais em CSS, sem lib.
+  - **Produção**: soma de **todos** os itens (`order_items`) de pedidos não
+    cancelados do período — produto × quantidade, ordenado. É o "resumo de
+    produção do dia" na visão `Hoje` e escala pra 7d/30d.
+  - `GET /api/v1/admin/reports?period=` → `getOperationsReport`
+    (`src/modules/admin/reports.ts`). Query server-side com range de datas
+    (não usa o cap de "200 pedidos" do dashboard).
+- **Auditoria com filtros** — `AuditLogSection` virou uma tela filtrável
+  (não é rota própria, fica na aba Segurança das Configurações): filtro por
+  área (`product` / `category` / `store` / `order` / `promotion`, via
+  `LIKE 'prefixo%'`) e período (7 / 30 / 90 dias), com um resumo curto do
+  `metadata` por linha. `GET /api/v1/admin/audit-logs?action=&days=&limit=`.
+
+**Testado em 2026-09-08** (Supabase local, rotas HTTP reais):
+- Pausar com prazo / sem previsão / retomar → colunas certas; prazo no
+  passado → 400. `isCatalogStoreOpenNow` coberto por teste unitário
+  (prazo futuro fecha, prazo vencido cai no horário, prazo vence
+  `is_open_override=true`).
+- Relatórios: cancelamentos agrupados por motivo + valor; produção exclui
+  itens de pedidos cancelados; `today` vs `7d` com janelas certas.
+- Auditoria: `action=store` só devolve `store.*`; `action=product` pega
+  `product.*` (inclui `product.image.*`); filtros inválidos ignorados.
 
 ---
 

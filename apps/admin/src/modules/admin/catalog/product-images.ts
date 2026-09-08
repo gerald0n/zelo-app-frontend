@@ -126,6 +126,118 @@ export async function uploadProductImage(options: {
   });
 }
 
+export async function setPrimaryProductImage(options: {
+  productId: string;
+  imageId: string;
+}): Promise<Result<true>> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth;
+
+  const admin = createAdminSupabaseClient();
+
+  const { data: image, error: findError } = await admin
+    .from('product_images')
+    .select('id')
+    .eq('id', options.imageId)
+    .eq('product_id', options.productId)
+    .maybeSingle();
+
+  if (findError) {
+    return err('INTERNAL_ERROR', 'Não foi possível definir a imagem principal.', {
+      cause: findError,
+    });
+  }
+  if (!image) return err('NOT_FOUND', 'Imagem não encontrada.');
+
+  // Tira a principal atual antes de marcar a nova — o índice único parcial
+  // `product_images_one_primary_idx` não deixa duas primárias no mesmo produto.
+  const { error: clearError } = await admin
+    .from('product_images')
+    .update({ is_primary: false })
+    .eq('product_id', options.productId)
+    .neq('id', options.imageId);
+
+  if (clearError) {
+    return err('INTERNAL_ERROR', 'Não foi possível definir a imagem principal.', {
+      cause: clearError,
+    });
+  }
+
+  const { error: setError } = await admin
+    .from('product_images')
+    .update({ is_primary: true })
+    .eq('id', options.imageId);
+
+  if (setError) {
+    return err('INTERNAL_ERROR', 'Não foi possível definir a imagem principal.', {
+      cause: setError,
+    });
+  }
+
+  await writeAuditLog({
+    actorId: auth.data.id,
+    action: 'product.image.set_primary',
+    entityType: 'product',
+    entityId: options.productId,
+    metadata: { imageId: options.imageId },
+  });
+
+  return ok(true);
+}
+
+export async function reorderProductImages(options: {
+  productId: string;
+  orderedIds: string[];
+}): Promise<Result<true>> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth;
+
+  const admin = createAdminSupabaseClient();
+
+  const { data: current, error: listError } = await admin
+    .from('product_images')
+    .select('id')
+    .eq('product_id', options.productId);
+
+  if (listError) {
+    return err('INTERNAL_ERROR', 'Não foi possível reordenar as imagens.', {
+      cause: listError,
+    });
+  }
+
+  const currentIds = new Set((current ?? []).map((row) => row.id));
+  if (
+    currentIds.size !== options.orderedIds.length ||
+    options.orderedIds.some((id) => !currentIds.has(id))
+  ) {
+    return err('VALIDATION_ERROR', 'A lista de imagens não confere.');
+  }
+
+  // São poucas imagens por produto e a UI reenvia a lista inteira; um erro no
+  // meio deixa a ordem parcial, corrigida no próximo reenvio.
+  for (let index = 0; index < options.orderedIds.length; index += 1) {
+    const { error: updateError } = await admin
+      .from('product_images')
+      .update({ sort_order: index })
+      .eq('id', options.orderedIds[index]);
+    if (updateError) {
+      return err('INTERNAL_ERROR', 'Não foi possível reordenar as imagens.', {
+        cause: updateError,
+      });
+    }
+  }
+
+  await writeAuditLog({
+    actorId: auth.data.id,
+    action: 'product.image.reorder',
+    entityType: 'product',
+    entityId: options.productId,
+    metadata: { order: options.orderedIds },
+  });
+
+  return ok(true);
+}
+
 export async function deleteProductImage(options: {
   productId: string;
   imageId: string;

@@ -1237,6 +1237,8 @@ export type Database = {
           longitude: number;
           max_delivery_radius_meters: number;
           name: string;
+          pause_reason: string | null;
+          paused_until: string | null;
           phone_e164: string;
           pix_copy_paste: string | null;
           postal_code: string | null;
@@ -1262,6 +1264,8 @@ export type Database = {
           longitude: number;
           max_delivery_radius_meters?: number;
           name: string;
+          pause_reason?: string | null;
+          paused_until?: string | null;
           phone_e164: string;
           pix_copy_paste?: string | null;
           postal_code?: string | null;
@@ -1287,6 +1291,8 @@ export type Database = {
           longitude?: number;
           max_delivery_radius_meters?: number;
           name?: string;
+          pause_reason?: string | null;
+          paused_until?: string | null;
           phone_e164?: string;
           pix_copy_paste?: string | null;
           postal_code?: string | null;

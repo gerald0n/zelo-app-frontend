@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -83,6 +83,33 @@ export function CategoriesTab({ categories, invalidateCatalog, onError }: Props)
       }),
     onSuccess: invalidateCatalog,
   });
+
+  const reorderMutation = useMutation({
+    mutationFn: (orderedIds: string[]) =>
+      apiJson('/api/v1/admin/categories', {
+        method: 'PUT',
+        body: JSON.stringify({ orderedIds }),
+      }),
+    onSuccess: async () => {
+      onError('');
+      await invalidateCatalog();
+    },
+    onError: (error) => {
+      onError(
+        error instanceof ApiError
+          ? error.message
+          : 'Falha ao reordenar as categorias.',
+      );
+    },
+  });
+
+  const move = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= categories.length) return;
+    const ids = categories.map((category) => category.id);
+    [ids[index], ids[target]] = [ids[target], ids[index]];
+    reorderMutation.mutate(ids);
+  };
 
   const openCategoryForm = (category?: AdminCategory) => {
     onError('');
@@ -170,15 +197,36 @@ export function CategoriesTab({ categories, invalidateCatalog, onError }: Props)
         </form>
       ) : null}
       <div className="space-y-2">
-        {categories.map((category) => (
+        {categories.map((category, index) => (
           <div
             key={category.id}
             className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
           >
+            <div className="flex shrink-0 flex-col">
+              <button
+                type="button"
+                onClick={() => move(index, -1)}
+                disabled={index === 0 || reorderMutation.isPending}
+                aria-label="Mover para cima"
+                className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-30"
+              >
+                <ChevronUp className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => move(index, 1)}
+                disabled={
+                  index === categories.length - 1 || reorderMutation.isPending
+                }
+                aria-label="Mover para baixo"
+                className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-30"
+              >
+                <ChevronDown className="size-4" />
+              </button>
+            </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold">{category.name}</p>
               <p className="text-2xs text-muted-foreground">
-                Ordem {category.sortOrder} ·{' '}
                 {category.isActive ? 'Ativa' : 'Inativa'}
               </p>
             </div>

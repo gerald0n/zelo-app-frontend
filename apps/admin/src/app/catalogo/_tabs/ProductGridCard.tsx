@@ -1,6 +1,13 @@
 'use client';
 
-import { Check, Pencil, Trash2, Upload, UtensilsCrossed } from 'lucide-react';
+import {
+  Check,
+  Copy,
+  Pencil,
+  Trash2,
+  Upload,
+  UtensilsCrossed,
+} from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import type { AdminProduct } from '@/modules/admin/types';
@@ -11,6 +18,7 @@ type Props = {
   onToggleSelect: (product: AdminProduct) => void;
   onEdit: (product: AdminProduct) => void;
   onArchive: (product: AdminProduct) => void;
+  onDuplicate: (product: AdminProduct) => void;
   onToggleAvailability: (product: AdminProduct) => void;
   onUpload: (product: AdminProduct, file: File) => void;
 };
@@ -43,6 +51,7 @@ export function ProductGridCard({
   onToggleSelect,
   onEdit,
   onArchive,
+  onDuplicate,
   onToggleAvailability,
   onUpload,
 }: Props) {
@@ -176,6 +185,14 @@ export function ProductGridCard({
             }}
           />
         </label>
+        <button
+          type="button"
+          onClick={() => onDuplicate(product)}
+          aria-label="Duplicar produto"
+          className="flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent"
+        >
+          <Copy className="size-3" />
+        </button>
         <button
           type="button"
           onClick={() => onArchive(product)}

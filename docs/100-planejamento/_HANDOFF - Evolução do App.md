@@ -16,7 +16,8 @@ não pesar o contexto de toda sessão nova.
 - **Stack:** Next.js (versão modificada — ler `node_modules/next/dist/docs/`
   antes de codar, ver `AGENTS.md`), TypeScript strict, Tailwind v4, shadcn/ui,
   TanStack Query, Supabase (Postgres + RLS + funções RPC), react-hook-form +
-  zod, Google Maps, `@dnd-kit`, Mercado Pago (Pix), Web Push (VAPID).
+  zod, Google Maps, Mercado Pago (Pix), Web Push (VAPID). Drag-and-drop do
+  kanban é feito à mão (eventos de ponteiro) — nenhuma lib de DnD no repo.
 - **Gerenciador:** pnpm. **Verificação por fase:**
   `pnpm typecheck && pnpm lint && pnpm build`. Commits Conventional em
   pt-BR, uma linha, sempre encerrando com `Co-Authored-By: Claude Sonnet 5
@@ -34,9 +35,9 @@ não pesar o contexto de toda sessão nova.
 
 | Doc | Assunto | Status |
 | --- | --- | --- |
-| [103](103%20-%20Painel%20Administrativo.md) | Painel admin: kanban, estoque, comanda manual, impressão, melhorias | Kanban, estoque, melhorias no pedido, comanda manual e impressão térmica (WebUSB) **implementados** — impressão falta validar em hardware. Catálogo/loja/relatórios/push não iniciados. |
+| [103](103%20-%20Painel%20Administrativo.md) | Painel admin: kanban, estoque, comanda manual, impressão, melhorias | Kanban (reescrito 2026-09-06), estoque, melhorias no pedido, comanda manual, impressão térmica (WebUSB, **validada em hardware 2026-09-08**), **Catálogo (resto)** e **Loja/relatórios** (2026-09-08: pausa com prazo/motivo, aba `/relatorios`, auditoria com filtros) — **implementados**. Só **push** não iniciado. |
 | [104](104%20-%20Promoções,%20Cupons%20e%20Financeiro.md) | Promoções, cupons, financeiro | Promoções **implementadas**. Cupons e Financeiro não iniciados (decisões travadas). |
-| [105](105%20-%20Precisão%20do%20Frete.md) | Google Maps: geocodificação, mapa, área de entrega | (a)-(d) **implementados**. (e) suavizar taxa adiado; (f) componente único de endereço desbloqueado, não iniciado. |
+| [105](105%20-%20Precisão%20do%20Frete.md) | Google Maps: geocodificação, mapa, área de entrega | (a)-(d) **implementados**, drag do pin **validado à mão 2026-09-08**. (e) suavizar taxa adiado; (f) componente único de endereço desbloqueado, não iniciado. |
 | [106](106%20-%20Avaliações%20e%20Depoimentos.md) | Avaliações de pedido + depoimentos | Não iniciado. 3 decisões em aberto. |
 
 **Commits em `develop` que ainda não foram pro `main`** (já enviados a
@@ -45,7 +46,8 @@ não pesar o contexto de toda sessão nova.
 
 **Migrations pendentes de `supabase db push` no próximo deploy** — checar
 `supabase/migrations/` por arquivos mais recentes que o último deploy
-confirmado.
+confirmado. Nova em 2026-09-08: `20260908120000_store_pause.sql`
+(`stores.paused_until` / `pause_reason`).
 
 ---
 
@@ -53,15 +55,12 @@ confirmado.
 
 1. Merge/deploy de `develop` pra `main` (commits + migrations pendentes,
    ver acima).
-2. Verificar num aparelho real (não só via automação de browser): drag do
-   pin do mapa (doc 105) e drag-and-drop do kanban (doc 103) — nunca
-   confirmados por gesto real, só por revisão de código + endpoint
-   funcionando.
-3. **103 — impressão térmica**: implementada via WebUSB/USB. Falta testar
-   com a EPSON TM-T20X de verdade — corte, largura de 48 col, acentuação
-   (code page WPC1252) e endpoint bulk-out.
-4. **103 — resto** (catálogo, loja/relatórios, push) ou **104 — Cupons +
-   Financeiro**: ambos desbloqueados, sem ordem travada entre si.
+2. ~~Validar em aparelho real: drag do pin do mapa, drag do kanban,
+   impressão térmica~~ — **feito em 2026-09-08**, tudo OK.
+3. ~~**103 — Catálogo (resto)**~~ e ~~**loja/relatórios**~~ — **feitos em
+   2026-09-08**.
+4. **103 — push** ou **104 — Cupons + Financeiro**: desbloqueados, sem
+   ordem travada entre si.
 5. **106 — Avaliações**: Fase 1 pode entrar a qualquer momento; Fase 2
    depende do login por SMS (Fase 14 do roadmap).
 6. A **repaginação visual do admin** (primitivos/tokens do redesign 102)
@@ -76,8 +75,10 @@ confirmado.
   configurar env var de chave via pipe (`printf ... | vercel env add`);
   usar o dashboard web da Vercel. Conferir com `vercel env pull` + `cat`
   (sem máscara).
-- **`react-beautiful-dnd` está descontinuado** — o projeto usa `@dnd-kit`
-  (melhor suporte a React 19) pro drag-and-drop do kanban.
+- **Drag-and-drop do kanban não usa lib** — `@dnd-kit` foi removido; o
+  arraste é feito à mão com `onPointerDown` + limiar de 8px + clone em portal
+  no `<body>` (`AdminKanbanBoard.tsx`). Não reintroduzir `@dnd-kit` /
+  `react-beautiful-dnd` sem necessidade.
 - Setup local, testes via `psql`, e pegadinhas de tooling (gen:types,
   `pnpm format` no repo inteiro, `pnpm build` derrubando dev server de
   outra sessão) estão na memória do assistente (`e2e-local-setup`), não

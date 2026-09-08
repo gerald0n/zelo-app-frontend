@@ -14,6 +14,7 @@ export type {
 
 export * from '@/modules/admin/catalog/categories';
 export * from '@/modules/admin/catalog/products';
+export * from '@/modules/admin/catalog/reorder';
 export * from '@/modules/admin/catalog/product-images';
 export * from '@/modules/admin/catalog/addons';
 export * from '@/modules/admin/catalog/store';

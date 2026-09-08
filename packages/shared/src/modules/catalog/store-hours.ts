@@ -5,10 +5,19 @@ function parseTimeToMinutes(value: string): number {
   return hours * 60 + minutes;
 }
 
+/** Pausa com prazo ainda valendo? (prazo no passado = já retomou sozinha) */
+export function isCatalogStorePaused(
+  store: Pick<CatalogStore, 'pausedUntil'>,
+  now = new Date(),
+): boolean {
+  return store.pausedUntil != null && new Date(store.pausedUntil) > now;
+}
+
 export function isCatalogStoreOpenNow(
   store: CatalogStore,
   now = new Date(),
 ): boolean {
+  if (isCatalogStorePaused(store, now)) return false;
   if (store.isOpenOverride === false) return false;
   if (store.isOpenOverride === true) return true;
 

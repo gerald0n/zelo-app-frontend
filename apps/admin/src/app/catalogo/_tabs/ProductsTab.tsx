@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAppDialog } from '@/contexts/AppDialogContext';
-import { cn } from '@/lib/cn';
 import {
   centsToReais,
   emptyProductForm,
@@ -12,12 +11,16 @@ import {
   type ProductForm,
 } from '@/app/catalogo/catalog-forms';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
+import { ProductCategoryFilter } from '@/app/catalogo/_tabs/ProductCategoryFilter';
+import { ProductCollection } from '@/app/catalogo/_tabs/ProductCollection';
 import { ProductFormModal } from '@/app/catalogo/_tabs/ProductFormModal';
-import { ProductListRow } from '@/app/catalogo/_tabs/ProductListRow';
-import { ProductGridCard } from '@/app/catalogo/_tabs/ProductGridCard';
 import { ProductStats } from '@/app/catalogo/_tabs/ProductStats';
 import { ProductBulkBar } from '@/app/catalogo/_tabs/ProductBulkBar';
 import { useProductMutations } from '@/app/catalogo/_tabs/useProductMutations';
+import {
+  byManualOrder,
+  reorderedProductIds,
+} from '@/app/catalogo/_tabs/product-reorder';
 import {
   ProductToolbar,
   type ProductSort,
@@ -42,6 +45,7 @@ const SORTERS: Record<
   ProductSort,
   (a: AdminProduct, b: AdminProduct) => number
 > = {
+  manual: byManualOrder,
   name: (a, b) => a.name.localeCompare(b.name, 'pt-BR'),
   'price-desc': (a, b) => b.priceCents - a.priceCents,
   'price-asc': (a, b) => a.priceCents - b.priceCents,
@@ -72,9 +76,7 @@ export function ProductsTab({
   const [sort, setSort] = useState<ProductSort>('name');
   const [view, setView] = useState<ProductView>('grid');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [editingProduct, setEditingProduct] = useState<AdminProduct | null>(
-    null,
-  );
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [showProductForm, setShowProductForm] = useState(false);
   const [cropTarget, setCropTarget] = useState<{
     productId: string;
@@ -86,18 +88,34 @@ export function ProductsTab({
     defaultValues: emptyProductForm(''),
   });
 
-  const { productMutation, patchMutation, bulkMutation, uploadMutation } =
-    useProductMutations({
-      editingProduct,
-      invalidateCatalog,
-      onError,
-      onProductSaved: () => {
-        setShowProductForm(false);
-        setEditingProduct(null);
-        productForm.reset(emptyProductForm(categories[0]?.id ?? ''));
-      },
-      onBulkDone: () => setSelectedIds(new Set()),
-    });
+  // Deriva o produto em edição da lista atual (não guarda um snapshot) — assim a
+  // galeria de fotos no modal reflete as mutações de imagem sem estado stale.
+  const editingProduct = useMemo(
+    () => products.find((product) => product.id === editingProductId) ?? null,
+    [products, editingProductId],
+  );
+
+  const {
+    productMutation,
+    patchMutation,
+    bulkMutation,
+    duplicateMutation,
+    reorderProductsMutation,
+    uploadMutation,
+    setPrimaryImageMutation,
+    reorderImagesMutation,
+    deleteImageMutation,
+  } = useProductMutations({
+    editingProduct,
+    invalidateCatalog,
+    onError,
+    onProductSaved: () => {
+      setShowProductForm(false);
+      setEditingProductId(null);
+      productForm.reset(emptyProductForm(categories[0]?.id ?? ''));
+    },
+    onBulkDone: () => setSelectedIds(new Set()),
+  });
 
   const visibleProducts = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -116,11 +134,6 @@ export function ProductsTab({
       .sort(SORTERS[sort]);
   }, [products, categoryFilter, status, query, sort]);
 
-  const countFor = (categoryId: string | null) =>
-    categoryId === null
-      ? products.length
-      : products.filter((p) => p.categoryId === categoryId).length;
-
   const toggleSelect = (product: AdminProduct) => {
     setSelectedIds((current) => {
       const next = new Set(current);
@@ -130,9 +143,19 @@ export function ProductsTab({
     });
   };
 
+  const moveProduct = (product: AdminProduct, direction: -1 | 1) => {
+    const ids = reorderedProductIds(
+      products,
+      visibleProducts,
+      product.id,
+      direction,
+    );
+    if (ids) reorderProductsMutation.mutate(ids);
+  };
+
   const openProductForm = (product?: AdminProduct) => {
     onError('');
-    setEditingProduct(product ?? null);
+    setEditingProductId(product?.id ?? null);
     productForm.reset(
       product
         ? {
@@ -205,24 +228,37 @@ export function ProductsTab({
         onNew={() => openProductForm()}
       />
 
-      <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
-        {[{ id: null, name: 'Todos' }, ...categories].map((item) => (
-          <button
-            key={item.id ?? 'all'}
-            type="button"
-            onClick={() => setCategoryFilter(item.id)}
-            className={cn(
-              'shrink-0 rounded-full border px-3 py-1.5 text-2xs font-semibold transition-colors',
-              categoryFilter === item.id
-                ? 'border-primary bg-primary text-primary-foreground'
-                : 'border-border bg-card hover:bg-accent',
-            )}
-          >
-            {item.name} ({countFor(item.id)})
-          </button>
-        ))}
-      </div>
+      <ProductCategoryFilter
+        categories={categories}
+        products={products}
+        value={categoryFilter}
+        onChange={setCategoryFilter}
+      />
 
+      <ProductFormModal
+        open={showProductForm}
+        form={productForm}
+        product={editingProduct}
+        categories={categories}
+        addons={addons}
+        isPending={productMutation.isPending}
+        uploadPending={uploadMutation.isPending}
+        onSubmit={(values) => productMutation.mutate(values)}
+        onAddImage={(file) =>
+          editingProduct &&
+          setCropTarget({ productId: editingProduct.id, file })
+        }
+        setPrimaryImage={setPrimaryImageMutation}
+        reorderImages={reorderImagesMutation}
+        deleteImage={deleteImageMutation}
+        onClose={() => {
+          setShowProductForm(false);
+          setEditingProductId(null);
+        }}
+      />
+
+      {/* Depois do modal de produto no DOM: como os dois usam o mesmo
+          z-index, o portal montado por último fica por cima. */}
       <ImageCropDialog
         open={cropTarget != null}
         file={cropTarget?.file ?? null}
@@ -230,9 +266,9 @@ export function ProductsTab({
         onConfirm={async (croppedFile) => {
           if (!cropTarget) return;
           // `mutateAsync` só resolve depois do `onSuccess` (invalidateCatalog),
-          // então quando fechamos o modal a imagem nova do card já chegou —
-          // nada de "fecha e some, aí de repente troca". Se der erro, rejeita
-          // e o próprio modal mostra a mensagem e continua aberto.
+          // então quando fechamos o modal a imagem nova já chegou — nada de
+          // "fecha e some, aí de repente troca". Se der erro, rejeita e o
+          // próprio modal mostra a mensagem e continua aberto.
           await uploadMutation.mutateAsync({
             productId: cropTarget.productId,
             file: croppedFile,
@@ -241,67 +277,30 @@ export function ProductsTab({
         }}
       />
 
-      <ProductFormModal
-        open={showProductForm}
-        form={productForm}
-        editingProduct={editingProduct !== null}
-        categories={categories}
-        addons={addons}
-        isPending={productMutation.isPending}
-        onSubmit={(values) => productMutation.mutate(values)}
-        onClose={() => {
-          setShowProductForm(false);
-          setEditingProduct(null);
-        }}
-      />
-
-      {visibleProducts.length === 0 ? (
-        <p className="py-10 text-center text-sm text-muted-foreground">
-          Nenhum produto encontrado.
+      {sort === 'manual' && view === 'grid' ? (
+        <p className="text-2xs text-muted-foreground">
+          Mude para a visão em lista para reordenar com as setas.
         </p>
-      ) : view === 'grid' ? (
-        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 xl:grid-cols-4">
-          {visibleProducts.map((product) => (
-            <ProductGridCard
-              key={product.id}
-              product={product}
-              selected={selectedIds.has(product.id)}
-              onToggleSelect={toggleSelect}
-              onEdit={openProductForm}
-              onArchive={confirmArchive}
-              onToggleAvailability={(item) =>
-                patchMutation.mutate({
-                  id: item.id,
-                  body: { isAvailable: !item.isAvailable },
-                })
-              }
-              onUpload={(item, file) =>
-                setCropTarget({ productId: item.id, file })
-              }
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {visibleProducts.map((product) => (
-            <ProductListRow
-              key={product.id}
-              product={product}
-              onEdit={openProductForm}
-              onArchive={confirmArchive}
-              onToggleAvailability={(item) =>
-                patchMutation.mutate({
-                  id: item.id,
-                  body: { isAvailable: !item.isAvailable },
-                })
-              }
-              onUpload={(item, file) =>
-                setCropTarget({ productId: item.id, file })
-              }
-            />
-          ))}
-        </div>
-      )}
+      ) : null}
+
+      <ProductCollection
+        products={visibleProducts}
+        view={view}
+        selectedIds={selectedIds}
+        reorderable={sort === 'manual'}
+        onToggleSelect={toggleSelect}
+        onEdit={openProductForm}
+        onArchive={confirmArchive}
+        onDuplicate={(item) => duplicateMutation.mutate(item.id)}
+        onToggleAvailability={(item) =>
+          patchMutation.mutate({
+            id: item.id,
+            body: { isAvailable: !item.isAvailable },
+          })
+        }
+        onUpload={(item, file) => setCropTarget({ productId: item.id, file })}
+        onMove={moveProduct}
+      />
 
       <ProductBulkBar
         count={selectedIds.size}

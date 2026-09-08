@@ -1,7 +1,13 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Grid2x2, Receipt, UtensilsCrossed, Settings } from 'lucide-react';
+import {
+  Grid2x2,
+  Receipt,
+  UtensilsCrossed,
+  BarChart3,
+  Settings,
+} from 'lucide-react';
 import LiquidGlassTabs from '@/components/LiquidGlassTabs';
 
 const TABS = [
@@ -23,6 +29,12 @@ const TABS = [
     label: 'Catálogo',
     icon: UtensilsCrossed,
     match: (p: string) => p.startsWith('/catalogo'),
+  },
+  {
+    href: '/relatorios',
+    label: 'Relatórios',
+    icon: BarChart3,
+    match: (p: string) => p.startsWith('/relatorios'),
   },
   {
     href: '/configuracoes',

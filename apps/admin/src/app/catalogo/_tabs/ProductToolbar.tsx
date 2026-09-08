@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/cn';
 
 export type ProductStatusFilter = 'all' | 'available' | 'paused' | 'low';
-export type ProductSort = 'name' | 'price-desc' | 'price-asc' | 'stock-asc';
+export type ProductSort =
+  'manual' | 'name' | 'price-desc' | 'price-asc' | 'stock-asc';
 export type ProductView = 'grid' | 'list';
 
 type Props = {
@@ -65,7 +66,8 @@ export function ProductToolbar({
           className={selectClass}
           aria-label="Ordenar"
         >
-          <option value="name">Ordenar: Nome</option>
+          <option value="manual">Ordenar: Manual</option>
+          <option value="name">Nome</option>
           <option value="price-desc">Maior preço</option>
           <option value="price-asc">Menor preço</option>
           <option value="stock-asc">Menor estoque</option>
