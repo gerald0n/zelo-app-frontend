@@ -74,6 +74,10 @@ export type CatalogStore = {
   maxDeliveryRadiusMeters: number;
   timezone: string;
   isOpenOverride: boolean | null;
+  /** Instante em que a loja volta a abrir sozinha (pausa com prazo). */
+  pausedUntil: string | null;
+  /** Motivo da pausa, mostrado só pro time no admin. */
+  pauseReason: string | null;
   acceptsPayments: CatalogPaymentMethods;
   businessHours: CatalogBusinessHour[];
   blackoutPeriods: CatalogBlackout[];

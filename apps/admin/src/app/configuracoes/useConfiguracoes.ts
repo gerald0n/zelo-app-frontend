@@ -16,7 +16,6 @@ import {
   type StoreForm as StoreFormValues,
 } from '@/app/configuracoes/configuracoes-forms';
 import type {
-  AdminAuditLog,
   AdminBlackout,
   AdminBusinessHourInput,
 } from '@/modules/admin/types';
@@ -53,13 +52,6 @@ export function useConfiguracoes() {
     enabled,
     queryFn: () =>
       apiJson<{ blackouts: AdminBlackout[] }>('/api/v1/admin/blackouts'),
-  });
-
-  const auditQuery = useQuery({
-    queryKey: adminKeys.audit(),
-    enabled,
-    queryFn: () =>
-      apiJson<{ logs: AdminAuditLog[] }>('/api/v1/admin/audit-logs?limit=20'),
   });
 
   const storeForm = useForm<StoreFormValues>({
@@ -255,7 +247,6 @@ export function useConfiguracoes() {
     setSlotTimes,
     slotsDirty,
     blackouts: blackoutsQuery.data?.blackouts ?? [],
-    auditLogs: auditQuery.data?.logs ?? [],
     storeMutation,
     hoursMutation,
     slotsMutation,

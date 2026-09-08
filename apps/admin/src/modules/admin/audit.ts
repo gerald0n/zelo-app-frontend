@@ -24,18 +24,31 @@ export async function writeAuditLog(options: {
   });
 }
 
-export async function listAdminAuditLogs(
-  limit = 40,
-): Promise<Result<AdminAuditLog[]>> {
+export async function listAdminAuditLogs(options?: {
+  limit?: number;
+  /** Filtra por prefixo de ação (ex.: "product" pega "product.create" etc). */
+  actionPrefix?: string;
+  /** ISO — só eventos a partir daqui. */
+  since?: string;
+}): Promise<Result<AdminAuditLog[]>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
 
   const admin = createAdminSupabaseClient();
-  const { data, error } = await admin
+  let query = admin
     .from('audit_logs')
     .select('id, action, entity_type, entity_id, metadata, created_at')
     .order('created_at', { ascending: false })
-    .limit(limit);
+    .limit(options?.limit ?? 40);
+
+  if (options?.actionPrefix) {
+    query = query.like('action', `${options.actionPrefix}%`);
+  }
+  if (options?.since) {
+    query = query.gte('created_at', options.since);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     return err('INTERNAL_ERROR', 'Não foi possível carregar a auditoria.', {

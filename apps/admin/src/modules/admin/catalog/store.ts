@@ -5,6 +5,7 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { writeAuditLog } from '@/modules/admin/audit';
 import { requireAdmin } from '@/modules/admin/auth';
 import { getPublicStore } from '@/modules/catalog/catalog-repository';
+import { isCatalogStorePaused } from '@/modules/catalog/store-hours';
 import { isHhmm } from '@/modules/scheduling/slot-times';
 import type { CatalogStore } from '@/modules/catalog/types';
 import type { Database } from '@/types/database';
@@ -108,6 +109,11 @@ export async function updateAdminStore(input: {
   }
   if (typeof input.acceptingOrders === 'boolean') {
     patch.is_open_override = input.acceptingOrders ? null : false;
+    if (input.acceptingOrders) {
+      // Retomar aqui também levanta uma pausa com prazo que estivesse ativa.
+      patch.paused_until = null;
+      patch.pause_reason = null;
+    }
   }
   if (typeof input.acceptsPix === 'boolean') {
     patch.accepts_pix = input.acceptsPix;
@@ -164,18 +170,119 @@ export async function updateAdminStore(input: {
 export async function setStoreAcceptingOrders(
   accepting: boolean,
 ): Promise<Result<{ acceptingOrders: boolean }>> {
-  const result = await updateAdminStore({ acceptingOrders: accepting });
-  if (!result.ok) return result;
-  return ok({ acceptingOrders: accepting });
+  if (accepting) return resumeStore();
+  return pauseStore({ pausedUntil: null, reason: null });
+}
+
+type StorePauseState = {
+  acceptingOrders: boolean;
+  pausedUntil: string | null;
+  pauseReason: string | null;
+};
+
+function pauseState(store: CatalogStore): StorePauseState {
+  const paused = isCatalogStorePaused(store) || store.isOpenOverride === false;
+  return {
+    acceptingOrders: !paused,
+    pausedUntil: store.pausedUntil,
+    pauseReason: store.pauseReason,
+  };
 }
 
 export async function getStoreAcceptingOrders(): Promise<
-  Result<{ acceptingOrders: boolean }>
+  Result<StorePauseState>
 > {
   const store = await getAdminStore();
   if (!store.ok) return store;
   if (!store.data) return err('NOT_FOUND', 'Loja não encontrada.');
-  return ok({
-    acceptingOrders: store.data.isOpenOverride !== false,
+  return ok(pauseState(store.data));
+}
+
+/**
+ * Pausa a loja. `pausedUntil` nulo = pausa sem previsão (`is_open_override =
+ * false`); com data = pausa com prazo, que se retoma sozinha quando o
+ * instante passa (a regra de "loja aberta" checa `paused_until`).
+ */
+export async function pauseStore(input: {
+  pausedUntil: string | null;
+  reason: string | null;
+}): Promise<Result<StorePauseState>> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth;
+
+  const current = await getPublicStore();
+  if (!current.ok) return current;
+  if (!current.data) return err('NOT_FOUND', 'Loja não encontrada.');
+
+  let until: string | null = null;
+  if (input.pausedUntil) {
+    const parsed = new Date(input.pausedUntil);
+    if (Number.isNaN(parsed.getTime()) || parsed.getTime() <= Date.now()) {
+      return err('VALIDATION_ERROR', 'A pausa precisa terminar no futuro.');
+    }
+    until = parsed.toISOString();
+  }
+
+  const reason = input.reason?.trim() || null;
+  const patch: StoreUpdate = {
+    paused_until: until,
+    pause_reason: reason,
+    is_open_override: until ? null : false,
+  };
+
+  const admin = createAdminSupabaseClient();
+  const { error } = await admin
+    .from('stores')
+    .update(patch)
+    .eq('id', current.data.id);
+  if (error) {
+    return err('INTERNAL_ERROR', 'Não foi possível pausar a loja.', {
+      cause: error,
+    });
+  }
+
+  await writeAuditLog({
+    actorId: auth.data.id,
+    action: 'store.pause',
+    entityType: 'store',
+    entityId: current.data.id,
+    metadata: { pausedUntil: until, reason },
   });
+
+  const refreshed = await getPublicStore();
+  if (!refreshed.ok) return refreshed;
+  if (!refreshed.data) return err('NOT_FOUND', 'Loja não encontrada.');
+  return ok(pauseState(refreshed.data));
+}
+
+export async function resumeStore(): Promise<Result<StorePauseState>> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth;
+
+  const current = await getPublicStore();
+  if (!current.ok) return current;
+  if (!current.data) return err('NOT_FOUND', 'Loja não encontrada.');
+
+  const admin = createAdminSupabaseClient();
+  const { error } = await admin
+    .from('stores')
+    .update({ paused_until: null, pause_reason: null, is_open_override: null })
+    .eq('id', current.data.id);
+  if (error) {
+    return err('INTERNAL_ERROR', 'Não foi possível retomar a loja.', {
+      cause: error,
+    });
+  }
+
+  await writeAuditLog({
+    actorId: auth.data.id,
+    action: 'store.resume',
+    entityType: 'store',
+    entityId: current.data.id,
+  });
+
+  const refreshed = await getPublicStore();
+  if (!refreshed.ok) return refreshed;
+  if (!refreshed.data) return err('NOT_FOUND', 'Loja não encontrada.');
+  return ok(pauseState(refreshed.data));
 }

@@ -8,6 +8,8 @@ export const adminKeys = {
   hours: () => [...adminKeys.all, 'hours'] as const,
   blackouts: () => [...adminKeys.all, 'blackouts'] as const,
   audit: () => [...adminKeys.all, 'audit'] as const,
+  reports: (period: string) =>
+    [...adminKeys.all, 'reports', period] as const,
 };
 
 export const catalogKeys = {

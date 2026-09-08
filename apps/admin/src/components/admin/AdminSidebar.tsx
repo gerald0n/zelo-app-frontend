@@ -6,6 +6,7 @@ import {
   Grid2x2,
   Receipt,
   UtensilsCrossed,
+  BarChart3,
   Settings,
   Plus,
   PanelLeft,
@@ -41,6 +42,12 @@ const NAV = [
     label: 'Catálogo',
     icon: UtensilsCrossed,
     match: (p: string) => p.startsWith('/catalogo'),
+  },
+  {
+    href: '/relatorios',
+    label: 'Relatórios',
+    icon: BarChart3,
+    match: (p: string) => p.startsWith('/relatorios'),
   },
   {
     href: '/configuracoes',
