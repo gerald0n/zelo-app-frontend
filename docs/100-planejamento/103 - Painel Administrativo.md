@@ -15,7 +15,7 @@ painel `/admin`.
 | Impressão térmica | **Implementado e validado em hardware** (WebUSB/USB, EPSON TM-T20X — 2026-09-08). |
 | Catálogo (resto) | **Feito** (2026-09-08). "Acabou num toque", duplicar produto, várias fotos por produto e reordenar (produtos + categorias, setas ↑/↓). |
 | Loja/relatórios | **Feito** (2026-09-08). Pausa com prazo/motivo, aba `/relatorios` (cancelamentos + produção), auditoria com filtros. Faturamento/abas já vinham prontos. |
-| Push do painel | **Feito** (2026-09-08). Pedido novo notifica o celular do admin (tabela `admin_push_subscriptions`, SW próprio, toggle em Dispositivos). Falta validar ponta a ponta em aparelho + setar VAPID no Vercel `zelo-admin`. |
+| Push do painel | **Feito e validado em produção** (2026-09-08). Pedido novo notifica o celular do admin (tabela `admin_push_subscriptions`, SW próprio, toggle em Dispositivos). |
 
 ---
 
@@ -411,16 +411,19 @@ Notificação no celular quando entra pedido novo, mesmo com o painel fechado.
   `POST|DELETE /api/v1/admin/push/subscriptions` (`requireAdmin`).
   Helper `src/lib/push-client.ts`; UI `PushSection` na aba
   **Dispositivos** das Configurações ("Ativar neste aparelho").
-- **Env**: precisa de `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` /
-  `VAPID_SUBJECT` no projeto Vercel `zelo-admin` (nasceu sem — ver memória
-  de deploy). Podem ser as mesmas do `zelo-app` ou um par próprio.
+- **Env**: `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` /
+  `VAPID_SUBJECT` no projeto Vercel `zelo-admin`. Setados em 2026-09-08 com
+  um **par VAPID próprio** do admin (o `zelo-app` ficou com o dele — os dois
+  apps são remetentes de push independentes). Segredo tipo "Secret" na
+  Vercel é write-only, então a chave privada antiga do `zelo-app` era
+  irrecuperável; gerou-se uma nova pro admin. Ver memória de deploy.
 
-**Testado local (2026-09-08)**: assinar/re-assinar (upsert por endpoint),
-guard de auth (401), `notifyAdminNewOrder` roda e falha graciosamente com
-chave inválida (sem revogar por engano), `/sw.js` servido sem redirect.
-**Falta validar num aparelho real** o fluxo ponta a ponta (permissão →
-subscribe → push chega com o painel fechado) — não dá pra testar sem
-navegador com push real.
+**Validado em 2026-09-08:**
+- Local: assinar/re-assinar (upsert por endpoint), guard de auth (401),
+  `notifyAdminNewOrder` roda e falha graciosamente com chave inválida (sem
+  revogar por engano), `/sw.js` servido sem redirect.
+- **Produção, aparelho real**: permissão → ativar em Dispositivos →
+  pedido novo → push chega no celular com o painel fechado. ✅
 
 ---
 
