@@ -4,6 +4,7 @@ import {
   getOperationsReport,
   type ReportPeriod,
 } from '@/modules/admin/reports';
+import { getFinancialReport } from '@/modules/admin/financial-report';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +17,11 @@ export async function GET(request: Request) {
     ? (raw as ReportPeriod)
     : 'today';
 
-  const result = await getOperationsReport(period);
+  const result =
+    searchParams.get('kind') === 'financial'
+      ? await getFinancialReport(period)
+      : await getOperationsReport(period);
+
   if (!result.ok) {
     return NextResponse.json(
       { error: result.error },

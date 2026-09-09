@@ -36,7 +36,7 @@ não pesar o contexto de toda sessão nova.
 | Doc | Assunto | Status |
 | --- | --- | --- |
 | [103](103%20-%20Painel%20Administrativo.md) | Painel admin: kanban, estoque, comanda manual, impressão, melhorias | Kanban (reescrito 2026-09-06), estoque, melhorias no pedido, comanda manual, impressão térmica (WebUSB, **validada em hardware 2026-09-08**), **Catálogo (resto)**, **Loja/relatórios** e **Push do painel** (2026-09-08, push validado em produção com aparelho real) — **implementados**. **Doc 103 100% fechado.** |
-| [104](104%20-%20Promoções,%20Cupons%20e%20Financeiro.md) | Promoções, cupons, financeiro | Promoções e **Cupons implementados** (2026-09-08). Só Financeiro não iniciado (decisões travadas). |
+| [104](104%20-%20Promoções,%20Cupons%20e%20Financeiro.md) | Promoções, cupons, financeiro | Promoções, **Cupons e Financeiro implementados** (2026-09-08). Doc 104 fechado. |
 | [105](105%20-%20Precisão%20do%20Frete.md) | Google Maps: geocodificação, mapa, área de entrega | (a)-(d) **implementados**, drag do pin **validado à mão 2026-09-08**. (e) suavizar taxa adiado; (f) componente único de endereço desbloqueado, não iniciado. |
 | [106](106%20-%20Avaliações%20e%20Depoimentos.md) | Avaliações de pedido + depoimentos | Não iniciado. 3 decisões em aberto. |
 
@@ -48,8 +48,8 @@ não pesar o contexto de toda sessão nova.
 `supabase/migrations/` por arquivos mais recentes que o último deploy
 confirmado. Novas em 2026-09-08: `20260908120000_store_pause.sql`,
 `20260908130000_admin_push_subscriptions.sql` e
-`20260908140000_coupons.sql` (tabela `coupons` + colunas em `orders` +
-replace de `create_order`/`create_manual_order`/`transition_order_status`).
+`20260908140000_coupons.sql` e `20260908150000_payment_financials.sql`
+(colunas de taxa/líquido em `orders`, `payment_fee_estimate_bps` em `stores`).
 
 ---
 
@@ -62,7 +62,8 @@ replace de `create_order`/`create_manual_order`/`transition_order_status`).
 3. ~~**103** — Catálogo (resto), loja/relatórios e push~~ — **feitos em
    2026-09-08. Doc 103 100% fechado** (push validado em produção com
    aparelho real; VAPID próprio do admin já setado no Vercel).
-4. **104 — Financeiro**: desbloqueado, decisões travadas (Cupons já feito).
+4. ~~**104**~~ — Promoções, Cupons e Financeiro **feitos**. **106 —
+   Avaliações Fase 1** é o próximo bloco desbloqueado (3 decisões em aberto).
 5. **106 — Avaliações**: Fase 1 pode entrar a qualquer momento; Fase 2
    depende do login por SMS (Fase 14 do roadmap).
 6. A **repaginação visual do admin** (primitivos/tokens do redesign 102)

@@ -32,6 +32,7 @@ export async function updateAdminStore(input: {
   freeDeliveryRadiusMeters?: number;
   fixedDeliveryFeeCents?: number;
   maxDeliveryRadiusMeters?: number;
+  paymentFeeEstimateBps?: number;
   acceptingOrders?: boolean;
   acceptsPix?: boolean;
   acceptsCash?: boolean;
@@ -106,6 +107,12 @@ export async function updateAdminStore(input: {
   }
   if (typeof input.maxDeliveryRadiusMeters === 'number') {
     patch.max_delivery_radius_meters = input.maxDeliveryRadiusMeters;
+  }
+  if (typeof input.paymentFeeEstimateBps === 'number') {
+    patch.payment_fee_estimate_bps = Math.max(
+      0,
+      Math.min(2000, Math.round(input.paymentFeeEstimateBps)),
+    );
   }
   if (typeof input.acceptingOrders === 'boolean') {
     patch.is_open_override = input.acceptingOrders ? null : false;
