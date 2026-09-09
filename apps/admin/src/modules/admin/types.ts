@@ -148,6 +148,10 @@ export type AdminAuditLog = {
   entityId: string | null;
   createdAt: string;
   metadata: Record<string, unknown> | null;
+  /** 'admin' | 'customer' | 'system' — quem originou o evento. */
+  actorType: string;
+  /** Nome do admin que fez a ação, quando `actorType === 'admin'`. */
+  actorName: string | null;
 };
 
 export type AdminStoreSettings = CatalogStore & {
