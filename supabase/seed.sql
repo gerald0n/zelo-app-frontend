@@ -22,8 +22,7 @@ insert into public.stores (
   free_delivery_radius_meters,
   max_delivery_radius_meters,
   fixed_delivery_fee_cents,
-  timezone,
-  schedule_slot_times
+  timezone
 ) values (
   'a0000000-0000-4000-8000-000000000001',
   'Zelo Confeitaria',
@@ -39,8 +38,7 @@ insert into public.stores (
   1000,
   3000,
   500,
-  'America/Fortaleza',
-  array['08:00','09:00','10:00','11:00','14:00','15:00','16:00','17:00']::text[]
+  'America/Fortaleza'
 );
 
 -- weekday: 0=domingo … 6=sábado
@@ -62,11 +60,16 @@ insert into public.store_business_hours (
   ('a1000000-0000-4000-8000-000000000005', 'a0000000-0000-4000-8000-000000000001', 5, '08:00', '18:00', false, true, true),
   ('a1000000-0000-4000-8000-000000000006', 'a0000000-0000-4000-8000-000000000001', 6, '08:00', '18:00', false, true, true);
 
-insert into public.categories (id, name, sort_order, is_active) values
-  ('b0000000-0000-4000-8000-000000000001', 'Cookies', 1, true),
-  ('b0000000-0000-4000-8000-000000000002', 'Pudins', 2, true),
-  ('b0000000-0000-4000-8000-000000000003', 'Empadas', 3, true),
-  ('b0000000-0000-4000-8000-000000000004', 'Coxinhas', 4, true);
+insert into public.categories (
+  id, name, sort_order, is_active,
+  scheduling_allow_same_day, scheduling_same_day_lead_minutes,
+  scheduling_weekday_earliest, scheduling_weekend_earliest,
+  scheduling_slot_interval_minutes
+) values
+  ('b0000000-0000-4000-8000-000000000001', 'Cookies', 1, true, true, 120, null, null, 30),
+  ('b0000000-0000-4000-8000-000000000002', 'Pudins', 2, true, false, 120, '17:00', '10:00', 60),
+  ('b0000000-0000-4000-8000-000000000003', 'Empadas', 3, true, true, 120, null, null, 30),
+  ('b0000000-0000-4000-8000-000000000004', 'Coxinhas', 4, true, true, 120, null, null, 30);
 
 insert into public.products (
   id,

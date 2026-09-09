@@ -19,11 +19,31 @@ export type CatalogResponse = {
   coupons: AdminCoupon[];
 };
 
+const hhmmOrEmpty = z
+  .string()
+  .trim()
+  .refine((v) => v === '' || /^([01]\d|2[0-3]):[0-5]\d$/.test(v), {
+    message: 'Use HH:MM.',
+  });
+
 export const categorySchema = z.object({
   name: z.string().trim().min(1, 'Informe o nome.'),
   description: z.string().optional(),
   sortOrder: z.number().int().min(0),
   isActive: z.boolean(),
+  schedulingAllowSameDay: z.boolean(),
+  schedulingSameDayLeadMinutes: z
+    .number()
+    .int()
+    .min(0, 'Entre 0 e 1440.')
+    .max(1440, 'Entre 0 e 1440.'),
+  schedulingWeekdayEarliest: hhmmOrEmpty,
+  schedulingWeekendEarliest: hhmmOrEmpty,
+  schedulingSlotIntervalMinutes: z
+    .number()
+    .int()
+    .min(5, 'Entre 5 e 240.')
+    .max(240, 'Entre 5 e 240.'),
 });
 
 export const productSchema = z.object({

@@ -1,4 +1,5 @@
 import type { CatalogStore } from '@/modules/catalog/types';
+import { storeWallClock } from '@/modules/scheduling/tz';
 
 function parseTimeToMinutes(value: string): number {
   const [hours, minutes] = value.slice(0, 5).split(':').map(Number);
@@ -21,14 +22,13 @@ export function isCatalogStoreOpenNow(
   if (store.isOpenOverride === false) return false;
   if (store.isOpenOverride === true) return true;
 
-  const weekday = now.getDay();
-  const hour = store.businessHours.find((item) => item.weekday === weekday);
+  const wc = storeWallClock(store.timezone, now);
+  const hour = store.businessHours.find((item) => item.weekday === wc.weekday);
   if (!hour || hour.isClosed || !hour.opensAt || !hour.closesAt) return false;
 
-  const totalMins = now.getHours() * 60 + now.getMinutes();
   return (
-    totalMins >= parseTimeToMinutes(hour.opensAt) &&
-    totalMins < parseTimeToMinutes(hour.closesAt)
+    wc.minutesOfDay >= parseTimeToMinutes(hour.opensAt) &&
+    wc.minutesOfDay < parseTimeToMinutes(hour.closesAt)
   );
 }
 
@@ -42,9 +42,8 @@ export function getCatalogStoreHoursLabel(
   store: CatalogStore,
   now = new Date(),
 ): string {
-  const today = store.businessHours.find(
-    (item) => item.weekday === now.getDay(),
-  );
+  const wc = storeWallClock(store.timezone, now);
+  const today = store.businessHours.find((item) => item.weekday === wc.weekday);
   if (isCatalogStoreOpenNow(store, now)) {
     if (today?.closesAt) return `Hoje até ${today.closesAt.slice(0, 5)}`;
     return 'Aberto agora';
@@ -61,14 +60,13 @@ export function getCatalogStoreHoursLabel(
   // Fechada agora, mas o horário de hoje ainda vai começar (ex.: são 15h e a
   // loja abre às 19h). Sem isto o rótulo pularia para "Amanhã".
   if (today && !today.isClosed && today.opensAt) {
-    const nowMins = now.getHours() * 60 + now.getMinutes();
-    if (parseTimeToMinutes(today.opensAt) > nowMins) {
+    if (parseTimeToMinutes(today.opensAt) > wc.minutesOfDay) {
       return `Hoje ${today.opensAt.slice(0, 5)}`;
     }
   }
 
   for (let offset = 1; offset <= 7; offset += 1) {
-    const day = (now.getDay() + offset) % 7;
+    const day = (wc.weekday + offset) % 7;
     const hour = store.businessHours.find((item) => item.weekday === day);
     if (hour && !hour.isClosed && hour.opensAt) {
       const at = hour.opensAt.slice(0, 5);

@@ -15,6 +15,12 @@ export type CheckoutOptions = {
   neighborhoods: Array<{ id: string; name: string }>;
   scheduling: {
     storeOpen: boolean;
+    /** `false` = a categoria do carrinho só funciona agendada (ex.: pudins). */
+    allowSameDay: boolean;
+    /** Carrinho mistura categorias com regras de agendamento diferentes. */
+    mixedCart: boolean;
+    /** Rótulo curto de funcionamento (ex.: "Hoje 19:00", "Amanhã 08:00"). */
+    hoursLabel: string;
     availableDates: string[];
     timesByDate: Record<string, { delivery: string[]; pickup: string[] }>;
   };

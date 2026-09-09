@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Bike, ShoppingBag, AlertCircle } from 'lucide-react';
 import { useCheckout } from '@/contexts/CheckoutContext';
+import { useCart } from '@/modules/carts';
 import { useAuth } from '@/contexts/AuthContext';
 import { checkoutContinuePath } from '@/modules/auth/checkout-path';
 import CheckoutProgress from '@/components/CheckoutProgress';
@@ -36,6 +37,7 @@ export default function RecebimentoPage() {
     setScheduledTime,
   } = useCheckout();
   const { user, identityReady } = useAuth();
+  const { items } = useCart();
 
   const [options, setOptions] = useState<CheckoutOptions | null>(null);
   const [optionsError, setOptionsError] = useState<string | null>(null);
@@ -46,15 +48,26 @@ export default function RecebimentoPage() {
   // no corpo do effect para o caso "sem usuário".
   const savedAddresses = user ? fetchedAddresses : [];
 
+  const productIdsKey = useMemo(
+    () => [...new Set(items.map((item) => item.productId))].sort().join(','),
+    [items],
+  );
+
+  const mixedCart = options?.scheduling.mixedCart ?? false;
   const storeOpen = options?.scheduling.storeOpen ?? false;
-  const allowImmediate = storeOpen;
+  const allowSameDay = options?.scheduling.allowSameDay ?? true;
+  const allowImmediate = storeOpen && allowSameDay && !mixedCart;
 
   const { quoting, quoteError, quoteMessage, revalidateWithCoords } =
     useDeliveryQuote();
 
   const onOptionsLoaded = useEffectEvent((data: CheckoutOptions) => {
     setOptions(data);
-    if (!data.scheduling.storeOpen && checkout.scheduleType === 'now') {
+    const canBeImmediate =
+      data.scheduling.storeOpen &&
+      data.scheduling.allowSameDay &&
+      !data.scheduling.mixedCart;
+    if (!canBeImmediate && checkout.scheduleType === 'now') {
       setScheduleType('scheduled');
     }
     if (
@@ -78,7 +91,13 @@ export default function RecebimentoPage() {
     let cancelled = false;
     (async () => {
       try {
-        const response = await fetch('/api/v1/checkout/options');
+        const response = await fetch('/api/v1/checkout/options', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            productIds: productIdsKey ? productIdsKey.split(',') : [],
+          }),
+        });
         const json = await response.json();
         if (!response.ok) {
           if (!cancelled) {
@@ -98,7 +117,7 @@ export default function RecebimentoPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [productIdsKey]);
 
   useEffect(() => {
     if (!user) return;
@@ -121,10 +140,10 @@ export default function RecebimentoPage() {
   }, [user]);
 
   useEffect(() => {
-    if (!storeOpen && checkout.scheduleType === 'now') {
+    if (!allowImmediate && checkout.scheduleType === 'now') {
       setScheduleType('scheduled');
     }
-  }, [storeOpen, checkout.scheduleType, setScheduleType]);
+  }, [allowImmediate, checkout.scheduleType, setScheduleType]);
 
   const availableDates = options?.scheduling.availableDates ?? [];
 
@@ -167,7 +186,7 @@ export default function RecebimentoPage() {
       ? allowImmediate
       : Boolean(checkout.scheduledDate && checkout.scheduledTime);
 
-  const isValid = deliveryReady && scheduleReady && !quoting;
+  const isValid = deliveryReady && scheduleReady && !quoting && !mixedCart;
 
   return (
     <div className="flex min-h-dvh min-w-0 flex-col bg-background">
@@ -201,8 +220,25 @@ export default function RecebimentoPage() {
             </div>
           ) : null}
 
+          {mixedCart ? (
+            <div className="flex items-start gap-2 rounded-md border border-transparent bg-tone-warning p-3 text-sm text-tone-warning-foreground">
+              <AlertCircle className="mt-0.5 size-4 shrink-0" />
+              <p>
+                Seu carrinho tem itens de categorias com regras de agendamento
+                diferentes (ex.: cookies e pudins). Finalize uma categoria por
+                vez —{' '}
+                <Link href="/carrinho" className="font-semibold underline">
+                  voltar ao carrinho
+                </Link>
+                .
+              </p>
+            </div>
+          ) : null}
+
           <ScheduleSection
             allowImmediate={allowImmediate}
+            allowSameDay={allowSameDay}
+            hoursLabel={options?.scheduling.hoursLabel ?? null}
             availableDates={availableDates}
             availableTimes={availableTimes}
           />

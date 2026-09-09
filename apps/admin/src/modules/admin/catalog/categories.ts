@@ -7,7 +7,94 @@ import { requireAdmin } from '@/modules/admin/auth';
 import type { AdminCategory } from '@/modules/admin/types';
 import type { Database } from '@/types/database';
 
+type CategoryRow = Database['public']['Tables']['categories']['Row'];
 type CategoryUpdate = Database['public']['Tables']['categories']['Update'];
+type CategoryInsert = Database['public']['Tables']['categories']['Insert'];
+
+const CATEGORY_COLUMNS =
+  'id, name, description, sort_order, is_active, archived_at, scheduling_allow_same_day, scheduling_same_day_lead_minutes, scheduling_weekday_earliest, scheduling_weekend_earliest, scheduling_slot_interval_minutes' as const;
+
+export type CategorySchedulingInput = {
+  allowSameDay?: boolean;
+  sameDayLeadMinutes?: number;
+  weekdayEarliest?: string | null;
+  weekendEarliest?: string | null;
+  slotIntervalMinutes?: number;
+};
+
+function mapAdminCategory(
+  row: Pick<
+    CategoryRow,
+    | 'id'
+    | 'name'
+    | 'description'
+    | 'sort_order'
+    | 'is_active'
+    | 'scheduling_allow_same_day'
+    | 'scheduling_same_day_lead_minutes'
+    | 'scheduling_weekday_earliest'
+    | 'scheduling_weekend_earliest'
+    | 'scheduling_slot_interval_minutes'
+  >,
+): AdminCategory {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    sortOrder: row.sort_order,
+    isActive: row.is_active,
+    scheduling: {
+      allowSameDay: row.scheduling_allow_same_day,
+      sameDayLeadMinutes: row.scheduling_same_day_lead_minutes,
+      weekdayEarliest: row.scheduling_weekday_earliest,
+      weekendEarliest: row.scheduling_weekend_earliest,
+      slotIntervalMinutes: row.scheduling_slot_interval_minutes,
+    },
+  };
+}
+
+const HHMM = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
+
+function schedulingPatch(
+  input: CategorySchedulingInput | undefined,
+): Result<Partial<CategoryUpdate>> {
+  const patch: Partial<CategoryUpdate> = {};
+  if (!input) return ok(patch);
+
+  if (typeof input.allowSameDay === 'boolean') {
+    patch.scheduling_allow_same_day = input.allowSameDay;
+  }
+  if (typeof input.sameDayLeadMinutes === 'number') {
+    if (
+      !Number.isInteger(input.sameDayLeadMinutes) ||
+      input.sameDayLeadMinutes < 0 ||
+      input.sameDayLeadMinutes > 1440
+    ) {
+      return err('VALIDATION_ERROR', 'Antecedência inválida (0–1440 min).');
+    }
+    patch.scheduling_same_day_lead_minutes = input.sameDayLeadMinutes;
+  }
+  if (typeof input.slotIntervalMinutes === 'number') {
+    if (
+      !Number.isInteger(input.slotIntervalMinutes) ||
+      input.slotIntervalMinutes < 5 ||
+      input.slotIntervalMinutes > 240
+    ) {
+      return err('VALIDATION_ERROR', 'Intervalo inválido (5–240 min).');
+    }
+    patch.scheduling_slot_interval_minutes = input.slotIntervalMinutes;
+  }
+  for (const key of ['weekdayEarliest', 'weekendEarliest'] as const) {
+    if (input[key] === undefined) continue;
+    const value = input[key];
+    if (value !== null && !HHMM.test(value)) {
+      return err('VALIDATION_ERROR', 'Horário mínimo inválido (use HH:MM).');
+    }
+    if (key === 'weekdayEarliest') patch.scheduling_weekday_earliest = value;
+    else patch.scheduling_weekend_earliest = value;
+  }
+  return ok(patch);
+}
 
 export async function listAdminCategories(): Promise<Result<AdminCategory[]>> {
   const auth = await requireAdmin();
@@ -16,7 +103,7 @@ export async function listAdminCategories(): Promise<Result<AdminCategory[]>> {
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('categories')
-    .select('id, name, description, sort_order, is_active, archived_at')
+    .select(CATEGORY_COLUMNS)
     .is('archived_at', null)
     .order('sort_order', { ascending: true });
 
@@ -26,15 +113,7 @@ export async function listAdminCategories(): Promise<Result<AdminCategory[]>> {
     });
   }
 
-  return ok(
-    (data ?? []).map((row) => ({
-      id: row.id,
-      name: row.name,
-      description: row.description,
-      sortOrder: row.sort_order,
-      isActive: row.is_active,
-    })),
-  );
+  return ok((data ?? []).map(mapAdminCategory));
 }
 
 export async function createAdminCategory(input: {
@@ -42,20 +121,26 @@ export async function createAdminCategory(input: {
   description?: string | null;
   sortOrder?: number;
   isActive?: boolean;
+  scheduling?: CategorySchedulingInput;
 }): Promise<Result<AdminCategory>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
 
+  const schedule = schedulingPatch(input.scheduling);
+  if (!schedule.ok) return schedule;
+
   const admin = createAdminSupabaseClient();
+  const insert: CategoryInsert = {
+    name: input.name.trim(),
+    description: input.description?.trim() || null,
+    sort_order: input.sortOrder ?? 0,
+    is_active: input.isActive ?? true,
+    ...schedule.data,
+  };
   const { data, error } = await admin
     .from('categories')
-    .insert({
-      name: input.name.trim(),
-      description: input.description?.trim() || null,
-      sort_order: input.sortOrder ?? 0,
-      is_active: input.isActive ?? true,
-    })
-    .select('id, name, description, sort_order, is_active')
+    .insert(insert)
+    .select(CATEGORY_COLUMNS)
     .single();
 
   if (error || !data) {
@@ -72,13 +157,7 @@ export async function createAdminCategory(input: {
     metadata: { name: data.name },
   });
 
-  return ok({
-    id: data.id,
-    name: data.name,
-    description: data.description,
-    sortOrder: data.sort_order,
-    isActive: data.is_active,
-  });
+  return ok(mapAdminCategory(data));
 }
 
 export async function updateAdminCategory(options: {
@@ -87,16 +166,21 @@ export async function updateAdminCategory(options: {
   description?: string | null;
   sortOrder?: number;
   isActive?: boolean;
+  scheduling?: CategorySchedulingInput;
 }): Promise<Result<AdminCategory>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
 
-  const patch: CategoryUpdate = {};
+  const schedule = schedulingPatch(options.scheduling);
+  if (!schedule.ok) return schedule;
+
+  const patch: CategoryUpdate = { ...schedule.data };
   if (typeof options.name === 'string') patch.name = options.name.trim();
   if (options.description !== undefined) {
     patch.description = options.description?.trim() || null;
   }
-  if (typeof options.sortOrder === 'number') patch.sort_order = options.sortOrder;
+  if (typeof options.sortOrder === 'number')
+    patch.sort_order = options.sortOrder;
   if (typeof options.isActive === 'boolean') patch.is_active = options.isActive;
 
   if (Object.keys(patch).length === 0) {
@@ -109,7 +193,7 @@ export async function updateAdminCategory(options: {
     .update(patch)
     .eq('id', options.categoryId)
     .is('archived_at', null)
-    .select('id, name, description, sort_order, is_active')
+    .select(CATEGORY_COLUMNS)
     .maybeSingle();
 
   if (error) {
@@ -127,13 +211,7 @@ export async function updateAdminCategory(options: {
     metadata: patch,
   });
 
-  return ok({
-    id: data.id,
-    name: data.name,
-    description: data.description,
-    sortOrder: data.sort_order,
-    isActive: data.is_active,
-  });
+  return ok(mapAdminCategory(data));
 }
 
 export async function archiveAdminCategory(

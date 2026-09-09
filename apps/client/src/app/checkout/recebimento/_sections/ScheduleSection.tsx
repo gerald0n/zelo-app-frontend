@@ -12,17 +12,27 @@ import {
 
 type Props = {
   allowImmediate: boolean;
+  allowSameDay: boolean;
+  hoursLabel: string | null;
   availableDates: string[];
   availableTimes: string[];
 };
 
 export function ScheduleSection({
   allowImmediate,
+  allowSameDay,
+  hoursLabel,
   availableDates,
   availableTimes,
 }: Props) {
   const { checkout, setScheduleType, setScheduledDate, setScheduledTime } =
     useCheckout();
+
+  const immediateHint = !allowSameDay
+    ? 'Só agendado'
+    : !allowImmediate
+      ? (hoursLabel ?? 'Loja fechada')
+      : null;
 
   return (
     <>
@@ -58,8 +68,10 @@ export function ScheduleSection({
           >
             Agora
           </span>
-          {!allowImmediate ? (
-            <span className="text-2xs text-muted-foreground">Loja fechada</span>
+          {immediateHint ? (
+            <span className="text-2xs text-muted-foreground">
+              {immediateHint}
+            </span>
           ) : null}
         </button>
 

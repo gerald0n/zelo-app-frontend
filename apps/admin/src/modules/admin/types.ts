@@ -77,6 +77,13 @@ export type AdminCategory = {
   description: string | null;
   sortOrder: number;
   isActive: boolean;
+  scheduling: {
+    allowSameDay: boolean;
+    sameDayLeadMinutes: number;
+    weekdayEarliest: string | null;
+    weekendEarliest: string | null;
+    slotIntervalMinutes: number;
+  };
 };
 
 export type AdminAddon = {

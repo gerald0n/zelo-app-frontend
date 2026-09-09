@@ -2,26 +2,50 @@ import 'server-only';
 
 import { err, ok, type Result } from '@/lib/errors';
 import { quoteDelivery } from '@/modules/delivery';
-import { getPublicStore } from '@/modules/catalog/catalog-repository';
+import {
+  getPublicCatalog,
+  getPublicStore,
+} from '@/modules/catalog/catalog-repository';
 import {
   canPlaceImmediateOrder,
   listAvailableScheduleDates,
   listAvailableScheduleTimes,
+  resolveCartSchedulingRule,
 } from '@/modules/scheduling/schedule';
 import type { CatalogStore } from '@/modules/catalog/types';
 import type { CreateOrderBody } from '@/modules/orders/create-order-schema';
 
+const MIXED_CART_MESSAGE =
+  'Este pedido mistura categorias com regras de agendamento diferentes. ' +
+  'Finalize uma categoria por vez.';
+
 export async function validateScheduling(
   body: CreateOrderBody,
 ): Promise<Result<{ scheduledFor: string | null }>> {
-  const storeResult = await getPublicStore();
-  if (!storeResult.ok) return storeResult;
-  if (!storeResult.data) {
+  const catalogResult = await getPublicCatalog();
+  if (!catalogResult.ok) return catalogResult;
+  const { store, categories, products } = catalogResult.data;
+  if (!store) {
     return err('NOT_FOUND', 'Loja não encontrada.');
   }
-  const store = storeResult.data;
+
+  const productIds = body.items.map((item) => item.productId);
+  const { rule, mixed } = resolveCartSchedulingRule(
+    categories,
+    products,
+    productIds,
+  );
+  if (mixed) {
+    return err('VALIDATION_ERROR', MIXED_CART_MESSAGE);
+  }
 
   if (body.timing === 'immediate') {
+    if (!rule.allowSameDay) {
+      return err(
+        'VALIDATION_ERROR',
+        'Estes itens só podem ser agendados. Escolha uma data e horário.',
+      );
+    }
     if (!canPlaceImmediateOrder(store)) {
       return err(
         'STORE_CLOSED',
@@ -44,11 +68,17 @@ export async function validateScheduling(
   const time = body.scheduledFor.slice(11, 16);
   const dates = listAvailableScheduleDates(store, {
     deliveryMethod: body.deliveryMethod,
+    rule,
   });
   if (!dates.includes(dateIso)) {
     return err('VALIDATION_ERROR', 'Data de agendamento indisponível.');
   }
-  const times = listAvailableScheduleTimes(store, dateIso, body.deliveryMethod);
+  const times = listAvailableScheduleTimes(
+    store,
+    dateIso,
+    body.deliveryMethod,
+    rule,
+  );
   if (!times.includes(time)) {
     return err('VALIDATION_ERROR', 'Horário de agendamento indisponível.');
   }

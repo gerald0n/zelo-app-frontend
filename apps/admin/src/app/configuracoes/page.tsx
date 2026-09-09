@@ -10,7 +10,6 @@ import { LogoutButton } from '@/app/configuracoes/_sections/LogoutButton';
 import { BusinessHoursForm } from '@/app/configuracoes/_sections/BusinessHoursForm';
 import { PrinterSection } from '@/app/configuracoes/_sections/PrinterSection';
 import { PushSection } from '@/app/configuracoes/_sections/PushSection';
-import { SlotTimesSection } from '@/app/configuracoes/_sections/SlotTimesSection';
 import { StoreForm } from '@/app/configuracoes/_sections/StoreForm';
 import { adminContainerClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
@@ -94,13 +93,6 @@ export default function AdminConfiguracoesPage() {
             form={config.hoursForm}
             isPending={config.hoursMutation.isPending}
             onSubmit={(values) => config.hoursMutation.mutate(values)}
-          />
-          <SlotTimesSection
-            slotTimes={config.slotTimes}
-            setSlotTimes={config.setSlotTimes}
-            dirty={config.slotsDirty}
-            isPending={config.slotsMutation.isPending}
-            onSave={(times) => config.slotsMutation.mutate(times)}
           />
           <BlackoutsSection
             form={config.blackoutForm}

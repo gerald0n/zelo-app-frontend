@@ -14,6 +14,7 @@ import {
   categorySchema,
   type CategoryForm,
 } from '@/app/catalogo/catalog-forms';
+import { CategorySchedulingFields } from '@/app/catalogo/_tabs/CategorySchedulingFields';
 import type { AdminCategory } from '@/modules/admin/types';
 
 type Props = {
@@ -34,6 +35,14 @@ export function CategoriesTab({
   );
   const [showCategoryForm, setShowCategoryForm] = useState(false);
 
+  const emptyScheduling = {
+    schedulingAllowSameDay: true,
+    schedulingSameDayLeadMinutes: 120,
+    schedulingWeekdayEarliest: '',
+    schedulingWeekendEarliest: '',
+    schedulingSlotIntervalMinutes: 30,
+  };
+
   const categoryForm = useForm<CategoryForm>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
@@ -41,6 +50,21 @@ export function CategoriesTab({
       description: '',
       sortOrder: 0,
       isActive: true,
+      ...emptyScheduling,
+    },
+  });
+
+  const toPayload = (values: CategoryForm) => ({
+    name: values.name,
+    description: values.description || null,
+    sortOrder: values.sortOrder,
+    isActive: values.isActive,
+    scheduling: {
+      allowSameDay: values.schedulingAllowSameDay,
+      sameDayLeadMinutes: values.schedulingSameDayLeadMinutes,
+      weekdayEarliest: values.schedulingWeekdayEarliest || null,
+      weekendEarliest: values.schedulingWeekendEarliest || null,
+      slotIntervalMinutes: values.schedulingSlotIntervalMinutes,
     },
   });
 
@@ -49,22 +73,12 @@ export function CategoriesTab({
       if (editingCategory) {
         return apiJson(`/api/v1/admin/categories/${editingCategory.id}`, {
           method: 'PATCH',
-          body: JSON.stringify({
-            name: values.name,
-            description: values.description || null,
-            sortOrder: values.sortOrder,
-            isActive: values.isActive,
-          }),
+          body: JSON.stringify(toPayload(values)),
         });
       }
       return apiJson('/api/v1/admin/categories', {
         method: 'POST',
-        body: JSON.stringify({
-          name: values.name,
-          description: values.description || null,
-          sortOrder: values.sortOrder,
-          isActive: values.isActive,
-        }),
+        body: JSON.stringify(toPayload(values)),
       });
     },
     onSuccess: async () => {
@@ -141,12 +155,22 @@ export function CategoriesTab({
             description: category.description ?? '',
             sortOrder: category.sortOrder,
             isActive: category.isActive,
+            schedulingAllowSameDay: category.scheduling.allowSameDay,
+            schedulingSameDayLeadMinutes:
+              category.scheduling.sameDayLeadMinutes,
+            schedulingWeekdayEarliest:
+              category.scheduling.weekdayEarliest ?? '',
+            schedulingWeekendEarliest:
+              category.scheduling.weekendEarliest ?? '',
+            schedulingSlotIntervalMinutes:
+              category.scheduling.slotIntervalMinutes,
           }
         : {
             name: '',
             description: '',
             sortOrder: categories.length,
             isActive: true,
+            ...emptyScheduling,
           },
     );
     setShowCategoryForm(true);
@@ -199,6 +223,9 @@ export function CategoriesTab({
             <input type="checkbox" {...categoryForm.register('isActive')} />
             Ativa
           </Label>
+
+          <CategorySchedulingFields form={categoryForm} />
+
           <div className="flex gap-2">
             <button
               type="submit"

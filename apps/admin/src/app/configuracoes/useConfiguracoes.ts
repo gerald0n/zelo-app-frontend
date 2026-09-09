@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -86,16 +86,6 @@ export function useConfiguracoes() {
     resolver: zodResolver(blackoutSchema),
     defaultValues: { startsAt: '', endsAt: '', reason: '' },
   });
-
-  const serverSlotTimes = storeQuery.data?.store?.scheduleSlotTimes;
-  const [slotTimes, setSlotTimes] = useState<string[]>([]);
-  const [seededFrom, setSeededFrom] = useState<string[] | undefined>(undefined);
-  if (serverSlotTimes && serverSlotTimes !== seededFrom) {
-    setSeededFrom(serverSlotTimes);
-    setSlotTimes(serverSlotTimes);
-  }
-  const slotsDirty =
-    JSON.stringify(slotTimes) !== JSON.stringify(serverSlotTimes ?? []);
 
   useEffect(() => {
     const store = storeQuery.data?.store;
@@ -200,15 +190,6 @@ export function useConfiguracoes() {
     },
   });
 
-  const slotsMutation = useMutation({
-    mutationFn: (times: string[]) =>
-      apiJson('/api/v1/admin/store', {
-        method: 'PATCH',
-        body: JSON.stringify({ scheduleSlotTimes: times }),
-      }),
-    onSuccess: invalidateStore,
-  });
-
   const blackoutMutation = useMutation({
     mutationFn: (values: BlackoutForm) =>
       apiJson('/api/v1/admin/blackouts', {
@@ -236,7 +217,7 @@ export function useConfiguracoes() {
   });
 
   const mutationError =
-    [slotsMutation, storeMutation, hoursMutation, blackoutMutation]
+    [storeMutation, hoursMutation, blackoutMutation]
       .map((m) => (m.error instanceof ApiError ? m.error.message : ''))
       .find(Boolean) ?? '';
 
@@ -248,13 +229,9 @@ export function useConfiguracoes() {
     storeForm,
     hoursForm,
     blackoutForm,
-    slotTimes,
-    setSlotTimes,
-    slotsDirty,
     blackouts: blackoutsQuery.data?.blackouts ?? [],
     storeMutation,
     hoursMutation,
-    slotsMutation,
     blackoutMutation,
     deleteBlackoutMutation,
     mutationError,
