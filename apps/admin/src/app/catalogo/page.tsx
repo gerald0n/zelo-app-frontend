@@ -9,12 +9,10 @@ import { apiJson } from '@/lib/api';
 import { adminContainerClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 import { adminKeys } from '@/lib/query-keys';
-import {
-  type CatalogResponse,
-  type Tab,
-} from '@/app/catalogo/catalog-forms';
+import { type CatalogResponse, type Tab } from '@/app/catalogo/catalog-forms';
 import { AddonsTab } from '@/app/catalogo/_tabs/AddonsTab';
 import { CategoriesTab } from '@/app/catalogo/_tabs/CategoriesTab';
+import { CouponsTab } from '@/app/catalogo/_tabs/CouponsTab';
 import { ProductsTab } from '@/app/catalogo/_tabs/ProductsTab';
 import { PromotionsTab } from '@/app/catalogo/_tabs/PromotionsTab';
 
@@ -22,6 +20,7 @@ const tabs: Array<{ id: Tab; label: string }> = [
   { id: 'products', label: 'Produtos' },
   { id: 'categories', label: 'Categorias' },
   { id: 'promotions', label: 'Promoções' },
+  { id: 'coupons', label: 'Cupons' },
   { id: 'addons', label: 'Adicionais' },
 ];
 
@@ -52,6 +51,10 @@ export default function AdminCatalogoPage() {
   const promotions = useMemo(
     () => catalogQuery.data?.promotions ?? [],
     [catalogQuery.data?.promotions],
+  );
+  const coupons = useMemo(
+    () => catalogQuery.data?.coupons ?? [],
+    [catalogQuery.data?.coupons],
   );
 
   const invalidateCatalog = async () => {
@@ -161,6 +164,14 @@ export default function AdminCatalogoPage() {
           categories={categories}
           products={products}
           promotions={promotions}
+          invalidateCatalog={invalidateCatalog}
+          onError={setFormError}
+        />
+      ) : null}
+
+      {tab === 'coupons' && !isLoading ? (
+        <CouponsTab
+          coupons={coupons}
           invalidateCatalog={invalidateCatalog}
           onError={setFormError}
         />

@@ -314,6 +314,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      coupons: {
+        Row: {
+          code: string;
+          created_at: string;
+          discount_type: string;
+          discount_value: number;
+          ends_at: string | null;
+          id: string;
+          is_active: boolean;
+          max_uses: number;
+          starts_at: string | null;
+          updated_at: string;
+          uses_count: number;
+        };
+        Insert: {
+          code: string;
+          created_at?: string;
+          discount_type: string;
+          discount_value?: number;
+          ends_at?: string | null;
+          id?: string;
+          is_active?: boolean;
+          max_uses: number;
+          starts_at?: string | null;
+          updated_at?: string;
+          uses_count?: number;
+        };
+        Update: {
+          code?: string;
+          created_at?: string;
+          discount_type?: string;
+          discount_value?: number;
+          ends_at?: string | null;
+          id?: string;
+          is_active?: boolean;
+          max_uses?: number;
+          starts_at?: string | null;
+          updated_at?: string;
+          uses_count?: number;
+        };
+        Relationships: [];
+      };
       customer_addresses: {
         Row: {
           archived_at: string | null;
@@ -725,6 +767,9 @@ export type Database = {
           cancelled_at: string | null;
           cancelled_by: string | null;
           change_for_amount_cents: number | null;
+          coupon_code: string | null;
+          coupon_discount_cents: number;
+          coupon_id: string | null;
           created_at: string;
           customer_id: string | null;
           customer_note: string | null;
@@ -761,6 +806,9 @@ export type Database = {
           cancelled_at?: string | null;
           cancelled_by?: string | null;
           change_for_amount_cents?: number | null;
+          coupon_code?: string | null;
+          coupon_discount_cents?: number;
+          coupon_id?: string | null;
           created_at?: string;
           customer_id?: string | null;
           customer_note?: string | null;
@@ -797,6 +845,9 @@ export type Database = {
           cancelled_at?: string | null;
           cancelled_by?: string | null;
           change_for_amount_cents?: number | null;
+          coupon_code?: string | null;
+          coupon_discount_cents?: number;
+          coupon_id?: string | null;
           created_at?: string;
           customer_id?: string | null;
           customer_note?: string | null;
@@ -828,6 +879,13 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'orders_coupon_id_fkey';
+            columns: ['coupon_id'];
+            isOneToOne: false;
+            referencedRelation: 'coupons';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'orders_customer_id_fkey';
             columns: ['customer_id'];
@@ -1368,6 +1426,9 @@ export type Database = {
           cancelled_at: string | null;
           cancelled_by: string | null;
           change_for_amount_cents: number | null;
+          coupon_code: string | null;
+          coupon_discount_cents: number;
+          coupon_id: string | null;
           created_at: string;
           customer_id: string | null;
           customer_note: string | null;
@@ -1423,6 +1484,9 @@ export type Database = {
           cancelled_at: string | null;
           cancelled_by: string | null;
           change_for_amount_cents: number | null;
+          coupon_code: string | null;
+          coupon_discount_cents: number;
+          coupon_id: string | null;
           created_at: string;
           customer_id: string | null;
           customer_note: string | null;
@@ -1462,6 +1526,15 @@ export type Database = {
       };
       is_admin: { Args: never; Returns: boolean };
       is_hhmm_list: { Args: { v: string[] }; Returns: boolean };
+      preview_coupon: {
+        Args: {
+          p_code: string;
+          p_delivery_fee_cents: number;
+          p_product_ids: string[];
+          p_subtotal_cents: number;
+        };
+        Returns: Json;
+      };
       purge_rate_limits: { Args: { p_older_than?: string }; Returns: number };
       refund_order_pix_payment: {
         Args: { p_mp_refund_id?: string; p_order_id: string };
@@ -1471,6 +1544,9 @@ export type Database = {
           cancelled_at: string | null;
           cancelled_by: string | null;
           change_for_amount_cents: number | null;
+          coupon_code: string | null;
+          coupon_discount_cents: number;
+          coupon_id: string | null;
           created_at: string;
           customer_id: string | null;
           customer_note: string | null;
@@ -1521,6 +1597,9 @@ export type Database = {
           cancelled_at: string | null;
           cancelled_by: string | null;
           change_for_amount_cents: number | null;
+          coupon_code: string | null;
+          coupon_discount_cents: number;
+          coupon_id: string | null;
           created_at: string;
           customer_id: string | null;
           customer_note: string | null;
@@ -1571,6 +1650,9 @@ export type Database = {
           cancelled_at: string | null;
           cancelled_by: string | null;
           change_for_amount_cents: number | null;
+          coupon_code: string | null;
+          coupon_discount_cents: number;
+          coupon_id: string | null;
           created_at: string;
           customer_id: string | null;
           customer_note: string | null;

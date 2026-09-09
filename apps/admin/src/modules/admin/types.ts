@@ -28,6 +28,8 @@ export type AdminOrderListItem = {
 
 export type AdminOrderDetail = CustomerOrder & {
   internalNote: string | null;
+  couponCode: string | null;
+  couponDiscountCents: number;
   customer: {
     id: string;
     name: string;
@@ -107,6 +109,21 @@ export type AdminBlackout = {
   startsAt: string;
   endsAt: string;
   reason: string | null;
+};
+
+export type CouponDiscountType = 'percent' | 'fixed' | 'free_shipping';
+
+export type AdminCoupon = {
+  id: string;
+  code: string;
+  discountType: CouponDiscountType;
+  /** percent: 1..100 · fixed: centavos · free_shipping: 0 */
+  discountValue: number;
+  maxUses: number;
+  usesCount: number;
+  isActive: boolean;
+  startsAt: string | null;
+  endsAt: string | null;
 };
 
 export type AdminAuditLog = {

@@ -8,7 +8,7 @@ promoções, cupons ou financeiro.
 | Bloco | Status |
 | --- | --- |
 | Promoções | **Implementado.** |
-| Cupons | Não iniciado. Decisões já travadas (ver abaixo). |
+| Cupons | **Implementado** (2026-09-08). |
 | Financeiro | Não iniciado. Decisões já travadas (ver abaixo). |
 
 ---
@@ -43,9 +43,9 @@ Migration: `supabase/migrations/20260904170000_promotions.sql`.
 
 ---
 
-## Cupons (não implementado)
+## Cupons (implementado — 2026-09-08)
 
-**Decisões travadas:**
+**Decisões travadas** (todas seguidas):
 - Tipos: percentual, valor fixo, frete grátis.
 - Incide sobre subtotal de produtos (não sobre frete; "frete grátis" zera o
   frete).
@@ -53,6 +53,47 @@ Migration: `supabase/migrations/20260904170000_promotions.sql`.
 - Só limite total de usos (sem limite por cliente até o login por SMS —
   Fase 14 do roadmap).
 - Uso contado junto com a criação do pedido (atômico); cancelamento devolve.
+
+**Implementação** (migration `20260908140000_coupons.sql`):
+- Tabela `public.coupons` (`code` único e uppercase, `discount_type`,
+  `discount_value`, `max_uses`, `uses_count`, `is_active`, período opcional).
+  RLS admin-only. `orders` ganhou `coupon_id`/`coupon_code`/
+  `coupon_discount_cents` e o check `orders_total_consistent` passou a
+  descontar o cupom.
+- `private.claim_coupon(code, subtotal, delivery_fee, has_promo)` — trava a
+  linha (`for update`), valida (ativo, período, `uses_count < max_uses`,
+  sem promo) e **incrementa `uses_count` na mesma transação**; lança em
+  qualquer problema, abortando a criação do pedido. Chamada dentro de
+  `private.create_order` **e** `private.create_manual_order`.
+- `has_promo` = algum item com `effective_price_cents < price_cents`.
+- Desconto (`private.coupon_discount_cents`): percent = `round(subtotal *
+  v/100)` capado no subtotal; fixed = `min(v, subtotal)`; free_shipping =
+  a taxa de entrega. `total = subtotal + adicionais + frete − desconto`.
+- `private.transition_order_status`: ao cancelar, `uses_count = greatest(
+  uses_count - 1, 0)` se o pedido tinha cupom.
+- `public.preview_coupon(code, subtotal, delivery_fee, product_ids[])` —
+  read-only (não conta uso, resolve `has_promo` sozinha pelos produtos),
+  retorna `{ valid, code, discountType, discountCents }` ou
+  `{ valid: false, reason }`. Só pro checkout mostrar o desconto antes.
+
+**Front:**
+- Cliente: campo de cupom na revisão do checkout
+  (`checkout/revisao/_components/CouponField` + `OrderTotals`), chama
+  `POST /api/v1/coupons/preview`; o código vai no body do pedido como
+  `couponCode`.
+- Comanda manual (`/pedidos/novo`): campo "Cupom (opcional)" na etapa de
+  pagamento.
+- Admin: aba **Cupons** em `/catalogo` (`CouponsTab`), CRUD via
+  `POST/PATCH/DELETE /api/v1/admin/coupons`, lista com `usos X/Y`. O detalhe
+  do pedido (modal do kanban) mostra a linha "Cupom … −R$ X".
+- Falta (follow-up): mostrar o cupom no acompanhamento do cliente e no
+  comprovante térmico.
+
+**Testado 2026-09-08** (Supabase local, rotas HTTP reais): CRUD admin
+(uppercase, código duplicado → 400, % fora de 1–100 → 400); comanda manual
+com cupom (10% em R$16 → R$14,40, `uses_count` +1); cancelar devolve o uso;
+promoção ativa → `preview` e criação recusam ("não acumula"), sem contar
+uso; `preview` free_shipping e "não encontrado".
 
 ---
 
