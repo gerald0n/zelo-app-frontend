@@ -18,6 +18,7 @@ import DesktopNavigation from '@/components/DesktopNavigation';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { PwaInstallProvider } from '@/contexts/PwaInstallContext';
 import LockMobileZoom from '@/components/LockMobileZoom';
+import RefreshOnVisible from '@/components/RefreshOnVisible';
 import { shouldHideCustomerNav } from '@/lib/layout';
 import { cn } from '@/lib/utils';
 import { QueryProvider } from '@/providers/query-provider';
@@ -79,6 +80,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
               <PwaInstallProvider>
                 <ClientObservability />
                 <LockMobileZoom />
+                <RefreshOnVisible />
                 <AppShell>{children}</AppShell>
               </PwaInstallProvider>
             </CheckoutProvider>
