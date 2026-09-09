@@ -158,6 +158,16 @@ export function isAwaitingPixPayment(order: {
   );
 }
 
+/**
+ * O painel fundiu "Pronto para entrega" em "Saiu para entrega" — o pedido de
+ * delivery salta essa etapa no fluxo visual. Para o cliente ela deixa de
+ * existir como passo próprio: é sempre apresentada como "Saiu para entrega".
+ * O enum e o histórico no banco continuam intactos; só a apresentação muda.
+ */
+export function customerFacingStatus(status: OrderStatus): OrderStatus {
+  return status === 'ready_for_delivery' ? 'out_for_delivery' : status;
+}
+
 export const STATUS_COPY: Partial<Record<OrderStatus, string>> = {
   received: 'Recebemos o seu pedido e vamos analisá-lo em instantes.',
   confirmed: 'Pedido confirmado! Em breve começamos o preparo.',
