@@ -49,11 +49,14 @@ export function getCatalogStoreHoursLabel(
     return 'Aberto agora';
   }
 
-  // Fechada por controle do painel: pausa sem previsão (`isOpenOverride ===
-  // false`) ou pausa com prazo ainda valendo. A agenda semanal não vale nesse
-  // estado — não adianta prometer "Amanhã 19:00" se a loja não vai abrir
-  // sozinha (ou volta antes disso). O selo ao lado já diz "Fechado".
-  if (store.isOpenOverride === false || isCatalogStorePaused(store, now)) {
+  // Pausa com prazo ainda valendo: a agenda semanal não vale nesse estado —
+  // não adianta prometer "Hoje 19:00" se a loja volta antes (ou depois) disso.
+  // O selo ao lado já diz "Fechado".
+  //
+  // Já o "fechado" manual sem prazo (`isOpenOverride === false`) segue mostrando
+  // o próximo horário configurado ("Hoje 19:00", "Amanhã 08:00") — é o horário
+  // que o cliente usa para agendar, mesmo com a loja fora do ar agora.
+  if (isCatalogStorePaused(store, now)) {
     return 'Ver horários';
   }
 
