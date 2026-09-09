@@ -34,6 +34,18 @@ type AdminContextValue = {
 
 const AdminContext = createContext<AdminContextValue | null>(null);
 
+/**
+ * Sem timeout, uma função serverless "fria" ou o Supabase Auth lento deixam o
+ * `fetch` pendurado para sempre — e a tela de login trava com o botão em
+ * loading eterno, só liberando com um reload manual. Com o abort, a demora
+ * vira um erro que o usuário consegue tratar (tentar de novo) na hora.
+ */
+const SESSION_REQUEST_TIMEOUT_MS = 20_000;
+
+function isTimeout(cause: unknown): boolean {
+  return cause instanceof DOMException && cause.name === 'TimeoutError';
+}
+
 export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [ready, setReady] = useState(false);
@@ -42,6 +54,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await fetch('/api/v1/admin/session', {
         cache: 'no-store',
+        signal: AbortSignal.timeout(SESSION_REQUEST_TIMEOUT_MS),
       });
       if (!response.ok) {
         setAdmin(null);
@@ -60,6 +73,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       try {
         const response = await fetch('/api/v1/admin/session', {
           cache: 'no-store',
+          signal: AbortSignal.timeout(SESSION_REQUEST_TIMEOUT_MS),
         });
         if (cancelled) return;
         if (!response.ok) {
@@ -82,23 +96,35 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string, options?: LoginOptions) => {
-      const response = await fetch('/api/v1/admin/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          password,
-          captchaToken: options?.captchaToken,
-          website: options?.website,
-        }),
-      });
+      let response: Response;
+      try {
+        response = await fetch('/api/v1/admin/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            password,
+            captchaToken: options?.captchaToken,
+            website: options?.website,
+          }),
+          cache: 'no-store',
+          signal: AbortSignal.timeout(SESSION_REQUEST_TIMEOUT_MS),
+        });
+      } catch (cause) {
+        setAdmin(null);
+        return {
+          ok: false as const,
+          message: isTimeout(cause)
+            ? 'A conexão demorou demais. Tente entrar novamente.'
+            : 'Falha de rede ao entrar. Verifique sua internet.',
+        };
+      }
       const json = await response.json().catch(() => null);
       if (!response.ok) {
         setAdmin(null);
         return {
           ok: false as const,
-          message:
-            json?.error?.message ?? 'Não foi possível entrar no painel.',
+          message: json?.error?.message ?? 'Não foi possível entrar no painel.',
         };
       }
       setAdmin(json.admin as AdminUser);
