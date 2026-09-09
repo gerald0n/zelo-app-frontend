@@ -1098,6 +1098,70 @@ export type Database = {
           },
         ];
       };
+      product_reviews: {
+        Row: {
+          comment: string | null;
+          created_at: string;
+          customer_display_name: string;
+          customer_id: string;
+          id: string;
+          moderated_at: string | null;
+          order_id: string | null;
+          product_id: string;
+          rating: number;
+          status: Database['public']['Enums']['review_status'];
+          updated_at: string;
+        };
+        Insert: {
+          comment?: string | null;
+          created_at?: string;
+          customer_display_name: string;
+          customer_id: string;
+          id?: string;
+          moderated_at?: string | null;
+          order_id?: string | null;
+          product_id: string;
+          rating: number;
+          status?: Database['public']['Enums']['review_status'];
+          updated_at?: string;
+        };
+        Update: {
+          comment?: string | null;
+          created_at?: string;
+          customer_display_name?: string;
+          customer_id?: string;
+          id?: string;
+          moderated_at?: string | null;
+          order_id?: string | null;
+          product_id?: string;
+          rating?: number;
+          status?: Database['public']['Enums']['review_status'];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'product_reviews_customer_id_fkey';
+            columns: ['customer_id'];
+            isOneToOne: false;
+            referencedRelation: 'customers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'product_reviews_order_id_fkey';
+            columns: ['order_id'];
+            isOneToOne: false;
+            referencedRelation: 'orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'product_reviews_product_id_fkey';
+            columns: ['product_id'];
+            isOneToOne: false;
+            referencedRelation: 'products';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       products: {
         Row: {
           archived_at: string | null;

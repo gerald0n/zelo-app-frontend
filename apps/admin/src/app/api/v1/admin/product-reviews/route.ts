@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { httpStatusFor } from '@/lib/errors';
-import { countPendingReviews, listAdminReviews } from '@/modules/admin/reviews';
-import { countPendingProductReviews } from '@/modules/admin/product-reviews';
+import {
+  countPendingProductReviews,
+  listAdminProductReviews,
+} from '@/modules/admin/product-reviews';
 import type { ReviewStatus } from '@/modules/admin/types';
 
 export const dynamic = 'force-dynamic';
@@ -12,19 +14,14 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
 
   if (searchParams.get('count') === 'pending') {
-    // Badge da sidebar: pendências de pedido + de produto.
-    const [orders, products] = await Promise.all([
-      countPendingReviews(),
-      countPendingProductReviews(),
-    ]);
-    if (!orders.ok) {
+    const result = await countPendingProductReviews();
+    if (!result.ok) {
       return NextResponse.json(
-        { error: orders.error },
-        { status: httpStatusFor(orders.error.code) },
+        { error: result.error },
+        { status: httpStatusFor(result.error.code) },
       );
     }
-    const pending = orders.data + (products.ok ? products.data : 0);
-    return NextResponse.json({ pending });
+    return NextResponse.json({ pending: result.data });
   }
 
   const statusParam = searchParams.get('status');
@@ -32,7 +29,7 @@ export async function GET(request: Request) {
     ? (statusParam as ReviewStatus)
     : undefined;
 
-  const result = await listAdminReviews(status);
+  const result = await listAdminProductReviews(status);
   if (!result.ok) {
     return NextResponse.json(
       { error: result.error },

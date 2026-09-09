@@ -36,6 +36,8 @@ export type CatalogProduct = {
   weight?: string;
   addons: CatalogAddon[];
   sortOrder: number;
+  /** Média (0–5, 1 casa) e nº de avaliações aprovadas. `null` = ainda sem. */
+  rating: { average: number; count: number } | null;
 };
 
 export type CatalogBusinessHour = {

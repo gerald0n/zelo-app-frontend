@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
-import { Search, Heart } from 'lucide-react';
+import { Search, Heart, Star } from 'lucide-react';
 import { CatalogCartControls } from '@/components/CartQtyStepper';
 import DesktopCartPanel from '@/components/DesktopCartPanel';
 import MenuHeroCarousel from '@/components/MenuHeroCarousel';
@@ -173,6 +173,12 @@ export default function HomeCatalog({
                         {product.originalPrice != null ? (
                           <span className="text-xs text-muted-foreground line-through">
                             {formatCatalogPrice(product.originalPrice)}
+                          </span>
+                        ) : null}
+                        {product.rating ? (
+                          <span className="flex items-center gap-0.5 text-2xs text-muted-foreground">
+                            <Star className="size-3 fill-amber-400 text-amber-400" />
+                            {product.rating.average.toFixed(1)}
                           </span>
                         ) : null}
                       </span>

@@ -10,6 +10,36 @@ export type CustomerOrderReview = {
   createdAt: string;
 };
 
+/** Média e volume de avaliações aprovadas de um produto. */
+export type ProductRatingSummary = { average: number; count: number };
+
+/** Avaliação de produto do ponto de vista do cliente que a enviou. */
+export type CustomerProductReview = {
+  rating: number;
+  comment: string | null;
+  status: ReviewStatus;
+  createdAt: string;
+};
+
+/** Avaliação de produto aprovada, exibida na página do produto. */
+export type PublicProductReview = {
+  id: string;
+  displayName: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+};
+
+/** Resposta da tela do produto: resumo + lista + contexto do cliente atual. */
+export type ProductReviewsView = {
+  summary: ProductRatingSummary;
+  items: PublicProductReview[];
+  /** Cliente logado tem pedido entregue com o item e ainda não avaliou. */
+  canReview: boolean;
+  /** Avaliação que o cliente logado já enviou (qualquer status). */
+  myReview: CustomerProductReview | null;
+};
+
 /** Depoimento aprovado + em destaque, exibido na vitrine pública. */
 export type PublicTestimonial = {
   id: string;
