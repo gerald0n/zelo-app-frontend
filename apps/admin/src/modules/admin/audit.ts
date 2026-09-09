@@ -1,8 +1,13 @@
 import 'server-only';
 
+import { after } from 'next/server';
 import { err, ok, type Result } from '@/lib/errors';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/modules/admin/auth';
+import {
+  catalogTagsForAuditAction,
+  requestCatalogRevalidation,
+} from '@/modules/catalog/revalidate';
 import type { AdminAuditLog } from '@/modules/admin/types';
 import type { Json } from '@/types/database';
 
@@ -22,6 +27,13 @@ export async function writeAuditLog(options: {
     entity_id: options.entityId ?? null,
     metadata: (options.metadata ?? null) as Json | null,
   });
+
+  // Toda mutação do catálogo/loja passa por aqui — invalida o cache do
+  // `apps/client` depois da resposta, sem somar latência à mutação.
+  const tags = catalogTagsForAuditAction(options.action);
+  if (tags.length > 0) {
+    after(() => requestCatalogRevalidation(tags));
+  }
 }
 
 export async function listAdminAuditLogs(options?: {

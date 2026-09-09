@@ -34,6 +34,9 @@ const envSchema = z.object({
   MERCADOPAGO_WEBHOOK_SECRET: z.string().min(1).optional().or(z.literal('')),
   CRON_SECRET: z.string().min(1).optional().or(z.literal('')),
   OTP_HASH_SECRET: z.string().min(16).optional().or(z.literal('')),
+  // Invalidação on-demand do cache do catálogo entre os dois deploys.
+  CATALOG_REVALIDATE_SECRET: z.string().min(16).optional().or(z.literal('')),
+  CLIENT_APP_ORIGIN: z.string().url().optional().or(z.literal('')),
 });
 
 export type AppEnv = z.infer<typeof appEnvSchema>;
@@ -65,6 +68,8 @@ const parsed = envSchema.safeParse({
   MERCADOPAGO_WEBHOOK_SECRET: process.env.MERCADOPAGO_WEBHOOK_SECRET,
   CRON_SECRET: process.env.CRON_SECRET,
   OTP_HASH_SECRET: process.env.OTP_HASH_SECRET,
+  CATALOG_REVALIDATE_SECRET: process.env.CATALOG_REVALIDATE_SECRET,
+  CLIENT_APP_ORIGIN: process.env.CLIENT_APP_ORIGIN,
 });
 
 if (!parsed.success) {
@@ -145,6 +150,13 @@ function assertProductionEnv(): void {
   }
   if (!env.SENTRY_DSN && !env.NEXT_PUBLIC_SENTRY_DSN) {
     recommended.push('Sentry (DSN)');
+  }
+  // Sem estes, a edição de catálogo no painel só aparece no cardápio quando
+  // o TTL do cache expira (~60 s) em vez de na hora.
+  if (!env.CATALOG_REVALIDATE_SECRET || !env.CLIENT_APP_ORIGIN) {
+    recommended.push(
+      'Revalidação on-demand do catálogo (CATALOG_REVALIDATE_SECRET + CLIENT_APP_ORIGIN)',
+    );
   }
   if (recommended.length > 0) {
     console.warn(
@@ -295,6 +307,23 @@ export function hasMercadoPagoConfig(): boolean {
 /** Segredo compartilhado com o Supabase Cron (header Authorization: Bearer). */
 export function getCronSecret(): string | undefined {
   return env.CRON_SECRET || undefined;
+}
+
+/**
+ * Segredo compartilhado entre `apps/admin` (envia) e `apps/client` (verifica)
+ * para invalidar o cache do catálogo sob demanda. Sem ele, a propagação de
+ * uma edição do painel cai no TTL do cache.
+ */
+export function getCatalogRevalidateSecret(): string | undefined {
+  return env.CATALOG_REVALIDATE_SECRET || undefined;
+}
+
+/**
+ * Origin do app do cliente (ex.: `https://cardapio.zeloconfeitaria.com.br`).
+ * Usado pelo `apps/admin` para disparar a revalidação do catálogo.
+ */
+export function getClientAppOrigin(): string | undefined {
+  return env.CLIENT_APP_ORIGIN?.replace(/\/$/, '') || undefined;
 }
 
 /**
