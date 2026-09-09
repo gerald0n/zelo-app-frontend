@@ -2,9 +2,16 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "zelo-dev",
+      "name": "zelo-admin",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["dev"],
+      "runtimeArgs": ["--filter", "@zelo/admin", "dev"],
+      "port": 3001,
+      "autoPort": true
+    },
+    {
+      "name": "zelo-client",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@zelo/client", "dev"],
       "port": 3000,
       "autoPort": true
     }
