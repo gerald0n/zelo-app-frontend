@@ -30,14 +30,14 @@ export default function AdminOrderDetailModal({ orderId, onClose }: Props) {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[1100] flex items-end justify-center bg-black/40 p-3 sm:items-center sm:p-6"
+      className="fixed inset-0 z-[1100] flex items-end justify-center bg-black/40 sm:items-center sm:p-6"
       role="presentation"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-modal="true"
-        className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-y-auto rounded-xl border border-border bg-card shadow-xl"
+        className="flex max-h-[calc(100dvh-max(1rem,env(safe-area-inset-top)))] w-full max-w-2xl flex-col overflow-y-auto overscroll-contain rounded-t-xl border border-border bg-card pb-[env(safe-area-inset-bottom)] shadow-xl sm:max-h-[92dvh] sm:rounded-xl sm:pb-0"
         onClick={(event) => event.stopPropagation()}
       >
         {loading || (!order && !error) ? (
