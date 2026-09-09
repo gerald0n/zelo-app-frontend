@@ -110,8 +110,11 @@ Quando a Loja estiver fechada, somente pedidos agendados podem ser concluídos.
 
 ## Regra de antecedência
 
-- pedidos realizados até as 17h podem ser agendados a partir do dia seguinte;
-- pedidos realizados após as 17h podem ser agendados a partir do segundo dia seguinte.
+Os dias e horários oferecidos são **derivados da regra de agendamento da
+categoria** dos itens do carrinho + da janela de funcionamento do dia (a
+antiga "regra das 17h" foi substituída — PR #98). Cada categoria define se
+permite mesmo dia, a antecedência para a agenda de hoje abrir, o horário
+mínimo (semana / fim de semana) e o intervalo. Ver `10-funcional/10`.
 
 ---
 

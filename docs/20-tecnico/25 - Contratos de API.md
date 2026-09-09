@@ -202,6 +202,10 @@ A resposta devolve os itens unidos e revalidados.
 
 # Checkout
 
+## `POST /api/v1/checkout/options`
+
+Opções do checkout para o carrinho atual. Recebe `{ productIds: string[] }` (era `GET` até o PR #98). Devolve: loja resumida, bairros e `scheduling` — `storeOpen`, `availableDates`, `timesByDate` (por data, com `delivery` / `pickup`), `allowSameDay`, `mixedCart`, `hoursLabel`. A agenda já vem resolvida pela regra de agendamento da categoria dos itens (ver `10-funcional/10`); `mixedCart = true` quando o carrinho mistura categorias com regras diferentes.
+
 ## `POST /api/v1/checkout/preview`
 
 Calcula e valida uma prévia sem criar Pedido.

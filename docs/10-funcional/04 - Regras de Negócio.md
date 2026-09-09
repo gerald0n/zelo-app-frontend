@@ -206,7 +206,9 @@ O catálogo pode ser visualizado quando a Loja estiver fechada.
 
 ## RN-043
 
-Pedidos imediatos não podem ser confirmados fora do horário de funcionamento.
+Pedidos imediatos ("Agora") só podem ser confirmados **dentro da janela real
+de funcionamento do dia**, no fuso da loja — inclusive quando a loja está
+forçada como aberta no painel. Antes da abertura, só agendamento.
 
 ## RN-044
 
@@ -214,19 +216,28 @@ Quando a Loja estiver fechada, o checkout deve permitir somente agendamento.
 
 ## RN-045
 
-Pedidos realizados até 17:00 podem ser agendados a partir do dia seguinte.
+> ⚠️ **Substituída (PR #98).** A antiga "regra das 17h" (RN-045–RN-047) deu
+> lugar a **regras de agendamento por categoria**. Cada categoria define: se
+> permite mesmo dia, a antecedência para a agenda de hoje abrir, o horário
+> mínimo por dia da semana / fim de semana e o intervalo entre horários. Os
+> dias e horários do checkout são derivados dessas regras, da janela do dia e
+> dos blackouts. Ver `10-funcional/10` e `20-tecnico/31` §2.9.
 
 ## RN-046
 
-Pedidos realizados após 17:00 podem ser agendados a partir do segundo dia seguinte.
+Categorias podem exigir agendamento **sempre a partir do dia seguinte** (sem
+mesmo dia) — ex.: pudins.
 
 ## RN-047
 
-Exatamente 17:00 pertence à regra de entrega a partir do dia seguinte.
+Um carrinho que mistura categorias com **regras de agendamento diferentes**
+não pode ser finalizado num único pedido.
 
 ## RN-048
 
-A data e o horário escolhidos devem respeitar o funcionamento configurado da Loja.
+A data e o horário escolhidos devem respeitar o funcionamento configurado da
+Loja e a regra da categoria. A validação na criação do pedido usa a mesma
+função que monta as opções do checkout.
 
 ---
 
