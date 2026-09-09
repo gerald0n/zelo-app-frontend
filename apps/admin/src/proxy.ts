@@ -83,11 +83,12 @@ export default async function proxy(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Checagem otimista: `getClaims()` valida o JWT localmente (signing keys
+  // assimétricas) sem ida à Auth a cada request. A autorização real (perfil
+  // admin ativo) continua no server via `requireAdmin()`.
+  const { data: claims } = await supabase.auth.getClaims();
 
-  if (!user) {
+  if (!claims?.claims.sub) {
     const loginUrl = new URL('/login', request.url);
     return withCsp(NextResponse.redirect(loginUrl));
   }
