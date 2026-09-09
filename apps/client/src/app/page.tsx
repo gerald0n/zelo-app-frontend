@@ -1,10 +1,14 @@
 import HomeCatalog from '@/components/HomeCatalog';
 import { getPublicCatalog } from '@/modules/catalog/catalog-repository';
+import { listPublicTestimonials } from '@/modules/reviews';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const catalog = await getPublicCatalog();
+  const [catalog, testimonials] = await Promise.all([
+    getPublicCatalog(),
+    listPublicTestimonials(),
+  ]);
 
   if (!catalog.ok) {
     return (
@@ -28,6 +32,7 @@ export default async function HomePage() {
       categories={catalog.data.categories}
       products={catalog.data.products}
       categoryNames={categoryNames}
+      testimonials={testimonials.ok ? testimonials.data : []}
     />
   );
 }

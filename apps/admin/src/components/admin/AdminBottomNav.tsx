@@ -6,6 +6,7 @@ import {
   Receipt,
   UtensilsCrossed,
   BarChart3,
+  Star,
   Settings,
 } from 'lucide-react';
 import LiquidGlassTabs from '@/components/LiquidGlassTabs';
@@ -37,6 +38,12 @@ const TABS = [
     match: (p: string) => p.startsWith('/relatorios'),
   },
   {
+    href: '/avaliacoes',
+    label: 'Avaliações',
+    icon: Star,
+    match: (p: string) => p.startsWith('/avaliacoes'),
+  },
+  {
     href: '/configuracoes',
     label: 'Ajustes',
     icon: Settings,
@@ -65,7 +72,7 @@ export default function AdminBottomNav() {
         className="liquid-glass-veil absolute inset-x-0 bottom-0 h-24"
       />
       <div className="pointer-events-auto relative px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5">
-        <div className="mx-auto max-w-[400px]">
+        <div className="mx-auto max-w-[440px]">
           <LiquidGlassTabs
             tabs={TABS}
             pathname={pathname}

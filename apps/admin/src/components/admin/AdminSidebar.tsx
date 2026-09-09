@@ -2,11 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import {
   Grid2x2,
   Receipt,
   UtensilsCrossed,
   BarChart3,
+  Star,
   Settings,
   Plus,
   PanelLeft,
@@ -18,6 +20,8 @@ import {
 import { useAdmin } from '@/contexts/AdminContext';
 import { useAdminRealtime } from '@/contexts/AdminRealtimeContext';
 import { useNewOrder } from '@/contexts/AdminNewOrderContext';
+import { apiJson } from '@/lib/api';
+import { adminKeys } from '@/lib/query-keys';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 import { useThemeToggle } from '@/hooks/useThemeToggle';
 import AdminStoreToggle from '@/components/admin/AdminStoreToggle';
@@ -50,6 +54,12 @@ const NAV = [
     match: (p: string) => p.startsWith('/relatorios'),
   },
   {
+    href: '/avaliacoes',
+    label: 'Avaliações',
+    icon: Star,
+    match: (p: string) => p.startsWith('/avaliacoes'),
+  },
+  {
     href: '/configuracoes',
     label: 'Ajustes',
     icon: Settings,
@@ -72,6 +82,14 @@ export default function AdminSidebar({ collapsed, onToggle }: Props) {
   const { open: openNewOrder } = useNewOrder();
   const { confirm } = useAppDialog();
   const { theme, toggle: toggleTheme } = useThemeToggle();
+
+  const { data: pendingReviews } = useQuery({
+    queryKey: adminKeys.reviewsPending(),
+    queryFn: () =>
+      apiJson<{ pending: number }>('/api/v1/admin/reviews?count=pending'),
+    refetchInterval: 60_000,
+  });
+  const pendingCount = pendingReviews?.pending ?? 0;
 
   const live = status === 'subscribed';
 
@@ -166,7 +184,7 @@ export default function AdminSidebar({ collapsed, onToggle }: Props) {
               title={item.label}
               aria-current={active ? 'page' : undefined}
               className={cn(
-                'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                 collapsed && 'justify-center px-0',
                 active
                   ? 'bg-sidebar-accent text-sidebar-accent-foreground'
@@ -177,7 +195,18 @@ export default function AdminSidebar({ collapsed, onToggle }: Props) {
                 className="size-[19px] shrink-0"
                 strokeWidth={active ? 2.25 : 1.75}
               />
-              {!collapsed ? item.label : null}
+              {!collapsed ? <span className="flex-1">{item.label}</span> : null}
+              {item.href === '/avaliacoes' && pendingCount > 0 ? (
+                <span
+                  className={cn(
+                    'inline-flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-2xs font-bold text-primary-foreground',
+                    collapsed &&
+                      'absolute right-1 top-1 min-w-3.5 px-0.5 text-[0.5rem]',
+                  )}
+                >
+                  {pendingCount}
+                </span>
+              ) : null}
             </Link>
           );
         })}

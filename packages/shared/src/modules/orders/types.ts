@@ -1,4 +1,5 @@
 import type { Database } from '@/types/database';
+import type { CustomerOrderReview } from '@/modules/reviews/types';
 
 export type OrderStatus = Database['public']['Enums']['order_status'];
 export type DeliveryMethod = Database['public']['Enums']['delivery_method'];
@@ -65,6 +66,10 @@ export type CustomerOrder = {
   items: CustomerOrderItem[];
   history: CustomerOrderHistoryEntry[];
   canCancel: boolean;
+  /** Avaliação já enviada para este pedido (em qualquer status de moderação). */
+  review: CustomerOrderReview | null;
+  /** Pedido entregue e ainda sem avaliação — mostra o convite. */
+  canReview: boolean;
 };
 
 export type CustomerOrderListItem = Pick<

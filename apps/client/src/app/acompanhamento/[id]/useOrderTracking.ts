@@ -20,6 +20,8 @@ export function useOrderTracking(id: string) {
   const [order, setOrder] = useState<CustomerOrder | null>(null);
   const [reordering, setReordering] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Bumpado por `refetch()` (ex.: após enviar avaliação) pra rerodar a carga.
+  const [refetchNonce, setRefetchNonce] = useState(0);
   const { version: realtimeVersion } = useCustomerOrderRealtime(id, true);
 
   // Skeleton = ainda não temos o pedido DESTE id e não deu erro. Derivado do
@@ -67,7 +69,7 @@ export function useOrderTracking(id: string) {
     return () => {
       cancelled = true;
     };
-  }, [id, realtimeVersion]);
+  }, [id, realtimeVersion, refetchNonce]);
 
   // Fallback periódico caso o Realtime falhe/desconecte.
   useEffect(() => {
@@ -109,5 +111,7 @@ export function useOrderTracking(id: string) {
     }
   };
 
-  return { order, loading, error, reordering, reorder };
+  const refetch = () => setRefetchNonce((n) => n + 1);
+
+  return { order, loading, error, reordering, reorder, refetch };
 }

@@ -7,6 +7,7 @@ import { CatalogCartControls } from '@/components/CartQtyStepper';
 import DesktopCartPanel from '@/components/DesktopCartPanel';
 import MenuHeroCarousel from '@/components/MenuHeroCarousel';
 import ProductCard from '@/components/ProductCard';
+import { Testimonials } from '@/components/Testimonials';
 import StoreHeader, {
   STORE_HEADER_COMPACT_HEIGHT,
 } from '@/components/StoreHeader';
@@ -18,6 +19,7 @@ import {
   type CatalogCategory,
   type CatalogProduct,
 } from '@/modules/catalog/types';
+import type { PublicTestimonial } from '@/modules/reviews/types';
 import { useCart } from '@/contexts/CartContext';
 import { useShopExperience } from '@/contexts/ShopExperienceContext';
 import { cn } from '@/lib/utils';
@@ -28,12 +30,14 @@ type Props = {
   categories: CatalogCategory[];
   products: CatalogProduct[];
   categoryNames: Record<string, string>;
+  testimonials: PublicTestimonial[];
 };
 
 export default function HomeCatalog({
   categories,
   products,
   categoryNames,
+  testimonials,
 }: Props) {
   const [active, setActive] = useState<Filter>('Todos');
   const { addItem, items } = useCart();
@@ -284,6 +288,10 @@ export default function HomeCatalog({
             </ul>
           )}
         </section>
+
+        {active === 'Todos' ? (
+          <Testimonials testimonials={testimonials} />
+        ) : null}
       </div>
 
       <DesktopCartPanel />

@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { ArrowLeft, MapPin, MessageCircle } from 'lucide-react';
 import { WEEKDAY_LABELS } from '@/lib/constants';
 import { getPublicStore } from '@/modules/catalog/catalog-repository';
+import { listPublicTestimonials } from '@/modules/reviews';
+import { Testimonials } from '@/components/Testimonials';
 import { canPlaceImmediateOrder } from '@/modules/scheduling/schedule';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/cn';
@@ -33,6 +35,8 @@ export default async function LojaPage() {
   const store = storeResult.data;
   const storeOpen = canPlaceImmediateOrder(store);
   const whatsappHref = `https://wa.me/${store.whatsappE164.replace(/\D/g, '')}`;
+  const testimonialsResult = await listPublicTestimonials();
+  const testimonials = testimonialsResult.ok ? testimonialsResult.data : [];
 
   return (
     <div className={cn('flex min-h-dvh w-full flex-col bg-background', shellNarrowClass)}>
@@ -122,6 +126,8 @@ export default async function LojaPage() {
           <MessageCircle className="size-[22px]" />
           Fale conosco pelo WhatsApp
         </a>
+
+        <Testimonials testimonials={testimonials} className="px-0 pb-2" />
       </div>
     </div>
   );
