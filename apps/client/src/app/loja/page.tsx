@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ArrowLeft, MapPin, MessageCircle } from 'lucide-react';
 import { WEEKDAY_LABELS } from '@/lib/constants';
-import { getPublicStore } from '@/modules/catalog/catalog-repository';
+import { getCachedPublicStore } from '@/modules/catalog/cached-catalog';
 import { listPublicTestimonials } from '@/modules/reviews';
 import { Testimonials } from '@/components/Testimonials';
 import { canPlaceImmediateOrder } from '@/modules/scheduling/schedule';
@@ -17,7 +17,10 @@ import { ZeloSeal } from '@/components/ZeloSeal';
 export const dynamic = 'force-dynamic';
 
 export default async function LojaPage() {
-  const storeResult = await getPublicStore();
+  const [storeResult, testimonialsResult] = await Promise.all([
+    getCachedPublicStore(),
+    listPublicTestimonials(),
+  ]);
 
   if (!storeResult.ok || !storeResult.data) {
     return (
@@ -35,7 +38,6 @@ export default async function LojaPage() {
   const store = storeResult.data;
   const storeOpen = canPlaceImmediateOrder(store);
   const whatsappHref = `https://wa.me/${store.whatsappE164.replace(/\D/g, '')}`;
-  const testimonialsResult = await listPublicTestimonials();
   const testimonials = testimonialsResult.ok ? testimonialsResult.data : [];
 
   return (

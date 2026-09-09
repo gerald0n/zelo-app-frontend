@@ -1,4 +1,4 @@
-import { getPublicProductBySlugOrId } from '@/modules/catalog/catalog-repository';
+import { getCachedPublicProductBySlugOrId } from '@/modules/catalog/cached-catalog';
 import ProdutoClient from '@/components/ProdutoClient';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +9,7 @@ export default async function ProdutoPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const product = await getPublicProductBySlugOrId(id);
+  const product = await getCachedPublicProductBySlugOrId(id);
 
   if (!product.ok) {
     return (
