@@ -84,7 +84,7 @@ export default function AdminCatalogoPage() {
             <p className="text-2xs font-bold uppercase tracking-widest text-primary">
               Gestão de catálogo
             </p>
-            <h1 className="mt-1 font-serif text-2xl font-bold tracking-tight">
+            <h1 className="mt-1 font-serif text-xl font-bold tracking-tight md:text-2xl">
               Catálogo de produtos
             </h1>
           </div>
@@ -97,7 +97,7 @@ export default function AdminCatalogoPage() {
             Ver cardápio
           </Link>
         </div>
-        <p className="max-w-prose text-xs text-muted-foreground">
+        <p className="hidden max-w-prose text-xs text-muted-foreground sm:block">
           Administre a vitrine digital, o estoque de fornadas, as fichas dos
           produtos e a precificação do cardápio artesanal.
         </p>
