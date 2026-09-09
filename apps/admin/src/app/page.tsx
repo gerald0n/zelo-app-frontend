@@ -11,7 +11,6 @@ import { adminContainerClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 import { adminKeys } from '@/lib/query-keys';
 import type { AdminOrderListItem } from '@/modules/admin/types';
-import { useAdminRealtime } from '@/contexts/AdminRealtimeContext';
 import {
   buildDashboard,
   PERIOD_LABEL,
@@ -27,11 +26,12 @@ const PERIODS: DashboardPeriod[] = ['today', '7d', '30d'];
 
 export default function AdminDashboardPage() {
   const { isAuthenticated, ready } = useRequireAdmin();
-  const { version: realtimeVersion } = useAdminRealtime();
   const [period, setPeriod] = useState<DashboardPeriod>('today');
 
   const ordersQuery = useQuery({
-    queryKey: [...adminKeys.orders('all'), realtimeVersion],
+    // Realtime invalida esta query pelo `AdminRealtimeProvider` — não entra
+    // no queryKey (senão troca a identidade e pisca o spinner a cada evento).
+    queryKey: adminKeys.orders('all'),
     enabled: ready && isAuthenticated,
     queryFn: () =>
       apiJson<{ orders: AdminOrderListItem[] }>(

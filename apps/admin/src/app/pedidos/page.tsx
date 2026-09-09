@@ -25,7 +25,6 @@ import {
   type AdminOrderListItem,
 } from '@/modules/admin/types';
 import { type OrderStatus } from '@/modules/orders/types';
-import { useAdminRealtime } from '@/contexts/AdminRealtimeContext';
 
 const DELIVERY_SLIP_STATUSES: OrderStatus[] = [
   'ready_for_delivery',
@@ -49,8 +48,6 @@ export default function AdminPedidosPage() {
   const knownIdsRef = useRef<Set<string> | null>(null);
   const knownStatusRef = useRef<Record<string, OrderStatus>>({});
 
-  const { version: realtimeVersion } = useAdminRealtime();
-
   const storeQuery = useQuery({
     queryKey: adminKeys.store(),
     enabled: ready && isAuthenticated,
@@ -59,7 +56,9 @@ export default function AdminPedidosPage() {
   });
 
   const ordersQuery = useQuery({
-    queryKey: [...adminKeys.orders('all', query.trim()), realtimeVersion],
+    // Realtime invalida esta query pelo `AdminRealtimeProvider` (não vai no
+    // queryKey — senão troca a identidade e pisca o spinner a cada evento).
+    queryKey: adminKeys.orders('all', query.trim()),
     enabled: ready && isAuthenticated,
     queryFn: async () => {
       const params = new URLSearchParams({ scope: 'all' });
