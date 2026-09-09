@@ -4,6 +4,7 @@ import {
   type CustomerOrderListItem,
   type OrderStatus,
 } from '@/modules/orders/types';
+import { mapReviewRow, type ReviewStatus } from '@/modules/reviews/types';
 
 export const ORDER_LIST_SELECT = `
   id,
@@ -80,6 +81,12 @@ export const ORDER_DETAIL_SELECT = `
     new_status,
     actor_type,
     reason,
+    created_at
+  ),
+  order_reviews (
+    rating,
+    comment,
+    status,
     created_at
   )
 `;
@@ -218,7 +225,22 @@ export function mapDetail(row: {
         created_at: string;
       }>
     | null;
+  order_reviews:
+    | {
+        rating: number;
+        comment: string | null;
+        status: ReviewStatus;
+        created_at: string;
+      }
+    | Array<{
+        rating: number;
+        comment: string | null;
+        status: ReviewStatus;
+        created_at: string;
+      }>
+    | null;
 }): CustomerOrder {
+  const review = mapReviewRow(row.order_reviews);
   const addressRaw = Array.isArray(row.order_addresses)
     ? row.order_addresses[0]
     : row.order_addresses;
@@ -286,5 +308,7 @@ export function mapDetail(row: {
       createdAt: entry.created_at,
     })),
     canCancel: canCustomerCancel(row.status),
+    review,
+    canReview: row.status === 'delivered' && review === null,
   };
 }

@@ -8,9 +8,49 @@ Futuras" do [00 - Produto](../00-produto-e-dominio/00%20-%20Produto.md)).
 
 ## Estado
 
-Não iniciado. Fase 1 pode entrar a qualquer momento (barata); Fase 2
-depende do login por SMS (Fase 14 do roadmap — hoje a identidade do cliente
-é temporária, sem login).
+**Fase 1 implementada** (2026-09-08, branch `feat/avaliacoes` — em revisão).
+Fase 2 depende de volume + login por SMS confiável.
+
+### Como ficou (Fase 1)
+
+- Migration `20260909120000_order_reviews.sql`: `public.review_status`
+  (`pending`/`approved`/`hidden`) + `public.order_reviews` (1 por pedido —
+  `unique(order_id)`; `rating` 1–5, `comment` opcional ≤1000, `is_featured`,
+  `customer_display_name` gravado como snapshot). RLS: leitura pública só de
+  `approved && is_featured`; resto é admin-only.
+- **Cliente:** ao entrar em `delivered` o pedido ganha um card "Como foi o
+  seu pedido?" na tela de acompanhamento (estrelas + comentário opcional).
+  O push de `delivered` virou o convite ("Como foi o pedido #N?" → abre
+  `/acompanhamento/{id}?avaliar=1`). Depois de enviar, o card vira "Sua
+  avaliação" com aviso de que passa por revisão.
+  `POST /api/v1/orders/{id}/review` → `submitOrderReview` (confere posse +
+  status `delivered` + 1 por pedido).
+- **Vitrine:** `listPublicTestimonials()` (RLS filtra) alimenta o bloco
+  `<Testimonials>` na home (aba "Todos") e na `/loja`. Sem nenhum aprovado,
+  não renderiza a seção.
+- **Admin:** aba **Avaliações** na sidebar + bottom nav, com contador de
+  pendentes (badge na sidebar, `?count=pending`). Abas Pendentes/Aprovadas/
+  Escondidas; ações Aprovar / Destacar / Esconder. Esconder ou despublicar
+  tira o destaque automaticamente. Detalhe do pedido no admin agora carrega
+  `review` junto (`order_reviews` no `DETAIL_SELECT`).
+- **Testado 2026-09-08** (Supabase local, HTTP real): envio → `pending`;
+  reenvio → 409 `REVIEW_NOT_ALLOWED`; `GET` do pedido traz `review` +
+  `canReview:false`; admin lista/conta/aprova/destaca; home e `/loja`
+  mostram o depoimento; esconder → some da vitrine e perde o destaque.
+- **Follow-up:** cupom/observações no comprovante térmico e no
+  acompanhamento seguem sem a linha de avaliação; nota por produto é Fase 2.
+
+### Decisões travadas (2026-09-08)
+
+1. **Nome no depoimento:** primeiro nome + inicial ("Maria S."), gravado
+   como snapshot na avaliação no momento do envio.
+2. **Mínimo p/ estrela no card do produto:** 3 (só vale na Fase 2).
+3. **Push "como foi seu pedido?":** sim — push ao entrar em `delivered`
+   (quando já há permissão) **+** card de convite na tela de acompanhamento.
+4. **Vitrine:** bloco de depoimentos na **home** e na **página da loja**
+   (`/loja`) — só os aprovados marcados como destaque.
+5. **Moderação:** aba própria **"Avaliações"** na sidebar do admin (+ bottom
+   nav), com contador de pendentes.
 
 ---
 
