@@ -134,6 +134,24 @@ Cada app fixa a região em `vercel.json` (`apps/client/vercel.json` e
 dashboard. Edge Middleware (`proxy.ts`) continua rodando no PoP mais
 próximo do usuário — não é afetado por `regions`.
 
+## Cache do catálogo público
+
+O cardápio (`/`, `/loja`, `/produto/[id]`, `/busca` e `/api/v1/catalog/*`)
+é servido do Data Cache do Next (`unstable_cache`), com TTL de 60 s
+(catálogo/loja) e 300 s (depoimentos). O `apps/admin` **não** usa a camada
+cacheada — lê direto do banco para não mostrar dado velho após gravar.
+
+Como os dois apps são deploys separados (Data Cache independente), o painel
+invalida o cache do cliente por HTTP após cada edição de catálogo/loja:
+`writeAuditLog` dispara `POST {CLIENT_APP_ORIGIN}/api/v1/internal/revalidate`
+com `Authorization: Bearer {CATALOG_REVALIDATE_SECRET}` (via `after()`, sem
+somar latência à mutação). Sem essas duas envs a propagação cai só no TTL.
+
+| Variável | Onde | Valor |
+| --- | --- | --- |
+| `CATALOG_REVALIDATE_SECRET` | **ambos** os apps | `openssl rand -hex 32` — o mesmo nos dois |
+| `CLIENT_APP_ORIGIN` | só `apps/admin` | `https://cardapio.zeloconfeitaria.com.br` |
+
 ---
 
 # Supabase
