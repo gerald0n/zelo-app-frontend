@@ -117,10 +117,16 @@ export async function notifyOrderStatusChange(options: {
     if (!subscriptions.length) return;
 
     const number = options.orderNumber ?? order.order_number;
-    const title = `Zelo · Pedido #${number}`;
-    const body =
-      STATUS_COPY[options.newStatus] ?? statusLabel(options.newStatus);
-    const url = `/acompanhamento/${order.id}`;
+    const isDelivered = options.newStatus === 'delivered';
+    const title = isDelivered
+      ? `Zelo · Como foi o pedido #${number}?`
+      : `Zelo · Pedido #${number}`;
+    const body = isDelivered
+      ? 'Toque para avaliar em 10 segundos — a sua opinião ajuda muito.'
+      : (STATUS_COPY[options.newStatus] ?? statusLabel(options.newStatus));
+    const url = isDelivered
+      ? `/acompanhamento/${order.id}?avaliar=1`
+      : `/acompanhamento/${order.id}`;
 
     await Promise.all(
       subscriptions.map(async (sub) => {

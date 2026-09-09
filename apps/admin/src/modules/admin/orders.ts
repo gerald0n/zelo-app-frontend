@@ -7,6 +7,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/modules/admin/auth';
 import { notifyOrderStatusChange } from '@/modules/notifications/send';
 import { canCustomerCancel, type OrderStatus } from '@/modules/orders/types';
+import { mapReviewRow } from '@/modules/reviews/types';
 import type {
   AdminOrderDetail,
   AdminOrderListItem,
@@ -96,7 +97,8 @@ const DETAIL_SELECT = `
     actor_type,
     reason,
     created_at
-  )
+  ),
+  order_reviews ( rating, comment, status, created_at )
 `;
 
 function formatAddress(parts: {
@@ -287,6 +289,8 @@ export async function getAdminOrder(
       createdAt: entry.created_at,
     })),
     canCancel: canCustomerCancel(data.status as OrderStatus),
+    review: mapReviewRow(data.order_reviews),
+    canReview: false,
     customer: customer
       ? {
           id: customer.id,

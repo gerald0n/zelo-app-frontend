@@ -126,6 +126,21 @@ export type AdminCoupon = {
   endsAt: string | null;
 };
 
+export type ReviewStatus = 'pending' | 'approved' | 'hidden';
+
+export type AdminReview = {
+  id: string;
+  orderId: string;
+  orderNumber: number | null;
+  rating: number;
+  comment: string | null;
+  status: ReviewStatus;
+  isFeatured: boolean;
+  customerDisplayName: string;
+  createdAt: string;
+  moderatedAt: string | null;
+};
+
 export type AdminAuditLog = {
   id: string;
   action: string;

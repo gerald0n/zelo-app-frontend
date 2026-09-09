@@ -36,20 +36,19 @@ não pesar o contexto de toda sessão nova.
 | Doc | Assunto | Status |
 | --- | --- | --- |
 | [103](103%20-%20Painel%20Administrativo.md) | Painel admin: kanban, estoque, comanda manual, impressão, melhorias | Kanban (reescrito 2026-09-06), estoque, melhorias no pedido, comanda manual, impressão térmica (WebUSB, **validada em hardware 2026-09-08**), **Catálogo (resto)**, **Loja/relatórios** e **Push do painel** (2026-09-08, push validado em produção com aparelho real) — **implementados**. **Doc 103 100% fechado.** |
-| [104](104%20-%20Promoções,%20Cupons%20e%20Financeiro.md) | Promoções, cupons, financeiro | Promoções, **Cupons e Financeiro implementados** (2026-09-08). Doc 104 fechado. |
+| [104](104%20-%20Promoções,%20Cupons%20e%20Financeiro.md) | Promoções, cupons, financeiro | Promoções, **Cupons (PR #62) e Financeiro (PR #64) em produção** (2026-09-08, migrations aplicadas no remoto). Doc 104 fechado. Único follow-up: a taxa real do MP só valida num Pix de produção. |
 | [105](105%20-%20Precisão%20do%20Frete.md) | Google Maps: geocodificação, mapa, área de entrega | (a)-(d) **implementados**, drag do pin **validado à mão 2026-09-08**. (e) suavizar taxa adiado; (f) componente único de endereço desbloqueado, não iniciado. |
 | [106](106%20-%20Avaliações%20e%20Depoimentos.md) | Avaliações de pedido + depoimentos | Não iniciado. 3 decisões em aberto. |
 
-**Commits em `develop` que ainda não foram pro `main`** (já enviados a
-`origin/develop`, faltando só o merge/deploy do dono) — checar
-`git log main..develop` pra confirmar se ainda vale.
+**Commits em `develop` que ainda não foram pro `main`** — checar
+`git log main..develop`. Em 2026-09-08 tudo de 103/104 já foi pro `main`
+(último merge: PR #65).
 
-**Migrations pendentes de `supabase db push` no próximo deploy** — checar
-`supabase/migrations/` por arquivos mais recentes que o último deploy
-confirmado. Novas em 2026-09-08: `20260908120000_store_pause.sql`,
-`20260908130000_admin_push_subscriptions.sql` e
-`20260908140000_coupons.sql` e `20260908150000_payment_financials.sql`
-(colunas de taxa/líquido em `orders`, `payment_fee_estimate_bps` em `stores`).
+**Migrations pendentes de `supabase db push`** — checar `supabase/migrations/`
+por arquivos mais recentes que o último deploy confirmado. Em 2026-09-08
+todas foram aplicadas no remoto: `20260908120000_store_pause.sql`,
+`20260908130000_admin_push_subscriptions.sql`,
+`20260908140000_coupons.sql`, `20260908150000_payment_financials.sql`.
 
 ---
 

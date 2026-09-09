@@ -8,13 +8,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useOrderTracking } from '@/app/acompanhamento/[id]/useOrderTracking';
 import { OrderTimeline } from '@/app/acompanhamento/[id]/_components/OrderTimeline';
 import { OrderSummary } from '@/app/acompanhamento/[id]/_components/OrderSummary';
+import { ReviewInvite } from '@/app/acompanhamento/[id]/_components/ReviewInvite';
 
 function AcompanhamentoContent({ id }: { id: string }) {
   const searchParams = useSearchParams();
   const from = searchParams.get('from');
   const router = useRouter();
 
-  const { order, loading, error, reordering, reorder } = useOrderTracking(id);
+  const { order, loading, error, reordering, reorder, refetch } =
+    useOrderTracking(id);
+  const wantsReview = searchParams.get('avaliar') === '1';
 
   if (loading && !order) {
     return (
@@ -75,6 +78,15 @@ function AcompanhamentoContent({ id }: { id: string }) {
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 py-3 pb-6 lg:grid lg:grid-cols-3 lg:items-start lg:gap-5 lg:px-0">
+        {order.review || order.canReview ? (
+          <div className="lg:col-span-2">
+            <ReviewInvite
+              order={order}
+              autoFocus={wantsReview}
+              onSubmitted={refetch}
+            />
+          </div>
+        ) : null}
         <OrderTimeline order={order} />
         <OrderSummary
           order={order}

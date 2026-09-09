@@ -719,6 +719,63 @@ export type Database = {
           },
         ];
       };
+      order_reviews: {
+        Row: {
+          comment: string | null;
+          created_at: string;
+          customer_display_name: string;
+          customer_id: string | null;
+          id: string;
+          is_featured: boolean;
+          moderated_at: string | null;
+          order_id: string;
+          rating: number;
+          status: Database['public']['Enums']['review_status'];
+          updated_at: string;
+        };
+        Insert: {
+          comment?: string | null;
+          created_at?: string;
+          customer_display_name: string;
+          customer_id?: string | null;
+          id?: string;
+          is_featured?: boolean;
+          moderated_at?: string | null;
+          order_id: string;
+          rating: number;
+          status?: Database['public']['Enums']['review_status'];
+          updated_at?: string;
+        };
+        Update: {
+          comment?: string | null;
+          created_at?: string;
+          customer_display_name?: string;
+          customer_id?: string | null;
+          id?: string;
+          is_featured?: boolean;
+          moderated_at?: string | null;
+          order_id?: string;
+          rating?: number;
+          status?: Database['public']['Enums']['review_status'];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'order_reviews_customer_id_fkey';
+            columns: ['customer_id'];
+            isOneToOne: false;
+            referencedRelation: 'customers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'order_reviews_order_id_fkey';
+            columns: ['order_id'];
+            isOneToOne: true;
+            referencedRelation: 'orders';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       order_status_history: {
         Row: {
           actor_id: string | null;
@@ -1733,6 +1790,7 @@ export type Database = {
       payment_method: 'pix' | 'cash' | 'card';
       payment_status:
         'pending' | 'confirmed' | 'failed' | 'cancelled' | 'refunded';
+      review_status: 'pending' | 'approved' | 'hidden';
       status_change_actor_type: 'customer' | 'admin' | 'system';
     };
     CompositeTypes: {
@@ -1881,6 +1939,7 @@ export const Constants = {
         'cancelled',
         'refunded',
       ],
+      review_status: ['pending', 'approved', 'hidden'],
       status_change_actor_type: ['customer', 'admin', 'system'],
     },
   },
