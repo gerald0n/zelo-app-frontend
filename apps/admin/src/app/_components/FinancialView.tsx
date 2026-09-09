@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Loader2, RotateCcw, Wallet } from 'lucide-react';
-import { useAdminRealtime } from '@/contexts/AdminRealtimeContext';
 import { apiJson } from '@/lib/api';
 import { adminKeys } from '@/lib/query-keys';
 import { formatCatalogPrice } from '@/modules/catalog/types';
@@ -39,9 +38,9 @@ function Line({
 }
 
 export function FinancialView({ period }: { period: ReportPeriod }) {
-  const { version } = useAdminRealtime();
   const query = useQuery({
-    queryKey: [...adminKeys.reports(`fin-${period}`), version],
+    // Realtime invalida via `AdminRealtimeProvider` — fora do queryKey.
+    queryKey: adminKeys.reports(`fin-${period}`),
     queryFn: () =>
       apiJson<FinancialReport>(
         `/api/v1/admin/reports?kind=financial&period=${period}`,

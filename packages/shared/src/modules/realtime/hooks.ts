@@ -26,8 +26,15 @@ function bindVisibilityRefetch(onSignal: () => void) {
 }
 
 /**
+ * Durante o expediente os pedidos mudam de status em rajada — sem esperar o
+ * silêncio, cada evento viraria um refetch. Agrupa a rajada num sinal só.
+ */
+const REALTIME_SIGNAL_DEBOUNCE_MS = 800;
+
+/**
  * Canal administrativo: novos pedidos e mudanças de status (RLS admin).
- * Retorna um contador que incrementa a cada sinal — a UI deve refetch o estado persistido.
+ * Retorna um contador (`version`) que incrementa quando o Realtime sinaliza,
+ * já com debounce — a UI usa isso para invalidar/refetch o estado persistido.
  */
 export function useAdminOrdersRealtime(enabled: boolean) {
   const [status, setStatus] = useState<RealtimeStatus>('idle');
@@ -40,9 +47,14 @@ export function useAdminOrdersRealtime(enabled: boolean) {
     let cancelled = false;
     let supabase: ReturnType<typeof createEphemeralSupabaseClient> | null =
       null;
+    let debounce: ReturnType<typeof setTimeout> | undefined;
 
     const bump = () => {
-      setVersion((current) => current + 1);
+      if (cancelled) return;
+      clearTimeout(debounce);
+      debounce = setTimeout(() => {
+        if (!cancelled) setVersion((current) => current + 1);
+      }, REALTIME_SIGNAL_DEBOUNCE_MS);
     };
 
     const connect = async () => {
@@ -115,6 +127,7 @@ export function useAdminOrdersRealtime(enabled: boolean) {
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
+      clearTimeout(debounce);
       unbind();
       if (channel && supabase) {
         void supabase.removeChannel(channel);

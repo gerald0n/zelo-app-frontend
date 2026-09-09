@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Ban, ChefHat, Loader2 } from 'lucide-react';
-import { useAdminRealtime } from '@/contexts/AdminRealtimeContext';
 import { apiJson } from '@/lib/api';
 import { adminKeys } from '@/lib/query-keys';
 import { formatCatalogPrice } from '@/modules/catalog/types';
@@ -10,9 +9,9 @@ import type { OperationsReport, ReportPeriod } from '@/modules/admin/reports';
 import { ReportBar } from '@/app/_components/ReportBar';
 
 export function OperationsView({ period }: { period: ReportPeriod }) {
-  const { version } = useAdminRealtime();
   const query = useQuery({
-    queryKey: [...adminKeys.reports(`op-${period}`), version],
+    // Realtime invalida via `AdminRealtimeProvider` — fora do queryKey.
+    queryKey: adminKeys.reports(`op-${period}`),
     queryFn: () =>
       apiJson<OperationsReport>(`/api/v1/admin/reports?period=${period}`),
   });
