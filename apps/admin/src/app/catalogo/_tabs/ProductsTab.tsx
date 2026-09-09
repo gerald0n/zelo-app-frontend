@@ -288,6 +288,13 @@ export function ProductsTab({
         view={view}
         selectedIds={selectedIds}
         reorderable={sort === 'manual'}
+        pendingProductId={
+          patchMutation.isPending
+            ? (patchMutation.variables?.id ?? null)
+            : duplicateMutation.isPending
+              ? (duplicateMutation.variables ?? null)
+              : null
+        }
         onToggleSelect={toggleSelect}
         onEdit={openProductForm}
         onArchive={confirmArchive}

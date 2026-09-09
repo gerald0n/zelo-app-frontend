@@ -7,7 +7,7 @@ import { apiJson } from '@/lib/api';
 import { adminKeys } from '@/lib/query-keys';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import type { OperationsReport, ReportPeriod } from '@/modules/admin/reports';
-import { ReportBar } from '@/app/relatorios/_components/ReportBar';
+import { ReportBar } from '@/app/_components/ReportBar';
 
 export function OperationsView({ period }: { period: ReportPeriod }) {
   const { version } = useAdminRealtime();

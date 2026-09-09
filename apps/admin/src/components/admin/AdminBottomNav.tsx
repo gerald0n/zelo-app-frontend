@@ -5,7 +5,6 @@ import {
   Grid2x2,
   Receipt,
   UtensilsCrossed,
-  BarChart3,
   Star,
   Settings,
 } from 'lucide-react';
@@ -22,20 +21,13 @@ const TABS = [
     href: '/pedidos',
     label: 'Pedidos',
     icon: Receipt,
-    match: (p: string) =>
-      p.startsWith('/pedidos') || p.startsWith('/pedido'),
+    match: (p: string) => p.startsWith('/pedidos') || p.startsWith('/pedido'),
   },
   {
     href: '/catalogo',
     label: 'Catálogo',
     icon: UtensilsCrossed,
     match: (p: string) => p.startsWith('/catalogo'),
-  },
-  {
-    href: '/relatorios',
-    label: 'Relatórios',
-    icon: BarChart3,
-    match: (p: string) => p.startsWith('/relatorios'),
   },
   {
     href: '/avaliacoes',

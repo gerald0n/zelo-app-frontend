@@ -1,11 +1,15 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ApiError, apiJson } from '@/lib/api';
+import { reaisToCents, type ProductForm } from '@/app/catalogo/catalog-forms';
 import {
-  reaisToCents,
-  type ProductForm,
-} from '@/app/catalogo/catalog-forms';
+  patchCatalogItem,
+  removeCatalogItem,
+  reorderCatalogProducts,
+  rollbackCatalog,
+  type CatalogRollback,
+} from '@/lib/admin/catalog-cache';
 import type { AdminProduct } from '@/modules/admin/types';
 
 type Options = {
@@ -24,6 +28,8 @@ export function useProductMutations({
   onProductSaved,
   onBulkDone,
 }: Options) {
+  const queryClient = useQueryClient();
+
   const productMutation = useMutation({
     mutationFn: async (values: ProductForm) => {
       const payload = {
@@ -74,10 +80,24 @@ export function useProductMutations({
         method: 'PATCH',
         body: JSON.stringify(input.body),
       }),
-    onSuccess: invalidateCatalog,
-    onError: (error) => {
+    onMutate: (input): Promise<CatalogRollback> => {
+      onError('');
+      // `archive: true` tira o produto da lista; qualquer outro corpo é um
+      // merge raso (alternar disponibilidade, ativar/desativar, etc.).
+      return input.body.archive === true
+        ? removeCatalogItem(queryClient, 'products', input.id)
+        : patchCatalogItem(
+            queryClient,
+            'products',
+            input.id,
+            input.body as Partial<AdminProduct>,
+          );
+    },
+    onError: (error, _input, context) => {
+      rollbackCatalog(queryClient, context);
       onError(error instanceof ApiError ? error.message : 'Falha na operação.');
     },
+    onSettled: invalidateCatalog,
   });
 
   const bulkMutation = useMutation({
@@ -94,14 +114,33 @@ export function useProductMutations({
         ),
       );
     },
-    onSuccess: async () => {
+    onMutate: async (input): Promise<CatalogRollback> => {
+      onError('');
+      let ctx: CatalogRollback = { previous: undefined };
+      for (const id of input.ids) {
+        const step =
+          input.body.archive === true
+            ? await removeCatalogItem(queryClient, 'products', id)
+            : await patchCatalogItem(
+                queryClient,
+                'products',
+                id,
+                input.body as Partial<AdminProduct>,
+              );
+        // Guarda só o 1º retrato — é o estado anterior a todo o lote.
+        if (!ctx.previous) ctx = step;
+      }
+      return ctx;
+    },
+    onSuccess: () => {
       onError('');
       onBulkDone();
-      await invalidateCatalog();
     },
-    onError: (error) => {
+    onError: (error, _input, context) => {
+      rollbackCatalog(queryClient, context);
       onError(error instanceof ApiError ? error.message : 'Falha em lote.');
     },
+    onSettled: invalidateCatalog,
   });
 
   const reorderProductsMutation = useMutation({
@@ -110,17 +149,19 @@ export function useProductMutations({
         method: 'PUT',
         body: JSON.stringify({ orderedIds }),
       }),
-    onSuccess: async () => {
+    onMutate: (orderedIds): Promise<CatalogRollback> => {
       onError('');
-      await invalidateCatalog();
+      return reorderCatalogProducts(queryClient, orderedIds);
     },
-    onError: (error) => {
+    onError: (error, _input, context) => {
+      rollbackCatalog(queryClient, context);
       onError(
         error instanceof ApiError
           ? error.message
           : 'Falha ao reordenar os produtos.',
       );
     },
+    onSettled: invalidateCatalog,
   });
 
   const duplicateMutation = useMutation({
@@ -134,7 +175,9 @@ export function useProductMutations({
     },
     onError: (error) => {
       onError(
-        error instanceof ApiError ? error.message : 'Falha ao duplicar produto.',
+        error instanceof ApiError
+          ? error.message
+          : 'Falha ao duplicar produto.',
       );
     },
   });
@@ -208,7 +251,9 @@ export function useProductMutations({
     },
     onError: (error) => {
       onError(
-        error instanceof ApiError ? error.message : 'Falha ao remover a imagem.',
+        error instanceof ApiError
+          ? error.message
+          : 'Falha ao remover a imagem.',
       );
     },
   });

@@ -15,6 +15,8 @@ import type { AdminProduct } from '@/modules/admin/types';
 
 type Props = {
   product: AdminProduct;
+  /** Mutação de disponibilidade/duplicar em voo — trava o switch e o duplicar. */
+  pending: boolean;
   onEdit: (product: AdminProduct) => void;
   onArchive: (product: AdminProduct) => void;
   onDuplicate: (product: AdminProduct) => void;
@@ -31,6 +33,7 @@ type Props = {
 
 export function ProductListRow({
   product,
+  pending,
   onEdit,
   onArchive,
   onDuplicate,
@@ -124,7 +127,8 @@ export function ProductListRow({
       <button
         type="button"
         onClick={() => onDuplicate(product)}
-        className="rounded-md border border-border p-1.5 text-muted-foreground"
+        disabled={pending}
+        className="rounded-md border border-border p-1.5 text-muted-foreground disabled:opacity-60"
         aria-label="Duplicar produto"
       >
         <Copy className="size-3.5" />
@@ -141,9 +145,10 @@ export function ProductListRow({
         type="button"
         role="switch"
         aria-checked={product.isAvailable}
+        disabled={pending}
         onClick={() => onToggleAvailability(product)}
         className={cn(
-          'relative h-6 w-11 shrink-0 rounded-full transition-colors',
+          'relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60',
           product.isAvailable ? 'bg-primary' : 'bg-muted',
         )}
       >

@@ -11,6 +11,8 @@ type Props = {
   selectedIds: Set<string>;
   /** Mostra as setas ↑/↓ na lista (só quando a ordenação "Manual" está ativa). */
   reorderable: boolean;
+  /** Produto com uma mutação (disponibilidade/duplicar) em voo — trava os controles. */
+  pendingProductId: string | null;
   onToggleSelect: (product: AdminProduct) => void;
   onEdit: (product: AdminProduct) => void;
   onArchive: (product: AdminProduct) => void;
@@ -25,6 +27,7 @@ export function ProductCollection({
   view,
   selectedIds,
   reorderable,
+  pendingProductId,
   onToggleSelect,
   onEdit,
   onArchive,
@@ -49,6 +52,7 @@ export function ProductCollection({
             key={product.id}
             product={product}
             selected={selectedIds.has(product.id)}
+            pending={product.id === pendingProductId}
             onToggleSelect={onToggleSelect}
             onEdit={onEdit}
             onArchive={onArchive}
@@ -67,6 +71,7 @@ export function ProductCollection({
         <ProductListRow
           key={product.id}
           product={product}
+          pending={product.id === pendingProductId}
           onEdit={onEdit}
           onArchive={onArchive}
           onDuplicate={onDuplicate}

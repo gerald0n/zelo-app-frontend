@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 import { ApiError, apiJson } from '@/lib/api';
+import { removeCatalogItem, rollbackCatalog } from '@/lib/admin/catalog-cache';
 import {
   isoToLocal,
   localToIso,
@@ -37,6 +38,7 @@ export function PromotionsTab({
   onError,
 }: Props) {
   const { confirm } = useAppDialog();
+  const queryClient = useQueryClient();
   const [editingPromotion, setEditingPromotion] =
     useState<AdminPromotion | null>(null);
   const [showPromotionForm, setShowPromotionForm] = useState(false);
@@ -95,7 +97,19 @@ export function PromotionsTab({
   const deletePromotionMutation = useMutation({
     mutationFn: (promotionId: string) =>
       apiJson(`/api/v1/admin/promotions/${promotionId}`, { method: 'DELETE' }),
-    onSuccess: invalidateCatalog,
+    onMutate: (promotionId) => {
+      onError('');
+      return removeCatalogItem(queryClient, 'promotions', promotionId);
+    },
+    onError: (error, _id, context) => {
+      rollbackCatalog(queryClient, context);
+      onError(
+        error instanceof ApiError
+          ? error.message
+          : 'Falha ao remover a promoção.',
+      );
+    },
+    onSettled: invalidateCatalog,
   });
 
   const openPromotionForm = (promotion?: AdminPromotion) => {

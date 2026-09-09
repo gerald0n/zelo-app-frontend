@@ -20,6 +20,8 @@ import {
 import { DashboardStats } from '@/app/_components/DashboardStats';
 import { SalesChart } from '@/app/_components/SalesChart';
 import { TopProducts } from '@/app/_components/TopProducts';
+import { OperationsView } from '@/app/_components/OperationsView';
+import { FinancialView } from '@/app/_components/FinancialView';
 
 const PERIODS: DashboardPeriod[] = ['today', '7d', '30d'];
 
@@ -74,8 +76,8 @@ export default function AdminDashboardPage() {
             Visão geral do ateliê
           </h1>
           <p className="mt-1 max-w-prose text-xs text-muted-foreground">
-            Faturamento, volume de pedidos e velocidade de atendimento em tempo
-            real.
+            Faturamento, volume de pedidos e velocidade de atendimento — mais
+            cancelamentos, produção e financeiro — em tempo real.
           </p>
         </div>
         <div className="flex rounded-lg border border-border bg-card p-0.5">
@@ -109,6 +111,12 @@ export default function AdminDashboardPage() {
             <SalesChart buckets={data.buckets} dense={period === '30d'} />
             <TopProducts products={data.topProducts} />
           </div>
+
+          <h2 className="font-serif text-base font-bold pt-1">Operação</h2>
+          <OperationsView period={period} />
+
+          <h2 className="font-serif text-base font-bold pt-1">Financeiro</h2>
+          <FinancialView period={period} />
 
           <div className="flex items-center justify-between pt-1">
             <h2 className="font-serif text-base font-bold">Pedidos ativos</h2>
