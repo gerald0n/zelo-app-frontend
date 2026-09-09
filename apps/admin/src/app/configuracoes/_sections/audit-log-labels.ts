@@ -30,7 +30,8 @@ const ACTION_LABELS: Record<string, string> = {
   'store.blackout.delete': 'Bloqueio de agenda removido',
   'store.pause': 'Loja pausada',
   'store.resume': 'Loja reaberta',
-  'review.moderate': 'Avaliação moderada',
+  'review.moderate': 'Avaliação de pedido moderada',
+  'product_review.moderate': 'Avaliação de produto moderada',
 };
 
 export function actionLabel(action: string): string {
@@ -141,7 +142,10 @@ export function auditDetail(log: AdminAuditLog): string | null {
     return parts.length ? parts.join(' · ') : null;
   }
 
-  if (log.action === 'review.moderate') {
+  if (
+    log.action === 'review.moderate' ||
+    log.action === 'product_review.moderate'
+  ) {
     const status = asString(meta.status);
     const parts: string[] = [];
     if (status) parts.push(REVIEW_STATUS_PT[status] ?? status);
