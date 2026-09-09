@@ -1,10 +1,10 @@
-import { listPublicProducts } from '@/modules/catalog/catalog-repository';
+import { listCachedPublicProducts } from '@/modules/catalog/cached-catalog';
 import BuscaClient from '@/components/BuscaClient';
 
 export const dynamic = 'force-dynamic';
 
 export default async function BuscaPage() {
-  const products = await listPublicProducts();
+  const products = await listCachedPublicProducts();
 
   if (!products.ok) {
     return (
