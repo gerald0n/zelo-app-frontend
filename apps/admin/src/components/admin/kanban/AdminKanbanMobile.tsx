@@ -9,8 +9,8 @@ import {
   LANES,
   type BoardColumn,
   type LaneKey,
-  columnLabel,
   columnOf,
+  columnShortLabel,
   columnsForLane,
   laneOf,
 } from '@/lib/admin/kanban-board';
@@ -69,7 +69,7 @@ export default function AdminKanbanMobile({
     : [];
 
   return (
-    <div className="space-y-2.5 px-3 pb-7 pt-24 sm:pt-16 lg:hidden">
+    <div className="space-y-2.5 px-3 pb-7 pt-16 lg:hidden">
       <div className="flex rounded-md bg-muted p-0.5">
         {LANES.map((item) => {
           const total = orders.filter(
@@ -111,7 +111,7 @@ export default function AdminKanbanMobile({
                 : 'border-border bg-card',
             )}
           >
-            {columnLabel(columnStatus)} ({countFor(columnStatus)})
+            {columnShortLabel(columnStatus)} ({countFor(columnStatus)})
           </button>
         ))}
       </div>
@@ -141,6 +141,7 @@ export default function AdminKanbanMobile({
                 onAdvance={onAdvance}
                 onCancel={onCancel}
                 busy={busyOrderId === order.id}
+                roomy
               />
             </div>
           ))}

@@ -22,7 +22,7 @@ type Props = {
 };
 
 const selectClass =
-  'h-9 rounded-md border border-border bg-card px-2.5 text-xs font-semibold text-foreground outline-none focus-visible:border-ring';
+  'h-9 min-w-0 flex-1 rounded-md border border-border bg-card px-2.5 text-xs font-semibold text-foreground outline-none focus-visible:border-ring lg:flex-none';
 
 export function ProductToolbar({
   query,
@@ -47,64 +47,68 @@ export function ProductToolbar({
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <select
-          value={status}
-          onChange={(e) => onStatus(e.target.value as ProductStatusFilter)}
-          className={selectClass}
-          aria-label="Filtrar por status"
-        >
-          <option value="all">Status: Todos</option>
-          <option value="available">Disponíveis</option>
-          <option value="paused">Pausados</option>
-          <option value="low">Estoque baixo</option>
-        </select>
+      <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
+        <div className="flex gap-2">
+          <select
+            value={status}
+            onChange={(e) => onStatus(e.target.value as ProductStatusFilter)}
+            className={selectClass}
+            aria-label="Filtrar por status"
+          >
+            <option value="all">Status: Todos</option>
+            <option value="available">Disponíveis</option>
+            <option value="paused">Pausados</option>
+            <option value="low">Estoque baixo</option>
+          </select>
 
-        <select
-          value={sort}
-          onChange={(e) => onSort(e.target.value as ProductSort)}
-          className={selectClass}
-          aria-label="Ordenar"
-        >
-          <option value="manual">Ordenar: Manual</option>
-          <option value="name">Nome</option>
-          <option value="price-desc">Maior preço</option>
-          <option value="price-asc">Menor preço</option>
-          <option value="stock-asc">Menor estoque</option>
-        </select>
-
-        <div className="flex overflow-hidden rounded-md border border-border">
-          {(['grid', 'list'] as const).map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => onView(mode)}
-              aria-pressed={view === mode}
-              aria-label={mode === 'grid' ? 'Grade' : 'Lista'}
-              className={cn(
-                'flex size-9 items-center justify-center transition-colors',
-                view === mode
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-card text-muted-foreground hover:bg-accent',
-              )}
-            >
-              {mode === 'grid' ? (
-                <LayoutGrid className="size-4" />
-              ) : (
-                <List className="size-4" />
-              )}
-            </button>
-          ))}
+          <select
+            value={sort}
+            onChange={(e) => onSort(e.target.value as ProductSort)}
+            className={selectClass}
+            aria-label="Ordenar"
+          >
+            <option value="manual">Ordenar: Manual</option>
+            <option value="name">Nome</option>
+            <option value="price-desc">Maior preço</option>
+            <option value="price-asc">Menor preço</option>
+            <option value="stock-asc">Menor estoque</option>
+          </select>
         </div>
 
-        <button
-          type="button"
-          onClick={onNew}
-          className="flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          <Plus className="size-4" />
-          Novo produto
-        </button>
+        <div className="flex gap-2">
+          <div className="flex shrink-0 overflow-hidden rounded-md border border-border">
+            {(['grid', 'list'] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => onView(mode)}
+                aria-pressed={view === mode}
+                aria-label={mode === 'grid' ? 'Grade' : 'Lista'}
+                className={cn(
+                  'flex size-9 items-center justify-center transition-colors',
+                  view === mode
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-card text-muted-foreground hover:bg-accent',
+                )}
+              >
+                {mode === 'grid' ? (
+                  <LayoutGrid className="size-4" />
+                ) : (
+                  <List className="size-4" />
+                )}
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={onNew}
+            className="flex h-9 items-center justify-center gap-1.5 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 max-lg:flex-1"
+          >
+            <Plus className="size-4" />
+            Novo produto
+          </button>
+        </div>
       </div>
     </div>
   );
