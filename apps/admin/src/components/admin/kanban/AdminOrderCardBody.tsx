@@ -25,6 +25,8 @@ type Props = {
   busy: boolean;
   /** `true` só no clone renderizado no overlay de arraste — muda a moldura. */
   dragging?: boolean;
+  /** Lista do celular: uma coluna só, então o card pode respirar mais. */
+  roomy?: boolean;
   className?: string;
 };
 
@@ -48,6 +50,7 @@ export default function AdminOrderCardBody({
   onCancel,
   busy,
   dragging = false,
+  roomy = false,
   className,
 }: Props) {
   const updatedAt = new Date(order.updatedAt).getTime();
@@ -61,6 +64,7 @@ export default function AdminOrderCardBody({
     <div
       className={cn(
         'space-y-1.5 rounded-lg border bg-card p-2.5 transition-shadow',
+        roomy && 'p-3',
         URGENCY_BORDER[urgency],
         dragging && 'shadow-lg',
         busy && 'opacity-60',
@@ -69,8 +73,20 @@ export default function AdminOrderCardBody({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold tabular-nums">{order.number}</p>
-          <p className="mt-0.5 truncate text-2xs text-muted-foreground">
+          <p
+            className={cn(
+              'font-bold tabular-nums',
+              roomy ? 'text-base' : 'text-sm',
+            )}
+          >
+            {order.number}
+          </p>
+          <p
+            className={cn(
+              'mt-0.5 truncate text-muted-foreground',
+              roomy ? 'text-xs' : 'text-2xs',
+            )}
+          >
             {order.customerName ?? 'Cliente'}
             {order.isGuest ? ' · Avulso' : ''}
           </p>
@@ -85,7 +101,12 @@ export default function AdminOrderCardBody({
         </span>
       </div>
 
-      <p className="line-clamp-2 text-xs leading-snug text-muted-foreground">
+      <p
+        className={cn(
+          'line-clamp-2 leading-snug text-muted-foreground',
+          roomy ? 'text-sm' : 'text-xs',
+        )}
+      >
         {order.items
           .map((item) => `${item.quantity}× ${item.name}`)
           .join(' · ')}
@@ -130,7 +151,10 @@ export default function AdminOrderCardBody({
               event.stopPropagation();
               onAdvance(order, next);
             }}
-            className="flex flex-1 items-center justify-center gap-1 rounded-md bg-primary py-1.5 text-2xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:opacity-50"
+            className={cn(
+              'flex flex-1 items-center justify-center gap-1 rounded-md bg-primary font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:opacity-50',
+              roomy ? 'py-2 text-xs' : 'py-1.5 text-2xs',
+            )}
           >
             {statusLabel(next)}
             <ArrowRight className="size-3" />

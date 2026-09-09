@@ -68,6 +68,22 @@ export function columnLabel(column: BoardColumn): string {
   return column === 'agendados' ? 'Agendados' : statusLabel(column);
 }
 
+/** Rótulo curto para os chips do quadro no celular (cabem mais na tela). */
+const SHORT_COLUMN_LABEL: Partial<Record<OrderStatus, string>> = {
+  received: 'Recebido',
+  confirmed: 'Confirmado',
+  in_production: 'Produção',
+  ready_for_pickup: 'Pronto',
+  ready_for_delivery: 'Pronto',
+  out_for_delivery: 'Saiu',
+  delivered: 'Entregue',
+};
+
+export function columnShortLabel(column: BoardColumn): string {
+  if (column === 'agendados') return 'Agendados';
+  return SHORT_COLUMN_LABEL[column] ?? statusLabel(column);
+}
+
 /** Colunas visíveis de uma raia, já aplicando o filtro "ocultar entregues". */
 export function columnsForLane(
   lane: LaneKey,
