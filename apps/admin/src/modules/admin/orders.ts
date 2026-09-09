@@ -51,6 +51,8 @@ const DETAIL_SELECT = `
   add_ons_total_cents,
   delivery_fee_cents,
   total_cents,
+  coupon_code,
+  coupon_discount_cents,
   needs_change,
   change_for_amount_cents,
   customer_note,
@@ -238,6 +240,8 @@ export async function getAdminOrder(
     subtotalCents: data.subtotal_cents + data.add_ons_total_cents,
     deliveryFeeCents: data.delivery_fee_cents,
     totalCents: data.total_cents,
+    couponCode: data.coupon_code,
+    couponDiscountCents: data.coupon_discount_cents ?? 0,
     needsChange: data.needs_change,
     changeForAmountCents: data.change_for_amount_cents,
     customerNote: data.customer_note,
@@ -333,4 +337,3 @@ export async function transitionAdminOrderStatus(options: {
   }
   return order;
 }
-

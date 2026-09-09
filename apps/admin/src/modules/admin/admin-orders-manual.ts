@@ -33,6 +33,7 @@ export async function createManualAdminOrder(input: {
   paymentMethod: 'cash' | 'card';
   alreadyPaid: boolean;
   customerNote?: string | null;
+  couponCode?: string | null;
 }): Promise<Result<AdminOrderDetail>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
@@ -70,6 +71,9 @@ export async function createManualAdminOrder(input: {
       payment_method: input.paymentMethod,
       already_paid: input.alreadyPaid,
       customer_note: input.customerNote ?? null,
+      coupon_code: input.couponCode
+        ? input.couponCode.trim().toUpperCase()
+        : null,
     },
   });
 

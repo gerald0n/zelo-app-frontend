@@ -35,6 +35,7 @@ export const createOrderBodySchema = z.object({
   needsChange: z.boolean().optional(),
   changeForAmountCents: z.number().int().positive().optional(),
   customerNote: z.string().max(1000).optional(),
+  couponCode: z.string().trim().min(3).max(32).optional(),
   address: addressSchema.optional(),
   items: z.array(orderItemSchema).min(1),
 });
@@ -48,6 +49,8 @@ export type CreatedOrderSummary = {
   totalCents: number;
   deliveryFeeCents: number;
   subtotalCents: number;
+  couponCode: string | null;
+  couponDiscountCents: number;
   routeDistanceMeters: number | null;
 };
 

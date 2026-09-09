@@ -52,6 +52,7 @@ const DEFAULTS: ManualOrderForm = {
   alreadyPaid: false,
   source: 'balcao',
   customerNote: '',
+  couponCode: '',
 };
 
 function readDraft(): Draft | null {

@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { useCheckout } from '@/contexts/CheckoutContext';
 import { useCart } from '@/contexts/CartContext';
-import { Separator } from '@/components/ui/separator';
 import CheckoutProgress from '@/components/CheckoutProgress';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import { cn } from '@/lib/cn';
@@ -25,6 +24,11 @@ import {
 } from '@/lib/layout';
 import { randomUUID } from '@/lib/random-id';
 import { useAppDialog } from '@/contexts/AppDialogContext';
+import {
+  CouponField,
+  type AppliedCoupon,
+} from '@/app/checkout/revisao/_components/CouponField';
+import { OrderTotals } from '@/app/checkout/revisao/_components/OrderTotals';
 
 const PAYMENT_LABELS = {
   pix: 'Pix',
@@ -81,10 +85,17 @@ export default function RevisaoPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [idempotencyKey] = useState(() => randomUUID());
+  const [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
 
   const deliveryFee =
     checkout.deliveryType === 'delivery' ? checkout.deliveryFeeCents : 0;
-  const total = subtotal + deliveryFee;
+  const couponDiscount = coupon
+    ? coupon.discountType === 'free_shipping'
+      ? deliveryFee
+      : Math.min(coupon.discountCents, subtotal)
+    : 0;
+  const total = Math.max(0, subtotal + deliveryFee - couponDiscount);
+  const productIds = [...new Set(items.map((item) => item.productId))];
 
   const handleConfirm = async () => {
     if (submitting || items.length === 0) return;
@@ -116,6 +127,7 @@ export default function RevisaoPage() {
           ? Math.round(parseFloat(checkout.changeFor.replace(',', '.')) * 100)
           : undefined,
       customerNote: checkout.note || undefined,
+      couponCode: coupon?.code,
       address:
         checkout.deliveryType === 'delivery'
           ? {
@@ -258,32 +270,22 @@ export default function RevisaoPage() {
             ) : null}
           </SummaryBlock>
 
-          <div className="space-y-2 rounded-xl border border-border bg-card p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Subtotal</span>
-              <span className="text-sm font-medium tabular-nums">
-                {formatCatalogPrice(subtotal)}
-              </span>
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Entrega</span>
-              <span
-                className={`text-sm font-medium tabular-nums ${checkout.deliveryType === 'pickup' || deliveryFee === 0 ? 'text-success' : ''}`}
-              >
-                {checkout.deliveryType === 'pickup' || deliveryFee === 0
-                  ? 'Grátis'
-                  : formatCatalogPrice(deliveryFee)}
-              </span>
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold">Total</span>
-              <span className="text-base font-bold tabular-nums">
-                {formatCatalogPrice(total)}
-              </span>
-            </div>
-          </div>
+          <CouponField
+            subtotalCents={subtotal}
+            deliveryFeeCents={deliveryFee}
+            productIds={productIds}
+            applied={coupon}
+            onChange={setCoupon}
+          />
+
+          <OrderTotals
+            subtotal={subtotal}
+            deliveryFee={deliveryFee}
+            couponDiscount={couponDiscount}
+            coupon={coupon}
+            isPickup={checkout.deliveryType === 'pickup'}
+            total={total}
+          />
 
           {error ? (
             <p className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">

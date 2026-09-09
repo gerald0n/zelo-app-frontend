@@ -2,18 +2,21 @@ import { z } from 'zod';
 import type {
   AdminAddon,
   AdminCategory,
+  AdminCoupon,
   AdminProduct,
   AdminPromotion,
   PromotionScope,
 } from '@/modules/admin/types';
 
-export type Tab = 'products' | 'categories' | 'addons' | 'promotions';
+export type Tab =
+  'products' | 'categories' | 'addons' | 'promotions' | 'coupons';
 
 export type CatalogResponse = {
   categories: AdminCategory[];
   products: AdminProduct[];
   addons: AdminAddon[];
   promotions: AdminPromotion[];
+  coupons: AdminCoupon[];
 };
 
 export const categorySchema = z.object({

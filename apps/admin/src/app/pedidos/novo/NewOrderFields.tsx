@@ -113,6 +113,14 @@ export function PaymentFields({ form }: FieldProps) {
         Pagamento já confirmado
       </Label>
       <Label className="block text-xs font-semibold">
+        Cupom (opcional)
+        <Input
+          {...form.register('couponCode')}
+          placeholder="BOLO10"
+          className={`${field} uppercase`}
+        />
+      </Label>
+      <Label className="block text-xs font-semibold">
         Observação da comanda (opcional)
         <Input {...form.register('customerNote')} className={field} />
       </Label>
