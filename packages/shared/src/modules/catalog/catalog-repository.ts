@@ -5,6 +5,7 @@ import { logger } from '@/lib/logger';
 import { createPublicSupabaseClient } from '@/lib/supabase/public';
 import { hasSupabasePublicConfig } from '@/config/env';
 import { mapCategory, mapProduct, mapStore } from '@/modules/catalog/mappers';
+import { listProductRatings } from '@/modules/catalog/product-ratings';
 import type { ActivePromotion } from '@/modules/catalog/promotions';
 import type {
   CatalogCategory,
@@ -62,45 +63,6 @@ async function listActivePromotions(
     categoryIds: (row.promotion_categories ?? []).map((c) => c.category_id),
     productIds: (row.promotion_products ?? []).map((p) => p.product_id),
   }));
-}
-
-/**
- * Média + volume de avaliações aprovadas por produto. A policy
- * `product_reviews_public_read` já limita a `status = 'approved'`, então um
- * `select` simples basta. Falha em silêncio: avaliação fora do ar não pode
- * derrubar o cardápio.
- */
-async function listProductRatings(
-  supabase: SupabaseClient<Database>,
-): Promise<Map<string, { average: number; count: number }>> {
-  const { data, error } = await supabase
-    .from('product_reviews')
-    .select('product_id, rating')
-    .eq('status', 'approved');
-
-  if (error) {
-    logger.error('Falha ao ler avaliações de produto', {
-      message: error.message,
-    });
-    return new Map();
-  }
-
-  const byProduct = new Map<string, number[]>();
-  for (const row of data ?? []) {
-    const list = byProduct.get(row.product_id) ?? [];
-    list.push(row.rating);
-    byProduct.set(row.product_id, list);
-  }
-
-  const result = new Map<string, { average: number; count: number }>();
-  for (const [productId, ratings] of byProduct) {
-    const total = ratings.reduce((sum, value) => sum + value, 0);
-    result.set(productId, {
-      average: Math.round((total / ratings.length) * 10) / 10,
-      count: ratings.length,
-    });
-  }
-  return result;
 }
 
 export async function getPublicStore(): Promise<Result<CatalogStore | null>> {
