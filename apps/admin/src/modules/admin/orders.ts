@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { after } from 'next/server';
 import { err, ok, type Result } from '@/lib/errors';
 import { logger } from '@/lib/logger';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
@@ -333,11 +334,15 @@ export async function transitionAdminOrderStatus(options: {
 
   const order = await getAdminOrder(options.orderId);
   if (order.ok) {
-    void notifyOrderStatusChange({
-      orderId: options.orderId,
-      newStatus: options.newStatus,
-      orderNumber: order.data.orderNumber,
-    });
+    // `after` estende a vida da invocação até o push terminar — sem isso, em
+    // serverless a função congela ao responder e a notificação se perde.
+    after(() =>
+      notifyOrderStatusChange({
+        orderId: options.orderId,
+        newStatus: options.newStatus,
+        orderNumber: order.data.orderNumber,
+      }),
+    );
   }
   return order;
 }

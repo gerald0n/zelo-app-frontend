@@ -36,16 +36,29 @@ const SHORT_WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 /**
  * Texto curto para o header — cabe numa linha ao lado de "· Entrega e retirada"
- * (ex.: "Hoje até 18:00", "Amanhã 08:00", "Sáb 08:00").
+ * (ex.: "Hoje até 18:00", "Hoje 19:00", "Amanhã 08:00", "Sáb 08:00").
  */
 export function getCatalogStoreHoursLabel(
   store: CatalogStore,
   now = new Date(),
 ): string {
-  const today = store.businessHours.find((item) => item.weekday === now.getDay());
+  const today = store.businessHours.find(
+    (item) => item.weekday === now.getDay(),
+  );
   if (isCatalogStoreOpenNow(store, now)) {
     if (today?.closesAt) return `Hoje até ${today.closesAt.slice(0, 5)}`;
     return 'Aberto agora';
+  }
+
+  // Fechada agora, mas o horário de hoje ainda vai começar (ex.: são 15h e a
+  // loja abre às 19h). Sem isto o rótulo pularia para "Amanhã".
+  const canOpenLater =
+    store.isOpenOverride == null && !isCatalogStorePaused(store, now);
+  if (canOpenLater && today && !today.isClosed && today.opensAt) {
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    if (parseTimeToMinutes(today.opensAt) > nowMins) {
+      return `Hoje ${today.opensAt.slice(0, 5)}`;
+    }
   }
 
   for (let offset = 1; offset <= 7; offset += 1) {

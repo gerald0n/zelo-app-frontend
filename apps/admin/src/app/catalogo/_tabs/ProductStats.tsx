@@ -51,22 +51,39 @@ export function ProductStats({ products, categories }: Props) {
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-      {cards.map((card) => (
-        <div
-          key={card.label}
-          className="rounded-xl border border-border bg-card p-3.5"
-        >
-          <div className="flex items-start justify-between">
-            <p className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+    <>
+      {/* Mobile: faixa compacta de 4 números — os cards cheios ocupavam ~280px
+          de rolagem antes de aparecer o primeiro produto. */}
+      <div className="flex divide-x divide-border rounded-xl border border-border bg-card lg:hidden">
+        {cards.map((card) => (
+          <div key={card.label} className="flex-1 px-2 py-2 text-center">
+            <p className="font-serif text-lg font-bold leading-none">
+              {card.value}
+            </p>
+            <p className="mt-1 text-[10px] font-semibold uppercase leading-tight tracking-wide text-muted-foreground">
               {card.label}
             </p>
-            <card.icon className={cn('size-4', card.tone)} />
           </div>
-          <p className="mt-2 font-serif text-2xl font-bold">{card.value}</p>
-          <p className="mt-0.5 text-2xs text-muted-foreground">{card.hint}</p>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+
+      <div className="hidden gap-2.5 lg:grid lg:grid-cols-4">
+        {cards.map((card) => (
+          <div
+            key={card.label}
+            className="rounded-xl border border-border bg-card p-3.5"
+          >
+            <div className="flex items-start justify-between">
+              <p className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {card.label}
+              </p>
+              <card.icon className={cn('size-4', card.tone)} />
+            </div>
+            <p className="mt-2 font-serif text-2xl font-bold">{card.value}</p>
+            <p className="mt-0.5 text-2xs text-muted-foreground">{card.hint}</p>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }

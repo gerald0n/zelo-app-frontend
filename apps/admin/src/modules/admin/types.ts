@@ -141,6 +141,18 @@ export type AdminReview = {
   moderatedAt: string | null;
 };
 
+export type AdminProductReview = {
+  id: string;
+  productId: string;
+  productName: string | null;
+  rating: number;
+  comment: string | null;
+  status: ReviewStatus;
+  customerDisplayName: string;
+  createdAt: string;
+  moderatedAt: string | null;
+};
+
 export type AdminAuditLog = {
   id: string;
   action: string;
@@ -148,6 +160,10 @@ export type AdminAuditLog = {
   entityId: string | null;
   createdAt: string;
   metadata: Record<string, unknown> | null;
+  /** 'admin' | 'customer' | 'system' — quem originou o evento. */
+  actorType: string;
+  /** Nome do admin que fez a ação, quando `actorType === 'admin'`. */
+  actorName: string | null;
 };
 
 export type AdminStoreSettings = CatalogStore & {

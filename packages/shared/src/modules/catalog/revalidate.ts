@@ -10,7 +10,7 @@ export const CATALOG_REVALIDATE_PATH = '/api/v1/internal/revalidate';
 /**
  * Tags a invalidar para uma ação de auditoria do painel. `store.*` mexe na
  * loja/horários; `product.*` / `category.*` / `addon.*` / `promotion.*` mexem
- * no cardápio (a promoção altera preços em `mapProduct`).
+ * no cardápio (a promoção altera preços, `product_review.*` altera a média).
  */
 export function catalogTagsForAuditAction(
   action: string,
@@ -18,6 +18,7 @@ export function catalogTagsForAuditAction(
   if (action.startsWith('store.')) return ['store'];
   if (
     action.startsWith('product.') ||
+    action.startsWith('product_review.') ||
     action.startsWith('category.') ||
     action.startsWith('addon.') ||
     action.startsWith('promotion.')

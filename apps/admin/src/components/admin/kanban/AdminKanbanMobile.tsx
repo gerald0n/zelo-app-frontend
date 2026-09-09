@@ -1,15 +1,16 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Inbox } from 'lucide-react';
+import { useUiPref } from '@/hooks/useUiPref';
 import type { AdminOrderListItem } from '@/modules/admin/types';
 import type { OrderStatus } from '@/modules/orders/types';
 import {
   LANES,
   type BoardColumn,
   type LaneKey,
-  columnLabel,
   columnOf,
+  columnShortLabel,
   columnsForLane,
   laneOf,
 } from '@/lib/admin/kanban-board';
@@ -40,8 +41,12 @@ export default function AdminKanbanMobile({
   busyOrderId,
   hideDelivered,
 }: Props) {
-  const [lane, setLane] = useState<LaneKey>('pickup');
-  const [status, setStatus] = useState<BoardColumn | null>(null);
+  // Raia e coluna ficam salvas por aparelho — um refresh (ou reabrir o PWA)
+  // mantém o operador onde ele estava, em vez de voltar para "Retirada".
+  const [lanePref, setLanePref] = useUiPref('pedidos-mobile:lane', 'pickup');
+  const [colPref, setColPref] = useUiPref('pedidos-mobile:col', '');
+  const lane: LaneKey = lanePref === 'delivery' ? 'delivery' : 'pickup';
+  const status = (colPref || null) as BoardColumn | null;
 
   const laneOrders = useMemo(
     () => orders.filter((order) => laneOf(order) === lane),
@@ -64,7 +69,7 @@ export default function AdminKanbanMobile({
     : [];
 
   return (
-    <div className="space-y-2.5 px-3 pb-7 pt-24 sm:pt-16 lg:hidden">
+    <div className="space-y-2.5 px-3 pb-7 pt-16 lg:hidden">
       <div className="flex rounded-md bg-muted p-0.5">
         {LANES.map((item) => {
           const total = orders.filter(
@@ -74,7 +79,7 @@ export default function AdminKanbanMobile({
             <button
               key={item.key}
               type="button"
-              onClick={() => setLane(item.key)}
+              onClick={() => setLanePref(item.key)}
               className={cn(
                 'flex-1 rounded-sm py-1.5 text-center text-xs font-medium transition-colors',
                 lane === item.key
@@ -98,7 +103,7 @@ export default function AdminKanbanMobile({
           <button
             key={columnStatus}
             type="button"
-            onClick={() => setStatus(columnStatus)}
+            onClick={() => setColPref(columnStatus)}
             className={cn(
               'shrink-0 rounded-md border px-3 py-1.5 text-2xs font-semibold transition-colors',
               activeStatus === columnStatus
@@ -106,7 +111,7 @@ export default function AdminKanbanMobile({
                 : 'border-border bg-card',
             )}
           >
-            {columnLabel(columnStatus)} ({countFor(columnStatus)})
+            {columnShortLabel(columnStatus)} ({countFor(columnStatus)})
           </button>
         ))}
       </div>
@@ -136,6 +141,7 @@ export default function AdminKanbanMobile({
                 onAdvance={onAdvance}
                 onCancel={onCancel}
                 busy={busyOrderId === order.id}
+                roomy
               />
             </div>
           ))}

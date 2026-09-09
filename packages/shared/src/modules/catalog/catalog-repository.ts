@@ -5,6 +5,7 @@ import { logger } from '@/lib/logger';
 import { createPublicSupabaseClient } from '@/lib/supabase/public';
 import { hasSupabasePublicConfig } from '@/config/env';
 import { mapCategory, mapProduct, mapStore } from '@/modules/catalog/mappers';
+import { listProductRatings } from '@/modules/catalog/product-ratings';
 import type { ActivePromotion } from '@/modules/catalog/promotions';
 import type {
   CatalogCategory,
@@ -89,19 +90,21 @@ export async function getPublicStore(): Promise<Result<CatalogStore | null>> {
 
     if (!store) return ok(null);
 
-    const [{ data: hours, error: hoursError }, { data: blackouts, error: blackoutsError }] =
-      await Promise.all([
-        supabase
-          .from('store_business_hours')
-          .select('*')
-          .eq('store_id', store.id)
-          .order('weekday', { ascending: true }),
-        supabase
-          .from('store_blackout_periods')
-          .select('id, starts_at, ends_at, reason')
-          .eq('store_id', store.id)
-          .order('starts_at', { ascending: true }),
-      ]);
+    const [
+      { data: hours, error: hoursError },
+      { data: blackouts, error: blackoutsError },
+    ] = await Promise.all([
+      supabase
+        .from('store_business_hours')
+        .select('*')
+        .eq('store_id', store.id)
+        .order('weekday', { ascending: true }),
+      supabase
+        .from('store_blackout_periods')
+        .select('id, starts_at, ends_at, reason')
+        .eq('store_id', store.id)
+        .order('starts_at', { ascending: true }),
+    ]);
 
     if (hoursError) {
       logger.error('Falha ao ler horários', { message: hoursError.message });
@@ -164,7 +167,7 @@ export async function listPublicProducts(): Promise<Result<CatalogProduct[]>> {
 
   try {
     const supabase = createPublicSupabaseClient();
-    const [{ data, error }, promotions] = await Promise.all([
+    const [{ data, error }, promotions, ratings] = await Promise.all([
       supabase
         .from('products')
         .select(PRODUCT_SELECT)
@@ -172,6 +175,7 @@ export async function listPublicProducts(): Promise<Result<CatalogProduct[]>> {
         .is('archived_at', null)
         .order('sort_order', { ascending: true }),
       listActivePromotions(supabase),
+      listProductRatings(supabase),
     ]);
 
     if (error) {
@@ -183,7 +187,11 @@ export async function listPublicProducts(): Promise<Result<CatalogProduct[]>> {
       );
     }
 
-    return ok((data ?? []).map((row) => mapProduct(row, promotions)));
+    return ok(
+      (data ?? []).map((row) =>
+        mapProduct(row, promotions, ratings.get(row.id) ?? null),
+      ),
+    );
   } catch (cause) {
     return err('INTERNAL_ERROR', 'Erro ao carregar o cardápio.', { cause });
   }
@@ -214,7 +222,17 @@ export async function getPublicProductBySlugOrId(
     }
 
     if (bySlug.data) {
-      return ok(mapProduct(bySlug.data, await listActivePromotions(supabase)));
+      const [promotions, ratings] = await Promise.all([
+        listActivePromotions(supabase),
+        listProductRatings(supabase),
+      ]);
+      return ok(
+        mapProduct(
+          bySlug.data,
+          promotions,
+          ratings.get(bySlug.data.id) ?? null,
+        ),
+      );
     }
 
     const byId = await supabase
@@ -234,7 +252,13 @@ export async function getPublicProductBySlugOrId(
     }
 
     if (!byId.data) return ok(null);
-    return ok(mapProduct(byId.data, await listActivePromotions(supabase)));
+    const [promotions, ratings] = await Promise.all([
+      listActivePromotions(supabase),
+      listProductRatings(supabase),
+    ]);
+    return ok(
+      mapProduct(byId.data, promotions, ratings.get(byId.data.id) ?? null),
+    );
   } catch (cause) {
     return err('INTERNAL_ERROR', 'Erro ao carregar o produto.', { cause });
   }

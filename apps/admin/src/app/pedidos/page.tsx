@@ -1,7 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { Plus, Search, Loader2 } from 'lucide-react';
 import AdminKanbanBoard from '@/components/admin/kanban/AdminKanbanBoard';
 import AdminKanbanMobile from '@/components/admin/kanban/AdminKanbanMobile';
@@ -11,6 +16,7 @@ import { useNewOrder } from '@/contexts/AdminNewOrderContext';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 import { usePrinter } from '@/contexts/PrinterContext';
 import { useRequireAdmin } from '@/hooks/useRequireAdmin';
+import { useUiPref } from '@/hooks/useUiPref';
 import { ApiError, apiJson } from '@/lib/api';
 import { adminKeys } from '@/lib/query-keys';
 import { playNewOrderChime } from '@/lib/admin/notification-sound';
@@ -38,7 +44,12 @@ export default function AdminPedidosPage() {
   const printer = usePrinter();
   const { isAuthenticated, ready } = useRequireAdmin();
   const [query, setQuery] = useState('');
-  const [hideDelivered, setHideDelivered] = useState(false);
+  // Persistido por aparelho: sobrevive a refresh / reabertura do PWA.
+  const [hideDeliveredPref, setHideDeliveredPref] = useUiPref(
+    'pedidos:hide-delivered',
+    '0',
+  );
+  const hideDelivered = hideDeliveredPref === '1';
   const [optimisticStatus, setOptimisticStatus] = useState<
     Record<string, OrderStatus>
   >({});
@@ -67,6 +78,9 @@ export default function AdminPedidosPage() {
         `/api/v1/admin/orders?${params}`,
       );
     },
+    // Ao digitar na busca a queryKey muda — mantém o quadro anterior na tela
+    // enquanto a nova lista carrega, em vez de cair no spinner de tela cheia.
+    placeholderData: keepPreviousData,
   });
 
   const allOrders = useMemo(
@@ -249,8 +263,8 @@ export default function AdminPedidosPage() {
 
   return (
     <div className="relative min-h-dvh bg-background lg:h-dvh lg:overflow-hidden">
-      <div className="fixed inset-x-3 top-3 z-30 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end lg:inset-x-auto lg:right-8">
-        <div className="flex h-10 items-center gap-2 rounded-full border border-border bg-card/85 px-4 shadow-lg backdrop-blur sm:w-72">
+      <div className="fixed inset-x-3 top-3 z-30 flex items-center gap-2 sm:justify-end lg:inset-x-auto lg:right-8">
+        <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-card/85 px-4 shadow-lg backdrop-blur sm:w-72 sm:flex-none">
           <Search className="size-4 shrink-0 text-muted-foreground" />
           <Input
             value={query}
@@ -259,13 +273,14 @@ export default function AdminPedidosPage() {
             className="h-auto flex-1 border-none bg-transparent p-0 text-sm shadow-none outline-none focus-visible:ring-0"
           />
         </div>
-        <label className="flex h-10 items-center gap-2 self-start rounded-full border border-border bg-card/85 px-4 text-2xs font-medium text-muted-foreground shadow-lg backdrop-blur sm:self-auto">
+        <label className="flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-border bg-card/85 px-3 text-2xs font-medium text-muted-foreground shadow-lg backdrop-blur">
           <input
             type="checkbox"
             checked={hideDelivered}
-            onChange={(e) => setHideDelivered(e.target.checked)}
+            onChange={(e) => setHideDeliveredPref(e.target.checked ? '1' : '0')}
           />
-          Ocultar entregues
+          <span className="sm:hidden">Entregues</span>
+          <span className="hidden sm:inline">Ocultar entregues</span>
         </label>
       </div>
 

@@ -27,10 +27,17 @@ export type CatalogProduct = {
   /** Public URL of the primary photo, or null. */
   image: string | null;
   imageAlt: string | null;
+  /**
+   * Todas as fotos do produto, principal primeiro (a mesma da `image`).
+   * Vazio quando o produto não tem foto. Usada na galeria da página do produto.
+   */
+  images: Array<{ url: string; alt: string | null }>;
   available: boolean;
   weight?: string;
   addons: CatalogAddon[];
   sortOrder: number;
+  /** Média (0–5, 1 casa) e nº de avaliações aprovadas. `null` = ainda sem. */
+  rating: { average: number; count: number } | null;
 };
 
 export type CatalogBusinessHour = {

@@ -10,14 +10,15 @@ import {
   Plus,
   Check,
   ChevronRight,
+  Star,
 } from 'lucide-react';
 import {
-  categoryTone,
   formatCatalogPrice,
   type CatalogAddon,
   type CatalogProduct,
 } from '@/modules/catalog/types';
-import { ProductThumb } from '@/components/product-thumb';
+import ProductGallery from '@/components/ProductGallery';
+import ProductReviews from '@/components/ProductReviews';
 import { Textarea } from '@/components/ui/textarea';
 import { useCart } from '@/contexts/CartContext';
 import { useShopExperience } from '@/contexts/ShopExperienceContext';
@@ -69,14 +70,11 @@ export default function ProdutoClient({
 
   return (
     <div className="mx-auto flex min-h-dvh flex-col bg-background lg:max-w-5xl lg:flex-row lg:gap-6 lg:px-5 lg:py-5">
-      <div className="relative h-[220px] shrink-0 lg:sticky lg:top-6 lg:h-[380px] lg:w-[380px] lg:self-start lg:overflow-hidden lg:rounded-2xl">
-        <ProductThumb
-          tone={categoryTone(product.slug)}
-          src={product.image}
-          alt={product.imageAlt ?? product.name}
-          className="h-full w-full rounded-none"
-          iconClassName="size-16"
-          width={860}
+      <div className="relative h-[220px] shrink-0 overflow-hidden lg:sticky lg:top-6 lg:h-[380px] lg:w-[380px] lg:self-start lg:rounded-2xl">
+        <ProductGallery
+          images={product.images}
+          productName={product.name}
+          productSlug={product.slug}
         />
         <Link
           href="/"
@@ -104,12 +102,18 @@ export default function ProdutoClient({
 
       <div className="flex min-h-0 flex-1 flex-col lg:min-w-0 lg:self-start">
         <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-4 pb-24 lg:flex-none lg:overflow-visible lg:p-0 lg:pb-0">
-          <h1 className="text-xl font-bold tracking-tight">
-            {product.name}
-          </h1>
+          <h1 className="text-xl font-bold tracking-tight">{product.name}</h1>
           {product.weight ? (
-            <p className="text-sm text-muted-foreground">
-              {product.weight}
+            <p className="text-sm text-muted-foreground">{product.weight}</p>
+          ) : null}
+          {product.rating ? (
+            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Star className="size-4 fill-amber-400 text-amber-400" />
+              <span className="font-semibold text-foreground">
+                {product.rating.average.toFixed(1)}
+              </span>
+              · {product.rating.count}{' '}
+              {product.rating.count === 1 ? 'avaliação' : 'avaliações'}
             </p>
           ) : null}
           <p className="mt-1 text-base text-muted-foreground">
@@ -207,6 +211,8 @@ export default function ProdutoClient({
               {note.length}/180
             </p>
           </div>
+
+          <ProductReviews productId={product.id} productName={product.name} />
         </div>
 
         <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2.5 border-t border-border bg-background px-3 pb-4 pt-2.5 lg:static lg:mt-4 lg:rounded-xl lg:border lg:bg-card lg:p-3 lg:shadow-sm">

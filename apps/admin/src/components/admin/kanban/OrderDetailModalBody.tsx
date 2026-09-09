@@ -79,7 +79,7 @@ export default function OrderDetailModalBody({
 
   return (
     <>
-      <div className="flex items-start justify-between gap-3 border-b border-border p-4">
+      <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-border bg-card p-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="font-serif text-lg font-bold">
@@ -235,7 +235,7 @@ export default function OrderDetailModalBody({
         {error ? <p className="text-xs text-destructive">{error}</p> : null}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border p-4">
+      <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-2 border-t border-border bg-card p-4">
         <div className="flex gap-2">
           <button
             type="button"
