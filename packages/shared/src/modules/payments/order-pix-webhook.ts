@@ -11,6 +11,7 @@ import {
   type MercadoPagoSnapshot,
   type NormalizedPaymentStatus,
 } from '@/modules/payments/mercadopago';
+import { recordPaymentFinancials } from '@/modules/payments/order-payment-financials';
 
 export type WebhookOutcome =
   | 'confirmed'
@@ -107,6 +108,7 @@ export async function applyStatus(
   orderId: string,
   status: NormalizedPaymentStatus,
   mpOrderId: string | null,
+  mpPaymentId?: string | null,
 ): Promise<Result<WebhookOutcome>> {
   const admin = createAdminSupabaseClient();
 
@@ -120,6 +122,9 @@ export async function applyStatus(
         cause: error,
       });
     }
+    // Chamada extra ao MP: grava taxa e líquido reais no pedido. Falha aqui
+    // não bloqueia — o relatório cai na taxa estimada.
+    await recordPaymentFinancials(orderId, mpPaymentId);
     // Pix confirmado: só agora o pedido entra pra produção — avisa o painel.
     await notifyAdminNewOrder({ orderId });
     return ok('confirmed');
@@ -233,7 +238,12 @@ export async function processMercadoPagoNotification(params: {
   }
 
   const order = orderResult.data;
-  const applied = await applyStatus(order.id, snapshot.status, snapshot.mpOrderId);
+  const applied = await applyStatus(
+    order.id,
+    snapshot.status,
+    snapshot.mpOrderId,
+    snapshot.mpPaymentId,
+  );
   if (!applied.ok) {
     // Erro transitório: deixa o MP re-tentar.
     return applied;

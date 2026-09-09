@@ -73,6 +73,8 @@ export type CatalogStore = {
   /** Raio máximo de entrega (m, linha reta); além dele, só retirada. */
   maxDeliveryRadiusMeters: number;
   timezone: string;
+  /** Estimativa de taxa de pagamento (basis points; 99 = 0,99%). */
+  paymentFeeEstimateBps: number;
   isOpenOverride: boolean | null;
   /** Instante em que a loja volta a abrir sozinha (pausa com prazo). */
   pausedUntil: string | null;

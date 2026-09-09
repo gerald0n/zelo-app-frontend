@@ -15,6 +15,7 @@ export const storeSchema = z
     freeDeliveryRadiusMeters: z.number().int().min(0),
     maxDeliveryRadiusMeters: z.number().int().min(0),
     fixedDeliveryFeeReais: z.number().min(0),
+    paymentFeeEstimatePercent: z.number().min(0).max(20),
     acceptingOrders: z.boolean(),
     acceptsPix: z.boolean(),
     acceptsCash: z.boolean(),

@@ -20,7 +20,8 @@ type ProductRow = Database['public']['Tables']['products']['Row'];
 type CategoryRow = Database['public']['Tables']['categories']['Row'];
 type StoreRow = Database['public']['Tables']['stores']['Row'];
 type HoursRow = Database['public']['Tables']['store_business_hours']['Row'];
-type BlackoutRow = Database['public']['Tables']['store_blackout_periods']['Row'];
+type BlackoutRow =
+  Database['public']['Tables']['store_blackout_periods']['Row'];
 type ImageRow = Database['public']['Tables']['product_images']['Row'];
 type AddonRow = Database['public']['Tables']['add_ons']['Row'];
 
@@ -143,6 +144,7 @@ export function mapStore(
     fixedDeliveryFeeCents: row.fixed_delivery_fee_cents,
     maxDeliveryRadiusMeters: row.max_delivery_radius_meters,
     timezone: row.timezone,
+    paymentFeeEstimateBps: row.payment_fee_estimate_bps,
     isOpenOverride: row.is_open_override,
     pausedUntil: row.paused_until,
     pauseReason: row.pause_reason,

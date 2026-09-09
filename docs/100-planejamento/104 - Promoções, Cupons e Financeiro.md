@@ -9,7 +9,7 @@ promoções, cupons ou financeiro.
 | --- | --- |
 | Promoções | **Implementado.** |
 | Cupons | **Implementado** (2026-09-08). |
-| Financeiro | Não iniciado. Decisões já travadas (ver abaixo). |
+| Financeiro | **Implementado** (2026-09-08). |
 
 ---
 
@@ -97,9 +97,9 @@ uso; `preview` free_shipping e "não encontrado".
 
 ---
 
-## Financeiro (não implementado)
+## Financeiro (implementado — 2026-09-08)
 
-**Decisões travadas:**
+**Decisões travadas** (todas seguidas):
 - Taxa real do Mercado Pago, gravada por transação (1 chamada extra ao MP na
   confirmação do Pix): grava taxa (R$) e líquido (R$) no pedido.
 - Campo configurável de taxa (padrão 0,99%) só pra estimar onde não há o
@@ -108,6 +108,30 @@ uso; `preview` free_shipping e "não encontrado".
 - Dinheiro/cartão na entrega: separados (sem taxa MP).
 - Aba "Financeiro" própria no admin.
 
-Contexto: `orders.mp_order_id`; `payment_events` guarda o payload completo
-do MP em jsonb, mas o código não extrai a taxa ainda. Estorno já existe
-(`refundOrderPixPayment`).
+**Implementação** (migration `20260908150000_payment_financials.sql`):
+- `orders` ganhou `mp_payment_id`, `payment_fee_cents`, `payment_net_cents`
+  (nullable). `stores` ganhou `payment_fee_estimate_bps` (basis points;
+  padrão 99 = 0,99%), editável em **Ajustes → Geral** ("Taxa de pagamento
+  estimada (%)").
+- Na confirmação do Pix (`order-pix-webhook.ts` → `applyStatus` →
+  `recordPaymentFinancials`, e também no `order-pix-reconcile`): 1 chamada a
+  `GET /v1/payments/{id}`. `paymentFinancials()` soma `fee_details` (taxas do
+  vendedor) e lê `transaction_details.net_received_amount` (fallback:
+  bruto − taxa). Falha aqui é silenciosa — o relatório cai na estimativa.
+- **Relatório** (`src/modules/admin/financial-report.ts` →
+  `GET /api/v1/admin/reports?kind=financial&period=`): por período —
+  bruto faturado, taxas MP (real quando tem, estimativa `round(total *
+  bps/10000)` quando não), líquido; split por forma de pagamento (Pix /
+  dinheiro / cartão — só Pix tem taxa); estornos (nº, valor devolvido, taxa
+  não recuperada como custo); lista de transações Pix (bruto / taxa /
+  líquido, marca "taxa estimada" quando não veio do MP).
+  - "Faturado" = Pix `confirmed` + dinheiro/cartão não cancelado. Pix
+    pendente/falho e cancelados ficam de fora.
+- **UI**: toggle **Operação | Financeiro** no topo de `/relatorios` (reusa o
+  seletor de período). Views em `relatorios/_components/`.
+
+**Testado 2026-09-08** (Supabase local, dados sintéticos): bruto R$100 (2 Pix
+confirmados + 1 dinheiro), taxas R$0,80 (R$0,50 real + R$0,30 estimado a
+0,99%), líquido R$99,20; split por método certo; 1 estorno → R$40 devolvido +
+R$0,40 de taxa não recuperada; lista Pix com marca de estimada. Config da
+taxa via PATCH da loja OK.

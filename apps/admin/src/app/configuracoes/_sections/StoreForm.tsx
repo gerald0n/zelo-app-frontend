@@ -18,6 +18,7 @@ const NUMERIC_FIELDS = [
   'freeDeliveryRadiusMeters',
   'maxDeliveryRadiusMeters',
   'fixedDeliveryFeeReais',
+  'paymentFeeEstimatePercent',
 ] as const;
 
 const PAYMENTS = [
@@ -40,6 +41,7 @@ const FIELDS: Array<[keyof StoreFormValues, string]> = [
   ['freeDeliveryRadiusMeters', 'Raio de entrega grátis (m)'],
   ['maxDeliveryRadiusMeters', 'Raio máximo de entrega (m)'],
   ['fixedDeliveryFeeReais', 'Taxa de entrega fixa (R$)'],
+  ['paymentFeeEstimatePercent', 'Taxa de pagamento estimada (%)'],
 ];
 
 export function StoreForm({ form, isPending, onSubmit }: Props) {
@@ -139,6 +141,7 @@ export function StoreForm({ form, isPending, onSubmit }: Props) {
           const numeric = (NUMERIC_FIELDS as readonly string[]).includes(field);
           const stepAny =
             field === 'fixedDeliveryFeeReais' ||
+            field === 'paymentFeeEstimatePercent' ||
             field === 'latitude' ||
             field === 'longitude';
           return (

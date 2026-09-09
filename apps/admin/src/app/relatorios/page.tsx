@@ -1,15 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Loader2, Ban, ChefHat } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useRequireAdmin } from '@/hooks/useRequireAdmin';
-import { useAdminRealtime } from '@/contexts/AdminRealtimeContext';
-import { apiJson } from '@/lib/api';
-import { adminKeys } from '@/lib/query-keys';
 import { adminContainerClass } from '@/lib/layout';
-import { formatCatalogPrice } from '@/modules/catalog/types';
-import type { OperationsReport, ReportPeriod } from '@/modules/admin/reports';
+import type { ReportPeriod } from '@/modules/admin/reports';
+import { OperationsView } from '@/app/relatorios/_components/OperationsView';
+import { FinancialView } from '@/app/relatorios/_components/FinancialView';
 import { cn } from '@/lib/cn';
 
 const PERIODS: Array<{ id: ReportPeriod; label: string }> = [
@@ -18,43 +15,42 @@ const PERIODS: Array<{ id: ReportPeriod; label: string }> = [
   { id: '30d', label: '30 dias' },
 ];
 
-/** Barra proporcional simples (sem lib de gráfico). */
-function Row({
-  label,
-  value,
-  max,
+const VIEWS = [
+  { id: 'operacao', label: 'Operação' },
+  { id: 'financeiro', label: 'Financeiro' },
+] as const;
+
+type View = (typeof VIEWS)[number]['id'];
+
+function Pill({
+  active,
+  onClick,
+  children,
 }: {
-  label: string;
-  value: number;
-  max: number;
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1 border-t border-border py-2 first:border-t-0 first:pt-0">
-      <div className="flex items-baseline justify-between gap-3 text-xs">
-        <span className="min-w-0 truncate font-medium">{label}</span>
-        <span className="shrink-0 font-bold tabular-nums">{value}</span>
-      </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-        <div
-          className="h-full rounded-full bg-primary/70"
-          style={{ width: `${max > 0 ? (value / max) * 100 : 0}%` }}
-        />
-      </div>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'rounded-full border px-3 py-1.5 text-2xs font-semibold transition-colors',
+        active
+          ? 'border-primary bg-primary text-primary-foreground'
+          : 'border-border bg-card hover:bg-accent',
+      )}
+    >
+      {children}
+    </button>
   );
 }
 
 export default function AdminRelatoriosPage() {
   const { ready, isAuthenticated } = useRequireAdmin();
-  const { version } = useAdminRealtime();
   const [period, setPeriod] = useState<ReportPeriod>('today');
-
-  const query = useQuery({
-    queryKey: [...adminKeys.reports(period), version],
-    enabled: ready && isAuthenticated,
-    queryFn: () =>
-      apiJson<OperationsReport>(`/api/v1/admin/reports?period=${period}`),
-  });
+  const [view, setView] = useState<View>('operacao');
 
   if (!ready || !isAuthenticated) {
     return (
@@ -63,10 +59,6 @@ export default function AdminRelatoriosPage() {
       </div>
     );
   }
-
-  const data = query.data;
-  const topCancel = data?.cancellations.byReason[0]?.count ?? 0;
-  const topProd = data?.production.items[0]?.quantity ?? 0;
 
   return (
     <div
@@ -83,94 +75,41 @@ export default function AdminRelatoriosPage() {
           Relatórios
         </h1>
         <p className="mt-1 text-xs text-muted-foreground">
-          Cancelamentos e produção. Faturamento e ticket médio ficam na Visão
-          geral.
+          Cancelamentos, produção e financeiro. Faturamento bruto e ticket médio
+          ficam na Visão geral.
         </p>
       </header>
 
-      <div className="flex gap-1.5">
-        {PERIODS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setPeriod(item.id)}
-            className={cn(
-              'rounded-full border px-3 py-1.5 text-2xs font-semibold transition-colors',
-              period === item.id
-                ? 'border-primary bg-primary text-primary-foreground'
-                : 'border-border bg-card hover:bg-accent',
-            )}
-          >
-            {item.label}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="flex gap-1.5">
+          {VIEWS.map((item) => (
+            <Pill
+              key={item.id}
+              active={view === item.id}
+              onClick={() => setView(item.id)}
+            >
+              {item.label}
+            </Pill>
+          ))}
+        </div>
+        <span className="h-4 w-px bg-border" />
+        <div className="flex gap-1.5">
+          {PERIODS.map((item) => (
+            <Pill
+              key={item.id}
+              active={period === item.id}
+              onClick={() => setPeriod(item.id)}
+            >
+              {item.label}
+            </Pill>
+          ))}
+        </div>
       </div>
 
-      {query.isLoading || !data ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="size-5 animate-spin text-muted-foreground" />
-        </div>
+      {view === 'operacao' ? (
+        <OperationsView period={period} />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <section className="space-y-2 rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center gap-2">
-              <Ban className="size-4 text-destructive" />
-              <h2 className="font-serif text-base font-bold">Cancelamentos</h2>
-            </div>
-            <p className="text-2xs text-muted-foreground">
-              <span className="font-bold text-foreground">
-                {data.cancellations.total}
-              </span>{' '}
-              pedido{data.cancellations.total === 1 ? '' : 's'} ·{' '}
-              {formatCatalogPrice(data.cancellations.valueCents)} não faturados
-            </p>
-            <div className="pt-1">
-              {data.cancellations.byReason.length === 0 ? (
-                <p className="py-4 text-center text-xs text-muted-foreground">
-                  Nenhum cancelamento no período.
-                </p>
-              ) : (
-                data.cancellations.byReason.map((entry) => (
-                  <Row
-                    key={entry.reason}
-                    label={entry.reason}
-                    value={entry.count}
-                    max={topCancel}
-                  />
-                ))
-              )}
-            </div>
-          </section>
-
-          <section className="space-y-2 rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center gap-2">
-              <ChefHat className="size-4 text-primary" />
-              <h2 className="font-serif text-base font-bold">Produção</h2>
-            </div>
-            <p className="text-2xs text-muted-foreground">
-              <span className="font-bold text-foreground">
-                {data.production.totalItems}
-              </span>{' '}
-              itens em {data.production.items.length} produtos
-            </p>
-            <div className="pt-1">
-              {data.production.items.length === 0 ? (
-                <p className="py-4 text-center text-xs text-muted-foreground">
-                  Nenhum item no período.
-                </p>
-              ) : (
-                data.production.items.map((item) => (
-                  <Row
-                    key={item.name}
-                    label={item.name}
-                    value={item.quantity}
-                    max={topProd}
-                  />
-                ))
-              )}
-            </div>
-          </section>
-        </div>
+        <FinancialView period={period} />
       )}
     </div>
   );
