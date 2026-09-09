@@ -168,9 +168,13 @@ resumo do que precisa entrar nos docs de referência.
   `stores.cnpj` no cabeçalho do comprovante. Migration
   `20260905120000_store_cnpj`.
 - **Web Push do painel**: tabela `admin_push_subscriptions` (separada da do
-  cliente), service worker próprio, VAPID próprio do admin no Vercel.
-  Toggle em Ajustes → Dispositivos. Rotas `/api/v1/admin/push/*`.
-  Migration `20260908130000_admin_push_subscriptions`.
+  cliente), service worker próprio. Toggle em Ajustes → Dispositivos. Rotas
+  `/api/v1/admin/push/*`. Migration `20260908130000_admin_push_subscriptions`.
+  ⚠️ O par VAPID (`NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` /
+  `VAPID_SUBJECT`) tem que ser **o mesmo** em `zelo-app` e `zelo-admin`:
+  "novo pedido" é enviado pelo client e "status mudou" pelo admin, cada um
+  mirando as assinaturas do outro. Par distinto → 401/403 silencioso. Ver
+  plano 103 §Web Push.
 - **Dashboard "Visão geral"** (`apps/admin/src/app/page.tsx`) absorveu
   `/relatorios` (rota removida, 404): seções Operação + Financeiro presas a
   um seletor de período. `GET /api/v1/admin/reports?kind=operations|financial`.
@@ -289,8 +293,10 @@ Fonte: `packages/shared/src/config/env.ts` (`assertProductionEnv`).
 - `OTP_HASH_SECRET` (mín. 16 chars)
 
 **Recomendadas:** VAPID (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`,
-`VAPID_SUBJECT`) — o **admin usa um par VAPID próprio**; Sentry DSN;
-`GOOGLE_MAPS_API_KEY` + `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`.
+`VAPID_SUBJECT`) — **o MESMO par em `zelo-app` e `zelo-admin`** (os dois apps
+enviam push mirando as assinaturas um do outro; par distinto = 401/403
+silencioso); Sentry DSN; `GOOGLE_MAPS_API_KEY` +
+`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`.
 
 **Não existem** (remover do doc 29): token/app-secret da Meta Cloud API,
 segredo do "Send SMS Hook".

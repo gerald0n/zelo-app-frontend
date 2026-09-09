@@ -415,18 +415,31 @@ Notificação no celular quando entra pedido novo, mesmo com o painel fechado.
   Helper `src/lib/push-client.ts`; UI `PushSection` na aba
   **Dispositivos** das Configurações ("Ativar neste aparelho").
 - **Env**: `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` /
-  `VAPID_SUBJECT` no projeto Vercel `zelo-admin`. Setados em 2026-09-08 com
-  um **par VAPID próprio** do admin (o `zelo-app` ficou com o dele — os dois
-  apps são remetentes de push independentes). Segredo tipo "Secret" na
-  Vercel é write-only, então a chave privada antiga do `zelo-app` era
-  irrecuperável; gerou-se uma nova pro admin. Ver memória de deploy.
+  `VAPID_SUBJECT` — **o MESMO par nos dois projetos Vercel** (`zelo-app` e
+  `zelo-admin`), Production **e** Preview. Motivo: quem envia cada push é a
+  app "do outro lado". "Novo pedido" é disparado pelo **client**
+  (`create-order.ts`, webhook do Mercado Pago) e mira as assinaturas do
+  admin; "status mudou" é disparado pelo **admin**
+  (`transitionAdminOrderStatus`) e mira as assinaturas do cliente. A
+  assinatura só aceita entrega se a chave privada que assina o envio
+  corresponder à `applicationServerKey` usada no `subscribe()`. Pares
+  distintos → todo envio cai em 401/403 (`logger.error` "Web Push recusado
+  (VAPID não confere)"), sem revogar a assinatura.
+  > ⚠️ Histórico: em 2026-09-08 o admin foi setado com um par próprio
+  > (`zelo-app` ficou com o dele). Isso quebrava os dois sentidos de push em
+  > produção — corrigido unificando o par. Se rotacionar o par no futuro,
+  > cada aparelho precisa **desativar e reativar** a notificação (os helpers
+  > `client.ts`/`push-client.ts` detectam a `applicationServerKey` antiga e
+  > reassinam sozinhos na próxima ativação).
 
-**Validado em 2026-09-08:**
+**Validado em 2026-09-08 (com a ressalva acima):**
 - Local: assinar/re-assinar (upsert por endpoint), guard de auth (401),
   `notifyAdminNewOrder` roda e falha graciosamente com chave inválida (sem
   revogar por engano), `/sw.js` servido sem redirect.
-- **Produção, aparelho real**: permissão → ativar em Dispositivos →
-  pedido novo → push chega no celular com o painel fechado. ✅
+- **Produção, aparelho real**: `notifyAdminNewOrder` pelo endpoint de teste
+  `/api/v1/push/test` (hospedado na app admin) → push chega. O caminho do
+  pedido real (app client) só passou a funcionar depois de unificar o par
+  VAPID.
 
 ---
 
