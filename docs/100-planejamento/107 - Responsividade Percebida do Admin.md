@@ -27,7 +27,14 @@ Parte 3 → Parte 2**, com a **Parte 1b** por último.
   archive/delete das outras abas; switch e duplicar travados durante o voo;
   "Salvar" de Categorias/Adicionais com `isPending`. Verificado: switch
   instantâneo, archive some na hora, erro simulado reverte.
-- **Parte 1b** — pendente (única restante).
+- **Parte 1b — FEITA** (commit `acb16ba`). `<script>` inline síncrono no `<head>`
+  do SSR em `layout.tsx`, com o nonce da CSP (lido via `headers()`), aplicando
+  `.dark` antes da 1ª pintura. `next/script` NÃO serve — no App Router empurra
+  scripts inline para o runtime do cliente (flash volta). Aviso de dev "script
+  tag while rendering" do React 19 é esperado, não afeta produção. Verificado
+  no SSR HTML + build limpo.
+
+**Todas as 4 partes concluídas.** Branch `feat/admin-ui-otimista` pronta para PR.
 
 ---
 
