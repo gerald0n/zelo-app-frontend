@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ApiError, apiJson } from '@/lib/api';
+import { removeCatalogItem, rollbackCatalog } from '@/lib/admin/catalog-cache';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import {
   addonSchema,
@@ -26,6 +27,7 @@ type Props = {
 
 export function AddonsTab({ addons, invalidateCatalog, onError }: Props) {
   const { confirm } = useAppDialog();
+  const queryClient = useQueryClient();
   const [editingAddon, setEditingAddon] = useState<AdminAddon | null>(null);
   const [showAddonForm, setShowAddonForm] = useState(false);
 
@@ -69,7 +71,9 @@ export function AddonsTab({ addons, invalidateCatalog, onError }: Props) {
     },
     onError: (error) => {
       onError(
-        error instanceof ApiError ? error.message : 'Falha ao salvar adicional.',
+        error instanceof ApiError
+          ? error.message
+          : 'Falha ao salvar adicional.',
       );
     },
   });
@@ -80,7 +84,19 @@ export function AddonsTab({ addons, invalidateCatalog, onError }: Props) {
         method: 'PATCH',
         body: JSON.stringify({ archive: true }),
       }),
-    onSuccess: invalidateCatalog,
+    onMutate: (id) => {
+      onError('');
+      return removeCatalogItem(queryClient, 'addons', id);
+    },
+    onError: (error, _id, context) => {
+      rollbackCatalog(queryClient, context);
+      onError(
+        error instanceof ApiError
+          ? error.message
+          : 'Falha ao arquivar o adicional.',
+      );
+    },
+    onSettled: invalidateCatalog,
   });
 
   const openAddonForm = (addon?: AdminAddon) => {
@@ -163,9 +179,10 @@ export function AddonsTab({ addons, invalidateCatalog, onError }: Props) {
           <div className="flex gap-2">
             <button
               type="submit"
-              className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:active:scale-100"
+              disabled={addonMutation.isPending}
+              className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-100 hover:bg-primary/90 active:scale-[0.97] disabled:opacity-60 disabled:active:scale-100"
             >
-              Salvar
+              {addonMutation.isPending ? 'Salvando…' : 'Salvar'}
             </button>
             <button
               type="button"

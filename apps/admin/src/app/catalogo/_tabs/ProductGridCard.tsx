@@ -15,6 +15,8 @@ import type { AdminProduct } from '@/modules/admin/types';
 type Props = {
   product: AdminProduct;
   selected: boolean;
+  /** Mutação de disponibilidade/duplicar em voo — trava o switch e o duplicar. */
+  pending: boolean;
   onToggleSelect: (product: AdminProduct) => void;
   onEdit: (product: AdminProduct) => void;
   onArchive: (product: AdminProduct) => void;
@@ -48,6 +50,7 @@ function statusBadge(product: AdminProduct) {
 export function ProductGridCard({
   product,
   selected,
+  pending,
   onToggleSelect,
   onEdit,
   onArchive,
@@ -146,9 +149,10 @@ export function ProductGridCard({
             role="switch"
             aria-checked={product.isAvailable}
             aria-label="Disponível para venda"
+            disabled={pending}
             onClick={() => onToggleAvailability(product)}
             className={cn(
-              'relative h-6 w-11 shrink-0 rounded-full transition-colors',
+              'relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60',
               product.isAvailable ? 'bg-primary' : 'bg-muted',
             )}
           >
@@ -188,8 +192,9 @@ export function ProductGridCard({
         <button
           type="button"
           onClick={() => onDuplicate(product)}
+          disabled={pending}
           aria-label="Duplicar produto"
-          className="flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent"
+          className="flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent disabled:opacity-60"
         >
           <Copy className="size-3" />
         </button>

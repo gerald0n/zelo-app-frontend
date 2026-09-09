@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ApiError, apiJson } from '@/lib/api';
+import { removeCatalogItem, rollbackCatalog } from '@/lib/admin/catalog-cache';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import type { AdminCoupon, CouponDiscountType } from '@/modules/admin/types';
 import { cn } from '@/lib/cn';
@@ -57,6 +58,7 @@ function toForm(c: AdminCoupon): FormState {
 
 export function CouponsTab({ coupons, invalidateCatalog, onError }: Props) {
   const { confirm } = useAppDialog();
+  const queryClient = useQueryClient();
   const [editing, setEditing] = useState<AdminCoupon | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -106,12 +108,17 @@ export function CouponsTab({ coupons, invalidateCatalog, onError }: Props) {
   const deleteMutation = useMutation({
     mutationFn: (id: string) =>
       apiJson(`/api/v1/admin/coupons/${id}`, { method: 'DELETE' }),
-    onSuccess: invalidateCatalog,
-    onError: (error) => {
+    onMutate: (id) => {
+      onError('');
+      return removeCatalogItem(queryClient, 'coupons', id);
+    },
+    onError: (error, _id, context) => {
+      rollbackCatalog(queryClient, context);
       onError(
         error instanceof ApiError ? error.message : 'Falha ao remover o cupom.',
       );
     },
+    onSettled: invalidateCatalog,
   });
 
   const openForm = (coupon?: AdminCoupon) => {
