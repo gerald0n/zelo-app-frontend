@@ -141,6 +141,18 @@ export type AdminReview = {
   moderatedAt: string | null;
 };
 
+export type AdminProductReview = {
+  id: string;
+  productId: string;
+  productName: string | null;
+  rating: number;
+  comment: string | null;
+  status: ReviewStatus;
+  customerDisplayName: string;
+  createdAt: string;
+  moderatedAt: string | null;
+};
+
 export type AdminAuditLog = {
   id: string;
   action: string;

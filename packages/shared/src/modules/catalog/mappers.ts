@@ -54,6 +54,7 @@ export function mapAddon(row: AddonRow): CatalogAddon {
 export function mapProduct(
   row: ProductJoinRow,
   promotions: ActivePromotion[] = [],
+  rating: CatalogProduct['rating'] = null,
 ): CatalogProduct {
   const images = [...(row.product_images ?? [])].sort(
     (a, b) =>
@@ -100,6 +101,7 @@ export function mapProduct(
     weight: formatWeightGrams(row.weight_min_grams, row.weight_max_grams),
     addons,
     sortOrder: row.sort_order,
+    rating: rating && rating.count > 0 ? rating : null,
   };
 }
 

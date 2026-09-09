@@ -8,9 +8,10 @@ export const adminKeys = {
   hours: () => [...adminKeys.all, 'hours'] as const,
   blackouts: () => [...adminKeys.all, 'blackouts'] as const,
   audit: () => [...adminKeys.all, 'audit'] as const,
-  reports: (period: string) =>
-    [...adminKeys.all, 'reports', period] as const,
+  reports: (period: string) => [...adminKeys.all, 'reports', period] as const,
   reviews: (tab: string) => [...adminKeys.all, 'reviews', tab] as const,
+  productReviews: (tab: string) =>
+    [...adminKeys.all, 'product-reviews', tab] as const,
   reviewsPending: () => [...adminKeys.all, 'reviews-pending'] as const,
 };
 
