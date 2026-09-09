@@ -7,6 +7,7 @@ import {
   statusLabel,
   STATUS_COLORS,
   isAwaitingPixPayment,
+  customerFacingStatus,
   type CustomerOrderListItem,
 } from '@/modules/orders/types';
 import { cn } from '@/lib/cn';
@@ -42,7 +43,9 @@ export default function OrderCard({
               : STATUS_COLORS[order.status],
           )}
         >
-          {awaitingPayment ? 'Aguardando pagamento' : statusLabel(order.status)}
+          {awaitingPayment
+            ? 'Aguardando pagamento'
+            : statusLabel(customerFacingStatus(order.status))}
         </span>
       </div>
       <p className="line-clamp-2 text-xs leading-4 text-muted-foreground">

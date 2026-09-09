@@ -60,6 +60,12 @@ export default function ProductCard({
         !product.available && 'opacity-60',
       )}
     >
+      <Link
+        href={`/produto/${product.slug}`}
+        className="absolute inset-0 z-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        <span className="sr-only">Ver detalhes de {product.name}</span>
+      </Link>
       <div className={cn('relative shrink-0', responsive && 'lg:w-full')}>
         <ProductThumb
           tone={categoryTone(categoryName ?? product.slug)}
@@ -88,7 +94,7 @@ export default function ProductCard({
               : `Adicionar ${product.name} aos favoritos`
           }
           className={cn(
-            'absolute left-1.5 top-1.5 flex size-7 items-center justify-center rounded-full bg-card/80 backdrop-blur transition-transform duration-150 active:scale-90',
+            'absolute left-1.5 top-1.5 z-10 flex size-7 items-center justify-center rounded-full bg-card/80 backdrop-blur transition-transform duration-150 active:scale-90',
             responsive &&
               'lg:left-auto lg:right-[7px] lg:top-[7px] lg:size-[30px]',
           )}
@@ -112,22 +118,14 @@ export default function ProductCard({
         )}
       >
         <div className="min-w-0 flex-1">
-          {product.available ? (
-            <Link
-              href={`/produto/${product.slug}`}
-              className="font-semibold leading-tight text-card-foreground"
-            >
-              {product.name}
-              <span className="sr-only"> — ver detalhes</span>
-            </Link>
-          ) : (
-            <p className="font-semibold leading-tight text-card-foreground">
-              {product.name}
+          <p className="font-semibold leading-tight text-card-foreground">
+            {product.name}
+            {!product.available ? (
               <span className="ml-2 text-xs font-medium text-muted-foreground">
                 Indisponível
               </span>
-            </p>
-          )}
+            ) : null}
+          </p>
           <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted-foreground">
             {product.description}
           </p>
@@ -147,7 +145,7 @@ export default function ProductCard({
             ) : null}
           </div>
         </div>
-        <div className="flex shrink-0 items-center justify-end">
+        <div className="relative z-10 flex shrink-0 items-center justify-end">
           <CatalogItemActions
             compact
             productId={product.id}

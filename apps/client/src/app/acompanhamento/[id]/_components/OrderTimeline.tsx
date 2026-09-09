@@ -6,6 +6,7 @@ import {
   statusLabel,
   STATUS_COPY,
   isAwaitingPixPayment,
+  customerFacingStatus,
   type CustomerOrder,
 } from '@/modules/orders/types';
 import { cn } from '@/lib/utils';
@@ -31,10 +32,17 @@ export function OrderTimeline({ order }: { order: CustomerOrder }) {
     order.deliveryMethod === 'pickup' ? PICKUP_STEPS : DELIVERY_STEPS;
   const isCancelled = order.status === 'cancelled';
   const awaitingPayment = isAwaitingPixPayment(order);
+  // "Pronto para entrega" é apresentado como "Saiu para entrega" para o cliente.
+  const displayStatus = customerFacingStatus(order.status);
   const currentStep = isCancelled
     ? -1
-    : steps.findIndex((s) => s.id === order.status);
+    : steps.findIndex((s) => s.id === displayStatus);
   const CurrentIcon = steps[Math.max(currentStep, 0)]?.icon ?? Receipt;
+  // "Pronto para entrega" não é um estado que o cliente vê — some do histórico
+  // (o horário dele ainda acende a etapa "Saiu para entrega" no passo a passo).
+  const historyEntries = order.history.filter(
+    (entry) => entry.newStatus !== 'ready_for_delivery',
+  );
 
   return (
     <div className="flex flex-col gap-3 lg:col-span-2">
@@ -109,10 +117,10 @@ export function OrderTimeline({ order }: { order: CustomerOrder }) {
             isCancelled ? 'text-destructive' : 'text-primary',
           )}
         >
-          {statusLabel(order.status)}
+          {statusLabel(displayStatus)}
         </h2>
         <p className="relative mx-auto mt-2 max-w-[28ch] text-sm leading-relaxed text-muted-foreground">
-          {STATUS_COPY[order.status]}
+          {STATUS_COPY[displayStatus]}
         </p>
 
         {order.scheduledFor ? (
@@ -212,13 +220,13 @@ export function OrderTimeline({ order }: { order: CustomerOrder }) {
         </section>
       ) : null}
 
-      {order.history.length > 0 ? (
+      {historyEntries.length > 0 ? (
         <section className="rounded-xl border border-border bg-card p-4">
           <h2 className="font-serif text-lg font-semibold text-foreground">
             Histórico
           </h2>
           <ul className="mt-3 space-y-2">
-            {order.history.map((entry) => (
+            {historyEntries.map((entry) => (
               <li
                 key={entry.id}
                 className="flex items-start justify-between gap-3 text-sm"

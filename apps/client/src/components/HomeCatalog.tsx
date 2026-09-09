@@ -140,8 +140,16 @@ export default function HomeCatalog({
                 return (
                   <article
                     key={product.id}
-                    className="flex w-[196px] shrink-0 flex-col rounded-xl border border-border bg-card p-2.5 lg:w-[248px] lg:p-3"
+                    className="relative flex w-[196px] shrink-0 flex-col rounded-xl border border-border bg-card p-2.5 transition-colors duration-150 hover:border-foreground/15 lg:w-[248px] lg:p-3"
                   >
+                    <Link
+                      href={`/produto/${product.slug}`}
+                      className="absolute inset-0 z-0 rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    >
+                      <span className="sr-only">
+                        Ver detalhes de {product.name}
+                      </span>
+                    </Link>
                     <div className="flex items-center gap-2.5 lg:gap-3">
                       <ProductThumb
                         tone={categoryTone(
@@ -171,7 +179,7 @@ export default function HomeCatalog({
                       {quantityInCart > 0 ? (
                         <CatalogCartControls
                           compact
-                          className="w-full"
+                          className="relative z-10 w-full"
                           productId={product.id}
                           productName={product.name}
                           quantity={quantityInCart}
@@ -181,7 +189,7 @@ export default function HomeCatalog({
                         <button
                           type="button"
                           onClick={() => addProduct(product)}
-                          className="inline-flex h-7 w-full items-center justify-center rounded-md bg-primary/10 px-2 text-2xs font-semibold text-primary transition-[background-color,transform] duration-100 hover:bg-primary/20 active:scale-[0.97] lg:h-9 lg:text-xs"
+                          className="relative z-10 inline-flex h-7 w-full items-center justify-center rounded-md bg-primary/10 px-2 text-2xs font-semibold text-primary transition-[background-color,transform] duration-100 hover:bg-primary/20 active:scale-[0.97] lg:h-9 lg:text-xs"
                         >
                           Adicionar
                         </button>
