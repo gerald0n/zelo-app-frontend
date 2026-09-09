@@ -7,14 +7,20 @@ import { apiJson } from '@/lib/api';
 import { adminKeys } from '@/lib/query-keys';
 import type { AdminAuditLog } from '@/modules/admin/types';
 import { cn } from '@/lib/cn';
+import {
+  actionLabel,
+  auditDetail,
+} from '@/app/configuracoes/_sections/audit-log-labels';
 
 const AREAS: Array<{ id: string; label: string }> = [
   { id: '', label: 'Tudo' },
   { id: 'product', label: 'Produtos' },
   { id: 'category', label: 'Categorias' },
-  { id: 'store', label: 'Loja' },
-  { id: 'order', label: 'Pedidos' },
+  { id: 'addon', label: 'Adicionais' },
   { id: 'promotion', label: 'Promoções' },
+  { id: 'coupon', label: 'Cupons' },
+  { id: 'store', label: 'Loja' },
+  { id: 'review', label: 'Avaliações' },
 ];
 
 const PERIODS: Array<{ days: number; label: string }> = [
@@ -23,18 +29,21 @@ const PERIODS: Array<{ days: number; label: string }> = [
   { days: 90, label: '90 dias' },
 ];
 
-/** Um resumo curto do metadata do evento (o que mudou), sem despejar o JSON. */
-function describe(log: AdminAuditLog): string | null {
-  const meta = log.metadata;
-  if (!meta) return null;
-  if (typeof meta.name === 'string') return meta.name;
-  if (typeof meta.reason === 'string') return meta.reason;
-  if (typeof meta.count === 'number') return `${meta.count} itens`;
-  if (typeof meta.pausedUntil === 'string') {
-    return `até ${new Date(meta.pausedUntil).toLocaleString('pt-BR')}`;
-  }
-  const keys = Object.keys(meta);
-  return keys.length ? keys.slice(0, 4).join(', ') : null;
+function actorLabel(log: AdminAuditLog): string {
+  if (log.actorType === 'admin') return log.actorName ?? 'Equipe';
+  if (log.actorType === 'customer') return 'Cliente';
+  if (log.actorType === 'system') return 'Sistema';
+  return log.actorType;
+}
+
+function formatWhen(iso: string): string {
+  return new Date(iso).toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 export function AuditLogSection() {
@@ -53,7 +62,13 @@ export function AuditLogSection() {
 
   return (
     <section className="space-y-3 rounded-lg border border-border bg-card p-3.5">
-      <p className="text-sm font-semibold">Auditoria</p>
+      <div>
+        <p className="text-sm font-semibold">Auditoria</p>
+        <p className="mt-0.5 text-2xs text-muted-foreground">
+          Tudo o que a equipe alterou no catálogo e nas configurações, com quem
+          fez e quando.
+        </p>
+      </div>
 
       <div className="flex flex-wrap gap-1.5">
         {AREAS.map((item) => (
@@ -99,30 +114,29 @@ export function AuditLogSection() {
           Nenhum evento nesse filtro.
         </p>
       ) : (
-        <ul className="max-h-[420px] space-y-0 overflow-y-auto">
+        <ul className="max-h-[460px] space-y-0 overflow-y-auto">
           {logs.map((log) => {
-            const detail = describe(log);
+            const detail = auditDetail(log);
             return (
               <li
                 key={log.id}
-                className="border-t border-border py-2 first:border-t-0 first:pt-0"
+                className="border-t border-border py-2.5 first:border-t-0 first:pt-0"
               >
-                <div className="flex items-baseline justify-between gap-2">
-                  <p className="text-xs font-semibold">{log.action}</p>
-                  <p className="shrink-0 text-2xs tabular-nums text-muted-foreground">
-                    {new Date(log.createdAt).toLocaleString('pt-BR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </p>
-                </div>
+                <p className="text-xs font-semibold text-foreground">
+                  {actionLabel(log.action)}
+                </p>
                 {detail ? (
-                  <p className="mt-0.5 truncate text-2xs text-muted-foreground">
+                  <p className="mt-0.5 text-2xs text-muted-foreground">
                     {detail}
                   </p>
                 ) : null}
+                <p className="mt-1 text-2xs text-muted-foreground">
+                  <span className="font-medium text-foreground/80">
+                    {actorLabel(log)}
+                  </span>
+                  {' · '}
+                  {formatWhen(log.createdAt)}
+                </p>
               </li>
             );
           })}

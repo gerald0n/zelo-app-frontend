@@ -7,9 +7,11 @@ export const dynamic = 'force-dynamic';
 const ALLOWED_PREFIXES = new Set([
   'product',
   'category',
+  'addon',
   'store',
-  'order',
   'promotion',
+  'coupon',
+  'review',
 ]);
 
 export async function GET(request: Request) {
