@@ -1,5 +1,13 @@
 # 08 - Entrega e Retirada
 
+> ⚠️ **Parcialmente desatualizado (ago/2026).** A área de entrega **não** é
+> mais uma "lista de bairros": é um **raio em linha reta** a partir da loja
+> — grátis até `free_delivery_radius_meters`, taxa fixa até
+> `max_delivery_radius_meters`, acima disso só retirada. O bairro virou
+> rótulo opcional para o entregador. Google Maps é a única stack de mapas
+> (Leaflet/OSM removidos). Ver plano `100-planejamento/105` e `20-tecnico/31`
+> §2.8.
+
 # Objetivo
 
 Este documento define as modalidades de recebimento do Pedido e as regras da área de atendimento.

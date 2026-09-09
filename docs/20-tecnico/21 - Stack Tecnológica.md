@@ -1,5 +1,10 @@
 # 21 - Stack Tecnológica — Revisado
 
+> ⚠️ **Parcialmente desatualizado (ago/2026).** "Meta WhatsApp Cloud API"
+> **não é usada**. As integrações reais são Twilio Verify (SMS), Mercado
+> Pago (Pix), Cloudflare Turnstile, Google Maps, Web Push e Sentry. Ver
+> `31 - Estado da Implementação vs. Documentação de Referência.md`.
+
 # Aplicação
 
 - Next.js;

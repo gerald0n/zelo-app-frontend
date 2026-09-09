@@ -1,5 +1,12 @@
 # 10 - Agendamento e Funcionamento
 
+> 🟡 **Incompleto (ago/2026).** Os **horários candidatos de agendamento** são
+> configuráveis pelo admin (`stores.schedule_slot_times`, HH:MM) — o app
+> filtra cada um pela janela do dia + blackouts. Existe **pausa da loja com
+> prazo e motivo** (`paused_until` / `pause_reason`): a regra "loja aberta
+> agora" checa `paused_until > now()` antes de `is_open_override` e do
+> horário. Ver `20-tecnico/31` §2.9. A regra das 17h segue como descrito.
+
 # Objetivo
 
 Este documento define o comportamento da Loja em relação a horários de funcionamento, pedidos imediatos e agendamentos.

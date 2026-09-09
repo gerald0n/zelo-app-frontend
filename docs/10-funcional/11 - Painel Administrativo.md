@@ -1,5 +1,14 @@
 # 11 - Painel Administrativo
 
+> ⚠️ **Muito incompleto (ago/2026).** Descreve só o núcleo (fila, catálogo,
+> configurações). O painel atual (`apps/admin`) tem, além disso: kanban de
+> duas raias com drag-and-drop, **comanda manual** (pedido para cliente sem
+> conta), **estoque** por produto, **impressão térmica** (WebUSB),
+> **promoções**, **cupons**, **financeiro**, **avaliações/moderação**,
+> **pausa da loja**, **push do painel** e um dashboard "Visão geral" que
+> absorveu a antiga rota `/relatorios`. Fonte viva: planos
+> `100-planejamento/103`, `104`, `106`, `107`. Delta em `20-tecnico/31` §2.10.
+
 # Objetivo
 
 Este documento define as funcionalidades do painel administrativo da primeira versão.

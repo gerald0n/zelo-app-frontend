@@ -13,7 +13,11 @@ Cada app é um projeto Vercel separado com **Root Directory** `apps/client` / `a
 e "Include source files outside of the Root Directory" habilitado. O código comum é
 resolvido pelo alias `@/*`, que cai em `packages/shared/src` quando não existe no app.
 
-Estado atual: **fases A–K implementadas** (catálogo, carrinho, checkout, pedidos, admin, realtime, push/PWA). Próximo passo: **Fase L — Deploy / produção**.
+Estado atual: **em produção**. As 14 fases do roadmap foram concluídas; a
+evolução ativa está nos planos `docs/100-planejamento/102`–`107` e no
+`_HANDOFF`. Para o que os docs de referência (`docs/10-funcional/`,
+`docs/20-tecnico/`) ainda não refletem, ver
+`docs/20-tecnico/31 - Estado da Implementação vs. Documentação de Referência.md`.
 
 ## Commits
 
@@ -106,9 +110,12 @@ ficam em `apps/client` — rode com `pnpm --filter @zelo/client <script>`.
 - React Hook Form + Zod (formulários)
 - Zustand (carrinho)
 - Supabase local (Postgres, Auth, Storage, Realtime)
-- Web Push + PWA
+- Web Push + PWA (cliente e painel)
 - Sentry (ativo com DSN)
-- Twilio Verify (SMS) para OTP
+- Twilio Verify (SMS) para OTP — fallback de código gerado pelo app (`OTP_HASH_SECRET`)
+- Cloudflare Turnstile (captcha no envio de OTP)
+- Mercado Pago (Pix dinâmico) + Supabase Cron (reconciliação)
+- Google Maps Platform (Places/Geocoding/Maps JS; Leaflet/OSM removidos)
 
 ## Banco local (Fase B)
 
@@ -160,7 +167,12 @@ Reinicie o Next. Em production o Twilio Verify é obrigatório.
 - `POST /api/v1/checkout/preview` e `POST /api/v1/orders`
 - Acompanhamento, cancelamento e recompra
 
-### Painel administrativo (Fase I)
+- Pix **dinâmico via Mercado Pago** (QR por pedido, confirmação por webhook,
+  reconciliação por Supabase Cron, tentativas, estorno)
+- Cupons e promoções aplicados na criação do pedido
+- Cloudflare Turnstile no envio de OTP
+
+### Painel administrativo
 
 Login **local** (criado pelo `seed.sql`, nunca vai para produção):
 `admin@zeloconfeitaria.com.br` / `admin123`
@@ -168,13 +180,18 @@ Login **local** (criado pelo `seed.sql`, nunca vai para produção):
 Em produção o admin é criado manualmente com senha forte — ver
 `docs/20-tecnico/29 - Deploy e Ambientes.md`.
 
-- Pedidos: fila, detalhe, status e cancelamento
-- Catálogo: CRUD de categorias, produtos e adicionais
-- Upload de imagens (`product-images`)
-- Disponibilidade rápida de produtos
-- Configurações da loja, horários semanais, blackouts e auditoria
+- Kanban de pedidos (duas raias, drag-and-drop à mão), detalhe, status,
+  cancelamento
+- Comanda manual (pedido para cliente sem conta)
+- Catálogo: CRUD de categorias/produtos/adicionais, várias fotos, duplicar,
+  reordenar, estoque
+- Promoções, cupons, financeiro (taxas MP), avaliações/moderação
+- Configurações: loja, horários, slots de agendamento, blackouts, pausa,
+  CNPJ, impressão térmica (WebUSB), auditoria
+- Push do painel (pedido novo notifica o celular do admin — VAPID próprio)
+- Dashboard "Visão geral" (Operação + Financeiro por período)
 
-### Realtime / Push / PWA (Fases J–K)
+### Realtime / Push / PWA
 
 - Canais admin e cliente com refetch via TanStack Query
 - Manifest, service worker, assinatura push após pedido
@@ -182,8 +199,9 @@ Em produção o admin é criado manualmente com senha forte — ver
 
 ## Próximos passos
 
-1. **Fase L — Deploy** (Vercel ou VPS, Supabase prod, domínio, variáveis, validação)
-2. **Fase M — Twilio Verify SMS em produção** (Geo Permissions no Brasil, OTP real)
-3. **Fase N — Encerramento** (limpeza, docs, segurança)
+Ver `docs/100-planejamento/_HANDOFF - Evolução do App.md`. Em aberto:
+reconciliar os docs de referência com o código
+(`docs/20-tecnico/31`), suavizar a taxa de entrega em faixas (105e),
+componente único de endereço (105f), avaliação por produto (106 Fase 2).
 
 Detalhes: `docs/100-planejamento/`.

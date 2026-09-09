@@ -1,5 +1,8 @@
 # 101 - Plano Mestre de Desenvolvimento
 
+> 📌 **Histórico.** Blocos A–N concluídos (app em produção). Evolução atual
+> nos planos 102–107 e no `_HANDOFF`.
+
 # Como usar
 
 Cada tarefa deve ser executada em ordem, salvo quando estiver explicitamente marcada como independente.

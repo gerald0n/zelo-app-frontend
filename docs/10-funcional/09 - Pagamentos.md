@@ -1,5 +1,14 @@
 # 09 - Pagamentos
 
+> ⚠️ **Seção "Pix" desatualizada (ago/2026).** O Pix **não** é mais
+> copia-e-cola estático com conferência manual. Cada pedido Pix gera uma
+> cobrança dinâmica no **Mercado Pago** (QR + copia-e-cola por pedido,
+> expiração ~30 min) e a confirmação chega **automaticamente por webhook**;
+> há reconciliação por cron, novas tentativas quando o código expira e
+> estorno quando o admin cancela um Pix pago (`payment_status = refunded`).
+> Dinheiro e cartão seguem como descrito. Detalhes: plano
+> `100-planejamento/104` e `20-tecnico/31` §2.1.
+
 # Objetivo
 
 Este documento define as formas de pagamento aceitas e suas regras na primeira versão.
