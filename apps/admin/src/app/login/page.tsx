@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -16,9 +16,7 @@ import { BotTrap } from '@/components/BotTrap';
 
 const loginSchema = z.object({
   email: z.email('Informe um e-mail válido.'),
-  password: z
-    .string()
-    .min(ADMIN_MIN_PASSWORD_LENGTH, 'Senha inválida.'),
+  password: z.string().min(ADMIN_MIN_PASSWORD_LENGTH, 'Senha inválida.'),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -44,6 +42,21 @@ export default function AdminLoginPage() {
       password: '',
     },
   });
+
+  // Se a navegação suave para `/` travar (payload RSC pendurado, sessão ainda
+  // não propagada), o botão ficaria em loading eterno. Depois de alguns
+  // segundos, força um carregamento "duro" — o proxy revalida a sessão e o
+  // painel abre limpo.
+  useEffect(() => {
+    if (!redirecting) return;
+    const timer = window.setTimeout(() => {
+      // Full reload proposital (não `router.push`): o objetivo é justamente
+      // descartar o estado de navegação preso e refazer a request do zero.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- reload duro é a intenção
+      window.location.assign(`${window.location.origin}/`);
+    }, 6000);
+    return () => window.clearTimeout(timer);
+  }, [redirecting]);
 
   const submit = form.handleSubmit(async (values) => {
     setError('');
@@ -129,9 +142,7 @@ export default function AdminLoginPage() {
             ) : null}
           </div>
 
-          {error ? (
-            <p className="text-sm text-destructive">{error}</p>
-          ) : null}
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
           <div className="relative">
             <BotTrap
