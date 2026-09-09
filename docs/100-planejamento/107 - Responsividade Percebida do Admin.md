@@ -22,7 +22,12 @@ Parte 3 → Parte 2**, com a **Parte 1b** por último.
   Obs.: precisou aplicar 6 migrações pendentes no Supabase local
   (`pnpm exec supabase migration up --local`) — o endpoint financeiro dependia
   da migração `20260908150000_payment_financials`.
-- **Parte 1b** e **Parte 2** — pendentes.
+- **Parte 2 — FEITA** (commit `81e5080`). Helper `src/lib/admin/catalog-cache.ts`;
+  optimistic em `patchMutation`/`bulkMutation`/`reorderProductsMutation` e nos
+  archive/delete das outras abas; switch e duplicar travados durante o voo;
+  "Salvar" de Categorias/Adicionais com `isPending`. Verificado: switch
+  instantâneo, archive some na hora, erro simulado reverte.
+- **Parte 1b** — pendente (única restante).
 
 ---
 
