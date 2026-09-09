@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { ChevronRight, Loader2 } from 'lucide-react';
 import AdminOrderCard from '@/components/admin/AdminOrderCard';
 import { useRequireAdmin } from '@/hooks/useRequireAdmin';
@@ -12,10 +12,12 @@ import { cn } from '@/lib/cn';
 import { adminKeys } from '@/lib/query-keys';
 import type { AdminOrderListItem } from '@/modules/admin/types';
 import {
-  buildDashboard,
   PERIOD_LABEL,
+  planDashboardQuery,
+  type DashboardData,
   type DashboardPeriod,
-} from '@/app/_components/dashboard-metrics';
+  type DashboardReport,
+} from '@/modules/admin/dashboard';
 import { DashboardStats } from '@/app/_components/DashboardStats';
 import { SalesChart } from '@/app/_components/SalesChart';
 import { TopProducts } from '@/app/_components/TopProducts';
@@ -28,28 +30,55 @@ export default function AdminDashboardPage() {
   const { isAuthenticated, ready } = useRequireAdmin();
   const [period, setPeriod] = useState<DashboardPeriod>('today');
 
-  const ordersQuery = useQuery({
-    // Realtime invalida esta query pelo `AdminRealtimeProvider` — não entra
-    // no queryKey (senão troca a identidade e pisca o spinner a cada evento).
-    queryKey: adminKeys.orders('all'),
+  // Fronteiras calculadas no fuso do cliente (capturadas ao trocar de
+  // período / montar). O servidor só agrega dentro delas.
+  const plan = useMemo(() => planDashboardQuery(period), [period]);
+
+  const dashboardQuery = useQuery({
+    // Realtime invalida via `AdminRealtimeProvider` (prefixo `reports`) — o
+    // `period` no queryKey troca a query ao alternar, com placeholderData
+    // segurando os dados anteriores até a nova chegar (sem flash).
+    queryKey: [...adminKeys.reports('dashboard'), period],
+    enabled: ready && isAuthenticated,
+    placeholderData: keepPreviousData,
+    queryFn: () => {
+      const params = new URLSearchParams({
+        kind: 'dashboard',
+        from: plan.query.from,
+        prevFrom: plan.query.prevFrom,
+        prevTo: plan.query.prevTo,
+        bucketFrom: plan.query.bucketFrom,
+        grain: plan.query.grain,
+        count: String(plan.query.count),
+      });
+      return apiJson<DashboardReport>(`/api/v1/admin/reports?${params}`);
+    },
+  });
+
+  const activeQuery = useQuery({
+    queryKey: adminKeys.orders('active'),
     enabled: ready && isAuthenticated,
     queryFn: () =>
       apiJson<{ orders: AdminOrderListItem[] }>(
-        '/api/v1/admin/orders?scope=all',
+        '/api/v1/admin/orders?scope=active',
       ),
   });
 
-  const orders = useMemo(
-    () => ordersQuery.data?.orders ?? [],
-    [ordersQuery.data],
-  );
-  const data = useMemo(() => buildDashboard(orders, period), [orders, period]);
+  const data = useMemo<DashboardData | null>(() => {
+    const report = dashboardQuery.data;
+    if (!report) return null;
+    return {
+      ...report,
+      buckets: report.buckets.map((bucket, index) => ({
+        label: plan.labels[index] ?? '',
+        ...bucket,
+      })),
+    };
+  }, [dashboardQuery.data, plan.labels]);
+
   const active = useMemo(
-    () =>
-      orders.filter(
-        (order) => !['delivered', 'cancelled'].includes(order.status),
-      ),
-    [orders],
+    () => activeQuery.data?.orders ?? [],
+    [activeQuery.data],
   );
 
   if (!ready || !isAuthenticated) {
@@ -99,7 +128,7 @@ export default function AdminDashboardPage() {
         </div>
       </header>
 
-      {ordersQuery.isLoading ? (
+      {!data ? (
         <div className="flex justify-center py-16">
           <Loader2 className="size-5 animate-spin text-muted-foreground" />
         </div>
