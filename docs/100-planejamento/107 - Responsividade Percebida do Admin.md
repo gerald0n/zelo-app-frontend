@@ -12,8 +12,17 @@ intacta.
 
 ## Estado
 
-**Não iniciado** (2026-09-09). Ordem de execução: **Parte 1 → Parte 3 → Parte 2**,
-com a **Parte 1b** por último (pode ser adiada sem bloquear o resto).
+Branch `feat/admin-ui-otimista` (de `develop`, 2026-09-09). Ordem: **Parte 1 →
+Parte 3 → Parte 2**, com a **Parte 1b** por último.
+
+- **Parte 1 — FEITA** (commit `ae71438`). Verificada no admin com Supabase local.
+- **Parte 3 — FEITA** (commit `3d734c7`). Verificada: Operação + Financeiro na
+  Visão geral reagindo ao seletor de período; nav sem "Relatórios";
+  `/relatorios` → 404; `pnpm --filter @zelo/admin build` limpo.
+  Obs.: precisou aplicar 6 migrações pendentes no Supabase local
+  (`pnpm exec supabase migration up --local`) — o endpoint financeiro dependia
+  da migração `20260908150000_payment_financials`.
+- **Parte 1b** e **Parte 2** — pendentes.
 
 ---
 
