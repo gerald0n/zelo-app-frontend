@@ -1,6 +1,8 @@
+import 'server-only';
+
 import { err, ok, type Result } from '@/lib/errors';
 import { logger } from '@/lib/logger';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createPublicSupabaseClient } from '@/lib/supabase/public';
 import { hasSupabasePublicConfig } from '@/config/env';
 import { mapCategory, mapProduct, mapStore } from '@/modules/catalog/mappers';
 import type { ActivePromotion } from '@/modules/catalog/promotions';
@@ -66,7 +68,7 @@ export async function getPublicStore(): Promise<Result<CatalogStore | null>> {
   if (!hasSupabasePublicConfig()) return notConfigured();
 
   try {
-    const supabase = await createServerSupabaseClient();
+    const supabase = createPublicSupabaseClient();
     const { data: store, error: storeError } = await supabase
       .from('stores')
       .select('*')
@@ -134,7 +136,7 @@ export async function listPublicCategories(): Promise<
   if (!hasSupabasePublicConfig()) return notConfigured();
 
   try {
-    const supabase = await createServerSupabaseClient();
+    const supabase = createPublicSupabaseClient();
     const { data, error } = await supabase
       .from('categories')
       .select('*')
@@ -161,7 +163,7 @@ export async function listPublicProducts(): Promise<Result<CatalogProduct[]>> {
   if (!hasSupabasePublicConfig()) return notConfigured();
 
   try {
-    const supabase = await createServerSupabaseClient();
+    const supabase = createPublicSupabaseClient();
     const [{ data, error }, promotions] = await Promise.all([
       supabase
         .from('products')
@@ -193,7 +195,7 @@ export async function getPublicProductBySlugOrId(
   if (!hasSupabasePublicConfig()) return notConfigured();
 
   try {
-    const supabase = await createServerSupabaseClient();
+    const supabase = createPublicSupabaseClient();
 
     const bySlug = await supabase
       .from('products')

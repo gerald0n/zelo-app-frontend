@@ -1,12 +1,12 @@
 import HomeCatalog from '@/components/HomeCatalog';
-import { getPublicCatalog } from '@/modules/catalog/catalog-repository';
+import { getCachedPublicCatalog } from '@/modules/catalog/cached-catalog';
 import { listPublicTestimonials } from '@/modules/reviews';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   const [catalog, testimonials] = await Promise.all([
-    getPublicCatalog(),
+    getCachedPublicCatalog(),
     listPublicTestimonials(),
   ]);
 
