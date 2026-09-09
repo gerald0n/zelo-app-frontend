@@ -34,7 +34,9 @@ Parte 3 → Parte 2**, com a **Parte 1b** por último.
   tag while rendering" do React 19 é esperado, não afeta produção. Verificado
   no SSR HTML + build limpo.
 
-**Todas as 4 partes concluídas.** Branch `feat/admin-ui-otimista` pronta para PR.
+**Todas as 4 partes concluídas e em produção** — PR #69 (`feat/admin-ui-otimista`
+→ `develop`, merge `6bd4171`) e PR #70 (`develop` → `main`, merge `65339ad`),
+ambos com CI `verify` verde (2026-09-09).
 
 ---
 
