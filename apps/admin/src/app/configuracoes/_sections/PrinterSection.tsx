@@ -22,6 +22,9 @@ export function PrinterSection() {
     if (!result.ok) setTestError(result.reason);
   };
 
+  const { pendingCount, failedCount } = printer;
+  const queued = pendingCount + failedCount;
+
   return (
     <section className="space-y-3 rounded-lg border border-border bg-card p-3.5">
       <p className="text-sm font-semibold">Impressora térmica</p>
@@ -31,6 +34,38 @@ export function PrinterSection() {
       {testError ? (
         <p className="text-2xs text-destructive">{testError}</p>
       ) : null}
+
+      {queued > 0 ? (
+        <div className="space-y-2 rounded-md border border-border bg-muted/40 p-2.5">
+          <p className="text-xs text-muted-foreground">
+            {pendingCount > 0
+              ? `${pendingCount} comanda${pendingCount > 1 ? 's' : ''} na fila de impressão`
+              : 'Fila de impressão'}
+            {failedCount > 0
+              ? ` · ${failedCount} com falha`
+              : printer.status === 'ready'
+                ? ' · imprimindo…'
+                : ' · aguardando a impressora'}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => printer.retryQueue()}
+              className="rounded-md border border-border px-3 py-1.5 text-2xs font-semibold"
+            >
+              Tentar imprimir agora
+            </button>
+            <button
+              type="button"
+              onClick={() => printer.clearQueue()}
+              className="rounded-md border border-border px-3 py-1.5 text-2xs font-semibold text-destructive"
+            >
+              Descartar fila
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap gap-2">
         {printer.status !== 'unsupported' ? (
           <button

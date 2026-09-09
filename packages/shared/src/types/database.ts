@@ -851,6 +851,7 @@ export type Database = {
           guest_phone_e164: string | null;
           id: string;
           internal_note: string | null;
+          kitchen_printed_at: string | null;
           mp_order_id: string | null;
           mp_payment_id: string | null;
           mp_refund_id: string | null;
@@ -893,6 +894,7 @@ export type Database = {
           guest_phone_e164?: string | null;
           id?: string;
           internal_note?: string | null;
+          kitchen_printed_at?: string | null;
           mp_order_id?: string | null;
           mp_payment_id?: string | null;
           mp_refund_id?: string | null;
@@ -935,6 +937,7 @@ export type Database = {
           guest_phone_e164?: string | null;
           id?: string;
           internal_note?: string | null;
+          kitchen_printed_at?: string | null;
           mp_order_id?: string | null;
           mp_payment_id?: string | null;
           mp_refund_id?: string | null;
@@ -1583,6 +1586,7 @@ export type Database = {
           guest_phone_e164: string | null;
           id: string;
           internal_note: string | null;
+          kitchen_printed_at: string | null;
           mp_order_id: string | null;
           mp_payment_id: string | null;
           mp_refund_id: string | null;
@@ -1644,6 +1648,7 @@ export type Database = {
           guest_phone_e164: string | null;
           id: string;
           internal_note: string | null;
+          kitchen_printed_at: string | null;
           mp_order_id: string | null;
           mp_payment_id: string | null;
           mp_refund_id: string | null;
@@ -1707,6 +1712,7 @@ export type Database = {
           guest_phone_e164: string | null;
           id: string;
           internal_note: string | null;
+          kitchen_printed_at: string | null;
           mp_order_id: string | null;
           mp_payment_id: string | null;
           mp_refund_id: string | null;
@@ -1763,6 +1769,7 @@ export type Database = {
           guest_phone_e164: string | null;
           id: string;
           internal_note: string | null;
+          kitchen_printed_at: string | null;
           mp_order_id: string | null;
           mp_payment_id: string | null;
           mp_refund_id: string | null;
@@ -1819,6 +1826,7 @@ export type Database = {
           guest_phone_e164: string | null;
           id: string;
           internal_note: string | null;
+          kitchen_printed_at: string | null;
           mp_order_id: string | null;
           mp_payment_id: string | null;
           mp_refund_id: string | null;

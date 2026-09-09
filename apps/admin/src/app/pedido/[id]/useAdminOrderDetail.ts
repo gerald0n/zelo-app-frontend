@@ -178,7 +178,16 @@ export function useAdminOrderDetail(id: string | null) {
     if (!order) return;
     const bytes = buildKitchenTicket(orderToKitchenTicket(order));
     const result = await printer.printRaw(bytes);
-    if (!result.ok) setError(result.reason);
+    if (!result.ok) {
+      setError(result.reason);
+      return;
+    }
+    // Impressão manual é autoritativa: tira o job da fila e marca no servidor
+    // pra reconciliação não reenfileirar a mesma comanda.
+    printer.dequeue(order.id, 'kitchen');
+    void apiJson(`/api/v1/admin/orders/${order.id}/mark-printed`, {
+      method: 'POST',
+    }).catch(() => {});
   };
 
   const reprintSlip = async () => {
@@ -186,7 +195,11 @@ export function useAdminOrderDetail(id: string | null) {
     if (!order || !store) return;
     const bytes = buildDeliverySlip(orderToDeliverySlip(order, store));
     const result = await printer.printRaw(bytes);
-    if (!result.ok) setError(result.reason);
+    if (!result.ok) {
+      setError(result.reason);
+      return;
+    }
+    printer.dequeue(order.id, 'delivery');
   };
 
   const retryRefund = async () => {
