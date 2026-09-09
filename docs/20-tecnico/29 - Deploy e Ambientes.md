@@ -154,6 +154,33 @@ somar latência à mutação). Sem essas duas envs a propagação cai só no TTL
 
 ---
 
+# Web Push (VAPID)
+
+`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` e `VAPID_SUBJECT` têm que
+ser **o mesmo par nos dois projetos** (`zelo-app` e `zelo-admin`), em
+Production e Preview. As notificações cruzam as apps: "novo pedido" é
+enviado pelo `apps/client` (checkout / webhook do Mercado Pago) mirando as
+assinaturas do painel; "status do pedido mudou" é enviado pelo `apps/admin`
+mirando as assinaturas do cliente. O serviço de push só entrega se a chave
+privada que assina o envio corresponder à `applicationServerKey` usada no
+`subscribe()`. Pares diferentes → todo envio cai em 401/403 (registrado como
+`logger.error` "Web Push recusado (VAPID não confere)"), sem revogar a
+assinatura.
+
+Gere com `pnpm exec web-push generate-vapid-keys`. Ao rotacionar o par, cada
+aparelho precisa **desativar e reativar** a notificação — os helpers
+(`packages/shared/src/modules/notifications/client.ts`,
+`apps/admin/src/lib/push-client.ts`) detectam a `applicationServerKey`
+antiga e reassinam sozinhos na ativação seguinte.
+
+| Variável | Onde | Valor |
+| --- | --- | --- |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | **ambos** os apps | mesma chave pública nos dois |
+| `VAPID_PRIVATE_KEY` | **ambos** os apps | mesma chave privada nos dois (Secret) |
+| `VAPID_SUBJECT` | **ambos** os apps | `mailto:contato@zeloconfeitaria.com.br` |
+
+---
+
 # Supabase
 
 Cada ambiente deve possuir configuração correspondente.

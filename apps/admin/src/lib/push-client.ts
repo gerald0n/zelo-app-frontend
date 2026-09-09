@@ -11,6 +11,25 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return output;
 }
 
+/**
+ * A assinatura fica presa à chave VAPID usada quando foi criada. Se o par
+ * VAPID do servidor mudou (rotação), a assinatura antiga continua no
+ * navegador mas todo envio é rejeitado com 403 — força uma nova.
+ */
+function subscriptionMatchesKey(
+  subscription: PushSubscription,
+  expectedKey: Uint8Array,
+): boolean {
+  const current = subscription.options?.applicationServerKey;
+  if (!current) return false;
+  const bytes = new Uint8Array(current);
+  if (bytes.length !== expectedKey.length) return false;
+  for (let i = 0; i < bytes.length; i += 1) {
+    if (bytes[i] !== expectedKey[i]) return false;
+  }
+  return true;
+}
+
 function pushSupported(): boolean {
   return (
     typeof window !== 'undefined' &&
@@ -65,13 +84,22 @@ export async function enableAdminPush(): Promise<
     return { ok: false, reason: 'failed' };
   }
 
+  const applicationServerKey = urlBase64ToUint8Array(
+    config.publicKey as string,
+  );
+
   let subscription = await registration.pushManager.getSubscription();
+  if (
+    subscription &&
+    !subscriptionMatchesKey(subscription, applicationServerKey)
+  ) {
+    await subscription.unsubscribe().catch(() => undefined);
+    subscription = null;
+  }
   if (!subscription) {
     subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(
-        config.publicKey as string,
-      ) as BufferSource,
+      applicationServerKey: applicationServerKey as BufferSource,
     });
   }
 
