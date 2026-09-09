@@ -1,7 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { Plus, Search, Loader2 } from 'lucide-react';
 import AdminKanbanBoard from '@/components/admin/kanban/AdminKanbanBoard';
 import AdminKanbanMobile from '@/components/admin/kanban/AdminKanbanMobile';
@@ -11,6 +16,7 @@ import { useNewOrder } from '@/contexts/AdminNewOrderContext';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 import { usePrinter } from '@/contexts/PrinterContext';
 import { useRequireAdmin } from '@/hooks/useRequireAdmin';
+import { useUiPref } from '@/hooks/useUiPref';
 import { ApiError, apiJson } from '@/lib/api';
 import { adminKeys } from '@/lib/query-keys';
 import { playNewOrderChime } from '@/lib/admin/notification-sound';
@@ -38,7 +44,12 @@ export default function AdminPedidosPage() {
   const printer = usePrinter();
   const { isAuthenticated, ready } = useRequireAdmin();
   const [query, setQuery] = useState('');
-  const [hideDelivered, setHideDelivered] = useState(false);
+  // Persistido por aparelho: sobrevive a refresh / reabertura do PWA.
+  const [hideDeliveredPref, setHideDeliveredPref] = useUiPref(
+    'pedidos:hide-delivered',
+    '0',
+  );
+  const hideDelivered = hideDeliveredPref === '1';
   const [optimisticStatus, setOptimisticStatus] = useState<
     Record<string, OrderStatus>
   >({});
@@ -67,6 +78,9 @@ export default function AdminPedidosPage() {
         `/api/v1/admin/orders?${params}`,
       );
     },
+    // Ao digitar na busca a queryKey muda — mantém o quadro anterior na tela
+    // enquanto a nova lista carrega, em vez de cair no spinner de tela cheia.
+    placeholderData: keepPreviousData,
   });
 
   const allOrders = useMemo(
@@ -263,7 +277,7 @@ export default function AdminPedidosPage() {
           <input
             type="checkbox"
             checked={hideDelivered}
-            onChange={(e) => setHideDelivered(e.target.checked)}
+            onChange={(e) => setHideDeliveredPref(e.target.checked ? '1' : '0')}
           />
           Ocultar entregues
         </label>

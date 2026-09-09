@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Inbox } from 'lucide-react';
+import { useUiPref } from '@/hooks/useUiPref';
 import type { AdminOrderListItem } from '@/modules/admin/types';
 import type { OrderStatus } from '@/modules/orders/types';
 import {
@@ -40,8 +41,12 @@ export default function AdminKanbanMobile({
   busyOrderId,
   hideDelivered,
 }: Props) {
-  const [lane, setLane] = useState<LaneKey>('pickup');
-  const [status, setStatus] = useState<BoardColumn | null>(null);
+  // Raia e coluna ficam salvas por aparelho — um refresh (ou reabrir o PWA)
+  // mantém o operador onde ele estava, em vez de voltar para "Retirada".
+  const [lanePref, setLanePref] = useUiPref('pedidos-mobile:lane', 'pickup');
+  const [colPref, setColPref] = useUiPref('pedidos-mobile:col', '');
+  const lane: LaneKey = lanePref === 'delivery' ? 'delivery' : 'pickup';
+  const status = (colPref || null) as BoardColumn | null;
 
   const laneOrders = useMemo(
     () => orders.filter((order) => laneOf(order) === lane),
@@ -74,7 +79,7 @@ export default function AdminKanbanMobile({
             <button
               key={item.key}
               type="button"
-              onClick={() => setLane(item.key)}
+              onClick={() => setLanePref(item.key)}
               className={cn(
                 'flex-1 rounded-sm py-1.5 text-center text-xs font-medium transition-colors',
                 lane === item.key
@@ -98,7 +103,7 @@ export default function AdminKanbanMobile({
           <button
             key={columnStatus}
             type="button"
-            onClick={() => setStatus(columnStatus)}
+            onClick={() => setColPref(columnStatus)}
             className={cn(
               'shrink-0 rounded-md border px-3 py-1.5 text-2xs font-semibold transition-colors',
               activeStatus === columnStatus
