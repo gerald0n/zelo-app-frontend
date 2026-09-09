@@ -42,6 +42,7 @@ const createManualOrderSchema = z.object({
   paymentMethod: z.enum(['cash', 'card']),
   alreadyPaid: z.boolean().default(false),
   customerNote: z.string().trim().max(1000).nullable().optional(),
+  couponCode: z.string().trim().min(3).max(32).nullable().optional(),
 });
 
 export async function GET(request: Request) {
@@ -106,6 +107,7 @@ export async function POST(request: Request) {
     paymentMethod: parsed.data.paymentMethod,
     alreadyPaid: parsed.data.alreadyPaid,
     customerNote: parsed.data.customerNote,
+    couponCode: parsed.data.couponCode,
   });
 
   if (!result.ok) {

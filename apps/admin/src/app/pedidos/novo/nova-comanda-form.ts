@@ -31,6 +31,7 @@ export const manualOrderSchema = z
     alreadyPaid: z.boolean(),
     source: z.enum(['balcao', 'whatsapp', 'instagram']),
     customerNote: z.string().trim().optional(),
+    couponCode: z.string().trim().optional(),
   })
   .superRefine((value, ctx) => {
     if (value.deliveryMethod === 'delivery') {
@@ -137,5 +138,6 @@ export function buildManualOrderPayload(
     paymentMethod: values.paymentMethod,
     alreadyPaid: values.alreadyPaid,
     customerNote: noteWithSource(values),
+    couponCode: values.couponCode?.trim().toUpperCase() || null,
   };
 }

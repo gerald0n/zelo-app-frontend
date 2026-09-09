@@ -214,6 +214,16 @@ export default function OrderDetailModalBody({
             <span className="text-muted-foreground">{feeLabel}</span>
             <span>{formatCatalogPrice(order.deliveryFeeCents)}</span>
           </div>
+          {order.couponDiscountCents > 0 ? (
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">
+                Cupom {order.couponCode}
+              </span>
+              <span className="text-success">
+                −{formatCatalogPrice(order.couponDiscountCents)}
+              </span>
+            </div>
+          ) : null}
           <div className="flex justify-between border-t border-border pt-1.5 text-sm font-bold">
             <span>Valor Total</span>
             <span className="text-primary">

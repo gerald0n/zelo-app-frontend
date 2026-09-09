@@ -7,6 +7,13 @@ export {
   type CreatedOrderPix,
 } from '@/modules/orders/create-order';
 export {
+  previewOrderCoupon,
+  couponPreviewSchema,
+  type CouponPreview,
+  type CouponPreviewInput,
+  type CouponDiscountType,
+} from '@/modules/orders/coupon-preview';
+export {
   resolveCustomerForCheckout,
   ensureCustomerRecord,
 } from '@/modules/orders/customer';

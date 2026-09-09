@@ -58,6 +58,7 @@ export function toRpcPayload(
         ? body.changeForAmountCents
         : null,
     customer_note: body.customerNote ?? null,
+    coupon_code: body.couponCode ? body.couponCode.toUpperCase() : null,
     delivery_fee_cents: delivery.deliveryFeeCents,
     route_distance_meters: delivery.routeDistanceMeters,
     address:
@@ -94,7 +95,7 @@ export async function fetchOrderSummary(
   const { data, error } = await admin
     .from('orders')
     .select(
-      'id, order_number, status, total_cents, delivery_fee_cents, subtotal_cents, add_ons_total_cents',
+      'id, order_number, status, total_cents, delivery_fee_cents, subtotal_cents, add_ons_total_cents, coupon_code, coupon_discount_cents',
     )
     .eq('id', orderId)
     .maybeSingle();
@@ -122,6 +123,8 @@ export async function fetchOrderSummary(
     totalCents: data.total_cents,
     deliveryFeeCents: data.delivery_fee_cents,
     subtotalCents: data.subtotal_cents + data.add_ons_total_cents,
+    couponCode: data.coupon_code,
+    couponDiscountCents: data.coupon_discount_cents ?? 0,
     routeDistanceMeters: address.data?.route_distance_meters ?? null,
   });
 }
