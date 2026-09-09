@@ -27,6 +27,11 @@ export type CatalogProduct = {
   /** Public URL of the primary photo, or null. */
   image: string | null;
   imageAlt: string | null;
+  /**
+   * Todas as fotos do produto, principal primeiro (a mesma da `image`).
+   * Vazio quando o produto não tem foto. Usada na galeria da página do produto.
+   */
+  images: Array<{ url: string; alt: string | null }>;
   available: boolean;
   weight?: string;
   addons: CatalogAddon[];

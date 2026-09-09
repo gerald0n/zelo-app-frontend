@@ -92,6 +92,10 @@ export function mapProduct(
       : {}),
     image: primary ? productImagePublicUrl(primary.storage_path) : null,
     imageAlt: primary?.alt_text ?? null,
+    images: images.map((img) => ({
+      url: productImagePublicUrl(img.storage_path),
+      alt: img.alt_text ?? null,
+    })),
     available: row.is_available && row.is_active && !row.archived_at,
     weight: formatWeightGrams(row.weight_min_grams, row.weight_max_grams),
     addons,
