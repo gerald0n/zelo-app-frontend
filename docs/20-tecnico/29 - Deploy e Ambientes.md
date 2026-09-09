@@ -116,6 +116,24 @@ A Vercel será responsável por:
 - logs de runtime;
 - integração com Sentry.
 
+## Região das Functions
+
+O Supabase de produção roda em `sa-east-1` (São Paulo). As Serverless
+Functions (SSR, RSC e rotas `/api`) **devem** rodar na mesma região, senão
+cada ida ao banco/Auth cruza o continente (~110 ms por round-trip, em série).
+
+Cada app fixa a região em `vercel.json` (`apps/client/vercel.json` e
+`apps/admin/vercel.json`):
+
+```json
+{ "regions": ["gru1"] }
+```
+
+`gru1` = São Paulo, co-locada com o `sa-east-1` do Supabase. O
+`vercel.json` tem precedência sobre a região default do projeto no
+dashboard. Edge Middleware (`proxy.ts`) continua rodando no PoP mais
+próximo do usuário — não é afetado por `regions`.
+
 ---
 
 # Supabase

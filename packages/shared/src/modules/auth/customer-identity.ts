@@ -18,10 +18,10 @@ export class SupabaseCustomerIdentityProvider implements CustomerIdentityProvide
   async getCurrent(): Promise<Result<CustomerIdentity | null>> {
     try {
       const supabase = await createServerSupabaseClient();
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
+      // `getClaims()` verifica o JWT localmente (signing keys assimétricas),
+      // sem ida à Auth a cada request — ao contrário de `getUser()`. Se o
+      // projeto ainda usa segredo simétrico, cai no mesmo caminho de rede.
+      const { data, error } = await supabase.auth.getClaims();
 
       if (error) {
         return err('UNAUTHENTICATED', 'Não foi possível validar a sessão.', {
@@ -29,14 +29,15 @@ export class SupabaseCustomerIdentityProvider implements CustomerIdentityProvide
         });
       }
 
-      if (!user) {
+      const userId = data?.claims.sub;
+      if (!userId) {
         return ok(null);
       }
 
       const { data: customer } = await supabase
         .from('customers')
         .select('id, name, phone_e164')
-        .eq('id', user.id)
+        .eq('id', userId)
         .maybeSingle();
 
       if (!customer) {
