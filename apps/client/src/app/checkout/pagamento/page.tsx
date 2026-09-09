@@ -68,7 +68,11 @@ export default function PagamentoPage() {
     let cancelled = false;
     (async () => {
       try {
-        const response = await fetch('/api/v1/checkout/options');
+        const response = await fetch('/api/v1/checkout/options', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: '{}',
+        });
         const json = await response.json();
         if (cancelled || !response.ok) return;
         const store = json?.store as CheckoutOptionsStore | undefined;

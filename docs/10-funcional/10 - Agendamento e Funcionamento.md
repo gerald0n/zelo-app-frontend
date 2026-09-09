@@ -1,28 +1,37 @@
 # 10 - Agendamento e Funcionamento
 
-> 🟡 **Incompleto (ago/2026).** Os **horários candidatos de agendamento** são
-> configuráveis pelo admin (`stores.schedule_slot_times`, HH:MM) — o app
-> filtra cada um pela janela do dia + blackouts. Existe **pausa da loja com
-> prazo e motivo** (`paused_until` / `pause_reason`): a regra "loja aberta
-> agora" checa `paused_until > now()` antes de `is_open_override` e do
-> horário. Ver `20-tecnico/31` §2.9. A regra das 17h segue como descrito.
+> ⚠️ **Reescrito em 09/09/2026** (PR #98 — em revisão, ainda não em
+> produção). O agendamento deixou de usar uma **lista fixa de horários**
+> (`stores.schedule_slot_times`, removida) e passou a ser **derivado** da
+> janela de funcionamento do dia + de **regras por categoria** (colunas
+> novas em `public.categories`, migração `20260909140000`). A antiga "regra
+> das 17h" foi substituída pelas regras de categoria. Toda a lógica de
+> "hoje"/"agora" passou a raciocinar no **fuso da loja** (`stores.timezone`),
+> não na hora do servidor. Ver `20-tecnico/31` §2.9. Lógica em
+> `packages/shared/src/modules/scheduling/`.
 
 # Objetivo
 
-Este documento define o comportamento da Loja em relação a horários de funcionamento, pedidos imediatos e agendamentos.
+Este documento define o comportamento da Loja em relação a horários de
+funcionamento, pedidos imediatos e agendamentos.
 
 ---
 
 # Horário de Funcionamento
 
-O Administrador deve configurar:
+O Administrador configura, por dia da semana:
 
-- dias de funcionamento;
-- horário de abertura;
-- horário de fechamento;
-- períodos indisponíveis;
-- horários permitidos para retirada;
-- horários permitidos para delivery.
+- se o dia está aberto ou fechado;
+- horário de abertura e de fechamento;
+- se aquele dia aceita entrega e/ou retirada;
+- períodos bloqueados pontuais (blackouts, com data/hora de início e fim);
+- pausa da loja "até tal hora" (`paused_until` / `pause_reason`).
+
+O Administrador **não** configura mais uma lista de horários de agendamento
+— ela é derivada (ver "Agendamento").
+
+A regra "loja aberta agora" checa, nesta ordem: `paused_until > now()` →
+`is_open_override` → o horário do dia no fuso da loja.
 
 ---
 
@@ -31,8 +40,8 @@ O Administrador deve configurar:
 Quando a Loja estiver aberta:
 
 - o catálogo pode ser visualizado;
-- pedidos imediatos podem ser realizados;
-- pedidos agendados podem ser realizados, se habilitados.
+- pedidos imediatos ("Agora") podem ser realizados;
+- pedidos agendados podem ser realizados.
 
 ---
 
@@ -45,57 +54,94 @@ Quando a Loja estiver fechada:
 - pedidos imediatos não podem ser confirmados;
 - o checkout permite somente agendamento.
 
----
+## "Agora" antes do primeiro horário do dia
 
-# Regra de Antecedência
-
-## Até 17h
-
-Pedidos realizados até e incluindo 17:00 podem ser agendados a partir do dia seguinte.
-
-## Após 17h
-
-Pedidos realizados após 17:00 podem ser agendados a partir do segundo dia seguinte.
+Se o dia de hoje está **aberto** na agenda, mas o horário atual ainda é
+**anterior à abertura** (ex.: a loja abre 19:00 e são 17:00), o botão
+"Agora" fica **desabilitado** e o checkout mostra "Hoje HH:MM" (o horário de
+abertura). Só o agendamento fica disponível. Isso vale **mesmo com a loja
+forçada como aberta no painel** (`is_open_override = true`) — "Agora" exige
+estar dentro da janela real do dia.
 
 ---
 
-# Exemplos
+# Agendamento
 
-Pedido realizado na terça-feira às 16:30:
+Os dias e horários oferecidos no checkout "Agendar" são **calculados** a
+partir de:
 
-- primeira data possível: quarta-feira.
+1. a **janela de funcionamento** do dia (abertura/fechamento, modalidade);
+2. a **regra de agendamento da categoria** dos itens do carrinho;
+3. os **períodos bloqueados** (blackouts).
 
-Pedido realizado na terça-feira às 17:00:
+O horário de **fechamento é o limite** e entra na lista (inclusivo): se a
+loja fecha 22:00, "22:00" é um horário selecionável.
 
-- primeira data possível: quarta-feira.
+## Regra de agendamento por categoria
 
-Pedido realizado na terça-feira às 17:01:
+Cada categoria carrega (editável no admin, aba Catálogo → Categorias):
 
-- primeira data possível: quinta-feira.
+| Campo                              | Significado                                                                  |
+| ---------------------------------- | ---------------------------------------------------------------------------- |
+| Permite mesmo dia                  | `false` = nunca hoje; só a partir de amanhã                                  |
+| Antecedência p/ liberar hoje (min) | a agenda de hoje só "abre" quando falta no máximo esse tempo para a abertura |
+| Horário mínimo (seg–sex)           | piso de horário nos dias de semana (nunca antes da abertura)                 |
+| Horário mínimo (sáb–dom)           | piso de horário no fim de semana                                             |
+| Intervalo entre horários (min)     | passo entre os horários oferecidos                                           |
+
+**Padrão de categoria nova** (comportamento "cookie"): permite mesmo dia,
+antecedência 120 min, sem piso, intervalo de 30 min.
+
+### Como os horários de hoje são montados
+
+- **Antes da abertura:** se falta mais que a "antecedência" para abrir → hoje
+  não aparece. Dentro da janela de antecedência → o primeiro horário é a
+  abertura, seguindo de intervalo em intervalo até o fechamento.
+- **Dentro do expediente:** o primeiro horário é o **próximo bloco cheio**
+  (múltiplo do intervalo) depois de agora. Ex.: intervalo 30 min, agora
+  19:15 → primeiro horário 19:30.
+- **Dias futuros:** do piso (abertura ou horário mínimo, o que for maior) até
+  o fechamento, de intervalo em intervalo.
+
+### Exemplos
+
+Categoria com abertura 19:00, fechamento 22:00, antecedência 120 min,
+intervalo 30 min:
+
+- pedido às 17:15 → hoje: 19:00, 19:30, 20:00, …, 22:00;
+- pedido às 10:00 → hoje **não** aparece (mais de 2 h antes de abrir);
+- pedido às 19:15 → hoje: 19:30, 20:00, …, 22:00.
+
+Categoria "pudins": não permite mesmo dia; horário mínimo 17:00 (semana) /
+10:00 (fim de semana); intervalo de 1 h. Um agendamento para quinta →
+17:00, 18:00, …; para sábado → 10:00, 11:00, ….
+
+## Carrinho misto
+
+Se o carrinho tem itens de **categorias com regras de agendamento
+diferentes** (ex.: cookies + pudins), o pedido é **bloqueado**: o checkout
+mostra um aviso, o botão "Continuar" fica travado e a criação do pedido é
+recusada no servidor. O Cliente separa em pedidos distintos.
 
 ---
 
 # Validação de Data
 
-A primeira data possível ainda deve respeitar:
-
-- dias de funcionamento;
-- horários configurados;
-- indisponibilidades da Loja;
-- modalidade escolhida.
-
-Datas ou horários indisponíveis não devem aparecer como selecionáveis.
+Datas e horários indisponíveis não aparecem como selecionáveis. A validação
+na criação do pedido usa exatamente a mesma função que monta as opções, então
+data/horário fora da regra são recusados.
 
 ---
 
 # Dados do Pedido Agendado
 
-O Pedido deve registrar:
+O Pedido registra:
 
 - indicador de Pedido agendado;
 - data e horário desejados;
 - data e horário de criação;
-- modalidade de entrega;
-- fuso horário utilizado.
+- modalidade de entrega.
 
-O fuso horário operacional deve ser consistente em todo o sistema.
+O fuso horário operacional (`stores.timezone`, ex.: `America/Fortaleza`) é
+usado de forma consistente em todo o cálculo de agenda, no servidor e no
+cliente.

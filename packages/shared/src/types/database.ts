@@ -289,6 +289,11 @@ export type Database = {
           id: string;
           is_active: boolean;
           name: string;
+          scheduling_allow_same_day: boolean;
+          scheduling_same_day_lead_minutes: number;
+          scheduling_slot_interval_minutes: number;
+          scheduling_weekday_earliest: string | null;
+          scheduling_weekend_earliest: string | null;
           sort_order: number;
           updated_at: string;
         };
@@ -299,6 +304,11 @@ export type Database = {
           id?: string;
           is_active?: boolean;
           name: string;
+          scheduling_allow_same_day?: boolean;
+          scheduling_same_day_lead_minutes?: number;
+          scheduling_slot_interval_minutes?: number;
+          scheduling_weekday_earliest?: string | null;
+          scheduling_weekend_earliest?: string | null;
           sort_order?: number;
           updated_at?: string;
         };
@@ -309,6 +319,11 @@ export type Database = {
           id?: string;
           is_active?: boolean;
           name?: string;
+          scheduling_allow_same_day?: boolean;
+          scheduling_same_day_lead_minutes?: number;
+          scheduling_slot_interval_minutes?: number;
+          scheduling_weekday_earliest?: string | null;
+          scheduling_weekend_earliest?: string | null;
           sort_order?: number;
           updated_at?: string;
         };
@@ -1478,7 +1493,6 @@ export type Database = {
           phone_e164: string;
           pix_copy_paste: string | null;
           postal_code: string | null;
-          schedule_slot_times: string[];
           state: string;
           timezone: string;
           updated_at: string;
@@ -1506,7 +1520,6 @@ export type Database = {
           phone_e164: string;
           pix_copy_paste?: string | null;
           postal_code?: string | null;
-          schedule_slot_times?: string[];
           state: string;
           timezone?: string;
           updated_at?: string;
@@ -1534,7 +1547,6 @@ export type Database = {
           phone_e164?: string;
           pix_copy_paste?: string | null;
           postal_code?: string | null;
-          schedule_slot_times?: string[];
           state?: string;
           timezone?: string;
           updated_at?: string;

@@ -259,6 +259,14 @@ Campos:
 - `created_at timestamptz not null`;
 - `updated_at timestamptz not null`.
 
+Regras de agendamento (migração `20260909140000`, PR #98 — ver `20-tecnico/31` §2.9):
+
+- `scheduling_allow_same_day boolean not null default true`;
+- `scheduling_same_day_lead_minutes integer not null default 120`;
+- `scheduling_weekday_earliest text` (HH:MM, nullable);
+- `scheduling_weekend_earliest text` (HH:MM, nullable);
+- `scheduling_slot_interval_minutes integer not null default 30`.
+
 Uma Categoria vazia ou sem Produtos disponíveis não aparece no cardápio público.
 
 ---

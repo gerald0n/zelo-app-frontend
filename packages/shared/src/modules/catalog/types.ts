@@ -1,3 +1,5 @@
+import type { CategorySchedulingRule } from '@/modules/scheduling/category-rules';
+
 export type CatalogAddon = {
   id: string;
   name: string;
@@ -10,6 +12,8 @@ export type CatalogCategory = {
   id: string;
   name: string;
   sortOrder: number;
+  /** Regras de agendamento aplicadas aos produtos desta categoria. */
+  scheduling: CategorySchedulingRule;
 };
 
 export type CatalogProduct = {
@@ -90,8 +94,6 @@ export type CatalogStore = {
   acceptsPayments: CatalogPaymentMethods;
   businessHours: CatalogBusinessHour[];
   blackoutPeriods: CatalogBlackout[];
-  /** Horários candidatos de agendamento (HH:MM), configurados no admin. */
-  scheduleSlotTimes: string[];
 };
 
 export function formatWeightGrams(

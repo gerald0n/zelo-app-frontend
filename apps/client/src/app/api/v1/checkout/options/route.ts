@@ -1,46 +1,69 @@
 import { NextResponse } from 'next/server';
-import { getPublicStore } from '@/modules/catalog/catalog-repository';
-import { getSchedulingSnapshot } from '@/modules/scheduling/schedule';
+import { z } from 'zod';
+import { getPublicCatalog } from '@/modules/catalog/catalog-repository';
+import {
+  buildSchedulingSnapshot,
+  resolveCartSchedulingRule,
+} from '@/modules/scheduling/schedule';
+import { getCatalogStoreHoursLabel } from '@/modules/catalog/store-hours';
 import { httpStatusFor } from '@/lib/errors';
 import { PEREIRO_URBAN_NEIGHBORHOODS } from '@/modules/delivery';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  const storeResult = await getPublicStore();
-  if (!storeResult.ok) {
+const bodySchema = z.object({
+  productIds: z.array(z.string().uuid()).max(200).optional(),
+});
+
+export async function POST(request: Request) {
+  const json = await request.json().catch(() => null);
+  const parsed = bodySchema.safeParse(json ?? {});
+  const productIds = parsed.success ? (parsed.data.productIds ?? []) : [];
+
+  const catalogResult = await getPublicCatalog();
+  if (!catalogResult.ok) {
     return NextResponse.json(
-      { error: storeResult.error },
-      { status: httpStatusFor(storeResult.error.code) },
+      { error: catalogResult.error },
+      { status: httpStatusFor(catalogResult.error.code) },
     );
   }
-  if (!storeResult.data) {
+  const { store, categories, products } = catalogResult.data;
+  if (!store) {
     return NextResponse.json(
-      {
-        error: { code: 'NOT_FOUND', message: 'Loja não encontrada.' },
-      },
+      { error: { code: 'NOT_FOUND', message: 'Loja não encontrada.' } },
       { status: 404 },
     );
   }
 
+  const { rule, mixed } = resolveCartSchedulingRule(
+    categories,
+    products,
+    productIds,
+  );
+
   return NextResponse.json({
     store: {
-      id: storeResult.data.id,
-      name: storeResult.data.name,
-      addressLine: storeResult.data.addressLine,
-      city: storeResult.data.city,
-      state: storeResult.data.state,
-      latitude: storeResult.data.latitude,
-      longitude: storeResult.data.longitude,
-      freeDeliveryRadiusMeters: storeResult.data.freeDeliveryRadiusMeters,
-      fixedDeliveryFeeCents: storeResult.data.fixedDeliveryFeeCents,
-      whatsappE164: storeResult.data.whatsappE164,
-      acceptsPayments: storeResult.data.acceptsPayments,
+      id: store.id,
+      name: store.name,
+      addressLine: store.addressLine,
+      city: store.city,
+      state: store.state,
+      latitude: store.latitude,
+      longitude: store.longitude,
+      freeDeliveryRadiusMeters: store.freeDeliveryRadiusMeters,
+      fixedDeliveryFeeCents: store.fixedDeliveryFeeCents,
+      whatsappE164: store.whatsappE164,
+      acceptsPayments: store.acceptsPayments,
     },
     neighborhoods: PEREIRO_URBAN_NEIGHBORHOODS.map((item) => ({
       id: item.id,
       name: item.name,
     })),
-    scheduling: getSchedulingSnapshot(storeResult.data),
+    scheduling: {
+      ...buildSchedulingSnapshot(store, rule),
+      mixedCart: mixed,
+      allowSameDay: rule.allowSameDay,
+      hoursLabel: getCatalogStoreHoursLabel(store),
+    },
   });
 }

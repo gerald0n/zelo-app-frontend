@@ -1,6 +1,6 @@
 import type { Database } from '@/types/database';
 import { productImagePublicUrl } from '@/lib/constants';
-import { normalizeSlotTimes } from '@/modules/scheduling/slot-times';
+import { normalizeCategorySchedulingRule } from '@/modules/scheduling/category-rules';
 import {
   applyDiscount,
   resolveDiscountPercent,
@@ -38,6 +38,13 @@ export function mapCategory(row: CategoryRow): CatalogCategory {
     id: row.id,
     name: row.name,
     sortOrder: row.sort_order,
+    scheduling: normalizeCategorySchedulingRule({
+      allowSameDay: row.scheduling_allow_same_day,
+      sameDayLeadMinutes: row.scheduling_same_day_lead_minutes,
+      weekdayEarliest: row.scheduling_weekday_earliest,
+      weekendEarliest: row.scheduling_weekend_earliest,
+      slotIntervalMinutes: row.scheduling_slot_interval_minutes,
+    }),
   };
 }
 
@@ -159,7 +166,6 @@ export function mapStore(
       cash: row.accepts_cash,
       card: row.accepts_card,
     },
-    scheduleSlotTimes: normalizeSlotTimes(row.schedule_slot_times),
     businessHours: hours
       .map(mapBusinessHour)
       .sort((a, b) => a.weekday - b.weekday),

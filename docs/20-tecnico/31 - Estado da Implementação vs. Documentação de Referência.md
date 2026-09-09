@@ -23,7 +23,7 @@ planos 102–107**; os docs de referência antigos estão atrás.
 | --- | --- | --- |
 | `10-funcional/08 - Entrega e Retirada.md` | ⚠️ desatualizado | Área de entrega virou **raio em linha reta** a partir da loja (não mais "lista de bairros"). Taxa tem 3 faixas: grátis / fixa / fora de área (só retirada). Bairro é rótulo opcional. |
 | `10-funcional/09 - Pagamentos.md` | ⚠️ incorreto | Pix deixou de ser "copia e cola estático + conferência manual". Agora é **cobrança dinâmica via Mercado Pago** com confirmação automática por webhook, tentativas, expiração e estorno. |
-| `10-funcional/10 - Agendamento e Funcionamento.md` | ⚠️ incompleto | Horários de agendamento são **configuráveis pelo admin** (`stores.schedule_slot_times`). Existe **pausa da loja com prazo** (`paused_until` / `pause_reason`). |
+| `10-funcional/10 - Agendamento e Funcionamento.md` | ✅ reconciliado (PR #98) | Agendamento **derivado por categoria** (regras em `categories`, migração `20260909140000`); `stores.schedule_slot_times` removida; "regra das 17h" substituída; lógica no **fuso da loja**; "Agora" travado antes da abertura; carrinho misto bloqueado. Pausa da loja com prazo. Ver §2.9. |
 | `10-funcional/11 - Painel Administrativo.md` | ⚠️ muito incompleto | Falta: kanban de duas raias, comanda manual, estoque, impressão térmica, promoções, cupons, financeiro, avaliações, pausa, push do painel, dashboard "Visão geral" (absorveu `/relatorios`). |
 | `20-tecnico/21 - Stack Tecnológica.md` | ⚠️ incorreto | Lista "Meta WhatsApp Cloud API" — **não é usada**. As integrações reais são **Twilio Verify (SMS)**, **Mercado Pago (Pix)**, **Cloudflare Turnstile**, Google Maps, Web Push, Sentry. |
 | `20-tecnico/22 - Acesso a Dados e Integrações.md` | 🟡 quase ok | Já cita Twilio Verify. Falta Mercado Pago, Turnstile e o cron de reconciliação Pix. Seção "Google Maps" ok; Leaflet/OSM foram removidos. |
@@ -150,11 +150,32 @@ resumo do que precisa entrar nos docs de referência.
   "Confirmar localização no mapa" para entrega.
 - Migration: `20260904120000_store_max_delivery_radius`.
 
-### 2.9 Agendamento configurável + pausa da loja
+### 2.9 Agendamento derivado por categoria + pausa da loja
 
-- `stores.schedule_slot_times text[]` (HH:MM; default 8 horários) — o admin
-  edita em **Ajustes**; o app filtra cada slot pela janela do dia +
-  blackouts. Migration `20260902123000_store_schedule_slots`.
+- **Reescrito em 09/09/2026 (PR #98).** O agendamento deixou de usar
+  `stores.schedule_slot_times` (removida na migração
+  `20260909140000_category_scheduling_rules`, junto com a função
+  `is_hhmm_list`). Os dias e horários do checkout são **derivados** da janela
+  de funcionamento do dia + de **regras por categoria** — colunas novas em
+  `public.categories`: `scheduling_allow_same_day`,
+  `scheduling_same_day_lead_minutes`, `scheduling_weekday_earliest`,
+  `scheduling_weekend_earliest`, `scheduling_slot_interval_minutes`.
+  Editáveis em Catálogo → Categorias.
+- Default ("cookie"): mesmo dia ok, agenda de hoje abre 120 min antes do
+  expediente, sem piso, intervalo 30 min. Pudins (semeado por nome): nunca
+  no mesmo dia, piso 17:00 semana / 10:00 fim de semana, intervalo 1 h.
+- A antiga **regra das 17h** (`calcFirstScheduleDate`) foi **removida**.
+- **Fuso da loja em toda a agenda:**
+  `packages/shared/src/modules/scheduling/tz.ts` (`storeWallClock` /
+  `storeLocalToInstant`); `catalog/store-hours.ts` também virou TZ-aware.
+  Fonte: `stores.timezone`.
+- `canPlaceImmediateOrder`: "Agora" só vale dentro da janela real de hoje,
+  mesmo com `is_open_override = true` (corrige o botão clicável antes de abrir).
+- **Carrinho misto** (categorias com regras diferentes) é bloqueado: aviso no
+  checkout, botão travado, e `create-order-validation.ts` recusa.
+- `GET /api/v1/checkout/options` virou **`POST { productIds }`**; resposta
+  ganhou `scheduling.{mixedCart, allowSameDay, hoursLabel}`.
+- Admin: seção global "Horários de agendamento" removida de `/configuracoes`.
 - `stores.paused_until` / `pause_reason` — pausa "até tal hora"; a regra
   "loja aberta agora" checa `paused_until > now()` antes de
   `is_open_override` e do horário. Migration `20260908120000_store_pause`.
@@ -209,15 +230,21 @@ resumo do que precisa entrar nos docs de referência.
 | `admin_push_subscriptions` | `20260908130000_admin_push_subscriptions` | Web Push do painel |
 | `order_reviews` | `20260909120000_order_reviews` | avaliações / depoimentos |
 
+**Colunas novas em `categories`** (`20260909140000_category_scheduling_rules`,
+PR #98): `scheduling_allow_same_day`, `scheduling_same_day_lead_minutes`,
+`scheduling_weekday_earliest`, `scheduling_weekend_earliest`,
+`scheduling_slot_interval_minutes` — regras de agendamento por categoria.
+
 **Enums:**
 
 - `payment_status` ganhou **`refunded`** (`20260903140000_pix_refund`).
 - Novo enum `review_status` (`pending` / `approved` / `hidden`).
 
 **Colunas novas em `stores`:** `accepts_pix/cash/card`,
-`schedule_slot_times[]`, `max_delivery_radius_meters`,
-`payment_fee_estimate_bps`, `cnpj`, `paused_until`, `pause_reason`.
-(O doc 24 ainda cita `pix_copy_paste`, que só é usado como fallback.)
+`max_delivery_radius_meters`, `payment_fee_estimate_bps`, `cnpj`,
+`paused_until`, `pause_reason`. (`schedule_slot_times[]` existiu entre
+`20260902123000` e `20260909140000`, quando foi **removida** — ver §2.9. O
+doc 24 ainda cita `pix_copy_paste`, que só é usado como fallback.)
 
 **Colunas novas em `orders`:** `mp_order_id`, `mp_payment_id`,
 `pix_qr_code`, `pix_qr_code_base64`, `pix_ticket_url`, `pix_expires_at`,
@@ -251,7 +278,10 @@ Rotas reais (raiz `apps/*/src/app/api/v1`):
 - `GET /api/v1/auth/me`, `.../auth/session`
 - `GET/PUT/DELETE /api/v1/cart`, `POST /api/v1/cart/reconcile`
 - `GET /api/v1/catalog/products`, `GET /api/v1/catalog/store`
-- `POST /api/v1/checkout/preview`, `GET /api/v1/checkout/options`
+- `POST /api/v1/checkout/preview`
+- `POST /api/v1/checkout/options` *(era `GET`; agora recebe `{ productIds }`
+  e devolve a agenda resolvida pela regra da categoria + `mixedCart` /
+  `allowSameDay` / `hoursLabel` — PR #98)*
 - `POST /api/v1/coupons/preview` *(novo)*
 - `POST /api/v1/orders`, `GET /api/v1/orders`, `GET /api/v1/orders/:id`
 - `POST /api/v1/orders/:id/cancel`, `.../reorder`, `.../pix` *(novo)*,

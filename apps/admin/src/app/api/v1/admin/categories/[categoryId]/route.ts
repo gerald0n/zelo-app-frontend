@@ -5,6 +5,7 @@ import {
   archiveAdminCategory,
   updateAdminCategory,
 } from '@/modules/admin/catalog';
+import { categorySchedulingSchema } from '@/lib/admin/category-scheduling';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,7 @@ const patchSchema = z.object({
   description: z.string().trim().max(500).nullable().optional(),
   sortOrder: z.number().int().min(0).max(10_000).optional(),
   isActive: z.boolean().optional(),
+  scheduling: categorySchedulingSchema.optional(),
   archive: z.boolean().optional(),
 });
 
@@ -51,6 +53,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     description: parsed.data.description,
     sortOrder: parsed.data.sortOrder,
     isActive: parsed.data.isActive,
+    scheduling: parsed.data.scheduling,
   });
 
   if (!result.ok) {

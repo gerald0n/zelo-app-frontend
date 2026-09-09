@@ -55,8 +55,6 @@ export type HourFormRow = {
   pickupEnabled: boolean;
 };
 
-export const SLOT_TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
-
 export function toLocalInputValue(iso: string) {
   const date = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, '0');
