@@ -1,5 +1,9 @@
 # 100 - Roadmap de Desenvolvimento
 
+> 📌 **Histórico.** As 14 fases abaixo foram concluídas e o app está em
+> produção. A evolução pós-lançamento está nos planos 102–107 e no
+> `_HANDOFF`. Mantido como registro da ordem de construção.
+
 # Objetivo
 
 Este documento define a ordem macro de implementação.

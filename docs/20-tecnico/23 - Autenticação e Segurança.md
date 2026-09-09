@@ -1,5 +1,11 @@
 # 23 - Autenticação e Segurança
 
+> 🟡 **Quase atual.** Já reflete o Twilio Verify. Falta registrar: o
+> **fallback de OTP gerado pelo app** (HMAC-SHA256 com `OTP_HASH_SECRET` em
+> `customer_otp_challenges.code_hash`, quando a Verify não está configurada),
+> o **Cloudflare Turnstile** no envio, o **honeypot** e o **rate limit
+> atômico por IP** (`public.consume_rate_limit`). Ver `31` §2.2.
+
 # Objetivo
 
 Este documento define os fluxos de autenticação, autorização e os controles mínimos de segurança.

@@ -130,8 +130,10 @@ uso; `preview` free_shipping e "não encontrado".
   líquido, marca "taxa estimada" quando não veio do MP).
   - "Faturado" = Pix `confirmed` + dinheiro/cartão não cancelado. Pix
     pendente/falho e cancelados ficam de fora.
-- **UI**: toggle **Operação | Financeiro** no topo de `/relatorios` (reusa o
-  seletor de período). Views em `relatorios/_components/`.
+- **UI**: ~~toggle **Operação | Financeiro** no topo de `/relatorios`~~.
+  *2026-09-09 (doc 107): `/relatorios` foi removido; a `FinancialView` virou a
+  seção "Financeiro" da Visão geral (`app/page.tsx`), presa ao seletor de
+  período do dashboard. Componentes movidos para `app/_components/`.*
 
 **Testado 2026-09-08** (Supabase local, dados sintéticos): bruto R$100 (2 Pix
 confirmados + 1 dinheiro), taxas R$0,80 (R$0,50 real + R$0,30 estimado a

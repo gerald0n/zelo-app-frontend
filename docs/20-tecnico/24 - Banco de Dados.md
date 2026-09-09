@@ -1,5 +1,14 @@
 # 24 - Banco de Dados
 
+> ⚠️ **Incompleto (ago/2026).** O esquema descrito aqui é o núcleo. Depois
+> disso entraram ~8 tabelas novas (`promotions`, `coupons`, `order_reviews`,
+> `payment_events`, `customer_otp_challenges`, `admin_push_subscriptions`,
+> `http_rate_limits`, junções de promoção), o valor `refunded` no enum
+> `payment_status`, o enum `review_status` e dezenas de colunas em `stores`,
+> `orders` e `products`. Delta completo em `31 - Estado da Implementação vs.
+> Documentação de Referência.md` §3. A verdade é `supabase/migrations/` +
+> `packages/shared/src/types/database.ts`.
+
 # Objetivo
 
 Este documento define a modelagem principal do banco de dados PostgreSQL da aplicação.

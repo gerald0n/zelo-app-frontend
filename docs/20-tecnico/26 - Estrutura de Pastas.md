@@ -1,5 +1,12 @@
 # 26 - Estrutura de Pastas
 
+> ⚠️ **Desatualizado (ago/2026).** Este documento descreve um **app único**
+> (`app/` e `src/` na raiz). O repositório é um **monorepo pnpm**:
+> `apps/client`, `apps/admin` e `packages/shared` (`@zelo/shared` — Supabase,
+> tipos, domínio, UI, config), com `supabase/` compartilhado. Cada app é um
+> projeto Vercel separado. Ver `README.md` na raiz. Os princípios de
+> modularidade, nomenclatura e proximidade abaixo continuam valendo.
+
 # Objetivo
 
 Este documento define a organização esperada do repositório.

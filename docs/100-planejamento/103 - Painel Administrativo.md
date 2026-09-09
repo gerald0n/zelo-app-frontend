@@ -14,7 +14,7 @@ painel `/admin`.
 | Comanda manual | **Implementado.** |
 | Impressão térmica | **Implementado e validado em hardware** (WebUSB/USB, EPSON TM-T20X — 2026-09-08). |
 | Catálogo (resto) | **Feito** (2026-09-08). "Acabou num toque", duplicar produto, várias fotos por produto e reordenar (produtos + categorias, setas ↑/↓). |
-| Loja/relatórios | **Feito** (2026-09-08). Pausa com prazo/motivo, aba `/relatorios` (cancelamentos + produção), auditoria com filtros. Faturamento/abas já vinham prontos. |
+| Loja/relatórios | **Feito** (2026-09-08). Pausa com prazo/motivo, aba `/relatorios` (cancelamentos + produção), auditoria com filtros. Faturamento/abas já vinham prontos. <br>**2026-09-09:** `/relatorios` foi absorvido na Visão geral (Operação + Financeiro viraram seções da `/`); rota removida (404). Ver [107 - Responsividade Percebida do Admin](107%20-%20Responsividade%20Percebida%20do%20Admin.md). |
 | Push do painel | **Feito e validado em produção** (2026-09-08). Pedido novo notifica o celular do admin (tabela `admin_push_subscriptions`, SW próprio, toggle em Dispositivos). |
 
 ---
@@ -360,7 +360,10 @@ não funcionava em local ("Email logins are disabled"). Mudado pra `true`
   Retomar (ou marcar "aceitar pedidos" nas Configurações) limpa os dois.
   `PATCH /api/v1/admin/store` com `{ pause: { until, reason } }` /
   `{ resume: true }`. Audit `store.pause` / `store.resume`.
-- **Nova aba `/relatorios`** (item no menu lateral + bottom nav):
+- **Nova aba `/relatorios`** (item no menu lateral + bottom nav)
+  — *2026-09-09: rota removida; este conteúdo virou as seções "Operação" e
+  "Financeiro" da Visão geral (`app/page.tsx`), com os componentes em
+  `app/_components/`. Ver doc 107.*:
   - **Cancelamentos** no período (hoje/7d/30d): total, valor não faturado,
     e lista agrupada por motivo (texto do `cancellation_reason`, agrupado
     sem diferenciar maiúsculas). Barras proporcionais em CSS, sem lib.

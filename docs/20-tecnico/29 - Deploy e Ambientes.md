@@ -1,5 +1,13 @@
 # 29 - Deploy e Ambientes
 
+> ⚠️ **Variáveis desatualizadas (ago/2026).** As variáveis da Meta Cloud
+> API **não existem**. As obrigatórias em produção hoje (ver
+> `packages/shared/src/config/env.ts`) incluem Twilio Verify, Cloudflare
+> Turnstile, Mercado Pago, `CRON_SECRET` e `OTP_HASH_SECRET`. O deploy são
+> **dois projetos Vercel** (`apps/client`, `apps/admin`) + **Supabase Cron**
+> para reconciliação de Pix. Delta em `31 - Estado da Implementação vs.
+> Documentação de Referência.md` §5.
+
 # Objetivo
 
 Este documento define ambientes, variáveis, migrations e processo de deploy.

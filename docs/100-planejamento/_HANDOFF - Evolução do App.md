@@ -38,36 +38,40 @@ não pesar o contexto de toda sessão nova.
 | [103](103%20-%20Painel%20Administrativo.md) | Painel admin: kanban, estoque, comanda manual, impressão, melhorias | Kanban (reescrito 2026-09-06), estoque, melhorias no pedido, comanda manual, impressão térmica (WebUSB, **validada em hardware 2026-09-08**), **Catálogo (resto)**, **Loja/relatórios** e **Push do painel** (2026-09-08, push validado em produção com aparelho real) — **implementados**. **Doc 103 100% fechado.** |
 | [104](104%20-%20Promoções,%20Cupons%20e%20Financeiro.md) | Promoções, cupons, financeiro | Promoções, **Cupons (PR #62) e Financeiro (PR #64) em produção** (2026-09-08, migrations aplicadas no remoto). Doc 104 fechado. Único follow-up: a taxa real do MP só valida num Pix de produção. |
 | [105](105%20-%20Precisão%20do%20Frete.md) | Google Maps: geocodificação, mapa, área de entrega | (a)-(d) **implementados**, drag do pin **validado à mão 2026-09-08**. (e) suavizar taxa adiado; (f) componente único de endereço desbloqueado, não iniciado. |
-| [106](106%20-%20Avaliações%20e%20Depoimentos.md) | Avaliações de pedido + depoimentos | Não iniciado. 3 decisões em aberto. |
+| [106](106%20-%20Avaliações%20e%20Depoimentos.md) | Avaliações de pedido + depoimentos | **Fase 1 em produção** (PR #67 + migration `20260909120000_order_reviews`). Fase 2 (nota por produto) espera volume + login por SMS. |
+| [107](107%20-%20Responsividade%20Percebida%20do%20Admin.md) | Responsividade percebida do admin | **4 partes feitas** (PRs #69/#70 em produção): `useUiPref`, Relatórios→Visão geral, UI otimista no catálogo, anti-flash de tema. |
+
+**Reconciliação da doc de referência** — `docs/10-funcional/` e
+`docs/20-tecnico/` descrevem o estado de ago/2026. O delta (o que já mudou e
+ainda não voltou pra lá) está em
+[`20-tecnico/31`](../20-tecnico/31%20-%20Estado%20da%20Implementação%20vs.%20Documentação%20de%20Referência.md).
 
 **Commits em `develop` que ainda não foram pro `main`** — checar
-`git log main..develop`. Em 2026-09-08 tudo de 103/104 já foi pro `main`
-(último merge: PR #65).
+`git log main..develop`. Em 2026-09-09 só há commits de doc pendentes; todo
+o código de 103–107 está em produção.
 
 **Migrations pendentes de `supabase db push`** — checar `supabase/migrations/`
-por arquivos mais recentes que o último deploy confirmado. Em 2026-09-08
-todas foram aplicadas no remoto: `20260908120000_store_pause.sql`,
-`20260908130000_admin_push_subscriptions.sql`,
-`20260908140000_coupons.sql`, `20260908150000_payment_financials.sql`.
+por arquivos mais recentes que o último deploy confirmado. Em 2026-09-09 a
+última aplicada no remoto é `20260909120000_order_reviews.sql`.
 
 ---
 
 ## Próximos passos sugeridos
 
-1. Merge/deploy de `develop` pra `main` (commits + migrations pendentes,
-   ver acima).
-2. ~~Validar em aparelho real: drag do pin do mapa, drag do kanban,
-   impressão térmica~~ — **feito em 2026-09-08**, tudo OK.
-3. ~~**103** — Catálogo (resto), loja/relatórios e push~~ — **feitos em
-   2026-09-08. Doc 103 100% fechado** (push validado em produção com
-   aparelho real; VAPID próprio do admin já setado no Vercel).
-4. ~~**104**~~ — Promoções, Cupons e Financeiro **feitos**. **106 —
-   Avaliações Fase 1** é o próximo bloco desbloqueado (3 decisões em aberto).
-5. **106 — Avaliações**: Fase 1 pode entrar a qualquer momento; Fase 2
-   depende do login por SMS (Fase 14 do roadmap).
+1. Merge/deploy dos commits de doc pendentes em `develop` → `main`.
+2. ~~103, 104, 105 (a–d), 106 Fase 1, 107~~ — **todos em produção.**
+3. **Reconciliar a doc de referência** (`10-funcional/`, `20-tecnico/`) com
+   o código — checklist em `20-tecnico/31`. Marcado como pendência do
+   "Encerramento" no roadmap.
+4. **105 (e)** suavizar a taxa de entrega em faixas — adiado, sem fórmula.
+   **105 (f)** componente único de endereço — desbloqueado, não iniciado.
+5. **106 — Avaliações Fase 2** (nota por produto): espera volume + login por
+   SMS confiável.
 6. A **repaginação visual do admin** (primitivos/tokens do redesign 102)
-   ainda não chegou em nenhuma tela nova do admin — continua usando
+   ainda não chegou nas telas novas do admin — continua usando
    `<button>`/`<div>` crus, não os primitivos de `src/components/ui`.
+7. O redesign **"Vidro Quente"** do cardápio (commit `4a85b11`) foi
+   **revertido** — vale o plano 102 (editorial minimalista).
 
 ---
 

@@ -1,5 +1,13 @@
 # 25 - Contratos de API
 
+> ⚠️ **Desatualizado (ago/2026).** Endpoints de OTP mudaram
+> (`/auth/otp/request` → `/auth/otp/send`); os webhooks `meta/whatsapp` e o
+> hook `send-sms` **não existem** (foram substituídos por
+> `webhooks/mercadopago` e `cron/reconcile-pix`); faltam as rotas de
+> cupons, promoções, avaliações, Pix, relatórios, push do painel e comanda
+> manual. Lista real e delta em `31 - Estado da Implementação vs.
+> Documentação de Referência.md` §4.
+
 # Objetivo
 
 Este documento define os contratos HTTP e os limites entre interface, backend, webhooks e service worker.

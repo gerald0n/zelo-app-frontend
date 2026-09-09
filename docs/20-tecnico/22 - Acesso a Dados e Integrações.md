@@ -1,5 +1,10 @@
 # 22 - Acesso a Dados e Integrações
 
+> 🟡 **Quase atual.** Já reflete o Twilio Verify e o Google Maps (Leaflet/OSM
+> removidos). Falta registrar as integrações **Mercado Pago** (Pix dinâmico +
+> webhook + reconciliação por Supabase Cron) e **Cloudflare Turnstile**. Ver
+> `31 - Estado da Implementação vs. Documentação de Referência.md`.
+
 # Objetivo
 
 Este documento define como a aplicação acessa o banco de dados e serviços externos.
