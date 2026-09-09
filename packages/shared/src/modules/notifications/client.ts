@@ -11,6 +11,26 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return output;
 }
 
+/**
+ * A assinatura fica presa à chave VAPID usada quando foi criada. Se o par
+ * VAPID do servidor mudou (rotação), a assinatura antiga continua "válida"
+ * no navegador mas todo envio é rejeitado com 403. Detecta a divergência
+ * pra forçar uma nova assinatura.
+ */
+function subscriptionMatchesKey(
+  subscription: PushSubscription,
+  expectedKey: Uint8Array,
+): boolean {
+  const current = subscription.options?.applicationServerKey;
+  if (!current) return false;
+  const bytes = new Uint8Array(current);
+  if (bytes.length !== expectedKey.length) return false;
+  for (let i = 0; i < bytes.length; i += 1) {
+    if (bytes[i] !== expectedKey[i]) return false;
+  }
+  return true;
+}
+
 export async function registerZeloServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
     return null;
@@ -56,13 +76,22 @@ export async function subscribeToPush(): Promise<
 
   await navigator.serviceWorker.ready;
 
+  const applicationServerKey = urlBase64ToUint8Array(
+    vapidJson.publicKey as string,
+  );
+
   let subscription = await registration.pushManager.getSubscription();
+  if (
+    subscription &&
+    !subscriptionMatchesKey(subscription, applicationServerKey)
+  ) {
+    await subscription.unsubscribe().catch(() => undefined);
+    subscription = null;
+  }
   if (!subscription) {
     subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(
-        vapidJson.publicKey as string,
-      ) as BufferSource,
+      applicationServerKey: applicationServerKey as BufferSource,
     });
   }
 
@@ -113,8 +142,7 @@ export async function getPushSubscriptionState(): Promise<{
 }
 
 export async function unsubscribeFromPush(): Promise<
-  | { ok: true }
-  | { ok: false; reason: 'unsupported' | 'failed' }
+  { ok: true } | { ok: false; reason: 'unsupported' | 'failed' }
 > {
   if (
     typeof window === 'undefined' ||

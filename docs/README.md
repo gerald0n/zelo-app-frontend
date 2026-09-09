@@ -38,7 +38,7 @@ como verdade.
 - Cloudflare Turnstile no envio de OTP;
 - Mercado Pago (Pix dinâmico) — confirmação automática por webhook;
 - Google Maps Platform (Leaflet/OSM removidos);
-- Web Push (cliente e painel, com VAPID próprio do admin);
+- Web Push (cliente e painel; o mesmo par VAPID nos dois projetos Vercel);
 - PWA;
 - sem internacionalização;
 - sem suíte automatizada de testes na primeira versão;

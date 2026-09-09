@@ -85,7 +85,17 @@ export async function sendWebPushNotification(options: {
     const message =
       error instanceof Error ? error.message : 'Falha ao enviar Web Push.';
 
-    logger.warn('Falha no Web Push', { statusCode, gone, message });
+    // 401/403 = a assinatura foi criada com outra chave VAPID (par diferente
+    // entre os deploys, ou rotação sem reassinar). Não é endpoint morto: a
+    // assinatura volta a funcionar quando as chaves baterem.
+    if (statusCode === 401 || statusCode === 403) {
+      logger.error(
+        'Web Push recusado (VAPID não confere) — client e admin precisam do MESMO par VAPID',
+        { statusCode, message },
+      );
+    } else {
+      logger.warn('Falha no Web Push', { statusCode, gone, message });
+    }
     return { ok: false, gone, statusCode, message };
   }
 }
