@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { cache } from 'react';
 import { err, ok, type Result } from '@/lib/errors';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
@@ -10,15 +11,21 @@ export type AdminSession = {
   displayName: string;
 };
 
-export async function requireAdmin(): Promise<Result<AdminSession>> {
+/**
+ * `cache()` deduplica a validação dentro do mesmo request — layout, página e
+ * módulos server que chamam `requireAdmin()` compartilham um único resultado.
+ */
+export const requireAdmin = cache(async function requireAdmin(): Promise<
+  Result<AdminSession>
+> {
   try {
     const supabase = await createServerSupabaseClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
+    // `getClaims()` verifica o JWT localmente (signing keys assimétricas), sem
+    // ida à Auth a cada request. Com segredo simétrico, cai no caminho de rede.
+    const { data, error } = await supabase.auth.getClaims();
 
-    if (error || !user) {
+    const claims = data?.claims;
+    if (error || !claims?.sub) {
       return err('UNAUTHENTICATED', 'Faça login no painel administrativo.');
     }
 
@@ -26,7 +33,7 @@ export async function requireAdmin(): Promise<Result<AdminSession>> {
     const { data: profile, error: profileError } = await admin
       .from('admin_profiles')
       .select('id, display_name, is_active')
-      .eq('id', user.id)
+      .eq('id', claims.sub)
       .maybeSingle();
 
     if (profileError) {
@@ -41,7 +48,7 @@ export async function requireAdmin(): Promise<Result<AdminSession>> {
 
     return ok({
       id: profile.id,
-      email: user.email ?? '',
+      email: typeof claims.email === 'string' ? claims.email : '',
       displayName: profile.display_name,
     });
   } catch (cause) {
@@ -49,4 +56,4 @@ export async function requireAdmin(): Promise<Result<AdminSession>> {
       cause,
     });
   }
-}
+});

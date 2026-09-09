@@ -49,10 +49,8 @@ export async function ensureCustomerRecord(
   if (existing.data) return ok(identity);
 
   const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user || user.id !== identity.id) {
+  const { data: claims } = await supabase.auth.getClaims();
+  if (claims?.claims.sub !== identity.id) {
     return err('UNAUTHENTICATED', 'Sessão inválida para criar o perfil.');
   }
 
