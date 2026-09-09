@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Heart } from 'lucide-react';
+import { Heart, Star } from 'lucide-react';
 import { ProductThumb } from '@/components/product-thumb';
 import { CatalogItemActions } from '@/components/CartQtyStepper';
 import {
@@ -141,6 +141,12 @@ export default function ProductCard({
             {product.weight ? (
               <span className="text-xs text-muted-foreground">
                 · {product.weight}
+              </span>
+            ) : null}
+            {product.rating ? (
+              <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
+                <Star className="size-3 fill-amber-400 text-amber-400" />
+                {product.rating.average.toFixed(1)} ({product.rating.count})
               </span>
             ) : null}
           </div>
