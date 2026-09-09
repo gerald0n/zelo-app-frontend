@@ -7,9 +7,12 @@ promoções, cupons ou financeiro.
 
 | Bloco | Status |
 | --- | --- |
-| Promoções | **Implementado.** |
-| Cupons | **Implementado** (2026-09-08). |
-| Financeiro | **Implementado** (2026-09-08). |
+| Promoções | **Em produção.** |
+| Cupons | **Em produção** (2026-09-08 — PR #62). |
+| Financeiro | **Em produção** (2026-09-08 — PR #64). |
+
+Migrations `20260908140000_coupons.sql` e `20260908150000_payment_financials.sql`
+aplicadas no Supabase remoto; deploys `zelo-app`/`zelo-admin` verdes.
 
 ---
 
@@ -135,3 +138,7 @@ confirmados + 1 dinheiro), taxas R$0,80 (R$0,50 real + R$0,30 estimado a
 0,99%), líquido R$99,20; split por método certo; 1 estorno → R$40 devolvido +
 R$0,40 de taxa não recuperada; lista Pix com marca de estimada. Config da
 taxa via PATCH da loja OK.
+
+**Follow-up:** a taxa real do MP (`fee_details` / `net_received_amount`) só é
+validável de verdade num Pix de produção — até o primeiro pagamento real
+todas as transações Pix aparecem com a taxa estimada.
