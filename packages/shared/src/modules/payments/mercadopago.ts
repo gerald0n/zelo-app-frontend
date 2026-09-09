@@ -6,6 +6,7 @@ import { getMercadoPagoAccessToken } from '@/config/env';
 import {
   firstPayment,
   normalizePaymentStatus,
+  paymentFinancials,
   snapshotFromOrder,
   type MercadoPagoSnapshot,
   type MpOrder,
@@ -204,7 +205,10 @@ export async function getMercadoPagoPayment(
     );
     const json: unknown = await response.json().catch(() => null);
     if (!response.ok) {
-      return err('INTEGRATION_UNAVAILABLE', 'Falha ao consultar pagamento Pix.');
+      return err(
+        'INTEGRATION_UNAVAILABLE',
+        'Falha ao consultar pagamento Pix.',
+      );
     }
     const payment = (json ?? {}) as MpPayment & {
       order?: { id?: string };
@@ -220,6 +224,42 @@ export async function getMercadoPagoPayment(
     });
   } catch (cause) {
     return err('INTEGRATION_UNAVAILABLE', 'Falha ao consultar pagamento Pix.', {
+      cause,
+    });
+  }
+}
+
+export type PaymentFinancials = {
+  mpPaymentId: string;
+  feeCents: number | null;
+  netCents: number | null;
+};
+
+/**
+ * Consulta um pagamento e extrai taxa/líquido reais
+ * (`GET /v1/payments/{id}` — `fee_details`, `transaction_details`).
+ * Retorna `null` quando o pagamento não é encontrado ou não tem os campos.
+ */
+export async function getMercadoPagoPaymentFinancials(
+  paymentId: string,
+): Promise<Result<PaymentFinancials | null>> {
+  try {
+    const response = await mpFetch(
+      `/v1/payments/${encodeURIComponent(paymentId)}`,
+    );
+    const json: unknown = await response.json().catch(() => null);
+    if (!response.ok || !json || typeof json !== 'object') {
+      return err('INTEGRATION_UNAVAILABLE', 'Falha ao consultar pagamento.');
+    }
+    const payment = json as MpPayment;
+    const { feeCents, netCents } = paymentFinancials(payment);
+    return ok({
+      mpPaymentId: payment.id ? String(payment.id) : paymentId,
+      feeCents,
+      netCents,
+    });
+  } catch (cause) {
+    return err('INTEGRATION_UNAVAILABLE', 'Falha ao consultar pagamento.', {
       cause,
     });
   }

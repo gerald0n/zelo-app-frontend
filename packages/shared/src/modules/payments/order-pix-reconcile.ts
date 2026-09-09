@@ -68,7 +68,12 @@ export async function reconcilePendingPixOrders(options?: {
       status = 'failed';
     }
 
-    const applied = await applyStatus(row.id, status, row.mp_order_id);
+    const applied = await applyStatus(
+      row.id,
+      status,
+      row.mp_order_id,
+      snap.data.mpPaymentId,
+    );
     if (!applied.ok) {
       summary.errors += 1;
       continue;

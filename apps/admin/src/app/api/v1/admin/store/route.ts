@@ -35,6 +35,7 @@ const patchSchema = z
     freeDeliveryRadiusMeters: z.number().int().min(0).max(50_000).optional(),
     fixedDeliveryFeeCents: z.number().int().min(0).max(100_000).optional(),
     maxDeliveryRadiusMeters: z.number().int().min(0).max(50_000).optional(),
+    paymentFeeEstimateBps: z.number().int().min(0).max(2000).optional(),
     acceptsPix: z.boolean().optional(),
     acceptsCash: z.boolean().optional(),
     acceptsCard: z.boolean().optional(),
