@@ -48,17 +48,39 @@ não pesar o contexto de toda sessão nova.
 [`20-tecnico/31`](../20-tecnico/31%20-%20Estado%20da%20Implementação%20vs.%20Documentação%20de%20Referência.md)
 tem a tabela de status e é o registro do delta.
 
-**`develop` e `main` estão idênticos** em `2752de3` (checado 2026-09-09,
-`git rev-list --left-right --count origin/main...origin/develop` = 0 0).
-Tudo em produção: agendamento por categoria (PR #98), fila de impressão da
-cozinha (PR #99 via merge, era `9aba06e`), fixes de horário com loja pausada
-(#95 + `c88adbc`), e a reconciliação da doc.
+**Produção (`main`) em `69da7b9`** (2026-09-10): todo o código de 103–107 +
+PRs #98/#99 + 4 bumps do Dependabot (#44–48: Sentry 10.73, lucide-react 1.41,
+patches). `develop` está 3 commits à frente — **só a doc de validação**
+(`2c85d43`, `896208e`, `8df9e92`), sem código; não precisa ir pra `main` com
+pressa.
 
 **Migrations — sem drift.** As 32 migrations locais estão aplicadas no
-remoto (`supabase migration list --linked` limpo em 2026-09-09). As últimas
+remoto (`supabase migration list --linked` limpo em 2026-09-10). As últimas
 4: `20260909120000_order_reviews`, `20260909130000_product_reviews`,
 `20260909140000_category_scheduling_rules` (dropa `stores.schedule_slot_times`
 e `is_hhmm_list`), `20260909150000_order_kitchen_printed_at`.
+
+**Validação pós-deploy — em andamento** (roteiro completo em
+[`20-tecnico/validacao-pos-deploy-2026-09-10.md`](../20-tecnico/validacao-pos-deploy-2026-09-10.md)):
+
+- ✅ **P0 sanidade** (via curl, Claude): `/catalog/store`, `/catalog/products`,
+  `/checkout/options` (1 produto / 2 produtos / body vazio / carrinho misto),
+  `/catalog/products/:id/reviews` — todos **HTTP 200, sem 500**. Payload da
+  loja **não tem mais `scheduleSlotTimes`**. Servido de `gru1`. **O deploy do
+  agendamento reescrito + drop de coluna está vivo em produção.**
+- ✅ **Agendamento por categoria** conferido contra `schedule.ts` com as 2
+  categorias reais (Cookies default, Pudim 500g). Nenhum bug. Dois pontos:
+  - **Cookie:** "hoje" só libera 2h antes de abrir (lead 120). Dono quer
+    hoje a qualquer hora → **ação no admin: Cookies → "Antecedência p/
+    liberar hoje" = 1440** (pendente de aplicar).
+  - **Pudim:** piso 17:00/10:00 nunca fura a abertura da loja
+    (`max(opensAt, piso)`); em prod a loja abre 19:00/15:00 então o piso não
+    "morde". **Dono decidiu deixar como está** (2026-09-10).
+- ⏳ **Pendente (precisa de telefone/hardware/dashboard):** confirmar deploy
+  do `zelo-admin` + Sentry; criação de pedido (`create_order` reescrito),
+  Pix, fila de impressão, kanban, avaliações Fase 2 end-to-end.
+- ⚠️ Produção só tem **1 categoria de verdade** até o dono criar a de "Pudim"
+  com regra diferente (foi criada durante o teste: `Pudim 500g`).
 
 ---
 
@@ -68,11 +90,11 @@ e `is_hhmm_list`), `20260909150000_order_kitchen_printed_at`.
    **feito em 2026-09-09.** `develop` == `main`, migrations sem drift.
 2. ~~103, 104, 105 (a–d), 106 (Fase 1 e 2), 107~~ — **todos em produção.**
 3. ~~**Reconciliar a doc de referência**~~ — **feito** (PR #99).
-4. **Validação pós-deploy pendente**: agendamento por categoria e fila de
-   impressão foram para produção junto com a migration que dropou
-   `stores.schedule_slot_times`. Testar em produção: checkout (datas/horários
-   por categoria, carrinho misto bloqueado), criação de pedido
-   (`create_order` reescrito) e a impressão automática de comanda no painel.
+4. **Validação pós-deploy** — P0 sanidade + agendamento **OK** (ver acima e o
+   doc `20-tecnico/validacao-pos-deploy-2026-09-10.md`). **Falta:** dono
+   aplicar o lead 1440 nos Cookies; e os testes que exigem
+   telefone/hardware/dashboard (criação de pedido, Pix, impressão, kanban,
+   avaliações).
 5. **105 (e)** suavizar a taxa de entrega em faixas — adiado, sem fórmula.
    **105 (f)** componente único de endereço — desbloqueado, não iniciado.
 6. **106 — follow-ups**: resposta pública do admin ao comentário; foto na
