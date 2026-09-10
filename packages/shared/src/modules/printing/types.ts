@@ -3,7 +3,9 @@ export type PrinterStatus = 'unsupported' | 'unpaired' | 'ready' | 'error';
 export type ReceiptItem = {
   name: string;
   quantity: number;
-  addOns: Array<{ name: string; quantity: number }>;
+  /** Preço unitário do produto (já com promoção aplicada), sem adicionais. */
+  unitPriceCents: number;
+  addOns: Array<{ name: string; quantity: number; unitPriceCents: number }>;
   note: string | null;
 };
 
@@ -49,6 +51,10 @@ export type DeliverySlipData = {
   items: ReceiptItem[];
   customerNote: string | null;
   subtotalCents: number;
+  /** Cupom aplicado (promoção já entra no preço do item, não aqui). */
+  couponCode: string | null;
+  /** Desconto do cupom em centavos — 0 quando não há cupom. */
+  discountCents: number;
   deliveryFeeCents: number;
   totalCents: number;
   paymentMethod: 'pix' | 'cash' | 'card';
