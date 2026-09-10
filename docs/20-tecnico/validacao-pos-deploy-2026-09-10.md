@@ -57,7 +57,7 @@ curl -s -X POST $BASE/api/v1/checkout/options -H 'content-type: application/json
       (Fase 2) e `images[]`.
 - [x] `/checkout/options` (1 produto, 2 produtos mesma categoria, body vazio) →
       **200** (~0.4s) nos três. `scheduling` = `{storeOpen, availableDates,
-    timesByDate, mixedCart, allowSameDay, hoursLabel}`. `mixedCart: false`,
+  timesByDate, mixedCart, allowSameDay, hoursLabel}`. `mixedCart: false`,
       `allowSameDay: true`, `hoursLabel: "Hoje 19:00"`, 14 datas,
       `timesByDate` com slots de 30 min por `delivery`/`pickup`. **Sem 500.** ✅
 - [x] `/catalog/products/:id/reviews` → **200**, Fase 2 de avaliação de produto
@@ -82,15 +82,58 @@ agendamento, P0 criação de pedido).
 
 ---
 
-## P0 — Agendamento por categoria (cliente, ~15 min)
+## P0 — Agendamento por categoria — ⚠️ TESTADO 2026-09-10, 2 achados de comportamento
+
+Testado por curl (`/api/v1/checkout/options`) contra produção, com as duas
+categorias reais: **Cookies** (regra default) e **Pudim 500g** (mesmo dia
+não; piso seg–sex 17:00 / sáb–dom 10:00; intervalo 60 min).
+
+Horário de funcionamento em produção: ter–sex **19:00–22:00**, sáb+dom
+**15:00–22:00**, seg **fechado**.
+
+**Nenhum bug.** Tudo que apareceu bate com o código (`schedule.ts`) e o
+doc `10-funcional/10`. Dois pontos de comportamento que o dono quis revisar:
+
+### Achado 1 — Cookie: "hoje" não aparece de madrugada (ajuste de config)
+
+A agenda de hoje só "abre" quando falta ≤ `sameDayLeadMinutes` (120 min
+default) para a loja abrir. Loja abre 19:00 → hoje só aparece a partir das
+17:00. Testando às 00:50, hoje não aparecia — **correto pelo default**.
+
+**Decisão do dono:** quer poder agendar para hoje a qualquer hora. →
+**Ação (admin, sem deploy):** Catálogo → Categorias → **Cookies** →
+"Antecedência p/ liberar hoje" `120` → **`1440`** (máx). Com lead 1440,
+`opensMin - lead ≤ 0` sempre → hoje fica sempre disponível enquanto a loja
+abrir naquele dia.
+
+- [ ] Aplicado no admin (Cookies, lead = 1440)
+- [ ] Re-teste: 00:xx, carrinho só cookie → hoje aparece com 19:00…22:00
+
+### Achado 2 — Pudim: piso 17:00/10:00 não "morde" (comportamento mantido)
+
+O piso da categoria **nunca é antes da abertura da loja**
+(`startFloor = max(opensAt, piso)`). Como a loja abre 19:00 (semana) / 15:00
+(fim de semana), e o piso do pudim é 17:00 / 10:00, o piso fica sempre
+"coberto" pela abertura. Pudim numa sexta → começa 19:00; num sábado →
+15:00. Pedir pudim às 10:00 numa sexta exigiria abrir a loja mais cedo ou
+desacoplar agendamento do horário de balcão.
+
+**Decisão do dono (2026-09-10): deixar como está.** O piso 17:00/10:00 só
+entra em cena se a loja passar a abrir antes desses horários.
+
+- [x] Comportamento confirmado e aceito como está
+
+---
+
+## P0 — Agendamento por categoria — checklist manual restante (cliente, ~15 min)
 
 Faça no navegador, em `cardapio.zeloconfeitaria.com.br`, **com a loja aberta**:
 
 - [ ] Adicionar só **cookies** ao carrinho → checkout → etapa de agendamento
       oferece **hoje** (se dentro da janela) e os próximos dias, intervalo 30 min
 - [ ] Adicionar só **pudim** → checkout → **não** oferece hoje; primeira data é
-      amanhã; horários começam **17:00** (dia de semana) ou **10:00** (fim de
-      semana); intervalo de **1 h**
+      amanhã; horários começam no **maior entre a abertura da loja e o piso da
+      categoria** (em prod: 19:00 semana, 15:00 fim de semana); intervalo **1 h**
 - [ ] Adicionar **cookie + pudim** no mesmo carrinho → checkout mostra aviso de
       carrinho misto, **botão de avançar travado**
 - [ ] Conferir que os horários exibidos batem com o **relógio de Fortaleza**
