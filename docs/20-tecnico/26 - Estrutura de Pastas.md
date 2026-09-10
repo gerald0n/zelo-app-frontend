@@ -1,327 +1,128 @@
 # 26 - Estrutura de Pastas
 
-> ⚠️ **Desatualizado (ago/2026).** Este documento descreve um **app único**
-> (`app/` e `src/` na raiz). O repositório é um **monorepo pnpm**:
-> `apps/client`, `apps/admin` e `packages/shared` (`@zelo/shared` — Supabase,
-> tipos, domínio, UI, config), com `supabase/` compartilhado. Cada app é um
-> projeto Vercel separado. Ver `README.md` na raiz. Os princípios de
-> modularidade, nomenclatura e proximidade abaixo continuam valendo.
-
-# Objetivo
-
-Este documento define a organização esperada do repositório.
-
-A estrutura deve favorecer modularidade, rastreabilidade e desenvolvimento assistido por IA.
-
----
+> Reconciliado com o código em **2026-09-09**. O repositório é um **monorepo
+> pnpm** com dois apps Next.js e um pacote compartilhado. Os módulos de
+> domínio são **planos** (arquivos `*.ts` diretos, não a árvore
+> `domain/application/infrastructure` que a versão anterior deste doc
+> propunha). Os princípios de modularidade, proximidade e nomenclatura no
+> fim continuam valendo.
 
 # Estrutura Principal
 
 ```text
 /
-├── app/
-├── src/
-├── public/
-├── supabase/
+├── apps/
+│   ├── client/          # zelo-app  (loja do cliente)  — projeto Vercel
+│   └── admin/           # zelo-admin (painel)          — projeto Vercel
+├── packages/
+│   └── shared/          # @zelo/shared — Supabase, tipos, domínio, UI, config
+├── supabase/            # migrations + cron + seed, compartilhado pelos apps
 ├── docs/
-├── scripts/
-├── .env.example
-├── package.json
-├── tsconfig.json
-└── README.md
+├── package.json         # scripts do monorepo (pnpm -r)
+├── pnpm-workspace.yaml
+└── tsconfig.base.json
 ```
+
+Cada app tem seu próprio `package.json`, `next.config.ts`, `vercel.json`,
+`tsconfig.json`, `public/`, `eslint.config.mjs` e `verify.mjs`.
 
 ---
 
-# Diretório `app`
-
-Contém apenas roteamento, layouts, páginas e endpoints do App Router.
+# `apps/client` e `apps/admin`
 
 ```text
-app/
-├── (public)/
-│   ├── page.tsx
-│   ├── produto/[slug]/page.tsx
-│   └── carrinho/page.tsx
-├── (customer)/
-│   ├── checkout/page.tsx
-│   ├── pedidos/page.tsx
-│   └── pedidos/[id]/page.tsx
-├── admin/
-│   ├── login/page.tsx
-│   ├── layout.tsx
-│   ├── page.tsx
-│   ├── pedidos/
-│   ├── produtos/
-│   ├── categorias/
-│   ├── adicionais/
-│   └── configuracoes/
-├── api/
-│   └── v1/
-│       ├── auth/
-│       ├── cart/
-│       ├── checkout/
-│       ├── orders/
-│       ├── addresses/
-│       ├── push/
-│       ├── admin/
-│       ├── hooks/
-│       └── webhooks/
-├── manifest.ts
-├── layout.tsx
-└── globals.css
+apps/<app>/src/
+├── app/                 # App Router: rotas, layouts, páginas, route handlers
+│   └── api/v1/...        # endpoints
+├── components/           # componentes do app (subpastas por área)
+├── contexts/             # React contexts (providers) do app
+├── hooks/
+└── lib/                  # helpers locais do app (ex.: admin/print-queue.ts)
 ```
 
-Rotas não devem conter regras de negócio complexas.
+- `apps/admin/src/modules/admin/` — módulos server-only exclusivos do painel
+  (auth, auditoria, dashboard, reviews, catálogo…).
+- Rotas não carregam regra de negócio complexa: chamam módulos de
+  `@zelo/shared` ou de `src/modules`.
 
 ---
 
-# Diretório `src`
+# `packages/shared` (`@zelo/shared`)
 
 ```text
-src/
-├── modules/
-├── components/
-├── lib/
+packages/shared/src/
+├── modules/             # domínio (planos, não em camadas)
+│   ├── auth/
+│   ├── carts/
+│   ├── catalog/
+│   ├── customers/
+│   ├── delivery/
+│   ├── notifications/
+│   ├── orders/
+│   ├── payments/
+│   ├── printing/
+│   ├── realtime/
+│   ├── reviews/
+│   ├── scheduling/
+│   └── security/
+├── components/ui/        # primitivos compartilhados (padrão shadcn)
+├── contexts/
 ├── hooks/
 ├── providers/
-├── styles/
-├── types/
-└── config/
+├── lib/
+│   ├── supabase/         # browser.ts, server.ts, admin.ts, public.ts
+│   ├── geo/
+│   ├── push/
+│   ├── errors.ts, http.ts, query-keys.ts, phone.ts, logger.ts, ...
+├── config/              # env.ts (validação de ambiente)
+├── styles/              # globals.css (tokens OKLCH, fontes)
+└── types/               # database.ts (gerado), domínio
 ```
+
+Cada módulo expõe sua API por `index.ts`; arquivos internos não são
+importados de fora do módulo. Código `server-only` é marcado como tal.
 
 ---
 
-# Módulos de Domínio
-
-```text
-src/modules/
-├── auth/
-├── customers/
-├── catalog/
-├── carts/
-├── checkout/
-├── orders/
-├── delivery/
-├── scheduling/
-├── payments/
-├── notifications/
-├── store/
-└── admin/
-```
-
-Cada módulo pode conter:
-
-```text
-orders/
-├── domain/
-│   ├── entities/
-│   ├── value-objects/
-│   ├── policies/
-│   └── errors/
-├── application/
-│   ├── use-cases/
-│   ├── dto/
-│   └── ports/
-├── infrastructure/
-│   ├── repositories/
-│   ├── mappers/
-│   └── services/
-├── presentation/
-│   ├── components/
-│   ├── hooks/
-│   └── schemas/
-└── index.ts
-```
-
-Nem todo módulo precisa de todas as subpastas.
-
-Evitar criar diretórios vazios ou abstrações sem uso.
-
----
-
-# Componentes Compartilhados
-
-```text
-src/components/
-├── ui/
-├── layout/
-├── feedback/
-└── shared/
-```
-
-## `ui`
-
-Componentes base do shadcn/ui.
-
-## `layout`
-
-Header, navegação, containers e estruturas globais.
-
-## `feedback`
-
-Loading, empty state, error state, alertas e toasts.
-
-## `shared`
-
-Componentes reutilizados em diferentes módulos.
-
-Componentes específicos devem permanecer no módulo de origem.
-
----
-
-# Biblioteca Compartilhada
-
-```text
-src/lib/
-├── supabase/
-│   ├── browser.ts
-│   ├── server.ts
-│   ├── admin.ts
-│   └── types.ts
-├── meta/
-├── maps/
-├── push/
-├── sentry/
-├── money/
-├── dates/
-├── validation/
-└── errors/
-```
-
----
-
-# Providers
-
-```text
-src/providers/
-├── query-provider.tsx
-├── auth-provider.tsx
-└── realtime-provider.tsx
-```
-
-Criar provider somente quando necessário.
-
----
-
-# Estado Zustand
-
-```text
-src/modules/carts/presentation/store/
-└── cart-store.ts
-```
-
-O estado do Carrinho deve permanecer dentro do módulo.
-
-Não criar uma pasta global de stores para tudo.
-
----
-
-# Supabase
+# `supabase/`
 
 ```text
 supabase/
 ├── config.toml
-├── migrations/
+├── migrations/           # SQL ordenado por timestamp; não editar após aplicado
+├── cron/                 # jobs do Supabase Cron (reconcile-pix)
 ├── seed.sql
-├── functions/
-└── tests/
+├── seed-operacional.sql
+└── snippets/
 ```
 
-Migrations devem ser:
-
-- pequenas;
-- ordenadas;
-- reversíveis quando possível;
-- revisadas;
-- sem edição posterior após aplicadas em produção.
-
----
-
----
-
-# Documentação
-
-```text
-docs/
-├── product/
-├── domain/
-├── functional/
-├── technical/
-├── decisions/
-└── agents/
-```
-
-As decisões arquiteturais relevantes podem ser registradas em ADRs.
-
----
-
-# Configuração
-
-```text
-src/config/
-├── env.ts
-├── feature-flags.ts
-└── constants.ts
-```
-
-Variáveis de ambiente devem ser validadas no startup.
-
----
-
-# Arquivos de Índice
-
-Usar `index.ts` apenas para expor API pública de módulo.
-
-Evitar barrels globais que:
-
-- dificultam rastreamento;
-- criam ciclos;
-- aumentam bundle;
-- escondem dependências.
-
----
-
-# Dependências entre Módulos
-
-Permitido:
-
-```text
-presentation → application → domain
-infrastructure → application/domain
-app → módulos
-```
-
-Proibido:
-
-```text
-domain → infrastructure
-domain → Next.js
-domain → React
-módulo A → arquivos internos de módulo B
-```
-
-Integração entre módulos deve ocorrer por APIs públicas ou portas bem definidas.
+Migrations: pequenas, ordenadas, reversíveis quando possível, sem edição
+posterior após aplicadas em produção.
 
 ---
 
 # Nomenclatura
 
 - componentes React: `PascalCase.tsx`;
-- hooks: `use-*.ts`;
-- funções e módulos: `kebab-case.ts`;
-- schemas: `*.schema.ts`;
-- casos de uso: verbo no infinitivo ou ação explícita;
-- testes: `*.test.ts` ou `*.spec.ts`;
+- hooks: `useX.ts` (camelCase com prefixo `use`);
+- outros módulos/funções: `kebab-case.ts`;
 - Route Handlers: `route.ts`;
-- Server Actions: `actions.ts` apenas quando agrupamento for coeso.
+- migrations: `<timestamp>_<slug>.sql`.
 
 ---
 
 # Regra de Proximidade
 
-Código deve permanecer próximo ao contexto em que é usado.
+Código fica próximo de onde é usado. Só sobe para `packages/shared` depois de
+reutilização real entre os apps ou responsabilidade claramente transversal —
+não "porque pode ser reaproveitado". Componente específico de uma tela
+permanece na tela.
 
-Não mover para compartilhado apenas porque pode ser reutilizado no futuro.
+---
 
-Compartilhar somente após reutilização real ou responsabilidade claramente transversal.
+# Dependências entre camadas
+
+Permitido: `app → src/modules → @zelo/shared`. Um módulo de domínio não
+depende de Next.js nem de React (os de `modules/` que precisam de React
+expõem hooks/components isolados). Um módulo não importa arquivos internos de
+outro — só a API pública (`index.ts`).

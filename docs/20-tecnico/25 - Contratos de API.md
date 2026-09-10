@@ -1,20 +1,88 @@
 # 25 - Contratos de API
 
-> ⚠️ **Desatualizado (ago/2026).** Endpoints de OTP mudaram
-> (`/auth/otp/request` → `/auth/otp/send`); os webhooks `meta/whatsapp` e o
-> hook `send-sms` **não existem** (foram substituídos por
-> `webhooks/mercadopago` e `cron/reconcile-pix`); faltam as rotas de
-> cupons, promoções, avaliações, Pix, relatórios, push do painel e comanda
-> manual. Lista real e delta em `31 - Estado da Implementação vs.
-> Documentação de Referência.md` §4.
+> Reconciliado em **2026-09-09**. O **Inventário de rotas** abaixo é a lista
+> autoritativa (extraída de `apps/*/src/app/api/v1`); as seções detalhadas
+> que vêm depois descrevem os contratos do núcleo e podem ter shapes
+> parciais para as rotas mais novas — a fonte final é o `route.ts` e o
+> schema Zod de cada uma. Ver `20-tecnico/31` §4.
 
 # Objetivo
 
 Este documento define os contratos HTTP e os limites entre interface, backend, webhooks e service worker.
 
-APIs públicas devem ser versionadas em `/api/v1`.
+APIs públicas são versionadas em `/api/v1`. Cada app (`apps/client` =
+`zelo-app`, `apps/admin` = `zelo-admin`) serve as suas próprias rotas.
 
 Server Actions podem ser usadas para mutações internas simples, mas não substituem contratos necessários para integrações externas.
+
+---
+
+# Inventário de rotas
+
+## Cliente (`apps/client`)
+
+| Rota                                                                 | Métodos                   | Notas                                                          |
+| -------------------------------------------------------------------- | ------------------------- | -------------------------------------------------------------- |
+| `/api/v1/auth/otp/send`                                              | POST                      | solicita OTP (era `/auth/otp/request`)                         |
+| `/api/v1/auth/otp/verify`                                            | POST                      | valida OTP → sessão Supabase                                   |
+| `/api/v1/auth/me`                                                    | GET                       | cliente atual                                                  |
+| `/api/v1/auth/session`                                               | GET/POST/DELETE           | sessão                                                         |
+| `/api/v1/catalog/products`                                           | GET                       | catálogo público (Data Cache)                                  |
+| `/api/v1/catalog/products/[productId]/reviews`                       | GET                       | avaliações aprovadas do produto                                |
+| `/api/v1/catalog/store`                                              | GET                       | dados públicos da loja                                         |
+| `/api/v1/cart`                                                       | GET/PUT/DELETE            | carrinho inteiro                                               |
+| `/api/v1/cart/reconcile`                                             | POST                      | funde carrinho anônimo ao logar                                |
+| `/api/v1/checkout/options`                                           | **POST** `{ productIds }` | agenda por categoria + `mixedCart`/`allowSameDay`/`hoursLabel` |
+| `/api/v1/checkout/preview`                                           | POST                      | totais, frete, cupom                                           |
+| `/api/v1/coupons/preview`                                            | POST                      | valida cupom (read-only)                                       |
+| `/api/v1/orders`                                                     | GET/POST                  | lista / cria pedido                                            |
+| `/api/v1/orders/[orderId]`                                           | GET                       | detalhe                                                        |
+| `/api/v1/orders/[orderId]/cancel`                                    | POST                      | cancela (dispara estorno se Pix pago)                          |
+| `/api/v1/orders/[orderId]/reorder`                                   | POST                      | repete pedido                                                  |
+| `/api/v1/orders/[orderId]/pix`                                       | GET/POST                  | cobrança Pix (nova tentativa)                                  |
+| `/api/v1/orders/[orderId]/review`                                    | POST                      | avaliação do pedido                                            |
+| `/api/v1/addresses`, `/addresses/[addressId]`, `/addresses/validate` | GET/POST/PATCH/DELETE     | endereços                                                      |
+| `/api/v1/push/subscriptions`                                         | POST/DELETE               | assinatura de push do cliente                                  |
+| `/api/v1/push/vapid-public-key`                                      | GET                       | chave pública VAPID                                            |
+| `/api/v1/webhooks/mercadopago`                                       | POST                      | confirmação de pagamento (assinatura validada, idempotente)    |
+| `/api/v1/cron/reconcile-pix`                                         | GET                       | varredura de Pix pendentes (Supabase Cron, `CRON_SECRET`)      |
+| `/api/v1/internal/revalidate`                                        | POST                      | invalidação de cache do catálogo (`CATALOG_REVALIDATE_SECRET`) |
+
+## Painel (`apps/admin`)
+
+| Rota                                                             | Métodos                                   | Notas                                   |
+| ---------------------------------------------------------------- | ----------------------------------------- | --------------------------------------- |
+| `/api/v1/admin/orders`, `/orders/[orderId]`                      | GET                                       | fila e detalhe                          |
+| `/api/v1/admin/orders/[orderId]/status`                          | POST                                      | transição de status                     |
+| `/api/v1/admin/orders/[orderId]/cancel`                          | POST                                      | cancela (motivo obrigatório)            |
+| `/api/v1/admin/orders/[orderId]/mark-printed`                    | POST                                      | marca comanda impressa                  |
+| `/api/v1/admin/orders/unprinted`                                 | GET                                       | pedidos com `kitchen_printed_at` nulo   |
+| `/api/v1/admin/catalog`                                          | GET                                       | catálogo completo do painel (sem cache) |
+| `/api/v1/admin/categories`, `/categories/[categoryId]`           | GET/POST/PATCH/DELETE                     | inclui regras de agendamento            |
+| `/api/v1/admin/products`, `/products/[productId]`                | GET/POST/PATCH/DELETE                     |                                         |
+| `/api/v1/admin/products/[productId]/archive`                     | POST                                      | arquivar                                |
+| `/api/v1/admin/products/[productId]/duplicate`                   | POST                                      | duplicar                                |
+| `/api/v1/admin/products/[productId]/images`, `/images/[imageId]` | GET/POST/DELETE                           | galeria                                 |
+| `/api/v1/admin/addons`, `/addons/[addonId]`                      | GET/POST/PATCH/DELETE                     |                                         |
+| `/api/v1/admin/promotions`, `/promotions/[promotionId]`          | GET/POST/PATCH/DELETE                     |                                         |
+| `/api/v1/admin/coupons`, `/coupons/[couponId]`                   | GET/POST/PATCH/DELETE                     |                                         |
+| `/api/v1/admin/reviews`, `/reviews/[reviewId]`                   | GET/PATCH                                 | moderação de avaliação de pedido        |
+| `/api/v1/admin/product-reviews`, `/product-reviews/[reviewId]`   | GET/PATCH                                 | moderação de avaliação de produto       |
+| `/api/v1/admin/reports`                                          | GET `?kind=operations\|financial&period=` | dashboard "Visão geral"                 |
+| `/api/v1/admin/store`                                            | GET/PATCH                                 | config da loja (inclui pausa)           |
+| `/api/v1/admin/business-hours`                                   | GET/PUT                                   |                                         |
+| `/api/v1/admin/blackouts`, `/blackouts/[blackoutId]`             | GET/POST/DELETE                           | bloqueios                               |
+| `/api/v1/admin/audit-logs`                                       | GET                                       | auditoria filtrável                     |
+| `/api/v1/admin/push/config`, `/push/subscriptions`               | GET/POST/DELETE                           | Web Push do painel                      |
+| `/api/v1/push/test`                                              | POST                                      | disparo de teste                        |
+| `/api/v1/admin/session`, `/session/password`                     | GET/POST                                  | sessão e troca de senha                 |
+| `/api/v1/admin/realtime`                                         | GET                                       | token/config de realtime                |
+| `/api/v1/admin/uploads/product-image`                            | POST                                      | upload de imagem                        |
+
+> **Não existem** (removidos): `POST /api/v1/webhooks/meta/whatsapp`,
+> `POST /api/v1/hooks/supabase/send-sms`, `GET /api/v1/catalog` (raiz),
+> `GET /api/v1/products/:slug`, `/api/v1/cart/items*` (o carrinho é
+> substituído inteiro via `PUT /api/v1/cart`).
 
 ---
 
@@ -71,9 +139,9 @@ Obrigatório para:
 
 # Autenticação do Cliente
 
-## `POST /api/v1/auth/otp/request`
+## `POST /api/v1/auth/otp/send`
 
-Solicita OTP por SMS.
+Solicita OTP por SMS. Protegido por Turnstile + honeypot + rate limit por IP.
 
 Entrada:
 
@@ -124,58 +192,50 @@ Saída:
 
 # Catálogo
 
-## `GET /api/v1/catalog`
+## `GET /api/v1/catalog/products`
 
-Retorna Loja, Categorias, Produtos, imagens e Adicionais públicos.
+Retorna Categorias, Produtos, imagens e Adicionais públicos. Servido do
+**Data Cache do Next** (ver `20-tecnico/22`). Produtos indisponíveis podem
+aparecer marcados como não compráveis.
 
-Filtros opcionais:
+## `GET /api/v1/catalog/store`
 
-- `search`;
-- `category`;
-- `cursor`.
+Dados públicos da loja (horário, pausa, formas de pagamento, raios).
 
-Produtos indisponíveis podem aparecer, mas devem ser marcados como não compráveis.
+## `GET /api/v1/catalog/products/:productId/reviews`
 
-## `GET /api/v1/products/:slug`
-
-Retorna detalhes de um Produto.
+Avaliações **aprovadas** do produto (nota + comentário + nome de exibição).
 
 ---
 
 # Carrinho
 
+O carrinho é lido inteiro e substituído inteiro — não há endpoints por item.
+
 ## `GET /api/v1/cart`
 
-Retorna Carrinho atual.
-
-## `POST /api/v1/cart/items`
-
-Entrada:
-
-```json
-{
-  "productId": "uuid",
-  "quantity": 2,
-  "addOnIds": ["uuid"],
-  "customerNote": "Sem açúcar por cima"
-}
-```
-
-## `PATCH /api/v1/cart/items/:itemId`
-
-Permite alterar quantidade, adicionais e observação.
-
-## `DELETE /api/v1/cart/items/:itemId`
-
-Remove Item.
-
-## `DELETE /api/v1/cart`
-
-Limpa Carrinho.
+Retorna o Carrinho atual (cliente autenticado ou anônimo por chave).
 
 ## `PUT /api/v1/cart`
 
-Substitui o Carrinho persistido do Cliente autenticado pelos itens enviados.
+Substitui o Carrinho pelos itens enviados:
+
+```json
+{
+  "items": [
+    {
+      "productId": "uuid",
+      "quantity": 2,
+      "addOnIds": ["uuid"],
+      "customerNote": "Sem açúcar por cima"
+    }
+  ]
+}
+```
+
+## `DELETE /api/v1/cart`
+
+Limpa o Carrinho.
 
 ## `POST /api/v1/cart/reconcile`
 
@@ -276,14 +336,19 @@ O servidor valida status e autoria.
 
 ## `POST /api/v1/orders/:orderId/reorder`
 
-Cria novo Carrinho com base no Pedido anterior.
+Cria novo Carrinho com base no Pedido anterior. A saída informa itens
+restaurados, itens/adicionais indisponíveis e preços atualizados.
 
-Saída deve informar:
+## `GET|POST /api/v1/orders/:orderId/pix`
 
-- Itens restaurados;
-- Itens indisponíveis;
-- Adicionais indisponíveis;
-- preços atualizados.
+`GET` devolve o estado da cobrança Pix atual (QR, copia-e-cola,
+`pix_expires_at`). `POST` gera uma **nova tentativa** quando a anterior
+expirou (`pix_attempt` incrementa).
+
+## `POST /api/v1/orders/:orderId/review`
+
+Envia a avaliação do Pedido (nota 1–5 + comentário opcional). Só para
+pedidos `delivered` do próprio Cliente; entra como `pending`.
 
 ---
 
@@ -307,13 +372,18 @@ Arquiva endereço.
 
 ## `POST /api/v1/addresses/validate`
 
-Valida:
+Valida geocodificação, distância **em linha reta** da loja, faixa de raio
+(dentro/fora da área) e taxa aplicável. Ver `10-funcional/08`.
 
-- geocodificação;
-- área urbana;
-- rota;
-- distância;
-- taxa.
+---
+
+# Cupons
+
+## `POST /api/v1/coupons/preview`
+
+Valida um `code` para o carrinho atual (read-only, `public.preview_coupon`).
+Devolve tipo de desconto, valor estimado e motivo de recusa. O consumo real
+acontece dentro de `create_order`.
 
 ---
 
@@ -422,32 +492,89 @@ Lista horários.
 
 Substitui configuração semanal de forma validada.
 
+## `GET|POST|DELETE /api/v1/admin/blackouts[/:blackoutId]`
+
+Bloqueios de datas (feriados, folgas).
+
 ---
 
-# Webhooks
+# Administração — catálogo estendido
 
-## `POST /api/v1/webhooks/meta/whatsapp`
+## `POST /api/v1/admin/products/:productId/duplicate`
 
-Utilizado para eventos da Meta quando necessários.
+Cria uma cópia do Produto (sem imagens vinculadas por padrão).
 
-Deve:
+## `GET|POST|DELETE /api/v1/admin/products/:productId/images[/:imageId]`
 
-- validar assinatura;
-- tratar challenge de verificação;
-- ser idempotente;
-- não registrar conteúdo sensível.
+Galeria de fotos do Produto (ordenável).
 
-## `POST /api/v1/hooks/supabase/send-sms`
+## `GET|POST|PATCH|DELETE /api/v1/admin/promotions[/:promotionId]`
 
-Endpoint interno do Send SMS Hook.
+Promoções (desconto percentual por escopo `store` / `category` /
+`products`).
 
-Responsabilidades:
+## `GET|POST|PATCH|DELETE /api/v1/admin/coupons[/:couponId]`
 
-- verificar assinatura do hook;
-- extrair telefone e OTP;
-- chamar a Meta Cloud API;
-- responder no formato esperado;
-- nunca expor o OTP em logs.
+Cupons (`code`, `discount_type`, `max_uses`, período).
+
+## `GET|PATCH /api/v1/admin/reviews[/:reviewId]`
+
+Moderação de avaliações **de pedido** (`order_reviews`): aprovar, ocultar,
+destacar (`is_featured`).
+
+## `GET|PATCH /api/v1/admin/product-reviews[/:reviewId]`
+
+Moderação de avaliações **de produto** (`product_reviews`).
+
+## `GET /api/v1/admin/reports?kind=operations|financial&period=`
+
+Agregações da "Visão geral". `operations` = contagens/tempos por status;
+`financial` = receita, taxas do MP, líquido. `period` = `today` / `7d` /
+`30d`.
+
+## `GET /api/v1/admin/orders/unprinted` · `POST /api/v1/admin/orders/:orderId/mark-printed`
+
+Suporte à fila de impressão da cozinha (`orders.kitchen_printed_at`).
+
+---
+
+# Administração — dispositivos e sessão
+
+## `GET|POST|DELETE /api/v1/admin/push/config` · `/push/subscriptions`
+
+Web Push do painel (`admin_push_subscriptions`). O par VAPID é o mesmo dos
+dois apps.
+
+## `GET|POST /api/v1/admin/session` · `/session/password`
+
+Sessão do admin e troca de senha (força no primeiro acesso via
+`must_set_password`).
+
+---
+
+# Webhooks e jobs
+
+## `POST /api/v1/webhooks/mercadopago`
+
+Notificação de pagamento do Mercado Pago. Valida a assinatura
+(`MERCADOPAGO_WEBHOOK_SECRET`), é **idempotente** via `payment_events`, e
+leva o pedido a `confirmed` / `failed` / `refunded` conforme o evento. Não
+registra dados sensíveis.
+
+## `GET /api/v1/cron/reconcile-pix`
+
+Varre pedidos Pix pendentes e consulta o status no MP (cobre webhooks
+perdidos). Agendado pelo **Supabase Cron** (`supabase/cron/`), protegido por
+`Authorization: Bearer <CRON_SECRET>`.
+
+## `POST /api/v1/internal/revalidate`
+
+Chamado pelo `apps/admin` após editar catálogo/loja. Autenticado por
+`Authorization: Bearer <CATALOG_REVALIDATE_SECRET>`; invalida as tags do
+Data Cache do catálogo no `apps/client`.
+
+> Não existe integração com a Meta. O SMS de OTP sai pela Twilio Verify
+> (ou pelo fallback interno), sem "Send SMS Hook" do Supabase.
 
 ---
 

@@ -92,11 +92,14 @@ O Cliente deve poder confirmar a localização do endereço.
 
 ## RF-018 — Validar área atendida
 
-O sistema deve impedir delivery para endereços fora da área urbana atendida de Pereiro.
+O sistema deve impedir delivery para endereços fora do **raio máximo de
+entrega** da Loja (`stores.max_delivery_radius_meters`). Fora do raio, só
+retirada. Ver `10-funcional/08`.
 
 ## RF-019 — Calcular distância
 
-O sistema deve calcular a distância por rota viária entre a Loja e o endereço.
+O sistema deve calcular a distância **em linha reta** (Haversine) entre a
+Loja e o endereço confirmado pelo Cliente.
 
 ## RF-020 — Calcular taxa de entrega
 
@@ -112,11 +115,15 @@ Ao escolher dinheiro, o Cliente deve poder informar se precisa de troco e para q
 
 ## RF-023 — Exibir Pix
 
-Ao escolher Pix, o sistema deve exibir o código Pix copia e cola configurado.
+Ao escolher Pix, o sistema deve gerar uma **cobrança dinâmica no Mercado
+Pago** para o pedido e exibir o QR code + copia-e-cola daquela cobrança, com
+contagem regressiva até `pix_expires_at` (~30 min).
 
-## RF-024 — Abrir envio de comprovante
+## RF-024 — Confirmar pagamento Pix
 
-O sistema deve oferecer um botão para abrir o WhatsApp da Loja e facilitar o envio do comprovante.
+O sistema deve confirmar o pagamento **automaticamente** pelo webhook do
+Mercado Pago (com reconciliação por cron como rede de segurança). Não há
+envio de comprovante por WhatsApp.
 
 ## RF-025 — Revisar Pedido
 

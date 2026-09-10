@@ -74,8 +74,10 @@ Devem possuir códigos específicos e estáveis.
 
 Exemplos:
 
-- Meta Cloud API indisponível;
-- Google Maps sem rota;
+- Twilio Verify indisponível (OTP);
+- Mercado Pago indisponível ou webhook inválido (Pix);
+- Cloudflare Turnstile indisponível;
+- Google Maps sem geocodificação;
 - falha no Web Push;
 - erro temporário do Supabase.
 

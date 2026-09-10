@@ -117,29 +117,32 @@ Cada sabor ou composição comercial é um Produto próprio. O sistema não ter�
 
 # Fora do Escopo
 
-- sistema financeiro completo;
-- controle detalhado de estoque;
 - emissão fiscal;
-- ERP;
-- marketplace;
-- gestão contábil;
+- ERP / gestão contábil;
+- marketplace e integrações com marketplaces;
 - controle detalhado de produção;
-- integrações com marketplaces;
-- pagamento online automatizado;
+- cartão online / gateway de cartão;
+- notificações por WhatsApp;
+- múltiplas lojas;
+- perfis administrativos;
 - internacionalização;
-- suíte automatizada de testes na primeira versão.
+- suíte automatizada de testes.
 
 ---
+
+# Evoluções já implementadas (não são mais "futuro")
+
+Desde a versão inicial entraram em produção: **promoções**, **cupons**,
+**confirmação automática de Pix** (Mercado Pago), **relatório financeiro**
+(dashboard "Visão geral"), **controle de estoque** básico por produto,
+**avaliações e depoimentos** (de pedido e de produto, com moderação) e a
+**comanda manual**. Ver `docs/100-planejamento/103`–`107` e
+`docs/20-tecnico/31`.
 
 # Evoluções Futuras
 
 - fidelidade;
-- cupons;
-- promoções;
 - favoritos;
-- gateways de pagamento;
-- confirmação automática de Pix;
-- notificações por WhatsApp;
-- dashboard financeiro;
-- relatórios;
+- resposta pública do admin a avaliações;
+- foto do cliente na avaliação;
 - múltiplas lojas.

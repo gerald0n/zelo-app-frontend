@@ -18,7 +18,9 @@ Ainda aguarda análise e aceitação da Loja.
 
 O Pedido foi analisado e aceito pela Loja.
 
-Para Pix, este estado pode representar também que o pagamento foi conferido manualmente.
+Para Pix, o pagamento é confirmado **automaticamente** pelo webhook do
+Mercado Pago (`payment_status = 'confirmed'`, `paid_at`) antes ou junto da
+confirmação da Loja — não há conferência manual.
 
 ## Em produção
 
@@ -46,7 +48,10 @@ O Pedido foi entregue ao Cliente ou retirado na Loja.
 
 O Pedido foi cancelado pelo Cliente ou pelo Administrador.
 
-É um estado terminal.
+É um estado terminal. Se era um Pix já pago, o cancelamento pelo
+Administrador dispara o **estorno** no Mercado Pago e o `payment_status` vai
+para `refunded` (também terminal; `transition_order_status` impede sair
+dele).
 
 ---
 

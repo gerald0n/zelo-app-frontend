@@ -8,9 +8,15 @@ Este documento define a arquitetura de alto nível da aplicação e orienta a se
 
 # Estilo Arquitetural
 
-A aplicação será um monólito modular full-stack em um único repositório.
+**Monorepo pnpm** com dois apps Next.js full-stack — `apps/client`
+(`zelo-app`, loja) e `apps/admin` (`zelo-admin`, painel) — e um pacote
+compartilhado `packages/shared` (Supabase, domínio, UI, config). `supabase/`
+é compartilhado. Cada app é um projeto Vercel separado. Ver
+`20-tecnico/26` e o `README.md` da raiz.
 
-Frontend e backend pertencem à mesma aplicação Next.js, porém regras de negócio, apresentação e infraestrutura devem permanecer separadas.
+Em cada app, frontend e backend pertencem à mesma aplicação Next.js, porém
+regras de negócio, apresentação e infraestrutura permanecem separadas — a
+maior parte do domínio vive em `packages/shared/src/modules/`.
 
 ---
 
@@ -40,7 +46,9 @@ Next.js
         ├── PostgreSQL
         ├── Supabase Realtime
         ├── Supabase Storage
-        ├── Meta WhatsApp Cloud API
+        ├── Twilio Verify (SMS OTP)
+        ├── Mercado Pago (Pix)
+        ├── Cloudflare Turnstile
         ├── Google Maps Platform
         ├── Web Push
         └── Sentry
@@ -92,7 +100,8 @@ O domínio não deve importar Next.js, Supabase, React ou APIs externas.
 
 ## Infraestrutura
 
-Responsável por Supabase, PostgreSQL, Meta Cloud API, Google Maps, Web Push e Sentry.
+Responsável por Supabase/PostgreSQL, Twilio Verify (SMS), Mercado Pago (Pix),
+Cloudflare Turnstile, Google Maps, Web Push e Sentry.
 
 Toda integração externa deve possuir adaptador próprio.
 
