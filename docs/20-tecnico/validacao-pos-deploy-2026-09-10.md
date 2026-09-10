@@ -23,37 +23,62 @@ Roteiro de teste manual para o deploy que levou `develop` → `main`
 
 ---
 
-## P0 — Sanidade do deploy (5 min, faça primeiro)
+## P0 — Sanidade do deploy — ✅ RODADO 2026-09-10 (Claude, via curl)
 
-Read-only, não cria nada. Rode no terminal:
+Read-only, não cria nada. `jq` não estava instalado na máquina — usei `python3`.
+Reproduza com:
 
 ```bash
 BASE=https://cardapio.zeloconfeitaria.com.br
 
-# 1. Loja pública + isOpen (código de horário TZ-aware)
-curl -s $BASE/api/v1/catalog/store | jq '{isOpen, paused: .store.paused_until, tz: .store.timezone}'
+# 1. Loja pública + isOpen
+curl -s $BASE/api/v1/catalog/store \
+  | python3 -c "import sys,json;d=json.load(sys.stdin);s=d['store'];print('isOpen',d['isOpen'],'| tz',s['timezone'],'| pausedUntil',s['pausedUntil'],'| slotTimes?', 'scheduleSlotTimes' in s)"
 
-# 2. Catálogo (pega IDs reais de produto)
-curl -s $BASE/api/v1/catalog/products | jq '.products[] | {id, name, categoryId: .category.id, categoryName: .category.name}' | head -40
+# 2. Catálogo — pega IDs e categoryId
+curl -s $BASE/api/v1/catalog/products \
+  | python3 -c "import sys,json;[print(p['id'],p['categoryId'],p['name']) for p in json.load(sys.stdin)['products']]"
 
-# 3. Opções de checkout p/ 1 produto — troque <ID_COOKIE> por um id da etapa 2
-curl -s -X POST $BASE/api/v1/checkout/options \
-  -H 'content-type: application/json' \
-  -d '{"productIds":["<ID_COOKIE>"]}' | jq '.scheduling'
+# 3. Opções de checkout p/ 1 produto (troque o ID)
+curl -s -X POST $BASE/api/v1/checkout/options -H 'content-type: application/json' \
+  -d '{"productIds":["<ID>"]}' \
+  | python3 -c "import sys,json;s=json.load(sys.stdin)['scheduling'];print({k:s[k] for k in ('mixedCart','allowSameDay','hoursLabel','storeOpen')});print('dates',s['availableDates'][:5])"
 
-# 4. Carrinho misto — 1 produto de "Cookies" + 1 de "Pudins"
-curl -s -X POST $BASE/api/v1/checkout/options \
-  -H 'content-type: application/json' \
-  -d '{"productIds":["<ID_COOKIE>","<ID_PUDIM>"]}' | jq '.scheduling.mixedCart'
+# 4. Body vazio (fallback sem productIds)
+curl -s -X POST $BASE/api/v1/checkout/options -H 'content-type: application/json' -d '{}' \
+  | python3 -c "import sys,json;print(json.load(sys.stdin)['scheduling']['mixedCart'])"
 ```
 
-- [ ] `/catalog/store` → HTTP 200, `isOpen` booleano coerente com o horário real
-- [ ] `/catalog/products` → 200, lista com `category` preenchida
-- [ ] `/checkout/options` (1 produto) → 200 com `scheduling.{allowSameDay, mixedCart, hoursLabel, availableDates, timesByDate}` — **sem 500**
-- [ ] `/checkout/options` (cookie + pudim) → `mixedCart: true`
-- [ ] Sentry (últimos 30 min): sem pico de erro novo em `zelo-app` / `zelo-admin`
+- [x] `/catalog/store` → **HTTP 200** (0.30s). `isOpen: false`, `timezone: America/Fortaleza`,
+      `pausedUntil: null`. **Sem campo `scheduleSlotTimes`** no payload → coluna
+      dropada e o código não a referencia mais. ✅
+- [x] `/catalog/products` → **200** (0.29s), 11 produtos. Servido de `gru1`
+      (região São Paulo, co-locada com o Supabase). Cada produto traz `rating`
+      (Fase 2) e `images[]`.
+- [x] `/checkout/options` (1 produto, 2 produtos mesma categoria, body vazio) →
+      **200** (~0.4s) nos três. `scheduling` = `{storeOpen, availableDates,
+    timesByDate, mixedCart, allowSameDay, hoursLabel}`. `mixedCart: false`,
+      `allowSameDay: true`, `hoursLabel: "Hoje 19:00"`, 14 datas,
+      `timesByDate` com slots de 30 min por `delivery`/`pickup`. **Sem 500.** ✅
+- [x] `/catalog/products/:id/reviews` → **200**, Fase 2 de avaliação de produto
+      respondendo (um produto com `average: 5, count: 1`).
+- [x] Cliente `/` → **200** (gru1); admin `/` → **307** (redirect p/ login, ok).
+- [ ] **Sentry** (últimos 30 min) — conferir no dashboard, não dá por curl.
+- [ ] **Vercel** — confirmar no dashboard que `zelo-app` **e** `zelo-admin`
+      subiram o commit `69da7b9` (as respostas indicam que o `zelo-app` subiu).
 
-Qualquer 500 nos itens 3–4 = a reescrita do agendamento quebrou em produção → **rollback** (deploy anterior na Vercel) e me chama.
+### Não testável por curl / limitação de dados
+
+- **Produção só tem 1 categoria** (11 produtos tipo "Cookie tradicional",
+  `categoryId 51059aaa-…`). **Não existe categoria "Pudins"** → a regra de piso
+  17h/10h e o `mixedCart: true` **não dão pra validar** até criar uma categoria
+  com regra diferente. Fazer isso no painel antes do teste manual de
+  agendamento, ou pular esses dois itens.
+
+**Veredito P0 sanidade: o deploy do agendamento reescrito está vivo e
+respondendo em produção — sem 500 nos caminhos exercitados.** Falta só a
+confirmação visual do Vercel/Sentry e os testes manuais de fluxo (P0
+agendamento, P0 criação de pedido).
 
 ---
 
