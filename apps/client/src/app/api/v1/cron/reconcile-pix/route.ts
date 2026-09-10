@@ -2,7 +2,10 @@ import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { getCronSecret } from '@/config/env';
 import { logger } from '@/lib/logger';
-import { reconcilePendingPixOrders } from '@/modules/payments';
+import {
+  reconcileCancelledPixRefunds,
+  reconcilePendingPixOrders,
+} from '@/modules/payments';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -38,8 +41,19 @@ async function handle(request: Request) {
     return NextResponse.json({ error: result.error.code }, { status: 500 });
   }
 
-  logger.info('Reconciliação Pix concluída', result.data);
-  return NextResponse.json(result.data);
+  // Mesma passada: estorna Pix de pedidos cancelados que ficaram pagos (o
+  // estorno automático não rodou ou falhou na hora). Idempotente.
+  const refunds = await reconcileCancelledPixRefunds();
+  if (!refunds.ok) {
+    logger.error('Sweep de estornos Pix falhou', { code: refunds.error.code });
+  }
+
+  const payload = {
+    ...result.data,
+    refundSweep: refunds.ok ? refunds.data : { error: refunds.error.code },
+  };
+  logger.info('Reconciliação Pix concluída', payload);
+  return NextResponse.json(payload);
 }
 
 export const GET = handle;

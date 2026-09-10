@@ -20,6 +20,7 @@ import {
   ORDER_DETAIL_SELECT,
   ORDER_LIST_SELECT,
 } from '@/modules/orders/customer-orders-mappers';
+import { refundOrderPixPayment } from '@/modules/payments/order-pix-webhook';
 import type { CartItem } from '@/modules/carts/types';
 import { unitPriceWithAddons } from '@/modules/carts/types';
 import type { CatalogAddon } from '@/modules/catalog/types';
@@ -96,13 +97,22 @@ export async function getCustomerOrder(
   return ok(mapDetail(data as never));
 }
 
+export type CancelCustomerOrderResult = {
+  order: CustomerOrder;
+  /** Presente quando o pedido era um Pix pago: estado do estorno automático. */
+  refund?: 'done' | 'already' | 'failed';
+};
+
 export async function cancelCustomerOrder(options: {
   orderId: string;
   reason: string;
-}): Promise<Result<CustomerOrder>> {
+}): Promise<Result<CancelCustomerOrderResult>> {
   const reason = options.reason.trim();
   if (reason.length < 3) {
-    return err('VALIDATION_ERROR', 'Informe um motivo com pelo menos 3 caracteres.');
+    return err(
+      'VALIDATION_ERROR',
+      'Informe um motivo com pelo menos 3 caracteres.',
+    );
   }
 
   const identity = await resolveIdentity();
@@ -126,12 +136,38 @@ export async function cancelCustomerOrder(options: {
   });
   if (error) {
     logger.error('Cancelamento falhou', { message: error.message });
-    return err('CANCELLATION_BLOCKED', 'Cancelamento não permitido neste status.', {
-      cause: error,
-    });
+    return err(
+      'CANCELLATION_BLOCKED',
+      'Cancelamento não permitido neste status.',
+      {
+        cause: error,
+      },
+    );
   }
 
-  return getCustomerOrder(options.orderId);
+  // Pix já pago → estorna no Mercado Pago. A falha do estorno não desfaz o
+  // cancelamento: o pedido fica marcado e a loja resolve pelo admin
+  // ("Tentar estorno do Pix de novo") ou pelo painel do Mercado Pago.
+  let refund: CancelCustomerOrderResult['refund'];
+  if (
+    existing.data.paymentMethod === 'pix' &&
+    existing.data.paymentStatus === 'confirmed'
+  ) {
+    const result = await refundOrderPixPayment(options.orderId);
+    if (result.ok) {
+      refund = result.data.alreadyRefunded ? 'already' : 'done';
+    } else {
+      refund = 'failed';
+      logger.error('Cliente cancelou, mas o estorno Pix falhou', {
+        orderId: options.orderId,
+        code: result.error.code,
+      });
+    }
+  }
+
+  const refreshed = await getCustomerOrder(options.orderId);
+  if (!refreshed.ok) return refreshed;
+  return ok({ order: refreshed.data, refund });
 }
 
 export type ReorderResult = {
