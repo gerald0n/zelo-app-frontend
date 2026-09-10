@@ -16,8 +16,11 @@ export {
   processMercadoPagoNotification,
   refundOrderPixPayment,
   reconcilePendingPixOrders,
+  reconcileCancelledPixRefunds,
+  countCancelledPixAwaitingRefund,
   type OrderPixCharge,
   type OrderPixView,
   type WebhookOutcome,
   type ReconcileSummary,
+  type PixRefundSweepSummary,
 } from '@/modules/payments/order-pix';

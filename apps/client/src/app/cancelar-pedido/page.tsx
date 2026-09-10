@@ -25,7 +25,7 @@ function CancelarPedidoContent() {
   const orderId = searchParams.get('orderId');
   const orderNumber = searchParams.get('orderNumber') ?? '#----';
   const router = useRouter();
-  const { confirm } = useAppDialog();
+  const { confirm, alert } = useAppDialog();
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +55,18 @@ function CancelarPedidoContent() {
         setLoading(false);
         return;
       }
+      const refund = json?.refund as 'done' | 'already' | 'failed' | undefined;
+      if (refund === 'done' || refund === 'already') {
+        await alert({
+          title: 'Pedido cancelado',
+          body: 'O estorno do Pix foi solicitado ao Mercado Pago e o valor volta para a mesma conta usada no pagamento.',
+        });
+      } else if (refund === 'failed') {
+        await alert({
+          title: 'Pedido cancelado',
+          body: 'Não conseguimos concluir o estorno do Pix automaticamente. Fale com a confeitaria para receber o valor de volta.',
+        });
+      }
       router.replace(`/acompanhamento/${orderId}`);
     } catch {
       setError('Falha de rede ao cancelar o pedido.');
@@ -63,7 +75,9 @@ function CancelarPedidoContent() {
   };
 
   return (
-    <div className={cn('flex min-h-dvh flex-col bg-background', shellNarrowClass)}>
+    <div
+      className={cn('flex min-h-dvh flex-col bg-background', shellNarrowClass)}
+    >
       <header className={pageHeaderBarClass}>
         <Link
           href={orderId ? `/acompanhamento/${orderId}` : '/pedidos'}
@@ -134,7 +148,9 @@ function CancelarPedidoContent() {
           className={cn(
             pageCtaBaseClass,
             'gap-2 text-white',
-            isValid && !loading ? 'bg-destructive' : 'bg-muted text-muted-foreground',
+            isValid && !loading
+              ? 'bg-destructive'
+              : 'bg-muted text-muted-foreground',
           )}
         >
           {loading ? <Loader2 className="size-5 animate-spin" /> : null}

@@ -13,6 +13,7 @@ export const adminKeys = {
   productReviews: (tab: string) =>
     [...adminKeys.all, 'product-reviews', tab] as const,
   reviewsPending: () => [...adminKeys.all, 'reviews-pending'] as const,
+  pixRefundsPending: () => [...adminKeys.all, 'pix-refunds-pending'] as const,
 };
 
 export const catalogKeys = {

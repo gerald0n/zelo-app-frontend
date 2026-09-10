@@ -1,12 +1,21 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, RotateCcw, Wallet } from 'lucide-react';
-import { apiJson } from '@/lib/api';
+import { ApiError, apiJson } from '@/lib/api';
 import { adminKeys } from '@/lib/query-keys';
+import { useAppDialog } from '@/contexts/AppDialogContext';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import type { ReportPeriod } from '@/modules/admin/reports';
 import type { FinancialReport } from '@/modules/admin/financial-report';
+
+type PixRefundSweepResult = {
+  scanned: number;
+  refunded: number;
+  alreadyRefunded: number;
+  failed: number;
+};
 
 const METHOD_LABEL = { pix: 'Pix', cash: 'Dinheiro', card: 'Cartão' } as const;
 
@@ -38,6 +47,10 @@ function Line({
 }
 
 export function FinancialView({ period }: { period: ReportPeriod }) {
+  const queryClient = useQueryClient();
+  const { alert } = useAppDialog();
+  const [sweeping, setSweeping] = useState(false);
+
   const query = useQuery({
     // Realtime invalida via `AdminRealtimeProvider` — fora do queryKey.
     queryKey: adminKeys.reports(`fin-${period}`),
@@ -46,6 +59,51 @@ export function FinancialView({ period }: { period: ReportPeriod }) {
         `/api/v1/admin/reports?kind=financial&period=${period}`,
       ),
   });
+
+  const pendingRefunds = useQuery({
+    queryKey: adminKeys.pixRefundsPending(),
+    queryFn: () => apiJson<{ pending: number }>('/api/v1/admin/pix-refunds'),
+  });
+
+  const runRefundSweep = async () => {
+    if (sweeping) return;
+    setSweeping(true);
+    try {
+      const r = await apiJson<PixRefundSweepResult>(
+        '/api/v1/admin/pix-refunds',
+        { method: 'POST' },
+      );
+      const done = r.refunded + r.alreadyRefunded;
+      await alert({
+        title: 'Estornos processados',
+        description:
+          `${done} de ${r.scanned} resolvido${done === 1 ? '' : 's'}` +
+          (r.failed > 0
+            ? `. ${r.failed} ainda com erro — tente de novo em alguns minutos ou estorne pelo painel do Mercado Pago.`
+            : '.'),
+      });
+    } catch (cause) {
+      await alert({
+        title: 'Não foi possível processar os estornos',
+        description:
+          cause instanceof ApiError
+            ? cause.message
+            : 'A operação pode ter sido interrompida. Confira a contagem e rode de novo se ainda houver pendências.',
+      });
+    } finally {
+      setSweeping(false);
+      // Sempre revalida: mesmo um run interrompido no meio já estornou parte.
+      void queryClient.invalidateQueries({
+        queryKey: adminKeys.pixRefundsPending(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: [...adminKeys.all, 'reports'],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: [...adminKeys.all, 'orders'],
+      });
+    }
+  };
 
   const d = query.data;
   if (query.isLoading || !d) {
@@ -124,6 +182,27 @@ export function FinancialView({ period }: { period: ReportPeriod }) {
             />
           </>
         )}
+
+        {pendingRefunds.data && pendingRefunds.data.pending > 0 ? (
+          <div className="space-y-2 border-t border-border pt-2">
+            <p className="text-xs leading-4 text-destructive">
+              {pendingRefunds.data.pending} pedido
+              {pendingRefunds.data.pending === 1 ? '' : 's'} Pix cancelado
+              {pendingRefunds.data.pending === 1 ? '' : 's'} sem estorno. O
+              sistema reprocessa sozinho a cada 10 min — use o botão para forçar
+              agora.
+            </p>
+            <button
+              type="button"
+              disabled={sweeping}
+              onClick={() => void runRefundSweep()}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-destructive/40 py-2.5 text-sm font-semibold text-destructive disabled:opacity-60"
+            >
+              {sweeping ? <Loader2 className="size-4 animate-spin" /> : null}
+              Processar estornos pendentes
+            </button>
+          </div>
+        ) : null}
       </section>
 
       <section className="space-y-2 rounded-xl border border-border bg-card p-4">
