@@ -1,6 +1,6 @@
 'use client';
 
-import { Bike, ShoppingBag, ArrowRight, X } from 'lucide-react';
+import { Bike, ShoppingBag, ArrowRight, MapPin, X } from 'lucide-react';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import {
   statusLabel,
@@ -111,6 +111,18 @@ export default function AdminOrderCardBody({
           .map((item) => `${item.quantity}× ${item.name}`)
           .join(' · ')}
       </p>
+
+      {order.deliveryMethod === 'delivery' && order.deliveryAddress ? (
+        <p
+          className={cn(
+            'flex items-start gap-1 leading-snug text-muted-foreground',
+            roomy ? 'text-xs' : 'text-2xs',
+          )}
+        >
+          <MapPin className="mt-px size-3 shrink-0" />
+          <span className="line-clamp-2">{order.deliveryAddress.short}</span>
+        </p>
+      ) : null}
 
       <div className="flex items-center justify-between">
         <span

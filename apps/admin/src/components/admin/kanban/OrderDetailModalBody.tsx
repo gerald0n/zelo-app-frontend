@@ -145,6 +145,25 @@ export default function OrderDetailModalBody({
           </InfoCard>
         </div>
 
+        {order.deliveryMethod === 'delivery' ? (
+          <InfoCard label="Endereço de entrega">
+            {order.address ? (
+              <>
+                <p className="text-sm">{order.address.formatted}</p>
+                {order.address.referencePoint ? (
+                  <p className="text-xs text-muted-foreground">
+                    Referência: {order.address.referencePoint}
+                  </p>
+                ) : null}
+              </>
+            ) : (
+              <p className="text-xs text-tone-warning-foreground">
+                Endereço não informado neste pedido.
+              </p>
+            )}
+          </InfoCard>
+        ) : null}
+
         {order.status === 'cancelled' ? (
           <div className="rounded-lg border border-destructive/40 p-3">
             <p className="text-sm font-bold text-destructive">

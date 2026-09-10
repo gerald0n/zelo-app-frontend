@@ -21,8 +21,8 @@ const DETAILS_URL = 'https://places.googleapis.com/v1/places';
 /** Centro urbano de Pereiro-CE — viés padrão quando não há coordenada da loja. */
 const PEREIRO_CENTER = { latitude: -6.0485, longitude: -38.4612 } as const;
 
-/** Raio do viés de localização (m). Cobre a área urbana com folga. */
-const BIAS_RADIUS_METERS = 15_000;
+/** Raio do viés de localização (m). Cobre a área urbana + rural próxima. */
+const BIAS_RADIUS_METERS = 8_000;
 
 /** A chave é inlined pelo Next no bundle do cliente. */
 const BROWSER_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || undefined;
@@ -128,19 +128,28 @@ export async function fetchPlaceSuggestions(
     if (!response.ok) return [];
 
     const data = (await response.json()) as AutocompleteResponse;
-    return (data.suggestions ?? [])
-      .map((item) => item.placePrediction)
-      .filter((prediction): prediction is NonNullable<typeof prediction> =>
-        Boolean(prediction?.placeId),
-      )
-      .map((prediction) => ({
-        placeId: prediction.placeId as string,
-        primaryText:
-          prediction.structuredFormat?.mainText?.text ??
-          prediction.text?.text ??
-          '',
-        secondaryText: prediction.structuredFormat?.secondaryText?.text ?? '',
-      }));
+    return (
+      (data.suggestions ?? [])
+        .map((item) => item.placePrediction)
+        .filter((prediction): prediction is NonNullable<typeof prediction> =>
+          Boolean(prediction?.placeId),
+        )
+        .map((prediction) => ({
+          placeId: prediction.placeId as string,
+          primaryText:
+            prediction.structuredFormat?.mainText?.text ??
+            prediction.text?.text ??
+            '',
+          secondaryText: prediction.structuredFormat?.secondaryText?.text ?? '',
+        }))
+        // O `locationBias` só enviesa — ainda voltam ruas de cidades vizinhas.
+        // Como a loja só entrega em Pereiro, descarta o que não é de lá.
+        .filter((suggestion) =>
+          normalize(
+            `${suggestion.secondaryText} ${suggestion.primaryText}`,
+          ).includes('pereiro'),
+        )
+    );
   } catch {
     // AbortError (request obsoleto) ou falha de rede: sem sugestões, sem ruído.
     return [];

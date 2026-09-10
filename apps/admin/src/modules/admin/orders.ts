@@ -6,6 +6,10 @@ import { logger } from '@/lib/logger';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/modules/admin/auth';
+import {
+  deliveryAddressSummary,
+  formatAddress,
+} from '@/lib/admin/order-address';
 import { notifyOrderStatusChange } from '@/modules/notifications/send';
 import { canCustomerCancel, type OrderStatus } from '@/modules/orders/types';
 import { mapReviewRow } from '@/modules/reviews/types';
@@ -36,6 +40,7 @@ const LIST_SELECT = `
   guest_name,
   guest_phone_e164,
   customers ( name, phone_e164 ),
+  order_addresses ( street, number, neighborhood ),
   order_items ( product_name, quantity )
 `;
 
@@ -102,20 +107,6 @@ const DETAIL_SELECT = `
   order_reviews ( rating, comment, status, created_at )
 `;
 
-function formatAddress(parts: {
-  street: string;
-  number: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-  complement: string | null;
-}): string {
-  const base = parts.neighborhood
-    ? `${parts.street}, ${parts.number} – ${parts.neighborhood}, ${parts.city}/${parts.state}`
-    : `${parts.street}, ${parts.number} – ${parts.city}/${parts.state}`;
-  return parts.complement ? `${base} · ${parts.complement}` : base;
-}
-
 export async function listAdminOrders(options?: {
   scope?: 'active' | 'scheduled' | 'done' | 'all';
   q?: string;
@@ -159,6 +150,9 @@ export async function listAdminOrders(options?: {
     const customer = Array.isArray(row.customers)
       ? row.customers[0]
       : row.customers;
+    const addr = Array.isArray(row.order_addresses)
+      ? row.order_addresses[0]
+      : row.order_addresses;
     return {
       id: row.id,
       orderNumber: row.order_number,
@@ -176,6 +170,7 @@ export async function listAdminOrders(options?: {
       customerName: customer?.name ?? row.guest_name ?? null,
       customerPhone: customer?.phone_e164 ?? row.guest_phone_e164 ?? null,
       isGuest: !customer,
+      deliveryAddress: deliveryAddressSummary(row.delivery_method, addr),
       items: (row.order_items ?? []).map(
         (item: { product_name: string; quantity: number }) => ({
           name: item.product_name,

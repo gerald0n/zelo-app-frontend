@@ -23,6 +23,14 @@ export type AdminOrderListItem = {
   customerPhone: string | null;
   /** Pedido de comanda manual sem vínculo com um customer existente. */
   isGuest: boolean;
+  /** Resumo do endereço de entrega (`null` em retirada ou sem endereço). */
+  deliveryAddress: {
+    street: string;
+    number: string;
+    neighborhood: string;
+    /** `"Bairro · Rua, 123"` — linha curta pronta pro card. */
+    short: string;
+  } | null;
   items: Array<{ name: string; quantity: number }>;
 };
 
