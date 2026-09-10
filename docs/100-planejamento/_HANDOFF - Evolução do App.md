@@ -41,42 +41,46 @@ não pesar o contexto de toda sessão nova.
 | [106](106%20-%20Avaliações%20e%20Depoimentos.md)            | Avaliações de pedido + depoimentos                                  | **Fase 1** (PR #67, `20260909120000_order_reviews`) e **Fase 2 — nota por produto** (PR #90, `20260909130000_product_reviews`) **implementadas**. Follow-ups: resposta pública do admin ao comentário e foto na avaliação.                                                                                            |
 | [107](107%20-%20Responsividade%20Percebida%20do%20Admin.md) | Responsividade percebida do admin                                   | **4 partes feitas** (PRs #69/#70 em produção): `useUiPref`, Relatórios→Visão geral, UI otimista no catálogo, anti-flash de tema. Depois: dashboard agregado no servidor (PR #93), debounce do realtime (PR #81), cache do catálogo (PRs #77/#79), densidade mobile (#89).                                             |
 
-**Reconciliação da doc de referência** — **feita em 2026-09-09** (branch
-`docs/reconciliacao-referencia`): `docs/10-funcional/05,07,08,09,11,12`,
-`docs/20-tecnico/21,22,23,24,25,26,29`, `PRODUCT.md` e
-`00-produto-e-dominio/00` foram atualizados contra o código. O doc
+**Reconciliação da doc de referência** — **feita e mergeada em 2026-09-09**
+(PR #99, merge commit `2752de3`): `docs/10-funcional/03,04,05,07,08,09,11,12`,
+`docs/20-tecnico/20,21,22,23,24,25,26,28,29`, `docs/README.md`, `PRODUCT.md` e
+`00-produto-e-dominio/00` alinhados ao código. O doc
 [`20-tecnico/31`](../20-tecnico/31%20-%20Estado%20da%20Implementação%20vs.%20Documentação%20de%20Referência.md)
-tem a tabela de status e continua sendo o registro do delta.
+tem a tabela de status e é o registro do delta.
 
-**Commits em `develop` que ainda não foram pro `main`** — checar
-`git log origin/main..origin/develop`. Em 2026-09-09: agendamento por
-categoria (PR #98), fila de impressão da cozinha (`9aba06e`, **sem PR
-ainda**), e dois fixes de horário com loja pausada (#95 + `c88adbc`).
+**`develop` e `main` estão idênticos** em `2752de3` (checado 2026-09-09,
+`git rev-list --left-right --count origin/main...origin/develop` = 0 0).
+Tudo em produção: agendamento por categoria (PR #98), fila de impressão da
+cozinha (PR #99 via merge, era `9aba06e`), fixes de horário com loja pausada
+(#95 + `c88adbc`), e a reconciliação da doc.
 
-**Migrations pendentes de `supabase db push`** — checar `supabase/migrations/`.
-Em 2026-09-09, depois de `20260909120000_order_reviews`, entraram:
-`20260909130000_product_reviews` (PR #90), `20260909140000_category_scheduling_rules`
-(PR #98) e `20260909150000_order_kitchen_printed_at` (`9aba06e`). Confirmar
-quais já foram aplicadas no remoto.
+**Migrations — sem drift.** As 32 migrations locais estão aplicadas no
+remoto (`supabase migration list --linked` limpo em 2026-09-09). As últimas
+4: `20260909120000_order_reviews`, `20260909130000_product_reviews`,
+`20260909140000_category_scheduling_rules` (dropa `stores.schedule_slot_times`
+e `is_hhmm_list`), `20260909150000_order_kitchen_printed_at`.
 
 ---
 
 ## Próximos passos sugeridos
 
-1. Merge/deploy de `develop` → `main`: PR #98 (agendamento por categoria) +
-   abrir PR da fila de impressão (`9aba06e`) + os 2 fixes de horário. Rodar
-   `supabase db push` para as 3 migrations de 2026-09-09.
+1. ~~Merge/deploy de `develop` → `main` + migrations de 2026-09-09~~ —
+   **feito em 2026-09-09.** `develop` == `main`, migrations sem drift.
 2. ~~103, 104, 105 (a–d), 106 (Fase 1 e 2), 107~~ — **todos em produção.**
-3. ~~**Reconciliar a doc de referência**~~ — **feito em 2026-09-09**
-   (branch `docs/reconciliacao-referencia`; ver tabela no `20-tecnico/31`).
-4. **105 (e)** suavizar a taxa de entrega em faixas — adiado, sem fórmula.
+3. ~~**Reconciliar a doc de referência**~~ — **feito** (PR #99).
+4. **Validação pós-deploy pendente**: agendamento por categoria e fila de
+   impressão foram para produção junto com a migration que dropou
+   `stores.schedule_slot_times`. Testar em produção: checkout (datas/horários
+   por categoria, carrinho misto bloqueado), criação de pedido
+   (`create_order` reescrito) e a impressão automática de comanda no painel.
+5. **105 (e)** suavizar a taxa de entrega em faixas — adiado, sem fórmula.
    **105 (f)** componente único de endereço — desbloqueado, não iniciado.
-5. **106 — follow-ups**: resposta pública do admin ao comentário; foto na
+6. **106 — follow-ups**: resposta pública do admin ao comentário; foto na
    avaliação.
-6. A **repaginação visual do admin** (primitivos/tokens do redesign 102)
+7. A **repaginação visual do admin** (primitivos/tokens do redesign 102)
    ainda não chegou nas telas novas do admin — continua usando
    `<button>`/`<div>` crus, não os primitivos de `src/components/ui`.
-7. O redesign **"Vidro Quente"** do cardápio (commit `4a85b11`) foi
+8. O redesign **"Vidro Quente"** do cardápio (commit `4a85b11`) foi
    **revertido** — vale o plano 102 (editorial minimalista).
 
 ---
@@ -91,6 +95,11 @@ quais já foram aplicadas no remoto.
   arraste é feito à mão com `onPointerDown` + limiar de 8px + clone em portal
   no `<body>` (`AdminKanbanBoard.tsx`). Não reintroduzir `@dnd-kit` /
   `react-beautiful-dnd` sem necessidade.
+- **Node 22 obrigatório** (`engines.node >= 22`). Com Node 20 o `next build`
+  do admin falha no typecheck de tipos gerados obsoletos (ex.: referência a
+  `src/app/relatorios/page.js` já removido). Se o build reclamar de rota
+  inexistente: `nvm install 22 && nvm use 22`, `rm -rf apps/*/.next` e
+  rebuildar.
 - Setup local, testes via `psql`, e pegadinhas de tooling (gen:types,
   `pnpm format` no repo inteiro, `pnpm build` derrubando dev server de
   outra sessão) estão na memória do assistente (`e2e-local-setup`), não
