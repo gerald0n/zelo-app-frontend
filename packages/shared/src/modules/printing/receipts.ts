@@ -23,11 +23,24 @@ function formatDateTime(iso: string) {
   });
 }
 
+/**
+ * Itens no pedido — com preço. "Valor total do produto" é unitário x
+ * quantidade (adicionais entram em linha própria, também com valor).
+ */
 function writeItems(builder: ReceiptBuilder, items: ReceiptItem[]) {
   for (const item of items) {
     builder.bold(true).line(`${item.quantity}x ${item.name}`).bold(false);
+    builder.row(
+      `   ${formatCatalogPrice(item.unitPriceCents)} x ${item.quantity}`,
+      formatCatalogPrice(item.unitPriceCents * item.quantity),
+    );
     for (const addOn of item.addOns) {
-      builder.line(`   + ${addOn.quantity}x ${addOn.name}`);
+      builder.row(
+        `   + ${addOn.quantity}x ${addOn.name}`,
+        formatCatalogPrice(
+          addOn.unitPriceCents * addOn.quantity * item.quantity,
+        ),
+      );
     }
     if (item.note) builder.line(`   Obs.: ${item.note}`);
   }
@@ -171,12 +184,18 @@ export function buildDeliverySlip(data: DeliverySlipData): Uint8Array {
   builder.bold(true).line(data.store.name).bold(false);
   builder.line('DOCUMENTO NÃO FISCAL');
   if (data.store.cnpj) builder.line(`CNPJ ${data.store.cnpj} · MEI`);
-  builder.line(`${data.store.addressLine} - ${data.store.city}/${data.store.state}`);
+  builder.line(
+    `${data.store.addressLine} - ${data.store.city}/${data.store.state}`,
+  );
   builder.line(`Tel/WhatsApp: ${data.store.phoneE164}`);
   builder.align('left').divider();
 
-  builder.line(`Pedido ${data.orderNumber}        ${formatClock(data.createdAt)}`);
-  builder.line(`Tipo: ${data.deliveryMethod === 'delivery' ? 'ENTREGA' : 'RETIRADA'}`);
+  builder.line(
+    `Pedido ${data.orderNumber}        ${formatClock(data.createdAt)}`,
+  );
+  builder.line(
+    `Tipo: ${data.deliveryMethod === 'delivery' ? 'ENTREGA' : 'RETIRADA'}`,
+  );
   if (data.customerName) builder.line(`Cliente: ${data.customerName}`);
   if (data.customerPhone) builder.line(`Tel: ${data.customerPhone}`);
   if (data.address) {
@@ -195,16 +214,27 @@ export function buildDeliverySlip(data: DeliverySlipData): Uint8Array {
   }
 
   builder.row('Subtotal:', formatCatalogPrice(data.subtotalCents));
+  if (data.discountCents > 0) {
+    const label = data.couponCode
+      ? `Desconto (cupom ${data.couponCode}):`
+      : 'Desconto:';
+    builder.row(label, `-${formatCatalogPrice(data.discountCents)}`);
+  }
   builder.row('Entrega:', formatCatalogPrice(data.deliveryFeeCents));
-  builder.bold(true).row('TOTAL:', formatCatalogPrice(data.totalCents)).bold(false);
+  builder
+    .bold(true)
+    .row('TOTAL:', formatCatalogPrice(data.totalCents))
+    .bold(false);
   builder.line(
     `Pagamento: ${PAYMENT_LABEL[data.paymentMethod]} · ${paymentStatusLabel(data.paymentStatus)}`,
   );
   if (data.needsChange && data.changeForAmountCents != null) {
-    builder.line(`Levar troco para ${formatCatalogPrice(data.changeForAmountCents)}`);
+    builder.line(
+      `Levar troco para ${formatCatalogPrice(data.changeForAmountCents)}`,
+    );
   }
   builder.divider();
-  builder.align('center').line('Obrigado pela preferência!');
+  builder.align('center').line('Feito com carinho, para momentos especiais.');
 
   return builder.cut().toBytes();
 }

@@ -10,9 +10,11 @@ function mapItems(order: AdminOrderDetail): ReceiptItem[] {
   return order.items.map((item) => ({
     name: item.name,
     quantity: item.quantity,
+    unitPriceCents: item.unitPriceCents,
     addOns: item.addOns.map((addOn) => ({
       name: addOn.name,
       quantity: addOn.quantity,
+      unitPriceCents: addOn.unitPriceCents,
     })),
     note: item.note,
   }));
@@ -70,6 +72,8 @@ export function orderToDeliverySlip(
     items: mapItems(order),
     customerNote: order.customerNote,
     subtotalCents: order.subtotalCents,
+    couponCode: order.couponCode,
+    discountCents: order.couponDiscountCents,
     deliveryFeeCents: order.deliveryFeeCents,
     totalCents: order.totalCents,
     paymentMethod: order.paymentMethod,

@@ -16,11 +16,42 @@ export const COLUMNS = 48;
  */
 const SELECT_WPC1252: readonly number[] = [0x1b, 0x74, 16];
 
+/**
+ * Pontuação "tipográfica" que o app usa em texto (endereço formatado com
+ * travessão, aspas curvas etc.) e que não existe em WPC1252 — sairia como
+ * '?' na bobina. Transliteramos pro equivalente ASCII/Latin-1 antes de
+ * codificar.
+ */
+const TRANSLITERATIONS: Record<string, string> = {
+  '‐': '-', // hyphen
+  '‑': '-', // non-breaking hyphen
+  '‒': '-', // figure dash
+  '–': '-', // en dash
+  '—': '-', // em dash
+  '―': '-', // horizontal bar
+  '−': '-', // minus sign
+  '‘': "'", // ‘
+  '’': "'", // ’
+  '‚': "'", // ‚
+  '‛': "'", // ‛
+  '“': '"', // “
+  '”': '"', // ”
+  '„': '"', // „
+  '…': '...', // …
+  '•': '·', // • → ·
+  ' ': ' ', // no-break space
+  ' ': ' ', // narrow no-break space
+  ' ': ' ', // thin space
+};
+
 function encodeWpc1252(value: string): number[] {
   const bytes: number[] = [];
   for (const char of value) {
-    const code = char.codePointAt(0) ?? 0x3f;
-    bytes.push(code <= 0xff ? code : 0x3f);
+    const normalized = TRANSLITERATIONS[char] ?? char;
+    for (const piece of normalized) {
+      const code = piece.codePointAt(0) ?? 0x3f;
+      bytes.push(code <= 0xff ? code : 0x3f);
+    }
   }
   return bytes;
 }
@@ -99,7 +130,10 @@ export class ReceiptBuilder {
    */
   row(left: string, right: string) {
     const gap = COLUMNS - left.length - right.length;
-    if (gap < 1) return this.line(left).line(' '.repeat(Math.max(0, COLUMNS - right.length)) + right);
+    if (gap < 1)
+      return this.line(left).line(
+        ' '.repeat(Math.max(0, COLUMNS - right.length)) + right,
+      );
     return this.line(left + ' '.repeat(gap) + right);
   }
 
