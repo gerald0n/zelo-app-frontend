@@ -1,9 +1,9 @@
 # 22 - Acesso a Dados e Integrações
 
-> 🟡 **Quase atual.** Já reflete o Twilio Verify e o Google Maps (Leaflet/OSM
-> removidos). Falta registrar as integrações **Mercado Pago** (Pix dinâmico +
-> webhook + reconciliação por Supabase Cron) e **Cloudflare Turnstile**. Ver
-> `31 - Estado da Implementação vs. Documentação de Referência.md`.
+> Reconciliado com o código em **2026-09-09** (ver `20-tecnico/31` §2.1,
+> §2.2, §2.8). Inclui Mercado Pago (Pix dinâmico + webhook + reconciliação
+> por Supabase Cron) e Cloudflare Turnstile. Distância de entrega é **linha
+> reta**, não rota viária.
 
 # Objetivo
 
@@ -35,16 +35,19 @@ Não utilizar ORM na primeira versão.
 
 # Repositórios
 
-O acesso ao banco deve ser encapsulado em módulos de repositório quando houver lógica ou reutilização relevante.
+O acesso ao banco é encapsulado em módulos de `packages/shared/src/modules/`
+(ex.: `catalog/catalog-repository.ts`, `orders/`, `customers/`) e, no painel,
+em `apps/admin/src/modules/admin/`.
 
-Exemplos:
+Componentes React não contêm consultas complexas diretamente.
 
-- `customer-repository`;
-- `order-repository`;
-- `catalog-repository`;
-- `store-repository`.
+## Cache do catálogo público
 
-Componentes React não devem conter consultas complexas diretamente.
+O cardápio público é servido do **Data Cache do Next**
+(`catalog/cached-catalog.ts`) com **invalidação on-demand**: quando o admin
+muda produto/categoria/promoção, dispara `POST /api/v1/internal/revalidate`
+(protegido por segredo) no app do cliente, que refaz as tags. Ver
+`catalog/revalidate.ts` e o plano de performance no `_HANDOFF`.
 
 ---
 
@@ -121,8 +124,9 @@ Regras:
 - validar tipo e tamanho;
 - gerar nomes não previsíveis;
 - restringir upload ao Administrador;
-- permitir leitura pública apenas quando necessário;
-- evitar armazenar comprovantes Pix inicialmente.
+- o bucket `product-images` é **público** para leitura
+  (`20260831130000_product_images_public_bucket`);
+- não armazenar comprovantes Pix (confirmação é automática via webhook).
 
 ---
 
@@ -146,25 +150,52 @@ O canal SMS exige Geo Permissions da Twilio com o Brasil ativo. Não é necessá
 
 ---
 
+# Mercado Pago (Pix)
+
+Adaptador HTTP em `packages/shared/src/modules/payments/`. Credenciais só no
+servidor (`MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_WEBHOOK_SECRET`).
+
+Responsabilidades:
+
+- criar a **cobrança Pix dinâmica** por pedido (Orders API), com
+  `X-Idempotency-Key = order-<id>-<attempt>` e expiração ~30 min;
+- receber a confirmação por **webhook** (`POST /api/v1/webhooks/mercadopago`),
+  validando a assinatura e deduplicando via `payment_events`;
+- consultar status na **reconciliação** (`GET /api/v1/cron/reconcile-pix`),
+  agendada pelo **Supabase Cron** (`supabase/cron/`), protegida por
+  `CRON_SECRET`;
+- disparar **estorno** quando o admin cancela um Pix pago;
+- na confirmação, buscar taxa/valor líquido reais para o financeiro.
+
+O domínio não conhece detalhes da API do MP.
+
+---
+
+# Cloudflare Turnstile
+
+Captcha no fluxo de OTP. `modules/security/turnstile.ts` valida o token no
+servidor (`TURNSTILE_SECRET_KEY`); o widget usa
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY`. Complementado por honeypot
+(`rejectHoneypot`) e rate limit atômico por IP (`consume_rate_limit` RPC).
+
+---
+
 # Google Maps Platform
 
 Utilizar para:
 
-- busca de endereço;
-- geocodificação;
-- mapa;
-- cálculo de rota;
-- distância viária.
+- busca de endereço (Places API New, autocomplete);
+- geocodificação e reverse geocoding (Geocoding API);
+- mapa em modo satélite (Maps JS API).
 
-O Pedido deve armazenar:
+**Não** se usa cálculo de rota nem distância viária: a distância loja→cliente
+é **linha reta** (Haversine), ver `10-funcional/08`. Leaflet/OSM ficaram só
+como fallback de geocodificação.
 
-- endereço confirmado;
-- latitude;
-- longitude;
-- distância calculada;
-- taxa aplicada.
+O Pedido armazena: endereço confirmado, latitude, longitude, distância
+calculada e taxa aplicada.
 
-A resposta do mapa não substitui a validação da área atendida.
+A resposta do mapa não substitui a checagem do raio de atendimento.
 
 ---
 
@@ -180,6 +211,13 @@ Regras:
 - assinaturas expiradas devem ser removidas;
 - push é opcional;
 - falha no push não desfaz alteração de status.
+
+Há **duas frentes de push** com tabelas separadas: a do cliente
+(`push_subscriptions`) e a do painel (`admin_push_subscriptions`). "Pedido
+novo" é enviado pelo app do cliente mirando as assinaturas do admin;
+"status mudou" é enviado pelo admin mirando as do cliente. Por isso o **par
+VAPID tem que ser o mesmo** nos dois apps (par distinto = 401/403
+silencioso). Ver `20-tecnico/31` §2.10.
 
 ---
 

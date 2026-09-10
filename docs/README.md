@@ -13,8 +13,7 @@ Esta pasta contém a base de conhecimento oficial para desenvolvimento do sistem
 7. roadmap e plano mestre em `100-planejamento` (**histórico** — as 14 fases
    foram concluídas)
 8. `20-tecnico/31 - Estado da Implementação vs. Documentação de Referência.md`
-   — o que mudou depois de ago/2026 e ainda não voltou para os docs 08–11 e
-   21–29
+   — registro do delta pós-ago/2026 + ponteiros para o código
 9. planos de evolução pós-lançamento: `100-planejamento/102`–`107` e
    `_HANDOFF - Evolução do App.md` (fonte viva de cada área)
 
@@ -22,10 +21,12 @@ Esta pasta contém a base de conhecimento oficial para desenvolvimento do sistem
 
 As 14 fases do roadmap foram concluídas e o app está **em produção**
 (`cardapio.zeloconfeitaria.com.br` + `admin.zeloconfeitaria.com.br`, dois
-projetos Vercel). A evolução ativa acontece nos planos 102–107. Os
-documentos de referência (`10-funcional/`, `20-tecnico/`) descrevem
-majoritariamente o estado de 30/08/2026 — ver o doc 31 antes de tratá-los
-como verdade.
+projetos Vercel). A evolução ativa acontece nos planos 102–107.
+
+Os documentos de referência (`10-funcional/`, `20-tecnico/`, `PRODUCT.md`)
+foram **reconciliados com o código em 2026-09-09** (ver a tabela no doc 31).
+Em caso de conflito residual, valem o código e os planos 102–107; o doc 31
+mapeia o que ainda for encontrado fora de sincronia.
 
 ## Decisões centrais
 

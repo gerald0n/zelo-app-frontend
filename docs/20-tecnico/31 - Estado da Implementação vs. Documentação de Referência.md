@@ -19,23 +19,31 @@ planos 102–107**; os docs de referência antigos estão atrás.
 
 ## 1. Resumo por documento de referência
 
-| Documento | Situação | O que está desatualizado |
-| --- | --- | --- |
-| `10-funcional/08 - Entrega e Retirada.md` | ⚠️ desatualizado | Área de entrega virou **raio em linha reta** a partir da loja (não mais "lista de bairros"). Taxa tem 3 faixas: grátis / fixa / fora de área (só retirada). Bairro é rótulo opcional. |
-| `10-funcional/09 - Pagamentos.md` | ⚠️ incorreto | Pix deixou de ser "copia e cola estático + conferência manual". Agora é **cobrança dinâmica via Mercado Pago** com confirmação automática por webhook, tentativas, expiração e estorno. |
-| `10-funcional/10 - Agendamento e Funcionamento.md` | ✅ reconciliado (PR #98) | Agendamento **derivado por categoria** (regras em `categories`, migração `20260909140000`); `stores.schedule_slot_times` removida; "regra das 17h" substituída; lógica no **fuso da loja**; "Agora" travado antes da abertura; carrinho misto bloqueado. Pausa da loja com prazo. Ver §2.9. |
-| `10-funcional/11 - Painel Administrativo.md` | ⚠️ muito incompleto | Falta: kanban de duas raias, comanda manual, estoque, impressão térmica, promoções, cupons, financeiro, avaliações, pausa, push do painel, dashboard "Visão geral" (absorveu `/relatorios`). |
-| `20-tecnico/21 - Stack Tecnológica.md` | ⚠️ incorreto | Lista "Meta WhatsApp Cloud API" — **não é usada**. As integrações reais são **Twilio Verify (SMS)**, **Mercado Pago (Pix)**, **Cloudflare Turnstile**, Google Maps, Web Push, Sentry. |
-| `20-tecnico/22 - Acesso a Dados e Integrações.md` | 🟡 quase ok | Já cita Twilio Verify. Falta Mercado Pago, Turnstile e o cron de reconciliação Pix. Seção "Google Maps" ok; Leaflet/OSM foram removidos. |
-| `20-tecnico/23 - Autenticação e Segurança.md` | 🟡 quase ok | Já cita Twilio Verify. Falta: **Turnstile** (captcha), **honeypot**, **rate limit atômico por IP** (`consume_rate_limit` RPC), **`OTP_HASH_SECRET`** (o app gera/hasheia o código quando não há Twilio Verify — `customer_otp_challenges.code_hash`). |
-| `20-tecnico/24 - Banco de Dados.md` | ⚠️ incompleto | Faltam ~8 tabelas e vários campos/enums novos — ver §3. |
-| `20-tecnico/25 - Contratos de API.md` | ⚠️ incorreto | Endpoints de OTP errados (`/auth/otp/request` → `/auth/otp/send`). Webhook `meta/whatsapp` e hook `send-sms` **não existem**; existe `webhooks/mercadopago` e `cron/reconcile-pix`. Faltam rotas de cupons, promoções, avaliações, pix, reports, push do admin, comanda manual — ver §4. |
-| `20-tecnico/26 - Estrutura de Pastas.md` | ⚠️ incorreto | Descreve **app único** (`app/`, `src/` na raiz, `src/lib/meta/`). O repo é **monorepo pnpm**: `apps/client`, `apps/admin`, `packages/shared`, `supabase/` compartilhado. Ver `README.md`. |
-| `20-tecnico/29 - Deploy e Ambientes.md` | ⚠️ incompleto | Variáveis da Meta não existem. Faltam: Mercado Pago, Turnstile, `CRON_SECRET`, `OTP_HASH_SECRET`, VAPID próprio do admin. Deploy é **dois projetos Vercel** (client/admin) + **Supabase Cron** para reconciliação Pix. |
-| `100-planejamento/100 - Roadmap.md` / `101 - Plano Mestre.md` | 🟡 histórico | As 14 fases foram concluídas; a evolução pós-lançamento está nos docs 102–107. Tratar 100/101 como registro histórico. |
-| `10-funcional/01`–`07`, `12` | ✅ ok | Personas, jornadas, requisitos, regras de negócio, ciclo do pedido, catálogo, carrinho/checkout, notificações — ainda descrevem bem o núcleo. Ajustes pontuais listados abaixo. |
+| Documento                                                     | Situação                     | Observação                                                                                                                                        |
+| ------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `10-funcional/05 - Ciclo de Vida do Pedido.md`                | ✅ reconciliado (2026-09-09) | Pix confirma por webhook; cancelamento de Pix pago → `refunded` (terminal).                                                                       |
+| `10-funcional/07 - Carrinho e Checkout.md`                    | ✅ reconciliado (2026-09-09) | Etapa de cupom + tela de pagamento Pix; agenda por categoria; confirmação no mapa.                                                                |
+| `10-funcional/08 - Entrega e Retirada.md`                     | ✅ reconciliado (2026-09-09) | Raio em linha reta a partir da loja, 3 faixas de taxa, bairro é rótulo opcional. Ver §2.8.                                                        |
+| `10-funcional/09 - Pagamentos.md`                             | ✅ reconciliado (2026-09-09) | Pix = cobrança dinâmica Mercado Pago (webhook, tentativas, expiração, estorno). Ver §2.1.                                                         |
+| `10-funcional/10 - Agendamento e Funcionamento.md`            | ✅ reconciliado (PR #98)     | Agendamento **derivado por categoria**; `stores.schedule_slot_times` removida; fuso da loja; carrinho misto bloqueado; pausa com prazo. Ver §2.9. |
+| `10-funcional/11 - Painel Administrativo.md`                  | ✅ reconciliado (2026-09-09) | Reescrito: navegação, kanban, comanda manual, estoque, impressão, catálogo, avaliações, ajustes. Ver §2.10.                                       |
+| `10-funcional/12 - Notificações e Tempo Real.md`              | ✅ reconciliado (2026-09-09) | Duas frentes de push (cliente / painel), debounce do realtime, `RefreshOnVisible`.                                                                |
+| `20-tecnico/21 - Stack Tecnológica.md`                        | ✅ reconciliado (2026-09-09) | Monorepo, Next 16/React 19, integrações reais (Twilio/MP/Turnstile/Maps). Sem Meta.                                                               |
+| `20-tecnico/22 - Acesso a Dados e Integrações.md`             | ✅ reconciliado (2026-09-09) | Mercado Pago, Turnstile, cron, cache do catálogo, bucket público, push duplo.                                                                     |
+| `20-tecnico/23 - Autenticação e Segurança.md`                 | ✅ reconciliado (2026-09-09) | OTP em 2 modos, Turnstile/honeypot/rate limit, `getClaims()`, lista de segredos.                                                                  |
+| `20-tecnico/24 - Banco de Dados.md`                           | ✅ reconciliado (2026-09-09) | Enums corrigidos + seção "Evolução do esquema" com tabelas/colunas/funções novas. Ver §3.                                                         |
+| `20-tecnico/25 - Contratos de API.md`                         | ✅ reconciliado (2026-09-09) | Inventário de rotas autoritativo + seções corrigidas (OTP, catálogo, carrinho, webhooks, admin). Ver §4.                                          |
+| `20-tecnico/26 - Estrutura de Pastas.md`                      | ✅ reconciliado (2026-09-09) | Monorepo pnpm; módulos planos.                                                                                                                    |
+| `20-tecnico/29 - Deploy e Ambientes.md`                       | ✅ reconciliado (2026-09-09) | Tabela de env vars (obrigatórias/recomendadas) de `env.ts`. Sem Meta. Ver §5.                                                                     |
+| `PRODUCT.md` / `00-produto-e-dominio/00 - Produto.md`         | ✅ reconciliado (2026-09-09) | Pix automático, raio em linha reta, agenda por categoria, features que saíram do "fora de escopo".                                                |
+| `100-planejamento/100 - Roadmap.md` / `101 - Plano Mestre.md` | 🟡 histórico                 | As 14 fases foram concluídas; evolução pós-lançamento nos docs 102–107.                                                                           |
+| `10-funcional/01`–`06`                                        | ✅ ok                        | Personas, jornadas, requisitos, regras de negócio, ciclo, catálogo — descrevem bem o núcleo.                                                      |
 
-Legenda: ✅ ok · 🟡 pequenas lacunas · ⚠️ precisa de correção.
+Legenda: ✅ ok / reconciliado · 🟡 pequenas lacunas · ⚠️ precisa de correção.
+
+> **Rodada de reconciliação de 2026-09-09** (branch `docs/reconciliacao-referencia`):
+> todos os docs ⚠️/🟡 da tabela original foram atualizados contra o código.
+> As seções §2–§6 abaixo continuam como registro do delta e ponteiros.
 
 ---
 
@@ -137,6 +145,14 @@ resumo do que precisa entrar nos docs de referência.
 - Admin: aba **Avaliações** (sidebar + bottom nav, badge de pendentes),
   `GET/PATCH /api/v1/admin/reviews`.
 - Migration: `20260909120000_order_reviews`.
+- **Fase 2 — avaliação por produto** (`product_reviews`, migration
+  `20260909130000`): nota 1–5 + comentário, uma por cliente×produto, só quem
+  tem pedido **entregue** com aquele produto. Tudo entra `pending`. Cliente:
+  `POST /api/v1/catalog/products/:id/reviews` (envio) e
+  `GET .../reviews` (lista aprovada), seção de avaliações + estrela nos
+  cards. Admin: aba Avaliações → sub-lista de produto,
+  `GET/PATCH /api/v1/admin/product-reviews`, auditoria
+  `product_review.moderate` (rótulo pt-BR).
 
 ### 2.8 Frete e mapas — plano 105
 
@@ -188,6 +204,12 @@ resumo do que precisa entrar nos docs de referência.
 - **Impressão térmica** via WebUSB (EPSON TM-T20X, validada em hardware).
   `stores.cnpj` no cabeçalho do comprovante. Migration
   `20260905120000_store_cnpj`.
+- **Fila de impressão resiliente** da comanda de cozinha
+  (`lib/admin/print-queue.ts`): jobs persistidos no `localStorage`, imprimem
+  um a um quando a impressora volta. `orders.kitchen_printed_at` (migration
+  `20260909150000`) é a fonte da verdade, marcada só após a impressão
+  confirmada. Reabrir o painel busca `GET /api/v1/admin/orders/unprinted` e
+  reenfileira; `POST /api/v1/admin/orders/:id/mark-printed`.
 - **Web Push do painel**: tabela `admin_push_subscriptions` (separada da do
   cliente), service worker próprio. Toggle em Ajustes → Dispositivos. Rotas
   `/api/v1/admin/push/*`. Migration `20260908130000_admin_push_subscriptions`.
@@ -220,15 +242,17 @@ resumo do que precisa entrar nos docs de referência.
 
 **Tabelas novas** (não citadas no doc 24):
 
-| Tabela | Origem | Papel |
-| --- | --- | --- |
-| `customer_otp_challenges` | `20260819120000_production_auth` | desafios OTP (hash, tentativas, expiração) |
-| `http_rate_limits` | `20260827210000_security_hardening` | rate limit por IP (bucket) |
-| `promotions`, `promotion_categories`, `promotion_products` | `20260904170000_promotions` | descontos por escopo |
-| `coupons` | `20260908140000_coupons` | cupons de desconto |
-| `payment_events` | `20260903120000_pix_mercadopago` | log/idempotência de webhooks MP |
-| `admin_push_subscriptions` | `20260908130000_admin_push_subscriptions` | Web Push do painel |
-| `order_reviews` | `20260909120000_order_reviews` | avaliações / depoimentos |
+| Tabela                                                     | Origem                                    | Papel                                               |
+| ---------------------------------------------------------- | ----------------------------------------- | --------------------------------------------------- |
+| `customer_otp_challenges`                                  | `20260819120000_production_auth`          | desafios OTP (hash, tentativas, expiração)          |
+| `http_rate_limits`                                         | `20260827210000_security_hardening`       | rate limit por IP (bucket)                          |
+| `promotions`, `promotion_categories`, `promotion_products` | `20260904170000_promotions`               | descontos por escopo                                |
+| `coupons`                                                  | `20260908140000_coupons`                  | cupons de desconto                                  |
+| `payment_events`                                           | `20260903120000_pix_mercadopago`          | log/idempotência de webhooks MP                     |
+| `admin_push_subscriptions`                                 | `20260908130000_admin_push_subscriptions` | Web Push do painel                                  |
+| `order_reviews`                                            | `20260909120000_order_reviews`            | avaliação do pedido / depoimentos                   |
+| `product_reviews`                                          | `20260909130000_product_reviews`          | avaliação por produto (nota + comentário, moderada) |
+| `idempotency_keys`                                         | segurança/pagamentos                      | cache de resposta por chave de idempotência         |
 
 **Colunas novas em `categories`** (`20260909140000_category_scheduling_rules`,
 PR #98): `scheduling_allow_same_day`, `scheduling_same_day_lead_minutes`,
@@ -250,7 +274,8 @@ doc 24 ainda cita `pix_copy_paste`, que só é usado como fallback.)
 `pix_qr_code`, `pix_qr_code_base64`, `pix_ticket_url`, `pix_expires_at`,
 `paid_at`, `pix_attempt`, `payment_fee_cents`, `payment_net_cents`,
 `coupon_id`, `coupon_code`, `coupon_discount_cents`, `guest_name`,
-`guest_phone_e164`. `customer_id` passou a **nullable**. O check
+`guest_phone_e164`, `kitchen_printed_at` (fila de impressão da cozinha,
+`20260909150000`). `customer_id` passou a **nullable**. O check
 `orders_total_consistent` agora desconta o cupom.
 
 **Colunas novas em outras tabelas:** `products.stock_quantity`,
@@ -279,28 +304,30 @@ Rotas reais (raiz `apps/*/src/app/api/v1`):
 - `GET/PUT/DELETE /api/v1/cart`, `POST /api/v1/cart/reconcile`
 - `GET /api/v1/catalog/products`, `GET /api/v1/catalog/store`
 - `POST /api/v1/checkout/preview`
-- `POST /api/v1/checkout/options` *(era `GET`; agora recebe `{ productIds }`
+- `POST /api/v1/checkout/options` _(era `GET`; agora recebe `{ productIds }`
   e devolve a agenda resolvida pela regra da categoria + `mixedCart` /
-  `allowSameDay` / `hoursLabel` — PR #98)*
-- `POST /api/v1/coupons/preview` *(novo)*
+  `allowSameDay` / `hoursLabel` — PR #98)_
+- `POST /api/v1/coupons/preview` _(novo)_
+- `GET /api/v1/catalog/products/:id/reviews` + `POST` _(avaliação de produto — Fase 2)_
 - `POST /api/v1/orders`, `GET /api/v1/orders`, `GET /api/v1/orders/:id`
-- `POST /api/v1/orders/:id/cancel`, `.../reorder`, `.../pix` *(novo)*,
-  `.../review` *(novo)*
+- `POST /api/v1/orders/:id/cancel`, `.../reorder`, `.../pix` _(novo)_,
+  `.../review` _(novo)_
 - `GET/POST/PATCH/DELETE /api/v1/addresses[...]`, `.../addresses/validate`
 - `POST/DELETE /api/v1/push/subscriptions`, `GET /api/v1/push/vapid-public-key`
-- `POST /api/v1/webhooks/mercadopago` *(substitui `meta/whatsapp`)*
-- `GET /api/v1/cron/reconcile-pix` *(novo; substitui o hook `send-sms`)*
+- `POST /api/v1/webhooks/mercadopago` _(substitui `meta/whatsapp`)_
+- `GET /api/v1/cron/reconcile-pix` _(novo; substitui o hook `send-sms`)_
 
 **Admin — ausentes no doc 25:**
 
 - `GET/POST /api/v1/admin/orders`, `.../orders/:id`, `.../status`, `.../cancel`
+- `.../orders/:id/mark-printed`, `.../orders/unprinted` _(fila de impressão)_
 - `.../categories`, `.../products` (+ `/archive`, `/duplicate`, `/images`),
   `.../addons`, `.../catalog`
-- `.../promotions[/:id]`, `.../coupons[/:id]` *(novos)*
-- `.../reviews[/:id]` *(novo)*
-- `.../reports?kind=operations|financial&period=` *(novo)*
+- `.../promotions[/:id]`, `.../coupons[/:id]` _(novos)_
+- `.../reviews[/:id]`, `.../product-reviews[/:id]` _(novos)_
+- `.../reports?kind=operations|financial&period=` _(novo)_
 - `.../store`, `.../business-hours`, `.../blackouts`, `.../audit-logs`
-- `.../push/config`, `.../push/subscriptions`, `.../push/test` *(push do painel)*
+- `.../push/config`, `.../push/subscriptions`, `.../push/test` _(push do painel)_
 - `.../session`, `.../session/password`, `.../realtime`
 - `.../uploads/product-image`
 

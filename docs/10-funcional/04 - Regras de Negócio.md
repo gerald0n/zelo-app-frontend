@@ -114,7 +114,9 @@ Confirmado significa que a Loja aceitou o Pedido.
 
 ## RN-023
 
-Para Pix, a confirmação pode ocorrer somente após conferência manual do pagamento pela Loja.
+Para Pix, a confirmação do pagamento é **automática**, via webhook do
+Mercado Pago (`payment_status = 'confirmed'`). Ver RN-052 e `20-tecnico/31`
+§2.1.
 
 ## RN-024
 
@@ -140,33 +142,45 @@ Pedidos cancelados não podem retornar ao fluxo normal.
 
 As modalidades disponíveis são retirada e delivery.
 
+> ⚠️ **Atualizada (plano 105).** A área de entrega deixou de ser "lista de
+> bairros da área urbana" e passou a ser um **raio em linha reta** a partir
+> da Loja. RN-029 a RN-035 abaixo refletem o modelo atual. Ver
+> `10-funcional/08` e `20-tecnico/31` §2.8.
+
 ## RN-029
 
-Delivery está disponível somente para endereços da área urbana atendida da cidade de Pereiro.
+Delivery está disponível para endereços dentro do **raio máximo de entrega**
+da Loja (`stores.max_delivery_radius_meters`, padrão 3 km), medido em linha
+reta.
 
 ## RN-030
 
-Distritos, sítios, comunidades rurais e demais localidades fora da sede urbana não são atendidos.
+Endereços a mais que o raio máximo (distritos, sítios, zona rural, ou
+qualquer ponto distante) não recebem delivery.
 
 ## RN-031
 
-Endereços fora da área atendida podem utilizar retirada.
+Endereços fora do raio máximo podem utilizar retirada.
 
 ## RN-032
 
-A distância deve ser calculada por rota viária entre a Loja e o endereço confirmado.
+A distância é calculada **em linha reta** (fórmula de Haversine) entre a
+localização da Loja e a localização confirmada pelo Cliente no mapa.
 
 ## RN-033
 
-Distância em linha reta não deve ser usada para calcular a taxa.
+Não há cálculo de rota viária; a distância em linha reta é a base da taxa e
+da área de atendimento.
 
 ## RN-034
 
-Para rotas de até 2 km, a taxa de entrega é R$ 0,00.
+Até o **raio de gratuidade** (`stores.free_delivery_radius_meters`), a taxa
+de entrega é R$ 0,00.
 
 ## RN-035
 
-Para rotas superiores a 2 km, a taxa fixa é R$ 5,00.
+Entre o raio de gratuidade e o raio máximo, aplica-se a **taxa fixa**
+configurada (`stores.fixed_delivery_fee_cents`).
 
 ## RN-036
 
@@ -255,21 +269,29 @@ Dinheiro e cartão são pagos no recebimento.
 
 No pagamento em dinheiro, o Cliente pode informar a necessidade de troco.
 
+> ⚠️ **Atualizadas (plano 104).** O Pix passou a ter confirmação automática
+> via Mercado Pago. RN-052 a RN-055 abaixo refletem o modelo atual.
+
 ## RN-052
 
-O Pix é conferido manualmente na primeira versão.
+Cada pedido Pix gera uma **cobrança dinâmica no Mercado Pago** (Orders API),
+com QR + copia-e-cola próprios e expiração (`pix_expires_at`, ~30 min).
 
 ## RN-053
 
-O sistema deve exibir o Pix copia e cola configurado pela Loja.
+A confirmação chega por **webhook** do Mercado Pago (assinatura validada,
+idempotente via `payment_events`), com reconciliação por cron
+(`/api/v1/cron/reconcile-pix`) como rede de segurança.
 
 ## RN-054
 
-O envio de comprovante ocorre por WhatsApp e não representa confirmação automática.
+Se o código expira, o Cliente gera outra tentativa (`orders.pix_attempt`),
+que cria uma cobrança nova.
 
 ## RN-055
 
-O sistema não deve marcar Pix como pago apenas porque o Cliente acionou o botão do WhatsApp.
+Quando o admin cancela um pedido Pix já pago, o sistema dispara o **estorno**
+no Mercado Pago e `payment_status` vai para `refunded` (estado terminal).
 
 ---
 

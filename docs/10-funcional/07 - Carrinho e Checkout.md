@@ -65,14 +65,18 @@ Todos os valores devem ser calculados em centavos.
 2. identificação por telefone;
 3. validação por OTP;
 4. dados pessoais, somente se o Cliente ainda não tiver nome;
-5. escolha entre imediato e agendado;
+5. escolha entre imediato e agendado (dias/horários **derivados da categoria**
+   dos itens; carrinho misto é bloqueado);
 6. escolha entre retirada e delivery;
-7. endereço, quando necessário;
-8. cálculo da entrega;
+7. endereço + **confirmação da localização no mapa**, quando delivery;
+8. cálculo da entrega (distância em linha reta, faixa de taxa);
 9. forma de pagamento;
 10. observações gerais;
-11. revisão final;
-12. confirmação.
+11. revisão final, com campo de **cupom**;
+12. confirmação;
+13. para Pix: tela de **pagamento Pix** com QR + copia-e-cola e contagem
+    regressiva; o pedido só sai de `pending` quando o webhook do Mercado
+    Pago confirma.
 
 A identificação pede apenas o celular. O nome não entra no login e não sobrescreve o cadastro existente.
 
@@ -98,7 +102,8 @@ Antes de criar o Pedido, o sistema deve validar novamente:
 - área atendida;
 - distância e taxa;
 - forma de pagamento habilitada;
-- data e horário do agendamento.
+- cupom, quando informado (`preview_coupon` / `claim_coupon`);
+- data e horário do agendamento contra a regra da categoria e o fuso da loja.
 
 Caso algum dado tenha mudado, o Cliente deve ser informado antes de confirmar.
 

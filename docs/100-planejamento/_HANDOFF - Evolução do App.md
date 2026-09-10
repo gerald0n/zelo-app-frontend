@@ -21,7 +21,7 @@ não pesar o contexto de toda sessão nova.
 - **Gerenciador:** pnpm. **Verificação por fase:**
   `pnpm typecheck && pnpm lint && pnpm build`. Commits Conventional em
   pt-BR, uma linha, sempre encerrando com `Co-Authored-By: Claude Sonnet 5
-  <noreply@anthropic.com>`.
+<noreply@anthropic.com>`.
 - **Fluxo de deploy:** o assistente commita local em `develop` e faz `push`
   pra `origin/develop`; quem faz o **merge para `main`** e o deploy de fato
   (Vercel, ligado ao git) é o dono. Não presumir que um commit em `develop`
@@ -33,40 +33,46 @@ não pesar o contexto de toda sessão nova.
 
 ## Estado atual por doc
 
-| Doc | Assunto | Status |
-| --- | --- | --- |
-| [103](103%20-%20Painel%20Administrativo.md) | Painel admin: kanban, estoque, comanda manual, impressão, melhorias | Kanban (reescrito 2026-09-06), estoque, melhorias no pedido, comanda manual, impressão térmica (WebUSB, **validada em hardware 2026-09-08**), **Catálogo (resto)**, **Loja/relatórios** e **Push do painel** (2026-09-08, push validado em produção com aparelho real) — **implementados**. **Doc 103 100% fechado.** |
-| [104](104%20-%20Promoções,%20Cupons%20e%20Financeiro.md) | Promoções, cupons, financeiro | Promoções, **Cupons (PR #62) e Financeiro (PR #64) em produção** (2026-09-08, migrations aplicadas no remoto). Doc 104 fechado. Único follow-up: a taxa real do MP só valida num Pix de produção. |
-| [105](105%20-%20Precisão%20do%20Frete.md) | Google Maps: geocodificação, mapa, área de entrega | (a)-(d) **implementados**, drag do pin **validado à mão 2026-09-08**. (e) suavizar taxa adiado; (f) componente único de endereço desbloqueado, não iniciado. |
-| [106](106%20-%20Avaliações%20e%20Depoimentos.md) | Avaliações de pedido + depoimentos | **Fase 1 em produção** (PR #67 + migration `20260909120000_order_reviews`). Fase 2 (nota por produto) espera volume + login por SMS. |
-| [107](107%20-%20Responsividade%20Percebida%20do%20Admin.md) | Responsividade percebida do admin | **4 partes feitas** (PRs #69/#70 em produção): `useUiPref`, Relatórios→Visão geral, UI otimista no catálogo, anti-flash de tema. |
+| Doc                                                         | Assunto                                                             | Status                                                                                                                                                                                                                                                                                                                |
+| ----------------------------------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [103](103%20-%20Painel%20Administrativo.md)                 | Painel admin: kanban, estoque, comanda manual, impressão, melhorias | Kanban (reescrito 2026-09-06), estoque, melhorias no pedido, comanda manual, impressão térmica (WebUSB, **validada em hardware 2026-09-08**), **Catálogo (resto)**, **Loja/relatórios** e **Push do painel** (2026-09-08, push validado em produção com aparelho real) — **implementados**. **Doc 103 100% fechado.** |
+| [104](104%20-%20Promoções,%20Cupons%20e%20Financeiro.md)    | Promoções, cupons, financeiro                                       | Promoções, **Cupons (PR #62) e Financeiro (PR #64) em produção** (2026-09-08, migrations aplicadas no remoto). Doc 104 fechado. Único follow-up: a taxa real do MP só valida num Pix de produção.                                                                                                                     |
+| [105](105%20-%20Precisão%20do%20Frete.md)                   | Google Maps: geocodificação, mapa, área de entrega                  | (a)-(d) **implementados**, drag do pin **validado à mão 2026-09-08**. (e) suavizar taxa adiado; (f) componente único de endereço desbloqueado, não iniciado.                                                                                                                                                          |
+| [106](106%20-%20Avaliações%20e%20Depoimentos.md)            | Avaliações de pedido + depoimentos                                  | **Fase 1** (PR #67, `20260909120000_order_reviews`) e **Fase 2 — nota por produto** (PR #90, `20260909130000_product_reviews`) **implementadas**. Follow-ups: resposta pública do admin ao comentário e foto na avaliação.                                                                                            |
+| [107](107%20-%20Responsividade%20Percebida%20do%20Admin.md) | Responsividade percebida do admin                                   | **4 partes feitas** (PRs #69/#70 em produção): `useUiPref`, Relatórios→Visão geral, UI otimista no catálogo, anti-flash de tema. Depois: dashboard agregado no servidor (PR #93), debounce do realtime (PR #81), cache do catálogo (PRs #77/#79), densidade mobile (#89).                                             |
 
-**Reconciliação da doc de referência** — `docs/10-funcional/` e
-`docs/20-tecnico/` descrevem o estado de ago/2026. O delta (o que já mudou e
-ainda não voltou pra lá) está em
-[`20-tecnico/31`](../20-tecnico/31%20-%20Estado%20da%20Implementação%20vs.%20Documentação%20de%20Referência.md).
+**Reconciliação da doc de referência** — **feita em 2026-09-09** (branch
+`docs/reconciliacao-referencia`): `docs/10-funcional/05,07,08,09,11,12`,
+`docs/20-tecnico/21,22,23,24,25,26,29`, `PRODUCT.md` e
+`00-produto-e-dominio/00` foram atualizados contra o código. O doc
+[`20-tecnico/31`](../20-tecnico/31%20-%20Estado%20da%20Implementação%20vs.%20Documentação%20de%20Referência.md)
+tem a tabela de status e continua sendo o registro do delta.
 
 **Commits em `develop` que ainda não foram pro `main`** — checar
-`git log main..develop`. Em 2026-09-09 só há commits de doc pendentes; todo
-o código de 103–107 está em produção.
+`git log origin/main..origin/develop`. Em 2026-09-09: agendamento por
+categoria (PR #98), fila de impressão da cozinha (`9aba06e`, **sem PR
+ainda**), e dois fixes de horário com loja pausada (#95 + `c88adbc`).
 
-**Migrations pendentes de `supabase db push`** — checar `supabase/migrations/`
-por arquivos mais recentes que o último deploy confirmado. Em 2026-09-09 a
-última aplicada no remoto é `20260909120000_order_reviews.sql`.
+**Migrations pendentes de `supabase db push`** — checar `supabase/migrations/`.
+Em 2026-09-09, depois de `20260909120000_order_reviews`, entraram:
+`20260909130000_product_reviews` (PR #90), `20260909140000_category_scheduling_rules`
+(PR #98) e `20260909150000_order_kitchen_printed_at` (`9aba06e`). Confirmar
+quais já foram aplicadas no remoto.
 
 ---
 
 ## Próximos passos sugeridos
 
-1. Merge/deploy dos commits de doc pendentes em `develop` → `main`.
-2. ~~103, 104, 105 (a–d), 106 Fase 1, 107~~ — **todos em produção.**
-3. **Reconciliar a doc de referência** (`10-funcional/`, `20-tecnico/`) com
-   o código — checklist em `20-tecnico/31`. Marcado como pendência do
-   "Encerramento" no roadmap.
+1. Merge/deploy de `develop` → `main`: PR #98 (agendamento por categoria) +
+   abrir PR da fila de impressão (`9aba06e`) + os 2 fixes de horário. Rodar
+   `supabase db push` para as 3 migrations de 2026-09-09.
+2. ~~103, 104, 105 (a–d), 106 (Fase 1 e 2), 107~~ — **todos em produção.**
+3. ~~**Reconciliar a doc de referência**~~ — **feito em 2026-09-09**
+   (branch `docs/reconciliacao-referencia`; ver tabela no `20-tecnico/31`).
 4. **105 (e)** suavizar a taxa de entrega em faixas — adiado, sem fórmula.
    **105 (f)** componente único de endereço — desbloqueado, não iniciado.
-5. **106 — Avaliações Fase 2** (nota por produto): espera volume + login por
-   SMS confiável.
+5. **106 — follow-ups**: resposta pública do admin ao comentário; foto na
+   avaliação.
 6. A **repaginação visual do admin** (primitivos/tokens do redesign 102)
    ainda não chegou nas telas novas do admin — continua usando
    `<button>`/`<div>` crus, não os primitivos de `src/components/ui`.

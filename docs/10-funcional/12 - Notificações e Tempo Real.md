@@ -28,9 +28,26 @@ O Administrador pode receber os eventos operacionais da Loja.
 
 As assinaturas devem respeitar autenticação e autorização.
 
+O realtime da fila do painel (`AdminRealtimeContext`) tem **debounce** para
+não disparar uma tempestade de refetch quando vários eventos chegam juntos.
+A tela do cliente também **revalida os dados ao voltar o foco** na aba/PWA
+(`RefreshOnVisible`), cobrindo o intervalo em que a conexão ficou suspensa.
+
 ---
 
 # Notificações Push
+
+Há **duas frentes de push**, com tabelas e service workers separados:
+
+- **Push do Cliente** (`push_subscriptions`) — "seu pedido mudou de status" e
+  o **convite de avaliação** ("como foi seu pedido?") quando entra em
+  `delivered`. Enviado pelo `apps/admin`.
+- **Push do Painel** (`admin_push_subscriptions`) — "pedido novo". Enviado
+  pelo `apps/client` (no checkout / no webhook do Mercado Pago). Toggle por
+  aparelho em Ajustes → Dispositivos.
+
+Como cada app envia mirando as assinaturas do outro, o **par VAPID precisa
+ser o mesmo** nos dois deploys (par distinto = 401/403 silencioso).
 
 Após a criação bem-sucedida do Pedido, o sistema deve explicar a finalidade das notificações e solicitar permissão.
 

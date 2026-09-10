@@ -1,13 +1,11 @@
 # 24 - Banco de Dados
 
-> ⚠️ **Incompleto (ago/2026).** O esquema descrito aqui é o núcleo. Depois
-> disso entraram ~8 tabelas novas (`promotions`, `coupons`, `order_reviews`,
-> `payment_events`, `customer_otp_challenges`, `admin_push_subscriptions`,
-> `http_rate_limits`, junções de promoção), o valor `refunded` no enum
-> `payment_status`, o enum `review_status` e dezenas de colunas em `stores`,
-> `orders` e `products`. Delta completo em `31 - Estado da Implementação vs.
-> Documentação de Referência.md` §3. A verdade é `supabase/migrations/` +
-> `packages/shared/src/types/database.ts`.
+> Reconciliado em **2026-09-09**. As seções por tabela abaixo descrevem o
+> **núcleo**; a seção **"Evolução do esquema"** no fim consolida o que entrou
+> depois (tabelas de promoção/cupom/avaliação/pagamento/segurança, o enum
+> `review_status`, o valor `refunded` e as colunas novas em `stores` /
+> `orders` / `products` / `categories`). A verdade final é
+> `supabase/migrations/` + `packages/shared/src/types/database.ts`.
 
 # Objetivo
 
@@ -77,7 +75,22 @@ pending
 confirmed
 failed
 cancelled
+refunded
 ```
+
+`refunded` (migração `20260903140000_pix_refund`): estado terminal após
+estorno de um Pix pago. `transition_order_status` bloqueia sair dele.
+
+## `review_status`
+
+```text
+pending
+approved
+hidden
+```
+
+Moderação de `order_reviews` e `product_reviews`. Leitura pública só de
+`approved` (e, em `order_reviews`, também `is_featured`).
 
 ## `order_timing`
 
@@ -696,3 +709,82 @@ Pode:
 - PushSubscriptions revogadas podem ser removidas após período operacional definido;
 - logs devem seguir política de retenção e privacidade;
 - Produtos, Categorias e Adicionais com histórico devem ser arquivados, não excluídos.
+
+---
+
+# Evolução do esquema (pós-núcleo)
+
+Consolidado de `supabase/migrations/` e `database.ts` em **2026-09-09**.
+Ponteiros de contexto: planos `100-planejamento/103`–`107` e `20-tecnico/31`.
+
+## Tabelas novas
+
+| Tabela                                                     | Migração                                  | Papel                                                                                                           |
+| ---------------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `customer_otp_challenges`                                  | `20260819120000_production_auth`          | desafios OTP: `code_hash`, tentativas, expiração                                                                |
+| `http_rate_limits`                                         | `20260827210000_security_hardening`       | rate limit por IP (bucket), RPC `consume_rate_limit`                                                            |
+| `idempotency_keys`                                         | segurança/pagamentos                      | dedup de requisições sensíveis                                                                                  |
+| `promotions`, `promotion_categories`, `promotion_products` | `20260904170000_promotions`               | desconto percentual por escopo `store`/`category`/`products`                                                    |
+| `coupons`                                                  | `20260908140000_coupons`                  | cupom: `code` uppercase único, `discount_type` (percent/fixed/free_shipping), `max_uses`, `uses_count`, período |
+| `payment_events`                                           | `20260903120000_pix_mercadopago`          | log/idempotência dos webhooks do Mercado Pago                                                                   |
+| `admin_push_subscriptions`                                 | `20260908130000_admin_push_subscriptions` | Web Push do painel (separada de `push_subscriptions`)                                                           |
+| `order_reviews`                                            | `20260909120000_order_reviews`            | avaliação do pedido (1 por pedido, nota 1–5, `is_featured`, `customer_display_name`)                            |
+| `product_reviews`                                          | `20260909130000_product_reviews`          | avaliação de produto (1 por cliente×produto, só quem tem pedido entregue)                                       |
+
+## Colunas novas
+
+**`stores`:** `accepts_pix` / `accepts_cash` / `accepts_card`,
+`free_delivery_radius_meters`, `fixed_delivery_fee_cents`,
+`max_delivery_radius_meters` (padrão 3000), `payment_fee_estimate_bps`
+(padrão 99), `cnpj`, `paused_until`, `pause_reason`, `timezone`.
+`schedule_slot_times[]` **existiu** entre `20260902123000` e
+`20260909140000`, quando foi **removida** (junto com `is_hhmm_list`).
+`pix_copy_paste` permanece só como fallback estático.
+
+**`categories`** (`20260909140000_category_scheduling_rules`, PR #98):
+`scheduling_allow_same_day`, `scheduling_same_day_lead_minutes`,
+`scheduling_weekday_earliest`, `scheduling_weekend_earliest`,
+`scheduling_slot_interval_minutes` — regras de agendamento por categoria
+(ver `10-funcional/10`).
+
+**`orders`:** `mp_order_id`, `mp_payment_id`, `pix_qr_code`,
+`pix_qr_code_base64`, `pix_ticket_url`, `pix_expires_at`, `paid_at`,
+`pix_attempt`, `payment_fee_cents`, `payment_net_cents`, `coupon_id`,
+`coupon_code`, `coupon_discount_cents`, `guest_name`, `guest_phone_e164`,
+`kitchen_printed_at` (`20260909150000` — fila de impressão da cozinha).
+`customer_id` passou a **nullable** (comanda manual; constraint
+`orders_customer_or_guest`). O check `orders_total_consistent` desconta o
+cupom.
+
+**`products`:** `stock_quantity` (integer nullable; NULL = ilimitado).
+**`admin_profiles`:** `must_set_password`.
+
+## Funções novas / reescritas
+
+- `private.create_manual_order(payload)` — comanda manual (guarda de admin,
+  cliente por telefone ou guest, `cash`/`card`, endereço sem geocodificação).
+- `private.effective_price_cents(...)` — resolve promoção por especificidade
+  (produto > categoria > loja, nunca acumula).
+- `private.claim_coupon(...)` / `public.preview_coupon(...)` — valida e
+  consome cupom na transação do pedido; cancelamento devolve.
+- `public.consume_rate_limit(...)` — rate limit atômico por IP.
+- Pix: `confirm_order_pix_payment`, `fail_order_pix_payment`,
+  `refund_order_pix_payment`.
+- Versões `*_as_customer` (`create_order_as_customer`,
+  `transition_order_status_as_customer`) para chamadas com a sessão do
+  cliente.
+- `create_order` e `transition_order_status` foram reescritas para cobrir
+  estoque, promoção, cupom, financeiro e o estado `refunded`.
+
+## Storage
+
+Bucket `product-images` passou a **público** para leitura
+(`20260831130000_product_images_public_bucket`).
+
+## Índices adicionais
+
+- `orders (created_at) where kitchen_printed_at is null` — varredura de
+  comandas não impressas;
+- `product_reviews (status, created_at desc)` e
+  `(product_id, created_at desc) where status = 'approved'`;
+- índices de moderação equivalentes em `order_reviews`.

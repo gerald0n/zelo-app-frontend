@@ -1,10 +1,9 @@
 # 23 - Autenticação e Segurança
 
-> 🟡 **Quase atual.** Já reflete o Twilio Verify. Falta registrar: o
-> **fallback de OTP gerado pelo app** (HMAC-SHA256 com `OTP_HASH_SECRET` em
-> `customer_otp_challenges.code_hash`, quando a Verify não está configurada),
-> o **Cloudflare Turnstile** no envio, o **honeypot** e o **rate limit
-> atômico por IP** (`public.consume_rate_limit`). Ver `31` §2.2.
+> Reconciliado com o código em **2026-09-09** (`modules/auth/otp.ts`,
+> `modules/security/`). Inclui o fallback de OTP gerado pelo app, o Cloudflare
+> Turnstile, o honeypot e o rate limit atômico por IP. Ver `20-tecnico/31`
+> §2.2.
 
 # Objetivo
 
@@ -29,13 +28,21 @@ Os fluxos são separados, embora utilizem Supabase Auth.
 
 O Cliente utiliza autenticação passwordless por telefone.
 
-O OTP é:
+O OTP tem **dois modos** (`modules/auth/otp.ts`):
 
-- gerado e enviado por SMS via Twilio Verify;
-- validado pela Twilio e pela aplicação;
-- utilizado para criar uma sessão Supabase Auth.
+- **Com Twilio Verify configurado** (`TWILIO_VERIFY_*`): a Twilio gera,
+  entrega e valida o código; `customer_otp_challenges.code_hash` guarda um
+  marcador do `serviceSid`, não o código.
+- **Sem Twilio** (local/preview, ou se cair): o app gera um código de 6
+  dígitos, guarda o **HMAC-SHA256** (`hashOtp`, segredo `OTP_HASH_SECRET`,
+  mín. 16 chars) em `customer_otp_challenges.code_hash` e entrega por
+  SMS/debug.
 
-A aplicação não deve criar sistema próprio de tokens ou sessões além do Supabase Auth.
+Em ambos os modos, o código válido cria uma sessão **Supabase Auth**. A
+aplicação não implementa tokens ou sessões próprias.
+
+A validação de sessão do cliente usa `supabase.auth.getClaims()` (verifica o
+JWT localmente com as signing keys assimétricas), não `getUser()`.
 
 ---
 
@@ -84,14 +91,16 @@ A aplicação deve:
 
 # Proteção do OTP
 
-O sistema deve possuir:
+Controles implementados:
 
-- limite de solicitações;
-- intervalo mínimo para reenvio;
-- limite de tentativas;
-- expiração curta;
-- proteção contra automação;
-- respostas que não revelem detalhes desnecessários.
+- **Rate limit atômico por IP** — RPC `public.consume_rate_limit` (tabela
+  `http_rate_limits`), `modules/security/rate-limit.ts`;
+- **Cloudflare Turnstile** no envio — `modules/security/turnstile.ts`
+  (`TURNSTILE_SECRET_KEY` / `NEXT_PUBLIC_TURNSTILE_SITE_KEY`);
+- **honeypot** — campo isca no formulário (`rejectHoneypot`);
+- TTL do código **10 min**, cooldown de reenvio **45 s**, **5 envios/hora**,
+  **5 tentativas** de verificação;
+- respostas que não revelam se o telefone existe.
 
 Nunca registrar:
 
@@ -111,9 +120,12 @@ Nunca registrar:
 - Supabase Auth;
 - cadastro público desabilitado.
 
-A conta será criada manualmente.
+A conta é criada manualmente. Não há página pública de cadastro
+administrativo.
 
-Não haverá página pública de cadastro administrativo.
+`admin_profiles.must_set_password` força a troca de senha no primeiro acesso
+(`/configuracoes` → senha). O login tem timeout + fallback para não travar
+no spinner (`fix/admin-login-timeout`).
 
 ---
 
@@ -163,12 +175,21 @@ Exemplos:
 
 Devem existir somente no servidor:
 
-- Supabase service role key;
-- Account SID, Auth Token e Verify Service SID da Twilio;
-- segredo de webhook;
-- chave privada VAPID;
-- chaves privadas do Google Maps;
-- tokens privados do Sentry.
+- Supabase service role key (`SUPABASE_SERVICE_ROLE_KEY`);
+- Twilio: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`,
+  `TWILIO_VERIFY_SERVICE_SID`;
+- Mercado Pago: `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_WEBHOOK_SECRET`;
+- Cloudflare Turnstile: `TURNSTILE_SECRET_KEY`;
+- `OTP_HASH_SECRET` (mín. 16 chars — HMAC do código no modo fallback);
+- `CRON_SECRET` (cron de reconciliação Pix);
+- `CATALOG_REVALIDATE_SECRET` (invalidação de cache admin → client);
+- chave privada VAPID (`VAPID_PRIVATE_KEY`) — **mesmo par nos dois apps**;
+- `GOOGLE_MAPS_API_KEY` (server) — a `NEXT_PUBLIC_` é a de browser, restrita
+  por referrer;
+- DSN/tokens privados do Sentry.
+
+`packages/shared/src/config/env.ts` (`assertProductionEnv`) valida as
+obrigatórias no boot de produção.
 
 ---
 

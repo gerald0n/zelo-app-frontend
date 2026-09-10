@@ -1,12 +1,10 @@
 # 29 - Deploy e Ambientes
 
-> ⚠️ **Variáveis desatualizadas (ago/2026).** As variáveis da Meta Cloud
-> API **não existem**. As obrigatórias em produção hoje (ver
-> `packages/shared/src/config/env.ts`) incluem Twilio Verify, Cloudflare
-> Turnstile, Mercado Pago, `CRON_SECRET` e `OTP_HASH_SECRET`. O deploy são
-> **dois projetos Vercel** (`apps/client`, `apps/admin`) + **Supabase Cron**
-> para reconciliação de Pix. Delta em `31 - Estado da Implementação vs.
-> Documentação de Referência.md` §5.
+> Reconciliado com o código em **2026-09-09** (`packages/shared/src/config/env.ts`,
+> `assertProductionEnv`). Não há nada da Meta Cloud API. O deploy são **dois
+> projetos Vercel** (`zelo-app` = `apps/client`, `zelo-admin` = `apps/admin`)
+>
+> - **Supabase Cron** para a reconciliação de Pix. Ver `20-tecnico/31` §5.
 
 # Objetivo
 
@@ -41,7 +39,8 @@ Deve usar:
 - banco de preview ou desenvolvimento controlado;
 - chaves separadas de produção;
 - Sentry identificado como preview;
-- Meta e Google Maps com credenciais restritas.
+- Google Maps, Turnstile e Mercado Pago com credenciais de teste/restritas
+  (ou ausentes — o app degrada: OTP em modo debug, sem checkout Pix).
 
 ## Produção
 
@@ -78,29 +77,47 @@ Exemplos:
 
 ## Privadas
 
-Somente no servidor.
-
-Exemplos:
-
-- Supabase service role key;
-- token da Meta Cloud API;
-- app secret da Meta;
-- segredo do hook;
-- chave privada VAPID;
-- segredos do Sentry;
-- chaves privadas de integrações.
+Somente no servidor: service role key, `TWILIO_AUTH_TOKEN`,
+`MERCADOPAGO_ACCESS_TOKEN` / `MERCADOPAGO_WEBHOOK_SECRET`,
+`TURNSTILE_SECRET_KEY`, `OTP_HASH_SECRET`, `CRON_SECRET`,
+`CATALOG_REVALIDATE_SECRET`, `VAPID_PRIVATE_KEY`, `GOOGLE_MAPS_API_KEY`,
+`SENTRY_DSN` / `SENTRY_AUTH_TOKEN`.
 
 ---
 
-# Arquivo `.env.example`
+# Referência de variáveis
 
-Deve:
+Fonte: `packages/shared/src/config/env.ts`. Com `APP_ENV=production`,
+`assertProductionEnv()` **falha o boot** se faltar uma obrigatória.
 
-- listar todas as variáveis;
-- não conter valores reais;
-- explicar finalidade;
-- indicar se é pública ou privada;
-- indicar ambiente aplicável.
+## Obrigatórias em produção
+
+| Variável                                                                 | Onde   | Observação                           |
+| ------------------------------------------------------------------------ | ------ | ------------------------------------ |
+| `NEXT_PUBLIC_SUPABASE_URL`                                               | ambos  |                                      |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` (ou `_PUBLISHABLE_KEY`)                  | ambos  |                                      |
+| `SUPABASE_SERVICE_ROLE_KEY`                                              | ambos  | servidor                             |
+| `SUPABASE_URL`                                                           | ambos  | URL interna do servidor              |
+| `TWILIO_ACCOUNT_SID` + `TWILIO_AUTH_TOKEN` + `TWILIO_VERIFY_SERVICE_SID` | client | OTP SMS                              |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY`                | ambos  | captcha                              |
+| `MERCADOPAGO_ACCESS_TOKEN` + `MERCADOPAGO_WEBHOOK_SECRET`                | client | Pix                                  |
+| `CRON_SECRET`                                                            | client | protege `/api/v1/cron/reconcile-pix` |
+| `OTP_HASH_SECRET`                                                        | client | mín. 16 chars                        |
+
+## Recomendadas (warn, não falha)
+
+| Variável                                                                     | Onde                 | Observação                                          |
+| ---------------------------------------------------------------------------- | -------------------- | --------------------------------------------------- |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY` + `VAPID_SUBJECT`       | **ambos, mesmo par** | Web Push                                            |
+| `CATALOG_REVALIDATE_SECRET`                                                  | ambos, mesmo valor   | invalidação de cache                                |
+| `CLIENT_APP_ORIGIN`                                                          | só admin             | origin do cardápio                                  |
+| `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN`                                      | ambos                |                                                     |
+| `SENTRY_AUTH_TOKEN`                                                          | ambos, só no build   | upload de source maps                               |
+| `GOOGLE_MAPS_API_KEY` (server) + `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (browser) | client               | sem elas: Nominatim + campo de rua sem autocomplete |
+
+O `.env.example` de cada app (`apps/client/.env.example`,
+`apps/admin/.env.example`) lista as variáveis com finalidade e escopo, sem
+valores reais.
 
 ---
 
@@ -147,10 +164,10 @@ invalida o cache do cliente por HTTP após cada edição de catálogo/loja:
 com `Authorization: Bearer {CATALOG_REVALIDATE_SECRET}` (via `after()`, sem
 somar latência à mutação). Sem essas duas envs a propagação cai só no TTL.
 
-| Variável | Onde | Valor |
-| --- | --- | --- |
+| Variável                    | Onde              | Valor                                     |
+| --------------------------- | ----------------- | ----------------------------------------- |
 | `CATALOG_REVALIDATE_SECRET` | **ambos** os apps | `openssl rand -hex 32` — o mesmo nos dois |
-| `CLIENT_APP_ORIGIN` | só `apps/admin` | `https://cardapio.zeloconfeitaria.com.br` |
+| `CLIENT_APP_ORIGIN`         | só `apps/admin`   | `https://cardapio.zeloconfeitaria.com.br` |
 
 ---
 
@@ -173,11 +190,11 @@ aparelho precisa **desativar e reativar** a notificação — os helpers
 `apps/admin/src/lib/push-client.ts`) detectam a `applicationServerKey`
 antiga e reassinam sozinhos na ativação seguinte.
 
-| Variável | Onde | Valor |
-| --- | --- | --- |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | **ambos** os apps | mesma chave pública nos dois |
-| `VAPID_PRIVATE_KEY` | **ambos** os apps | mesma chave privada nos dois (Secret) |
-| `VAPID_SUBJECT` | **ambos** os apps | `mailto:contato@zeloconfeitaria.com.br` |
+| Variável                       | Onde              | Valor                                   |
+| ------------------------------ | ----------------- | --------------------------------------- |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | **ambos** os apps | mesma chave pública nos dois            |
+| `VAPID_PRIVATE_KEY`            | **ambos** os apps | mesma chave privada nos dois (Secret)   |
+| `VAPID_SUBJECT`                | **ambos** os apps | `mailto:contato@zeloconfeitaria.com.br` |
 
 ---
 
@@ -293,13 +310,16 @@ Cookies de sessão devem usar configurações seguras.
 
 # Restrições de Chaves
 
-Chaves do Google Maps devem possuir:
+Chaves do Google Maps:
 
-- restrição por domínio;
-- restrição por API;
-- separação entre cliente e servidor quando necessário.
+- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (browser) — restrita por referrer + por
+  API (Maps JS + Places API New);
+- `GOOGLE_MAPS_API_KEY` (servidor) — restrita por API/IP (Geocoding), nunca
+  vai ao cliente.
 
-Credenciais da Meta devem existir apenas no servidor.
+Token do Mercado Pago e secret do webhook existem apenas no servidor do
+`apps/client`. `MERCADOPAGO_WEBHOOK_SECRET` valida a assinatura de cada
+webhook recebido.
 
 ---
 
