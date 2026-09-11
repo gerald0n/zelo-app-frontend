@@ -88,29 +88,43 @@ Cada categoria carrega (editável no admin, aba Catálogo → Categorias):
 | Horário mínimo (seg–sex)           | piso de horário nos dias de semana (nunca antes da abertura)                 |
 | Horário mínimo (sáb–dom)           | piso de horário no fim de semana                                             |
 | Intervalo entre horários (min)     | passo entre os horários oferecidos                                           |
+| Antecedência mínima p/ qualquer horário (min) | nenhum horário de hoje pode estar a menos desse tempo de "agora"  |
 
 **Padrão de categoria nova** (comportamento "cookie"): permite mesmo dia,
-antecedência 120 min, sem piso, intervalo de 30 min.
+antecedência p/ liberar hoje 120 min, sem piso, intervalo de 30 min,
+antecedência mínima 30 min.
 
 ### Como os horários de hoje são montados
 
-- **Antes da abertura:** se falta mais que a "antecedência" para abrir → hoje
-  não aparece. Dentro da janela de antecedência → o primeiro horário é a
+- **Antes da abertura:** se falta mais que a "antecedência p/ liberar hoje"
+  para abrir → hoje não aparece. Dentro dessa janela → o primeiro horário é a
   abertura, seguindo de intervalo em intervalo até o fechamento.
 - **Dentro do expediente:** o primeiro horário é o **próximo bloco cheio**
   (múltiplo do intervalo) depois de agora. Ex.: intervalo 30 min, agora
   19:15 → primeiro horário 19:30.
+- **Antecedência mínima:** depois de aplicar as regras acima, qualquer
+  horário a menos de "antecedência mínima" minutos de agora é descartado (o
+  próximo horário do grid entra no lugar). Vale tanto antes quanto durante o
+  expediente — é o que evita o cliente agendar para "daqui a 1 minuto".
 - **Dias futuros:** do piso (abertura ou horário mínimo, o que for maior) até
-  o fechamento, de intervalo em intervalo.
+  o fechamento, de intervalo em intervalo (a antecedência mínima só faz
+  diferença no dia de hoje).
 
 ### Exemplos
 
-Categoria com abertura 19:00, fechamento 22:00, antecedência 120 min,
-intervalo 30 min:
+Categoria com abertura 19:00, fechamento 22:00, antecedência p/ liberar hoje
+120 min, intervalo 30 min, antecedência mínima 30 min:
 
 - pedido às 17:15 → hoje: 19:00, 19:30, 20:00, …, 22:00;
 - pedido às 10:00 → hoje **não** aparece (mais de 2 h antes de abrir);
-- pedido às 19:15 → hoje: 19:30, 20:00, …, 22:00.
+- pedido às 18:35 → hoje: 19:30, 20:00, …, 22:00 (19:00 cai fora: só faltam
+  25 min, menos que a antecedência mínima de 30);
+- pedido às 19:29 → hoje: 20:00, 20:30, …, 22:00 (19:30 cai fora: só falta
+  1 min).
+
+A antecedência mínima é configurável por categoria porque a loja pode
+precisar de mais (ou menos) tempo de preparo dependendo da demanda do dia —
+sem mexer no horário de funcionamento nem no intervalo padrão dos horários.
 
 Categoria "pudins": não permite mesmo dia; horário mínimo 17:00 (semana) /
 10:00 (fim de semana); intervalo de 1 h. Um agendamento para quinta →

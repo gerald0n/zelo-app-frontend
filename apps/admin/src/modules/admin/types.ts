@@ -91,6 +91,7 @@ export type AdminCategory = {
     weekdayEarliest: string | null;
     weekendEarliest: string | null;
     slotIntervalMinutes: number;
+    minLeadMinutes: number;
   };
 };
 

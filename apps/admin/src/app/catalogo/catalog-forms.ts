@@ -44,6 +44,11 @@ export const categorySchema = z.object({
     .int()
     .min(5, 'Entre 5 e 240.')
     .max(240, 'Entre 5 e 240.'),
+  schedulingMinLeadMinutes: z
+    .number()
+    .int()
+    .min(0, 'Entre 0 e 1440.')
+    .max(1440, 'Entre 0 e 1440.'),
 });
 
 export const productSchema = z.object({

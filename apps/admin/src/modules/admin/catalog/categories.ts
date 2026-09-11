@@ -5,6 +5,7 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { writeAuditLog } from '@/modules/admin/audit';
 import { requireAdmin } from '@/modules/admin/auth';
 import type { AdminCategory } from '@/modules/admin/types';
+import type { CategorySchedulingInput } from '@/modules/scheduling/category-rules';
 import type { Database } from '@/types/database';
 
 type CategoryRow = Database['public']['Tables']['categories']['Row'];
@@ -12,15 +13,7 @@ type CategoryUpdate = Database['public']['Tables']['categories']['Update'];
 type CategoryInsert = Database['public']['Tables']['categories']['Insert'];
 
 const CATEGORY_COLUMNS =
-  'id, name, description, sort_order, is_active, archived_at, scheduling_allow_same_day, scheduling_same_day_lead_minutes, scheduling_weekday_earliest, scheduling_weekend_earliest, scheduling_slot_interval_minutes' as const;
-
-export type CategorySchedulingInput = {
-  allowSameDay?: boolean;
-  sameDayLeadMinutes?: number;
-  weekdayEarliest?: string | null;
-  weekendEarliest?: string | null;
-  slotIntervalMinutes?: number;
-};
+  'id, name, description, sort_order, is_active, archived_at, scheduling_allow_same_day, scheduling_same_day_lead_minutes, scheduling_weekday_earliest, scheduling_weekend_earliest, scheduling_slot_interval_minutes, scheduling_min_lead_minutes' as const;
 
 function mapAdminCategory(
   row: Pick<
@@ -35,6 +28,7 @@ function mapAdminCategory(
     | 'scheduling_weekday_earliest'
     | 'scheduling_weekend_earliest'
     | 'scheduling_slot_interval_minutes'
+    | 'scheduling_min_lead_minutes'
   >,
 ): AdminCategory {
   return {
@@ -49,51 +43,41 @@ function mapAdminCategory(
       weekdayEarliest: row.scheduling_weekday_earliest,
       weekendEarliest: row.scheduling_weekend_earliest,
       slotIntervalMinutes: row.scheduling_slot_interval_minutes,
+      minLeadMinutes: row.scheduling_min_lead_minutes,
     },
   };
 }
 
-const HHMM = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
-
+/**
+ * Traduz uma CategorySchedulingInput (já validada pelo schema da rota, via
+ * categorySchedulingRuleInputSchema) para as colunas snake_case da tabela.
+ * Não revalida limites: quem chama esta função sempre passou pelo schema.
+ */
 function schedulingPatch(
   input: CategorySchedulingInput | undefined,
-): Result<Partial<CategoryUpdate>> {
+): Partial<CategoryUpdate> {
   const patch: Partial<CategoryUpdate> = {};
-  if (!input) return ok(patch);
+  if (!input) return patch;
 
-  if (typeof input.allowSameDay === 'boolean') {
+  if (input.allowSameDay !== undefined) {
     patch.scheduling_allow_same_day = input.allowSameDay;
   }
-  if (typeof input.sameDayLeadMinutes === 'number') {
-    if (
-      !Number.isInteger(input.sameDayLeadMinutes) ||
-      input.sameDayLeadMinutes < 0 ||
-      input.sameDayLeadMinutes > 1440
-    ) {
-      return err('VALIDATION_ERROR', 'Antecedência inválida (0–1440 min).');
-    }
+  if (input.sameDayLeadMinutes !== undefined) {
     patch.scheduling_same_day_lead_minutes = input.sameDayLeadMinutes;
   }
-  if (typeof input.slotIntervalMinutes === 'number') {
-    if (
-      !Number.isInteger(input.slotIntervalMinutes) ||
-      input.slotIntervalMinutes < 5 ||
-      input.slotIntervalMinutes > 240
-    ) {
-      return err('VALIDATION_ERROR', 'Intervalo inválido (5–240 min).');
-    }
+  if (input.slotIntervalMinutes !== undefined) {
     patch.scheduling_slot_interval_minutes = input.slotIntervalMinutes;
   }
-  for (const key of ['weekdayEarliest', 'weekendEarliest'] as const) {
-    if (input[key] === undefined) continue;
-    const value = input[key];
-    if (value !== null && !HHMM.test(value)) {
-      return err('VALIDATION_ERROR', 'Horário mínimo inválido (use HH:MM).');
-    }
-    if (key === 'weekdayEarliest') patch.scheduling_weekday_earliest = value;
-    else patch.scheduling_weekend_earliest = value;
+  if (input.minLeadMinutes !== undefined) {
+    patch.scheduling_min_lead_minutes = input.minLeadMinutes;
   }
-  return ok(patch);
+  if (input.weekdayEarliest !== undefined) {
+    patch.scheduling_weekday_earliest = input.weekdayEarliest;
+  }
+  if (input.weekendEarliest !== undefined) {
+    patch.scheduling_weekend_earliest = input.weekendEarliest;
+  }
+  return patch;
 }
 
 export async function listAdminCategories(): Promise<Result<AdminCategory[]>> {
@@ -126,16 +110,13 @@ export async function createAdminCategory(input: {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
 
-  const schedule = schedulingPatch(input.scheduling);
-  if (!schedule.ok) return schedule;
-
   const admin = createAdminSupabaseClient();
   const insert: CategoryInsert = {
     name: input.name.trim(),
     description: input.description?.trim() || null,
     sort_order: input.sortOrder ?? 0,
     is_active: input.isActive ?? true,
-    ...schedule.data,
+    ...schedulingPatch(input.scheduling),
   };
   const { data, error } = await admin
     .from('categories')
@@ -171,10 +152,7 @@ export async function updateAdminCategory(options: {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
 
-  const schedule = schedulingPatch(options.scheduling);
-  if (!schedule.ok) return schedule;
-
-  const patch: CategoryUpdate = { ...schedule.data };
+  const patch: CategoryUpdate = { ...schedulingPatch(options.scheduling) };
   if (typeof options.name === 'string') patch.name = options.name.trim();
   if (options.description !== undefined) {
     patch.description = options.description?.trim() || null;

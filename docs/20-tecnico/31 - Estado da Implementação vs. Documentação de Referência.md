@@ -181,6 +181,15 @@ resumo do que precisa entrar nos docs de referência.
   expediente, sem piso, intervalo 30 min. Pudins (semeado por nome): nunca
   no mesmo dia, piso 17:00 semana / 10:00 fim de semana, intervalo 1 h.
 - A antiga **regra das 17h** (`calcFirstScheduleDate`) foi **removida**.
+- **Follow-up 2026-09-11 (migração `20260911120000_category_scheduling_min_lead`):**
+  nova coluna `scheduling_min_lead_minutes` (default 30) — antecedência
+  mínima para **qualquer** horário de hoje, não só para a agenda "abrir"
+  antes do expediente. `listAvailableScheduleTimes` (`schedule.ts`) agora
+  empurra `firstMin` para `wc.minutesOfDay + rule.minLeadMinutes` tanto no
+  ramo "antes da abertura" quanto no "dentro do expediente", antes de
+  realinhar à grade do intervalo. Resolve o caso de pedir às 19h29 e ainda
+  conseguir agendar 19h30 (sem tempo hábil de preparo). Editável por
+  categoria em Catálogo → Categorias, mesmo fieldset das outras regras.
 - **Fuso da loja em toda a agenda:**
   `packages/shared/src/modules/scheduling/tz.ts` (`storeWallClock` /
   `storeLocalToInstant`); `catalog/store-hours.ts` também virou TZ-aware.
@@ -258,6 +267,8 @@ resumo do que precisa entrar nos docs de referência.
 PR #98): `scheduling_allow_same_day`, `scheduling_same_day_lead_minutes`,
 `scheduling_weekday_earliest`, `scheduling_weekend_earliest`,
 `scheduling_slot_interval_minutes` — regras de agendamento por categoria.
+Mais `scheduling_min_lead_minutes` (`20260911120000_category_scheduling_min_lead`,
+11/09/2026) — antecedência mínima por horário, ver §2.9.
 
 **Enums:**
 

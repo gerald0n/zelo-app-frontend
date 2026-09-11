@@ -10,6 +10,7 @@
     "build:admin": "pnpm --filter @zelo/admin build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r --if-present run test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:start": "supabase start",

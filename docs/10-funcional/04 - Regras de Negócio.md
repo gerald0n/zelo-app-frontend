@@ -233,9 +233,11 @@ Quando a Loja estiver fechada, o checkout deve permitir somente agendamento.
 > ⚠️ **Substituída (PR #98).** A antiga "regra das 17h" (RN-045–RN-047) deu
 > lugar a **regras de agendamento por categoria**. Cada categoria define: se
 > permite mesmo dia, a antecedência para a agenda de hoje abrir, o horário
-> mínimo por dia da semana / fim de semana e o intervalo entre horários. Os
-> dias e horários do checkout são derivados dessas regras, da janela do dia e
-> dos blackouts. Ver `10-funcional/10` e `20-tecnico/31` §2.9.
+> mínimo por dia da semana / fim de semana, o intervalo entre horários e a
+> antecedência mínima para qualquer horário (2026-09-11, evita agendar um
+> horário a poucos minutos de distância). Os dias e horários do checkout são
+> derivados dessas regras, da janela do dia e dos blackouts. Ver
+> `10-funcional/10` e `20-tecnico/31` §2.9.
 
 ## RN-046
 

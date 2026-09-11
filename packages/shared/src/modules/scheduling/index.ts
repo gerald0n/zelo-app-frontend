@@ -8,10 +8,13 @@ export {
   type CartSchedulingResolution,
 } from '@/modules/scheduling/schedule';
 export {
+  categorySchedulingRuleInputSchema,
+  categorySchedulingRuleSchema,
   DEFAULT_CATEGORY_SCHEDULING_RULE,
   isHhmm,
   normalizeCategorySchedulingRule,
   schedulingRuleSignature,
+  type CategorySchedulingInput,
   type CategorySchedulingRule,
 } from '@/modules/scheduling/category-rules';
 export {

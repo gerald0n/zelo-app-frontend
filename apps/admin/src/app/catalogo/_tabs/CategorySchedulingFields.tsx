@@ -20,7 +20,8 @@ export function CategorySchedulingFields({
     formState.errors.schedulingWeekdayEarliest ||
     formState.errors.schedulingWeekendEarliest ||
     formState.errors.schedulingSameDayLeadMinutes ||
-    formState.errors.schedulingSlotIntervalMinutes;
+    formState.errors.schedulingSlotIntervalMinutes ||
+    formState.errors.schedulingMinLeadMinutes;
 
   return (
     <>
@@ -74,6 +75,21 @@ export function CategorySchedulingFields({
             className={fieldClass}
           />
         </Label>
+        <Label className="block text-xs font-semibold">
+          Antecedência mínima para qualquer horário (min)
+          <Input
+            type="number"
+            {...register('schedulingMinLeadMinutes', {
+              valueAsNumber: true,
+            })}
+            className={fieldClass}
+          />
+        </Label>
+        <p className="text-2xs leading-4 text-muted-foreground">
+          Nenhum horário de hoje aparece a menos desse tempo de agora — ex.:
+          com 30 min, quem pedir às 19h29 já não vê mais o horário das 19h30.
+          Aumente num dia mais corrido.
+        </p>
       </fieldset>
 
       {hasError ? (
