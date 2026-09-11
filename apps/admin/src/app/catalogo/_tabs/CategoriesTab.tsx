@@ -41,6 +41,7 @@ export function CategoriesTab({
     schedulingWeekdayEarliest: '',
     schedulingWeekendEarliest: '',
     schedulingSlotIntervalMinutes: 30,
+    schedulingMinLeadMinutes: 30,
   };
 
   const categoryForm = useForm<CategoryForm>({
@@ -65,6 +66,7 @@ export function CategoriesTab({
       weekdayEarliest: values.schedulingWeekdayEarliest || null,
       weekendEarliest: values.schedulingWeekendEarliest || null,
       slotIntervalMinutes: values.schedulingSlotIntervalMinutes,
+      minLeadMinutes: values.schedulingMinLeadMinutes,
     },
   });
 
@@ -164,6 +166,7 @@ export function CategoriesTab({
               category.scheduling.weekendEarliest ?? '',
             schedulingSlotIntervalMinutes:
               category.scheduling.slotIntervalMinutes,
+            schedulingMinLeadMinutes: category.scheduling.minLeadMinutes,
           }
         : {
             name: '',

@@ -44,6 +44,7 @@ export function mapCategory(row: CategoryRow): CatalogCategory {
       weekdayEarliest: row.scheduling_weekday_earliest,
       weekendEarliest: row.scheduling_weekend_earliest,
       slotIntervalMinutes: row.scheduling_slot_interval_minutes,
+      minLeadMinutes: row.scheduling_min_lead_minutes,
     }),
   };
 }

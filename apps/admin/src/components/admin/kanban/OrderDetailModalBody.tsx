@@ -4,6 +4,7 @@ import { formatCatalogPrice } from '@/modules/catalog/types';
 import { statusLabel } from '@/modules/orders/types';
 import { nextAdminStatus, type AdminOrderDetail } from '@/modules/admin/types';
 import OrderTimeline, { clock } from '@/components/admin/kanban/OrderTimeline';
+import WhatsappNotifyButton from '@/components/admin/WhatsappNotifyButton';
 import { cn } from '@/lib/cn';
 
 type Props = {
@@ -144,6 +145,33 @@ export default function OrderDetailModalBody({
             </p>
           </InfoCard>
         </div>
+
+        <WhatsappNotifyButton
+          status={order.status}
+          number={order.number}
+          id={order.id}
+          customerName={customer?.name ?? null}
+          phoneE164={customer?.phoneE164 ?? null}
+        />
+
+        {order.deliveryMethod === 'delivery' ? (
+          <InfoCard label="Endereço de entrega">
+            {order.address ? (
+              <>
+                <p className="text-sm">{order.address.formatted}</p>
+                {order.address.referencePoint ? (
+                  <p className="text-xs text-muted-foreground">
+                    Referência: {order.address.referencePoint}
+                  </p>
+                ) : null}
+              </>
+            ) : (
+              <p className="text-xs text-tone-warning-foreground">
+                Endereço não informado neste pedido.
+              </p>
+            )}
+          </InfoCard>
+        ) : null}
 
         {order.status === 'cancelled' ? (
           <div className="rounded-lg border border-destructive/40 p-3">

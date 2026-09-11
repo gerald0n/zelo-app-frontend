@@ -5,7 +5,7 @@ import {
   archiveAdminCategory,
   updateAdminCategory,
 } from '@/modules/admin/catalog';
-import { categorySchedulingSchema } from '@/lib/admin/category-scheduling';
+import { categorySchedulingRuleInputSchema } from '@/modules/scheduling/category-rules';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +16,7 @@ const patchSchema = z.object({
   description: z.string().trim().max(500).nullable().optional(),
   sortOrder: z.number().int().min(0).max(10_000).optional(),
   isActive: z.boolean().optional(),
-  scheduling: categorySchedulingSchema.optional(),
+  scheduling: categorySchedulingRuleInputSchema.optional(),
   archive: z.boolean().optional(),
 });
 

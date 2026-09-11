@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Bike, ShoppingBag } from 'lucide-react';
+import { Bike, MapPin, ShoppingBag } from 'lucide-react';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import {
   statusLabel,
@@ -47,6 +47,12 @@ export default function AdminOrderCard({ order }: Props) {
           .map((item) => `${item.quantity}× ${item.name}`)
           .join(' · ')}
       </p>
+      {order.deliveryMethod === 'delivery' && order.deliveryAddress ? (
+        <p className="flex items-start gap-1 text-2xs leading-snug text-muted-foreground">
+          <MapPin className="mt-px size-3 shrink-0" />
+          <span className="line-clamp-2">{order.deliveryAddress.short}</span>
+        </p>
+      ) : null}
       <div className="flex items-center justify-between">
         <span
           className={cn(

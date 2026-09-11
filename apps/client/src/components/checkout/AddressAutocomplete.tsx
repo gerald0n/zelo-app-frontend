@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Loader2, MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/cn';
@@ -30,6 +30,11 @@ type AddressAutocompleteProps = {
 
 const DEBOUNCE_MS = 300;
 
+/** Altura mínima útil para a lista antes de valer a pena abrir para cima. */
+const MIN_LIST_SPACE_PX = 152;
+const LIST_MAX_PX = 288;
+const LIST_MIN_PX = 112;
+
 export function AddressAutocomplete({
   value,
   onChange,
@@ -48,7 +53,14 @@ export function AddressAutocomplete({
   const [activeIndex, setActiveIndex] = useState(-1);
   const [resolving, setResolving] = useState(false);
 
+  /** `true` quando a lista abre acima do campo (teclado colando embaixo). */
+  const [dropUp, setDropUp] = useState(false);
+  const [listMaxPx, setListMaxPx] = useState(LIST_MAX_PX);
+  /** Mensagem quando o cliente escolhe um endereço fora de Pereiro. */
+  const [outsideArea, setOutsideArea] = useState(false);
+
   const listboxId = useId();
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const sessionTokenRef = useRef<string>(createPlacesSessionToken());
   const abortRef = useRef<AbortController | null>(null);
   const blurTimerRef = useRef<number | null>(null);
@@ -95,15 +107,49 @@ export function AddressAutocomplete({
     };
   }, []);
 
+  /**
+   * Decide se a lista abre para baixo ou para cima e qual a altura máxima,
+   * medindo o espaço real acima/abaixo do campo. Usa `visualViewport`, que
+   * encolhe quando o teclado virtual sobe (o `100vh`/`innerHeight` não).
+   */
+  const recalcPlacement = useCallback(() => {
+    const input = containerRef.current?.querySelector('input');
+    if (!input) return;
+    const rect = input.getBoundingClientRect();
+    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+    const viewTop = vv?.offsetTop ?? 0;
+    const viewBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+
+    const spaceBelow = viewBottom - rect.bottom - 8;
+    const spaceAbove = rect.top - viewTop - 8;
+    const openUp = spaceBelow < MIN_LIST_SPACE_PX && spaceAbove > spaceBelow;
+
+    const room = openUp ? spaceAbove : spaceBelow;
+    setDropUp(openUp);
+    setListMaxPx(
+      Math.max(LIST_MIN_PX, Math.min(LIST_MAX_PX, Math.floor(room))),
+    );
+  }, []);
+
   async function selectSuggestion(suggestion: PlaceSuggestion) {
     setOpen(false);
     setSuggestions([]);
+    setOutsideArea(false);
     setResolving(true);
     const token = sessionTokenRef.current;
     const place = await fetchPlaceDetails(suggestion.placeId, token);
     // A sessão fecha após o Details — próxima busca começa uma nova.
     sessionTokenRef.current = createPlacesSessionToken();
     setResolving(false);
+
+    if (place && !place.cityMatches) {
+      // Endereço de outra cidade: sem coordenada confiável, o mapa cairia
+      // num ponto aleatório de Pereiro. Recusa e limpa o campo.
+      resolvedTextRef.current = null;
+      setOutsideArea(true);
+      onChange('');
+      return;
+    }
 
     if (place) {
       resolvedTextRef.current = place.street || suggestion.primaryText;
@@ -143,24 +189,47 @@ export function AddressAutocomplete({
 
   const showList = enabled && open && (suggestions.length > 0 || loading);
 
+  useEffect(() => {
+    if (!showList) return;
+    recalcPlacement();
+
+    const vv = window.visualViewport;
+    const onViewportChange = () => recalcPlacement();
+    vv?.addEventListener('resize', onViewportChange);
+    vv?.addEventListener('scroll', onViewportChange);
+    window.addEventListener('scroll', onViewportChange, true);
+    return () => {
+      vv?.removeEventListener('resize', onViewportChange);
+      vv?.removeEventListener('scroll', onViewportChange);
+      window.removeEventListener('scroll', onViewportChange, true);
+    };
+  }, [showList, suggestions.length, recalcPlacement]);
+
   return (
-    <div className={cn('relative min-w-0', className)}>
+    <div ref={containerRef} className={cn('relative min-w-0', className)}>
       <div className="relative">
         <Input
           type="text"
           value={value}
           onChange={(event) => {
             resolvedTextRef.current = null;
+            if (outsideArea) setOutsideArea(false);
             onChange(event.target.value);
           }}
           onFocus={() => {
             if (suggestions.length > 0) setOpen(true);
+            // Depois que o teclado virtual sobe (~300ms), traz o campo para
+            // uma posição com espaço para a lista e remede o layout.
+            window.setTimeout(() => {
+              containerRef.current?.scrollIntoView({
+                block: 'center',
+                behavior: 'smooth',
+              });
+              recalcPlacement();
+            }, 320);
           }}
           onBlur={() => {
-            blurTimerRef.current = window.setTimeout(
-              () => setOpen(false),
-              120,
-            );
+            blurTimerRef.current = window.setTimeout(() => setOpen(false), 120);
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
@@ -180,11 +249,21 @@ export function AddressAutocomplete({
         )}
       </div>
 
+      {outsideArea ? (
+        <p className="mt-1 text-xs text-destructive">
+          Endereço fora de Pereiro. A entrega é feita só em Pereiro-CE.
+        </p>
+      ) : null}
+
       {showList && (
         <ul
           id={listboxId}
           role="listbox"
-          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-64 overflow-y-auto rounded-md border border-border bg-card py-1 shadow-lg"
+          style={{ maxHeight: listMaxPx }}
+          className={cn(
+            'absolute left-0 right-0 z-30 overflow-y-auto overscroll-contain rounded-md border border-border bg-card py-1 shadow-lg',
+            dropUp ? 'bottom-full mb-1' : 'top-full mt-1',
+          )}
         >
           {suggestions.length === 0 && loading ? (
             <li className="px-3 py-2 text-sm text-muted-foreground">

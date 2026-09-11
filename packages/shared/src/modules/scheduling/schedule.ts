@@ -98,6 +98,10 @@ export function listAvailableScheduleTimes(
       const nextBlock = (Math.floor(wc.minutesOfDay / interval) + 1) * interval;
       firstMin = Math.max(startFloor, nextBlock);
     }
+    // Antecedência mínima por horário: descarta qualquer horário a menos de
+    // `minLeadMinutes` de agora (ex.: 18h35 + 30min de antecedência derruba
+    // o horário das 19h, mas mantém o das 19h30 em diante).
+    firstMin = Math.max(firstMin, wc.minutesOfDay + rule.minLeadMinutes);
   } else {
     firstMin = startFloor;
   }

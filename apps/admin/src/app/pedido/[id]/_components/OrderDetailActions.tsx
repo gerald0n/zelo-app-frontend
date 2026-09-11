@@ -4,6 +4,7 @@ import { ArrowRight, Loader2, Printer } from 'lucide-react';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import { statusLabel, type OrderStatus } from '@/modules/orders/types';
 import { nextAdminStatus, type AdminOrderDetail } from '@/modules/admin/types';
+import WhatsappNotifyButton from '@/components/admin/WhatsappNotifyButton';
 
 type Props = {
   order: AdminOrderDetail;
@@ -67,6 +68,15 @@ export function OrderDetailActions({
           <ArrowRight className="size-4" />
         </button>
       ) : null}
+
+      <WhatsappNotifyButton
+        status={order.status}
+        number={order.number}
+        id={order.id}
+        customerName={(order.customer ?? order.guest)?.name ?? null}
+        phoneE164={(order.customer ?? order.guest)?.phoneE164 ?? null}
+        className="py-3.5 text-sm"
+      />
 
       {order.status !== 'delivered' && order.status !== 'cancelled' ? (
         <button

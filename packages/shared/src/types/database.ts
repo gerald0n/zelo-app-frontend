@@ -290,6 +290,7 @@ export type Database = {
           is_active: boolean;
           name: string;
           scheduling_allow_same_day: boolean;
+          scheduling_min_lead_minutes: number;
           scheduling_same_day_lead_minutes: number;
           scheduling_slot_interval_minutes: number;
           scheduling_weekday_earliest: string | null;
@@ -305,6 +306,7 @@ export type Database = {
           is_active?: boolean;
           name: string;
           scheduling_allow_same_day?: boolean;
+          scheduling_min_lead_minutes?: number;
           scheduling_same_day_lead_minutes?: number;
           scheduling_slot_interval_minutes?: number;
           scheduling_weekday_earliest?: string | null;
@@ -320,6 +322,7 @@ export type Database = {
           is_active?: boolean;
           name?: string;
           scheduling_allow_same_day?: boolean;
+          scheduling_min_lead_minutes?: number;
           scheduling_same_day_lead_minutes?: number;
           scheduling_slot_interval_minutes?: number;
           scheduling_weekday_earliest?: string | null;

@@ -278,7 +278,10 @@ Regras de agendamento (migração `20260909140000`, PR #98 — ver `20-tecnico/3
 - `scheduling_same_day_lead_minutes integer not null default 120`;
 - `scheduling_weekday_earliest text` (HH:MM, nullable);
 - `scheduling_weekend_earliest text` (HH:MM, nullable);
-- `scheduling_slot_interval_minutes integer not null default 30`.
+- `scheduling_slot_interval_minutes integer not null default 30`;
+- `scheduling_min_lead_minutes integer not null default 30` (migração
+  `20260911120000`, 11/09/2026): antecedência mínima para qualquer horário de
+  hoje, não só o de abertura.
 
 Uma Categoria vazia ou sem Produtos disponíveis não aparece no cardápio público.
 
