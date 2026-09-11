@@ -101,13 +101,19 @@ export function PwaInstallProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    // Só o app instalado não precisa disto. Mesmo com o convite automático
-    // já dispensado, seguimos capturando o `beforeinstallprompt` pra que o
-    // botão "Adicionar à tela inicial" (no popup e na tela de Conta)
+
+    // Pré-registra sempre, mesmo já instalado — se não, a primeira ativação
+    // de notificações (tela de Conta) teria que registrar o SW e assinar o
+    // push na mesma interação, "a frio", o que falha silenciosamente em
+    // vários navegadores. Rodar isto aqui deixa o SW pronto bem antes do
+    // usuário chegar em "Ativar notificações".
+    void registerZeloServiceWorker();
+
+    // O resto (captura de `beforeinstallprompt`) o app instalado não precisa.
+    // Mesmo com o convite automático já dispensado, seguimos capturando pra
+    // que o botão "Adicionar à tela inicial" (no popup e na tela de Conta)
     // consiga abrir a instalação nativa em vez de só mostrar o passo a passo.
     if (isStandaloneDisplay()) return;
-
-    void registerZeloServiceWorker();
 
     const onBeforeInstall = (event: Event) => {
       event.preventDefault();

@@ -24,11 +24,11 @@ import { TopProducts } from '@/app/_components/TopProducts';
 import { OperationsView } from '@/app/_components/OperationsView';
 import { FinancialView } from '@/app/_components/FinancialView';
 
-const PERIODS: DashboardPeriod[] = ['today', '7d', '30d'];
+const PERIODS: DashboardPeriod[] = ['30d', '7d', 'today'];
 
 export default function AdminDashboardPage() {
   const { isAuthenticated, ready } = useRequireAdmin();
-  const [period, setPeriod] = useState<DashboardPeriod>('today');
+  const [period, setPeriod] = useState<DashboardPeriod>('30d');
 
   // Fronteiras calculadas no fuso do cliente (capturadas ao trocar de
   // período / montar). O servidor só agrega dentro delas.

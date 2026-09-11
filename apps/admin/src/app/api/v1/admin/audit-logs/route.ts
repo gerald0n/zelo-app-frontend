@@ -12,6 +12,7 @@ const ALLOWED_PREFIXES = new Set([
   'promotion',
   'coupon',
   'review',
+  'notification',
 ]);
 
 export async function GET(request: Request) {

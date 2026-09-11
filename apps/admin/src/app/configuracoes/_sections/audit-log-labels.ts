@@ -32,6 +32,7 @@ const ACTION_LABELS: Record<string, string> = {
   'store.resume': 'Loja reaberta',
   'review.moderate': 'Avaliação de pedido moderada',
   'product_review.moderate': 'Avaliação de produto moderada',
+  'notification.broadcast': 'Notificação enviada a clientes',
 };
 
 export function actionLabel(action: string): string {
@@ -139,6 +140,16 @@ export function auditDetail(log: AdminAuditLog): string | null {
     const parts: string[] = [];
     if (until) parts.push(`até ${formatDateTime(until)}`);
     if (reason) parts.push(reason);
+    return parts.length ? parts.join(' · ') : null;
+  }
+
+  if (log.action === 'notification.broadcast') {
+    const title = asString(meta.title);
+    const sent = typeof meta.sent === 'number' ? meta.sent : null;
+    const devices = typeof meta.devices === 'number' ? meta.devices : null;
+    const parts: string[] = [];
+    if (title) parts.push(`“${title}”`);
+    if (sent != null && devices != null) parts.push(`${sent}/${devices} entregues`);
     return parts.length ? parts.join(' · ') : null;
   }
 

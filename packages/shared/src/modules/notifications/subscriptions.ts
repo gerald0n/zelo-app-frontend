@@ -191,3 +191,29 @@ export async function listActiveSubscriptionsForCustomer(
     auth: row.auth,
   }));
 }
+
+/** Todas as assinaturas ativas, de todos os clientes — usado pelo broadcast do admin. */
+export async function listAllActiveCustomerSubscriptions(): Promise<
+  StoredPushSubscription[]
+> {
+  const admin = createAdminSupabaseClient();
+  const { data, error } = await admin
+    .from('push_subscriptions')
+    .select('id, customer_id, endpoint, p256dh, auth')
+    .is('revoked_at', null);
+
+  if (error) {
+    logger.warn('Falha ao listar PushSubscriptions ativas', {
+      message: error.message,
+    });
+    return [];
+  }
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    customerId: row.customer_id,
+    endpoint: row.endpoint,
+    p256dh: row.p256dh,
+    auth: row.auth,
+  }));
+}
