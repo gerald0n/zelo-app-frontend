@@ -114,12 +114,16 @@ export default function AdminPedidosPage() {
     },
     onSettled: async (_data, _error, input) => {
       setBusyOrderId(null);
+      // Espera o cache ficar fresco ANTES de tirar a sobreposição otimista —
+      // senão displayStatusFor cai de volta pro status antigo do cache por
+      // uma janela (refetch ainda em voo) e o card pisca pra coluna anterior
+      // antes de avançar de novo quando o refetch chega.
+      await invalidateOrders();
       setOptimisticStatus((prev) => {
         const next = { ...prev };
         delete next[input.orderId];
         return next;
       });
-      await invalidateOrders();
     },
   });
 
