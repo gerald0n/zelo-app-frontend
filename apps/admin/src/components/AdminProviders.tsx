@@ -14,6 +14,7 @@ import { AdminNewOrderProvider } from '@/contexts/AdminNewOrderContext';
 import { PrinterProvider } from '@/contexts/PrinterContext';
 import { AppDialogProvider } from '@/contexts/AppDialogContext';
 import { QueryProvider } from '@/providers/query-provider';
+import { ApiErrorToaster } from '@/components/ApiErrorToaster';
 import AdminShell from '@/components/admin/AdminShell';
 
 function AdminObservability() {
@@ -51,6 +52,7 @@ export default function AdminProviders({
             <AdminRealtimeProvider>
               <AdminNewOrderProvider>
                 <AdminObservability />
+                <ApiErrorToaster />
                 <AdminShell>{children}</AdminShell>
               </AdminNewOrderProvider>
             </AdminRealtimeProvider>
