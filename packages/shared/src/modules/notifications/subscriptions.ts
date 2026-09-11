@@ -1,7 +1,9 @@
 import 'server-only';
 
+import { hasWebPushConfig } from '@/config/env';
 import { err, ok, type Result } from '@/lib/errors';
 import { logger } from '@/lib/logger';
+import { sendWebPushNotification } from '@/lib/push/web-push';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import {
   ensureCustomerRecord,
@@ -11,6 +13,32 @@ import type {
   PushSubscriptionInput,
   StoredPushSubscription,
 } from '@/modules/notifications/types';
+
+/**
+ * Avisa o próprio aparelho que a ativação deu certo. Só dispara no insert
+ * (assinatura nova) — não no update/reativação — pra não reenviar a cada
+ * refresh de last_seen_at. Nunca lança: falha aqui não pode derrubar o
+ * cadastro da assinatura.
+ */
+function sendActivationWelcomePush(input: PushSubscriptionInput): void {
+  if (!hasWebPushConfig()) return;
+
+  sendWebPushNotification({
+    endpoint: input.endpoint,
+    p256dh: input.keys.p256dh,
+    auth: input.keys.auth,
+    payload: {
+      title: 'Zelo · Notificações ativadas 🎉',
+      body: 'Agora você recebe avisos por aqui sobre o andamento dos seus pedidos.',
+      url: '/conta/notificacoes',
+      tag: 'push-welcome',
+    },
+  }).catch((error) => {
+    logger.warn('Push: falha ao enviar boas-vindas de ativação', {
+      message: error instanceof Error ? error.message : String(error),
+    });
+  });
+}
 
 export async function upsertPushSubscription(
   input: PushSubscriptionInput,
@@ -85,6 +113,8 @@ export async function upsertPushSubscription(
       cause: error,
     });
   }
+
+  sendActivationWelcomePush(input);
 
   return ok({ id: data.id });
 }

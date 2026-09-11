@@ -30,3 +30,6 @@ export const CATALOG_CACHE_TTL_SECONDS = 60;
 
 /** Depoimentos mudam raramente. */
 export const TESTIMONIALS_CACHE_TTL_SECONDS = 300;
+
+/** "Mais vendidos" agrega pedidos — não precisa de frescor além disso. */
+export const BEST_SELLERS_CACHE_TTL_SECONDS = 300;

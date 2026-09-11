@@ -13,6 +13,7 @@ import React, {
 import { CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { randomUUID } from '@/lib/random-id';
+import { subscribeApiError } from '@/lib/api-error-bus';
 import {
   getFavoritesSnapshot,
   getServerFavoritesSnapshot,
@@ -178,6 +179,13 @@ export function ShopExperienceProvider({
     },
     [clearToastTimer, scheduleDismiss],
   );
+
+  // Rede de segurança: qualquer query/mutation do React Query que falhar em
+  // qualquer tela vira toast de erro aqui, mesmo sem tratamento manual —
+  // essencial no mobile, onde não dá pra abrir o depurador de rede.
+  useEffect(() => {
+    return subscribeApiError((message) => notify(message, 'error'));
+  }, [notify]);
 
   const toggleFavorite = useCallback(
     (productId: string, productName: string) => {

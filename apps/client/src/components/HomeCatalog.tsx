@@ -31,6 +31,8 @@ type Props = {
   products: CatalogProduct[];
   categoryNames: Record<string, string>;
   testimonials: PublicTestimonial[];
+  /** IDs dos mais vendidos nos últimos 30 dias, do mais pro menos vendido. */
+  bestSellerProductIds: string[];
 };
 
 export default function HomeCatalog({
@@ -38,6 +40,7 @@ export default function HomeCatalog({
   products,
   categoryNames,
   testimonials,
+  bestSellerProductIds,
 }: Props) {
   const [active, setActive] = useState<Filter>('Todos');
   const { addItem, items } = useCart();
@@ -53,10 +56,24 @@ export default function HomeCatalog({
     return quantities;
   }, [items]);
 
-  const popular = useMemo(
-    () => products.filter((product) => product.available).slice(0, 3),
-    [products],
-  );
+  const bestSellers = useMemo(() => {
+    const byId = new Map(products.map((product) => [product.id, product]));
+    const ranked = bestSellerProductIds
+      .map((id) => byId.get(id))
+      .filter(
+        (product): product is CatalogProduct =>
+          !!product && product.available,
+      )
+      .slice(0, 3);
+    if (ranked.length > 0) return { items: ranked, ranked: true };
+    // Loja nova / sem vendas nos últimos 30 dias: cai de volta pra ordem do
+    // cardápio, pra seção não sumir logo de cara. Sem selo de posição aqui —
+    // não são de fato os mais vendidos.
+    return {
+      items: products.filter((product) => product.available).slice(0, 3),
+      ranked: false,
+    };
+  }, [products, bestSellerProductIds]);
 
   const filtered = useMemo(() => {
     if (active === 'Favoritos') {
@@ -121,21 +138,18 @@ export default function HomeCatalog({
         <StoreStrip />
         <MenuHeroCarousel />
 
-        {popular.length > 0 ? (
-          <section className="pt-4" aria-labelledby="reorder-heading">
+        {bestSellers.items.length > 0 ? (
+          <section className="pt-4" aria-labelledby="best-sellers-heading">
             <div className="px-4">
               <h3
-                id="reorder-heading"
+                id="best-sellers-heading"
                 className="font-serif text-lg font-semibold text-foreground"
               >
-                Destaques
+                Mais vendidos nos últimos 30 dias
               </h3>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Escolhas do cardápio
-              </p>
             </div>
             <div className="mt-3 flex gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {popular.map((product) => {
+              {bestSellers.items.map((product, index) => {
                 const quantityInCart = quantityByProduct.get(product.id) ?? 0;
                 return (
                   <article
@@ -147,9 +161,20 @@ export default function HomeCatalog({
                       className="absolute inset-0 z-0 rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                     >
                       <span className="sr-only">
+                        {bestSellers.ranked
+                          ? `${index + 1}º mais vendido: `
+                          : ''}
                         Ver detalhes de {product.name}
                       </span>
                     </Link>
+                    {bestSellers.ranked ? (
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute left-2 top-2 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-2xs font-bold text-primary-foreground"
+                      >
+                        {index + 1}º
+                      </span>
+                    ) : null}
                     <div className="flex items-center gap-2.5 lg:gap-3">
                       <ProductThumb
                         tone={categoryTone(

@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { err, ok, type Result } from '@/lib/errors';
+import { logger } from '@/lib/logger';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { writeAuditLog } from '@/modules/admin/audit';
 import { requireAdmin } from '@/modules/admin/auth';
@@ -92,6 +93,11 @@ export async function listAdminCategories(): Promise<Result<AdminCategory[]>> {
     .order('sort_order', { ascending: true });
 
   if (error) {
+    logger.captureAppError({
+      code: 'INTERNAL_ERROR',
+      message: 'Não foi possível carregar categorias.',
+      cause: error,
+    });
     return err('INTERNAL_ERROR', 'Não foi possível carregar categorias.', {
       cause: error,
     });
@@ -125,6 +131,11 @@ export async function createAdminCategory(input: {
     .single();
 
   if (error || !data) {
+    logger.captureAppError({
+      code: 'INTERNAL_ERROR',
+      message: 'Não foi possível criar a categoria.',
+      cause: error,
+    });
     return err('INTERNAL_ERROR', 'Não foi possível criar a categoria.', {
       cause: error,
     });
@@ -175,6 +186,11 @@ export async function updateAdminCategory(options: {
     .maybeSingle();
 
   if (error) {
+    logger.captureAppError({
+      code: 'INTERNAL_ERROR',
+      message: 'Não foi possível atualizar a categoria.',
+      cause: error,
+    });
     return err('INTERNAL_ERROR', 'Não foi possível atualizar a categoria.', {
       cause: error,
     });
@@ -208,6 +224,11 @@ export async function archiveAdminCategory(
     .maybeSingle();
 
   if (error) {
+    logger.captureAppError({
+      code: 'INTERNAL_ERROR',
+      message: 'Não foi possível arquivar a categoria.',
+      cause: error,
+    });
     return err('INTERNAL_ERROR', 'Não foi possível arquivar a categoria.', {
       cause: error,
     });

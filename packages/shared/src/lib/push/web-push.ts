@@ -29,7 +29,7 @@ export type PushPayload = {
   icon?: string;
   badge?: string;
   url: string;
-  orderId: string;
+  orderId?: string;
   tag?: string;
 };
 
@@ -69,7 +69,11 @@ export async function sendWebPushNotification(options: {
           url: options.payload.url,
           orderId: options.payload.orderId,
         },
-        tag: options.payload.tag ?? `order-${options.payload.orderId}`,
+        tag:
+          options.payload.tag ??
+          (options.payload.orderId
+            ? `order-${options.payload.orderId}`
+            : 'zelo-notification'),
       }),
     );
     return { ok: true };
