@@ -14,6 +14,7 @@
  * Módulo client-safe: não importa `logger` nem nada de servidor.
  */
 import { findPereiroNeighborhood } from '@/modules/delivery/pereiro';
+import { randomUUID } from '@/lib/random-id';
 
 const AUTOCOMPLETE_URL = 'https://places.googleapis.com/v1/places:autocomplete';
 const DETAILS_URL = 'https://places.googleapis.com/v1/places';
@@ -62,7 +63,7 @@ type FetchSuggestionsOptions = {
 
 /** Token de sessão (autocomplete + 1 Place Details contam como 1 cobrança). */
 export function createPlacesSessionToken(): string {
-  return crypto.randomUUID();
+  return randomUUID();
 }
 
 function normalize(value: string): string {
