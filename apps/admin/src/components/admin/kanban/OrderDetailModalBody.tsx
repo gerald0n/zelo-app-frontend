@@ -4,6 +4,7 @@ import { formatCatalogPrice } from '@/modules/catalog/types';
 import { statusLabel } from '@/modules/orders/types';
 import { nextAdminStatus, type AdminOrderDetail } from '@/modules/admin/types';
 import OrderTimeline, { clock } from '@/components/admin/kanban/OrderTimeline';
+import WhatsappNotifyButton from '@/components/admin/WhatsappNotifyButton';
 import { cn } from '@/lib/cn';
 
 type Props = {
@@ -144,6 +145,14 @@ export default function OrderDetailModalBody({
             </p>
           </InfoCard>
         </div>
+
+        <WhatsappNotifyButton
+          status={order.status}
+          number={order.number}
+          id={order.id}
+          customerName={customer?.name ?? null}
+          phoneE164={customer?.phoneE164 ?? null}
+        />
 
         {order.deliveryMethod === 'delivery' ? (
           <InfoCard label="Endereço de entrega">
