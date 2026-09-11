@@ -8,11 +8,11 @@ import {
   CATALOG_CACHE_TTL_SECONDS,
   STORE_CACHE_TAG,
 } from '@/modules/catalog/cache';
+import { listPublicBestSellingProductIds } from '@/modules/catalog/best-sellers-repository';
 import {
   getPublicCatalog,
   getPublicProductBySlugOrId,
   getPublicStore,
-  listPublicBestSellingProductIds,
   listPublicProducts,
 } from '@/modules/catalog/catalog-repository';
 
