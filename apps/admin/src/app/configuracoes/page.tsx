@@ -9,17 +9,19 @@ import { BlackoutsSection } from '@/app/configuracoes/_sections/BlackoutsSection
 import { LogoutButton } from '@/app/configuracoes/_sections/LogoutButton';
 import { BusinessHoursForm } from '@/app/configuracoes/_sections/BusinessHoursForm';
 import { PrinterSection } from '@/app/configuracoes/_sections/PrinterSection';
+import { PushBroadcastSection } from '@/app/configuracoes/_sections/PushBroadcastSection';
 import { PushSection } from '@/app/configuracoes/_sections/PushSection';
 import { StoreForm } from '@/app/configuracoes/_sections/StoreForm';
 import { adminContainerClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 
-type Tab = 'geral' | 'horarios' | 'dispositivos' | 'seguranca';
+type Tab = 'geral' | 'horarios' | 'dispositivos' | 'marketing' | 'seguranca';
 
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: 'geral', label: 'Geral & Estabelecimento' },
   { id: 'horarios', label: 'Horários & Agendamento' },
   { id: 'dispositivos', label: 'Dispositivos & Impressão' },
+  { id: 'marketing', label: 'Marketing & Avisos' },
   { id: 'seguranca', label: 'Segurança & Acessos' },
 ];
 
@@ -107,6 +109,12 @@ export default function AdminConfiguracoesPage() {
         <div className="space-y-4">
           <PushSection />
           <PrinterSection />
+        </div>
+      ) : null}
+
+      {tab === 'marketing' ? (
+        <div className="space-y-4">
+          <PushBroadcastSection />
         </div>
       ) : null}
 

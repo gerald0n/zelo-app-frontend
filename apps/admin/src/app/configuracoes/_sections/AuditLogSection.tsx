@@ -21,6 +21,7 @@ const AREAS: Array<{ id: string; label: string }> = [
   { id: 'coupon', label: 'Cupons' },
   { id: 'store', label: 'Loja' },
   { id: 'review', label: 'Avaliações' },
+  { id: 'notification', label: 'Notificações' },
 ];
 
 const PERIODS: Array<{ days: number; label: string }> = [
