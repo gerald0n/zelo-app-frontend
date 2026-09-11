@@ -3,6 +3,7 @@ import 'server-only';
 import { unstable_cache } from 'next/cache';
 import { err, ok, type Result } from '@/lib/errors';
 import {
+  BEST_SELLERS_CACHE_TTL_SECONDS,
   CATALOG_CACHE_TAG,
   CATALOG_CACHE_TTL_SECONDS,
   STORE_CACHE_TAG,
@@ -11,6 +12,7 @@ import {
   getPublicCatalog,
   getPublicProductBySlugOrId,
   getPublicStore,
+  listPublicBestSellingProductIds,
   listPublicProducts,
 } from '@/modules/catalog/catalog-repository';
 
@@ -57,6 +59,17 @@ const cachedProducts = unstable_cache(
   { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_TTL_SECONDS },
 );
 
+/** Home do client: sempre olha os últimos 30 dias, sem filtro pro usuário. */
+const BEST_SELLERS_WINDOW_DAYS = 30;
+const BEST_SELLERS_LIMIT = 3;
+
+const cachedBestSellingProductIds = unstable_cache(
+  async () =>
+    listPublicBestSellingProductIds(BEST_SELLERS_WINDOW_DAYS, BEST_SELLERS_LIMIT),
+  ['catalog:best-sellers:30d'],
+  { revalidate: BEST_SELLERS_CACHE_TTL_SECONDS },
+);
+
 const cachedProductBySlugOrId = unstable_cache(
   async (slugOrId: string) => {
     const result = await getPublicProductBySlugOrId(slugOrId);
@@ -85,6 +98,10 @@ export function getCachedPublicCatalog() {
 
 export function getCachedPublicStore() {
   return toResult(() => cachedStore());
+}
+
+export function getCachedBestSellingProductIds() {
+  return cachedBestSellingProductIds();
 }
 
 export function listCachedPublicProducts() {

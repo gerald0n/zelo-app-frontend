@@ -1683,8 +1683,14 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      get_top_selling_products: {
+        Args: { p_limit?: number; p_since: string };
+        Returns: {
+          product_id: string;
+          total_quantity: number;
+        }[];
+      };
       is_admin: { Args: never; Returns: boolean };
-      is_hhmm_list: { Args: { v: string[] }; Returns: boolean };
       preview_coupon: {
         Args: {
           p_code: string;
