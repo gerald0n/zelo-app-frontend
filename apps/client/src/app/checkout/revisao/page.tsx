@@ -92,7 +92,9 @@ export default function RevisaoPage() {
   const couponDiscount = coupon
     ? coupon.discountType === 'free_shipping'
       ? deliveryFee
-      : Math.min(coupon.discountCents, subtotal)
+      : coupon.discountType === 'full_order'
+        ? subtotal + deliveryFee
+        : Math.min(coupon.discountCents, subtotal)
     : 0;
   const total = Math.max(0, subtotal + deliveryFee - couponDiscount);
   const productIds = [...new Set(items.map((item) => item.productId))];

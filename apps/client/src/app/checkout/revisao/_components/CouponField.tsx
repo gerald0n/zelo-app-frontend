@@ -87,7 +87,9 @@ export function CouponField({
           <span className="text-muted-foreground">
             {applied.discountType === 'free_shipping'
               ? '· frete grátis'
-              : `· −${formatCatalogPrice(applied.discountCents)}`}
+              : applied.discountType === 'full_order'
+                ? '· pedido grátis'
+                : `· −${formatCatalogPrice(applied.discountCents)}`}
           </span>
         </span>
         <button

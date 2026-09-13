@@ -46,51 +46,59 @@ Migration: `supabase/migrations/20260904170000_promotions.sql`.
 
 ---
 
-## Cupons (implementado — 2026-09-08)
+## Cupons (implementado — 2026-09-08; tipo `full_order` em 2026-09-12)
 
 **Decisões travadas** (todas seguidas):
-- Tipos: percentual, valor fixo, frete grátis.
-- Incide sobre subtotal de produtos (não sobre frete; "frete grátis" zera o
-  frete).
+- Tipos: percentual, valor fixo, frete grátis, desconto total do pedido
+  (`full_order` — 100% do subtotal + adicionais + frete, zera o total).
+- Incide sobre subtotal de produtos (não sobre frete/adicionais); "frete
+  grátis" zera o frete; "desconto total" zera subtotal + adicionais + frete.
 - Sem acúmulo com promoção: carrinho com item em promoção → cupom recusado.
 - Só limite total de usos (sem limite por cliente até o login por SMS —
   Fase 14 do roadmap).
 - Uso contado junto com a criação do pedido (atômico); cancelamento devolve.
 
-**Implementação** (migration `20260908140000_coupons.sql`):
-- Tabela `public.coupons` (`code` único e uppercase, `discount_type`,
-  `discount_value`, `max_uses`, `uses_count`, `is_active`, período opcional).
-  RLS admin-only. `orders` ganhou `coupon_id`/`coupon_code`/
-  `coupon_discount_cents` e o check `orders_total_consistent` passou a
-  descontar o cupom.
-- `private.claim_coupon(code, subtotal, delivery_fee, has_promo)` — trava a
-  linha (`for update`), valida (ativo, período, `uses_count < max_uses`,
-  sem promo) e **incrementa `uses_count` na mesma transação**; lança em
-  qualquer problema, abortando a criação do pedido. Chamada dentro de
-  `private.create_order` **e** `private.create_manual_order`.
+**Implementação** (migration `20260908140000_coupons.sql`; `full_order`
+adicionado em `20260912120000_coupon_full_order_discount.sql`):
+- Tabela `public.coupons` (`code` único e uppercase, `discount_type` ∈
+  `percent | fixed | free_shipping | full_order`, `discount_value`,
+  `max_uses`, `uses_count`, `is_active`, período opcional). RLS admin-only.
+  `orders` ganhou `coupon_id`/`coupon_code`/`coupon_discount_cents` e o check
+  `orders_total_consistent` passou a descontar o cupom.
+- `private.claim_coupon(code, subtotal, delivery_fee, has_promo,
+  add_ons_total default 0)` — trava a linha (`for update`), valida (ativo,
+  período, `uses_count < max_uses`, sem promo) e **incrementa `uses_count`
+  na mesma transação**; lança em qualquer problema, abortando a criação do
+  pedido. Chamada dentro de `private.create_order` **e**
+  `private.create_manual_order`, ambas passando o total de adicionais (só
+  usado por `full_order`).
 - `has_promo` = algum item com `effective_price_cents < price_cents`.
 - Desconto (`private.coupon_discount_cents`): percent = `round(subtotal *
   v/100)` capado no subtotal; fixed = `min(v, subtotal)`; free_shipping =
-  a taxa de entrega. `total = subtotal + adicionais + frete − desconto`.
+  a taxa de entrega; full_order = `subtotal + adicionais + frete` (zera o
+  pedido). `total = subtotal + adicionais + frete − desconto`.
 - `private.transition_order_status`: ao cancelar, `uses_count = greatest(
   uses_count - 1, 0)` se o pedido tinha cupom.
 - `public.preview_coupon(code, subtotal, delivery_fee, product_ids[])` —
   read-only (não conta uso, resolve `has_promo` sozinha pelos produtos),
   retorna `{ valid, code, discountType, discountCents }` ou
-  `{ valid: false, reason }`. Só pro checkout mostrar o desconto antes.
+  `{ valid: false, reason }`. Só pro checkout mostrar o desconto antes;
+  assinatura não mudou com `full_order` (o `subtotalCents` que o front já
+  manda inclui adicionais, então o preview fecha certo sem parâmetro extra).
 
 **Front:**
 - Cliente: campo de cupom na revisão do checkout
   (`checkout/revisao/_components/CouponField` + `OrderTotals`), chama
   `POST /api/v1/coupons/preview`; o código vai no body do pedido como
-  `couponCode`.
+  `couponCode`. `full_order` mostra "pedido grátis" e zera o total exibido.
 - Comanda manual (`/pedidos/novo`): campo "Cupom (opcional)" na etapa de
-  pagamento.
+  pagamento (só o código — sem preview de tipo/valor).
 - Admin: aba **Cupons** em `/catalogo` (`CouponsTab`), CRUD via
   `POST/PATCH/DELETE /api/v1/admin/coupons`, lista com `usos X/Y`. O detalhe
-  do pedido (modal do kanban) mostra a linha "Cupom … −R$ X".
-- Falta (follow-up): mostrar o cupom no acompanhamento do cliente e no
-  comprovante térmico.
+  do pedido (modal do kanban) mostra a linha "Cupom … −R$ X" (genérico, já
+  cobre `full_order` sem mudança). Comprovante térmico (`buildDeliverySlip`)
+  mostra "Subtotal / Desconto (cupom X) / Entrega / TOTAL" sempre que há
+  desconto — também já cobre `full_order` sem mudança.
 
 **Testado 2026-09-08** (Supabase local, rotas HTTP reais): CRUD admin
 (uppercase, código duplicado → 400, % fora de 1–100 → 400); comanda manual
