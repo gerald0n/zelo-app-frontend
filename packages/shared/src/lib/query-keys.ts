@@ -4,6 +4,12 @@ export const adminKeys = {
   orders: (scope: string, query = '') =>
     [...adminKeys.all, 'orders', scope, query] as const,
   order: (id: string) => [...adminKeys.all, 'order', id] as const,
+  orderHistory: (filters: {
+    q: string;
+    from: string;
+    to: string;
+    page: number;
+  }) => [...adminKeys.all, 'order-history', filters] as const,
   store: () => [...adminKeys.all, 'store'] as const,
   hours: () => [...adminKeys.all, 'hours'] as const,
   blackouts: () => [...adminKeys.all, 'blackouts'] as const,
