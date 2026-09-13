@@ -44,6 +44,30 @@ export function isScheduledPending(order: AdminOrderListItem): boolean {
   return order.timing === 'scheduled' && order.status === 'received';
 }
 
+function isToday(iso: string): boolean {
+  const d = new Date(iso);
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+}
+
+/**
+ * Pedido pertence ao quadro ao vivo. Cancelado não tem coluna própria — sem
+ * este filtro ele não aparece em canto nenhum, mas ainda inflava a contagem
+ * da raia. "Entregue" só fica no quadro no dia em que foi entregue (usa
+ * `updatedAt` como aproximação do momento da entrega, mesma lógica já usada
+ * pro card); o histórico completo mora na tela de Histórico, não aqui — vira
+ * meia-noite e a coluna esvazia sozinha.
+ */
+export function isOnLiveBoard(order: AdminOrderListItem): boolean {
+  if (order.status === 'cancelled') return false;
+  if (order.status === 'delivered') return isToday(order.updatedAt);
+  return true;
+}
+
 export function laneOf(order: AdminOrderListItem): LaneKey {
   return order.deliveryMethod === 'delivery' ? 'delivery' : 'pickup';
 }

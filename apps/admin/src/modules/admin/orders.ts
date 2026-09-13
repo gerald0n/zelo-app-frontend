@@ -24,7 +24,7 @@ export type {
 } from '@/modules/admin/types';
 export { nextAdminStatus } from '@/modules/admin/types';
 
-const LIST_SELECT = `
+export const LIST_SELECT = `
   id,
   order_number,
   status,

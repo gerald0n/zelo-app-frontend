@@ -7,7 +7,8 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { Plus, Search, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { History, Plus, Search, Loader2 } from 'lucide-react';
 import AdminKanbanBoard from '@/components/admin/kanban/AdminKanbanBoard';
 import AdminKanbanMobile from '@/components/admin/kanban/AdminKanbanMobile';
 import AdminOrderDetailModal from '@/components/admin/kanban/AdminOrderDetailModal';
@@ -181,6 +182,14 @@ export default function AdminPedidosPage() {
   return (
     <div className="relative min-h-dvh bg-background lg:h-dvh lg:overflow-hidden">
       <div className="fixed inset-x-3 top-3 z-30 flex items-center gap-2 sm:justify-end lg:inset-x-auto lg:right-8">
+        <Link
+          href="/historico"
+          title="Histórico de pedidos"
+          aria-label="Histórico de pedidos"
+          className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-card/85 text-muted-foreground shadow-lg backdrop-blur transition-colors hover:text-foreground"
+        >
+          <History className="size-4" />
+        </Link>
         <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-card/85 px-4 shadow-lg backdrop-blur sm:w-72 sm:flex-none">
           <Search className="size-4 shrink-0 text-muted-foreground" />
           <Input

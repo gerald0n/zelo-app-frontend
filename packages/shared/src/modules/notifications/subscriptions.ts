@@ -15,10 +15,11 @@ import type {
 } from '@/modules/notifications/types';
 
 /**
- * Avisa o próprio aparelho que a ativação deu certo. Só dispara no insert
- * (assinatura nova) — não no update/reativação — pra não reenviar a cada
- * refresh de last_seen_at. Nunca lança: falha aqui não pode derrubar o
- * cadastro da assinatura.
+ * Avisa o próprio aparelho que a ativação deu certo. Dispara em toda
+ * assinatura nova e em toda reativação (endpoint que tinha `revoked_at`
+ * preenchido) — não no refresh silencioso de `last_seen_at` de uma
+ * assinatura que já estava ativa. Nunca lança: falha aqui não pode derrubar
+ * o cadastro da assinatura.
  */
 function sendActivationWelcomePush(input: PushSubscriptionInput): void {
   if (!hasWebPushConfig()) return;
@@ -54,7 +55,7 @@ export async function upsertPushSubscription(
 
   const { data: existing, error: findError } = await admin
     .from('push_subscriptions')
-    .select('id')
+    .select('id, revoked_at')
     .eq('endpoint', input.endpoint)
     .maybeSingle();
 
@@ -88,6 +89,12 @@ export async function upsertPushSubscription(
         cause: error,
       });
     }
+
+    // Reativação de uma assinatura que tinha sido desativada (endpoint
+    // reaproveitado pelo navegador ao assinar de novo) também conta como
+    // "acabou de ativar" — só o refresh silencioso de `last_seen_at` numa
+    // assinatura já ativa (`revoked_at` já nulo) não deve reenviar.
+    if (existing.revoked_at) sendActivationWelcomePush(input);
 
     return ok({ id: existing.id });
   }
