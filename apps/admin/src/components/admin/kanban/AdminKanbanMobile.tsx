@@ -12,6 +12,7 @@ import {
   columnOf,
   columnShortLabel,
   columnsForLane,
+  isOnLiveBoard,
   laneOf,
 } from '@/lib/admin/kanban-board';
 import AdminOrderCardBody from '@/components/admin/kanban/AdminOrderCardBody';
@@ -48,9 +49,11 @@ export default function AdminKanbanMobile({
   const lane: LaneKey = lanePref === 'delivery' ? 'delivery' : 'pickup';
   const status = (colPref || null) as BoardColumn | null;
 
+  const boardOrders = useMemo(() => orders.filter(isOnLiveBoard), [orders]);
+
   const laneOrders = useMemo(
-    () => orders.filter((order) => laneOf(order) === lane),
-    [orders, lane],
+    () => boardOrders.filter((order) => laneOf(order) === lane),
+    [boardOrders, lane],
   );
 
   const columns = columnsForLane(lane, hideDelivered);
@@ -72,7 +75,7 @@ export default function AdminKanbanMobile({
     <div className="space-y-2.5 px-3 pb-7 pt-16 lg:hidden">
       <div className="flex rounded-md bg-muted p-0.5">
         {LANES.map((item) => {
-          const total = orders.filter(
+          const total = boardOrders.filter(
             (order) => laneOf(order) === item.key,
           ).length;
           return (

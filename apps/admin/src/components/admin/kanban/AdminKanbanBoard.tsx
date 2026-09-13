@@ -14,6 +14,7 @@ import {
   boardColumnForStatus,
   columnOf,
   columnsForLane,
+  isOnLiveBoard,
   laneOf,
 } from '@/lib/admin/kanban-board';
 import AdminOrderCardBody from '@/components/admin/kanban/AdminOrderCardBody';
@@ -105,14 +106,16 @@ export default function AdminKanbanBoard({
     onOpenOrder(order.id);
   }
 
+  const boardOrders = useMemo(() => orders.filter(isOnLiveBoard), [orders]);
+
   const lanes = useMemo(
     () =>
       LANES.map((lane) => ({
         ...lane,
         columns: columnsForLane(lane.key, hideDelivered),
-        ...laneBuckets(orders, lane.key, displayStatusFor),
+        ...laneBuckets(boardOrders, lane.key, displayStatusFor),
       })),
-    [orders, hideDelivered, displayStatusFor],
+    [boardOrders, hideDelivered, displayStatusFor],
   );
 
   function columnAt(x: number, y: number): string | null {
