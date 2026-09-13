@@ -84,24 +84,19 @@ export function PushPermissionPrompt() {
 
   return (
     <div
-      className="fixed inset-0 z-[1100] flex items-end justify-center sm:items-center"
+      className="fixed inset-0 z-[1100] flex items-center justify-center"
       role="presentation"
     >
-      <button
-        type="button"
-        aria-label="Fechar"
-        className="absolute inset-0 bg-foreground/25"
-        onClick={dismiss}
-      />
+      {/* Decorativo só — clicar fora não fecha, só "Ativar", "Agora não" ou o X. */}
+      <div aria-hidden="true" className="absolute inset-0 bg-foreground/25" />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="push-prompt-title"
         aria-describedby="push-prompt-desc"
         className={cn(
-          'relative z-10 mx-3 mb-[max(0.75rem,env(safe-area-inset-bottom))] w-full max-w-md',
+          'relative z-10 mx-3 w-full max-w-md',
           'rounded-2xl border border-border bg-card p-5 shadow-xl',
-          'sm:mb-0',
         )}
       >
         <button
