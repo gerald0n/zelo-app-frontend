@@ -28,6 +28,10 @@ export function IdentificationFields({ form }: FieldProps) {
     name: 'deliveryMethod',
   });
   const timing = useWatch({ control: form.control, name: 'timing' });
+  const noGuestPhone = useWatch({
+    control: form.control,
+    name: 'noGuestPhone',
+  });
   const e = form.formState.errors;
 
   return (
@@ -44,13 +48,20 @@ export function IdentificationFields({ form }: FieldProps) {
           <Input
             {...form.register('guestPhone')}
             placeholder="(88) 99999-9999"
+            disabled={noGuestPhone}
             className={field}
           />
           <ErrorText message={e.guestPhone?.message} />
         </Label>
-        <p className="text-2xs text-muted-foreground">
-          Se o telefone já tem conta, o pedido é vinculado a ela.
-        </p>
+        <Label className="inline-flex items-center gap-2 text-xs font-semibold">
+          <input type="checkbox" {...form.register('noGuestPhone')} />
+          Cliente não informou telefone
+        </Label>
+        {!noGuestPhone ? (
+          <p className="text-2xs text-muted-foreground">
+            Se o telefone já tem conta, o pedido é vinculado a ela.
+          </p>
+        ) : null}
       </section>
 
       <section className={card}>

@@ -46,7 +46,8 @@ export type AdminOrderDetail = CustomerOrder & {
   /** Presente só quando `isGuest` — nome/telefone digitados na comanda manual. */
   guest: {
     name: string;
-    phoneE164: string;
+    /** Telefone é opcional na comanda manual. */
+    phoneE164: string | null;
   } | null;
   isGuest: boolean;
 };

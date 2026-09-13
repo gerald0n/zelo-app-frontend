@@ -295,7 +295,7 @@ export async function getAdminOrder(
         }
       : null,
     guest:
-      !customer && data.guest_name && data.guest_phone_e164
+      !customer && data.guest_name
         ? { name: data.guest_name, phoneE164: data.guest_phone_e164 }
         : null,
     isGuest: !customer,

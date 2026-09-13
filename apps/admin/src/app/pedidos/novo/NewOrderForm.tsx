@@ -37,6 +37,7 @@ const DRAFT_KEY = 'zelo:comanda-draft';
 const DEFAULTS: ManualOrderForm = {
   guestName: '',
   guestPhone: '',
+  noGuestPhone: false,
   deliveryMethod: 'pickup',
   street: '',
   number: '',
@@ -217,7 +218,7 @@ export function NewOrderForm({ enabled = true, onCreated, onCancel }: Props) {
             <p className="truncate text-sm font-semibold">
               {guestName || 'Cliente'}{' '}
               <span className="text-2xs font-normal text-muted-foreground">
-                {guestPhone}
+                {guestPhone || 'sem telefone'}
               </span>
             </p>
             <p className="text-2xs text-muted-foreground">

@@ -15,7 +15,8 @@ export type CatalogResponse = {
 export const manualOrderSchema = z
   .object({
     guestName: z.string().trim().min(1, 'Informe o nome.'),
-    guestPhone: z.string().trim().min(8, 'Telefone inválido.'),
+    guestPhone: z.string().trim().optional(),
+    noGuestPhone: z.boolean(),
     deliveryMethod: z.enum(['pickup', 'delivery']),
     street: z.string().trim().optional(),
     number: z.string().trim().optional(),
@@ -34,6 +35,16 @@ export const manualOrderSchema = z
     couponCode: z.string().trim().optional(),
   })
   .superRefine((value, ctx) => {
+    if (
+      !value.noGuestPhone &&
+      (!value.guestPhone || value.guestPhone.length < 8)
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Telefone inválido.',
+        path: ['guestPhone'],
+      });
+    }
     if (value.deliveryMethod === 'delivery') {
       const required: Array<[keyof typeof value, string]> = [
         ['street', 'Informe a rua.'],
@@ -106,7 +117,7 @@ export function buildManualOrderPayload(
 ) {
   return {
     guestName: values.guestName,
-    guestPhone: values.guestPhone,
+    guestPhone: values.noGuestPhone ? null : values.guestPhone,
     items: items.map((item) => ({
       productId: item.productId,
       quantity: item.quantity,
