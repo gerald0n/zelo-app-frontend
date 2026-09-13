@@ -31,7 +31,7 @@ const addressSchema = z.object({
 });
 
 const createManualOrderSchema = z.object({
-  guestPhone: z.string().trim().min(8),
+  guestPhone: z.string().trim().min(8).nullable().optional(),
   guestName: z.string().trim().min(1).max(120),
   items: z.array(itemSchema).min(1),
   deliveryMethod: z.enum(['pickup', 'delivery']),
@@ -82,17 +82,20 @@ export async function POST(request: Request) {
     );
   }
 
-  const guestPhoneE164 = toPhoneE164(parsed.data.guestPhone);
-  if (!guestPhoneE164) {
-    return NextResponse.json(
-      {
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Telefone inválido.',
+  let guestPhoneE164: string | null = null;
+  if (parsed.data.guestPhone) {
+    guestPhoneE164 = toPhoneE164(parsed.data.guestPhone);
+    if (!guestPhoneE164) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Telefone inválido.',
+          },
         },
-      },
-      { status: 400 },
-    );
+        { status: 400 },
+      );
+    }
   }
 
   const result = await createManualAdminOrder({

@@ -9,7 +9,7 @@ import type { AdminOrderDetail } from '@/modules/admin/types';
 
 export async function createManualAdminOrder(input: {
   guestName: string;
-  guestPhoneE164: string;
+  guestPhoneE164: string | null;
   items: Array<{
     productId: string;
     quantity: number;
