@@ -61,11 +61,21 @@ const cachedProducts = unstable_cache(
 
 /** Home do client: sempre olha os últimos 30 dias, sem filtro pro usuário. */
 const BEST_SELLERS_WINDOW_DAYS = 30;
-const BEST_SELLERS_LIMIT = 3;
+/**
+ * Busca mais do que os 3 exibidos: o ranking vem só do histórico de vendas,
+ * sem saber se o produto segue ativo/disponível. `HomeCatalog` filtra os
+ * indisponíveis e corta pros 3 primeiros — essa margem garante que sobre
+ * candidato (4º, 5º lugar…) pra completar o pódio quando um dos 3 primeiros
+ * for desativado.
+ */
+const BEST_SELLERS_FETCH_LIMIT = 10;
 
 const cachedBestSellingProductIds = unstable_cache(
   async () =>
-    listPublicBestSellingProductIds(BEST_SELLERS_WINDOW_DAYS, BEST_SELLERS_LIMIT),
+    listPublicBestSellingProductIds(
+      BEST_SELLERS_WINDOW_DAYS,
+      BEST_SELLERS_FETCH_LIMIT,
+    ),
   ['catalog:best-sellers:30d'],
   { revalidate: BEST_SELLERS_CACHE_TTL_SECONDS },
 );
