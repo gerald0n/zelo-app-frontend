@@ -115,7 +115,9 @@ export function OrderDetailMain({ order }: { order: AdminOrderDetail }) {
           </p>
         ) : order.guest ? (
           <p className="text-xs text-muted-foreground">
-            Cliente: {order.guest.name} · {order.guest.phoneE164} · Avulso
+            Cliente: {order.guest.name}
+            {order.guest.phoneE164 ? ` · ${order.guest.phoneE164}` : ''} ·
+            Avulso
           </p>
         ) : null}
       </section>
@@ -155,7 +157,9 @@ export function OrderDetailMain({ order }: { order: AdminOrderDetail }) {
                 className="flex items-start justify-between gap-3 text-xs"
               >
                 <div>
-                  <p className="font-semibold">{statusLabel(entry.newStatus)}</p>
+                  <p className="font-semibold">
+                    {statusLabel(entry.newStatus)}
+                  </p>
                   {entry.reason ? (
                     <p className="mt-0.5 text-2xs text-muted-foreground">
                       {entry.reason}
