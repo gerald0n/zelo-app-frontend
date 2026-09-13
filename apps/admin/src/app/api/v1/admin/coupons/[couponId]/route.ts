@@ -9,7 +9,9 @@ type RouteContext = { params: Promise<{ couponId: string }> };
 
 const patchSchema = z.object({
   code: z.string().trim().min(3).max(32).optional(),
-  discountType: z.enum(['percent', 'fixed', 'free_shipping']).optional(),
+  discountType: z
+    .enum(['percent', 'fixed', 'free_shipping', 'full_order'])
+    .optional(),
   discountValue: z.number().int().min(0).max(1_000_000).optional(),
   maxUses: z.number().int().min(1).max(1_000_000).optional(),
   isActive: z.boolean().optional(),

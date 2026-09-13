@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 const createSchema = z.object({
   code: z.string().trim().min(3).max(32),
-  discountType: z.enum(['percent', 'fixed', 'free_shipping']),
+  discountType: z.enum(['percent', 'fixed', 'free_shipping', 'full_order']),
   discountValue: z.number().int().min(0).max(1_000_000),
   maxUses: z.number().int().min(1).max(1_000_000),
   isActive: z.boolean().optional(),
