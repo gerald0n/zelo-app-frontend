@@ -16,6 +16,7 @@ import {
   buildManualOrderPayload,
   draftSubtotalCents,
   manualOrderSchema,
+  reaisToCents,
   type CatalogResponse,
   type ManualOrderForm,
 } from '@/app/pedidos/novo/nova-comanda-form';
@@ -24,6 +25,8 @@ import {
   IdentificationFields,
   PaymentFields,
 } from '@/app/pedidos/novo/NewOrderFields';
+import type { AppliedManualOrderCoupon } from '@/app/pedidos/novo/_components/ManualOrderCouponField';
+import { ManualOrderTotalsSummary } from '@/app/pedidos/novo/_components/ManualOrderTotalsSummary';
 
 type Props = {
   enabled?: boolean;
@@ -53,7 +56,6 @@ const DEFAULTS: ManualOrderForm = {
   alreadyPaid: false,
   source: 'balcao',
   customerNote: '',
-  couponCode: '',
 };
 
 function readDraft(): Draft | null {
@@ -81,6 +83,7 @@ export function NewOrderForm({ enabled = true, onCreated, onCancel }: Props) {
   const [items, setItems] = useState<ManualOrderItemDraft[]>(
     () => draft?.items ?? [],
   );
+  const [coupon, setCoupon] = useState<AppliedManualOrderCoupon | null>(null);
   const [formError, setFormError] = useState('');
 
   const catalogQuery = useQuery({
@@ -95,23 +98,32 @@ export function NewOrderForm({ enabled = true, onCreated, onCancel }: Props) {
     resolver: zodResolver(manualOrderSchema),
     defaultValues: draft?.values ?? DEFAULTS,
   });
-  const [deliveryMethod, timing, paymentMethod, guestName, guestPhone] =
-    useWatch({
-      control: form.control,
-      name: [
-        'deliveryMethod',
-        'timing',
-        'paymentMethod',
-        'guestName',
-        'guestPhone',
-      ],
-    });
+  const [
+    deliveryMethod,
+    timing,
+    paymentMethod,
+    guestName,
+    guestPhone,
+    deliveryFeeReais,
+  ] = useWatch({
+    control: form.control,
+    name: [
+      'deliveryMethod',
+      'timing',
+      'paymentMethod',
+      'guestName',
+      'guestPhone',
+      'deliveryFeeReais',
+    ],
+  });
 
   const mutation = useMutation({
     mutationFn: (values: ManualOrderForm) =>
       apiJson<{ order: { id: string } }>('/api/v1/admin/orders', {
         method: 'POST',
-        body: JSON.stringify(buildManualOrderPayload(values, items)),
+        body: JSON.stringify(
+          buildManualOrderPayload(values, items, coupon?.code ?? null),
+        ),
       }),
     onSuccess: async (data) => {
       try {
@@ -119,6 +131,7 @@ export function NewOrderForm({ enabled = true, onCreated, onCancel }: Props) {
       } catch {
         // ignore
       }
+      setCoupon(null);
       await queryClient.invalidateQueries({
         queryKey: [...adminKeys.all, 'orders'],
       });
@@ -132,6 +145,20 @@ export function NewOrderForm({ enabled = true, onCreated, onCancel }: Props) {
   });
 
   const subtotalCents = draftSubtotalCents(items, products, addons);
+  const deliveryFeeCents =
+    deliveryMethod === 'delivery' ? reaisToCents(deliveryFeeReais || 0) : 0;
+  const couponDiscountCents = coupon
+    ? coupon.discountType === 'free_shipping'
+      ? deliveryFeeCents
+      : coupon.discountType === 'full_order'
+        ? subtotalCents + deliveryFeeCents
+        : Math.min(coupon.discountCents, subtotalCents)
+    : 0;
+  const totalCents = Math.max(
+    0,
+    subtotalCents + deliveryFeeCents - couponDiscountCents,
+  );
+  const productIds = [...new Set(items.map((item) => item.productId))];
 
   const handleNext = form.handleSubmit(
     (values) => {
@@ -167,15 +194,6 @@ export function NewOrderForm({ enabled = true, onCreated, onCancel }: Props) {
     onCancel();
   };
 
-  const addQuick = (productId: string) =>
-    setItems((prev) => [
-      ...prev,
-      { productId, quantity: 1, customerNote: '', addOnIds: [] },
-    ]);
-
-  const shortcuts = products
-    .filter((p) => p.isActive && p.stockQuantity !== 0)
-    .slice(0, 4);
   const modeBadge = `${deliveryMethod === 'delivery' ? 'Entrega' : 'Balcão'} / ${
     timing === 'immediate' ? 'Imediato' : 'Agendado'
   }`;
@@ -250,23 +268,6 @@ export function NewOrderForm({ enabled = true, onCreated, onCancel }: Props) {
               {items.length} {items.length === 1 ? 'item' : 'itens'}
             </span>
           </div>
-          {shortcuts.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-2xs font-semibold text-muted-foreground">
-                Atalhos:
-              </span>
-              {shortcuts.map((product) => (
-                <button
-                  key={product.id}
-                  type="button"
-                  onClick={() => addQuick(product.id)}
-                  className="rounded-full border border-border px-2.5 py-1 text-2xs font-semibold transition-colors hover:bg-accent"
-                >
-                  + {product.name}
-                </button>
-              ))}
-            </div>
-          ) : null}
           {catalogQuery.isLoading ? (
             <Loader2 className="size-4 animate-spin text-muted-foreground" />
           ) : (
@@ -282,19 +283,23 @@ export function NewOrderForm({ enabled = true, onCreated, onCancel }: Props) {
 
       {step === 3 ? (
         <div className="space-y-3">
-          <PaymentFields form={form} />
-          <div className="space-y-1 rounded-xl border border-border bg-card p-3.5 text-xs">
-            <div className="flex justify-between text-muted-foreground">
-              <span>Subtotal ({items.length} itens)</span>
-              <span>{formatCatalogPrice(subtotalCents)}</span>
-            </div>
-            <div className="flex justify-between border-t border-border pt-1.5 text-sm font-bold">
-              <span>Total previsto</span>
-              <span className="text-primary">
-                {formatCatalogPrice(subtotalCents)}
-              </span>
-            </div>
-          </div>
+          <PaymentFields
+            form={form}
+            subtotalCents={subtotalCents}
+            deliveryFeeCents={deliveryFeeCents}
+            productIds={productIds}
+            appliedCoupon={coupon}
+            onCouponChange={setCoupon}
+          />
+          <ManualOrderTotalsSummary
+            itemCount={items.length}
+            subtotalCents={subtotalCents}
+            deliveryFeeCents={deliveryFeeCents}
+            showDelivery={deliveryMethod === 'delivery'}
+            coupon={coupon}
+            couponDiscountCents={couponDiscountCents}
+            totalCents={totalCents}
+          />
         </div>
       ) : null}
 
