@@ -32,7 +32,6 @@ export const manualOrderSchema = z
     alreadyPaid: z.boolean(),
     source: z.enum(['balcao', 'whatsapp', 'instagram']),
     customerNote: z.string().trim().optional(),
-    couponCode: z.string().trim().optional(),
   })
   .superRefine((value, ctx) => {
     if (
@@ -70,7 +69,7 @@ export const manualOrderSchema = z
 
 export type ManualOrderForm = z.infer<typeof manualOrderSchema>;
 
-function reaisToCents(value: number) {
+export function reaisToCents(value: number) {
   return Math.round(value * 100);
 }
 
@@ -114,6 +113,7 @@ function noteWithSource(values: ManualOrderForm): string | null {
 export function buildManualOrderPayload(
   values: ManualOrderForm,
   items: ManualOrderItemDraft[],
+  couponCode: string | null,
 ) {
   return {
     guestName: values.guestName,
@@ -149,6 +149,6 @@ export function buildManualOrderPayload(
     paymentMethod: values.paymentMethod,
     alreadyPaid: values.alreadyPaid,
     customerNote: noteWithSource(values),
-    couponCode: values.couponCode?.trim().toUpperCase() || null,
+    couponCode: couponCode ? couponCode.trim().toUpperCase() : null,
   };
 }
