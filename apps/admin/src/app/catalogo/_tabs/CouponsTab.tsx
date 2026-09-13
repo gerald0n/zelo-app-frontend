@@ -22,6 +22,7 @@ const TYPE_LABEL: Record<CouponDiscountType, string> = {
   percent: 'Percentual',
   fixed: 'Valor fixo',
   free_shipping: 'Frete grátis',
+  full_order: 'Desconto total do pedido',
 };
 
 type FormState = {
@@ -172,9 +173,11 @@ export function CouponsTab({ coupons, invalidateCatalog, onError }: Props) {
                 <option value="percent">Percentual</option>
                 <option value="fixed">Valor fixo (R$)</option>
                 <option value="free_shipping">Frete grátis</option>
+                <option value="full_order">Desconto total do pedido</option>
               </select>
             </label>
-            {form.discountType !== 'free_shipping' ? (
+            {form.discountType !== 'free_shipping' &&
+            form.discountType !== 'full_order' ? (
               <Label className="block text-xs font-semibold">
                 {form.discountType === 'percent'
                   ? 'Desconto (%)'

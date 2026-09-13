@@ -127,13 +127,14 @@ export type AdminBlackout = {
   reason: string | null;
 };
 
-export type CouponDiscountType = 'percent' | 'fixed' | 'free_shipping';
+export type CouponDiscountType =
+  'percent' | 'fixed' | 'free_shipping' | 'full_order';
 
 export type AdminCoupon = {
   id: string;
   code: string;
   discountType: CouponDiscountType;
-  /** percent: 1..100 · fixed: centavos · free_shipping: 0 */
+  /** percent: 1..100 · fixed: centavos · free_shipping/full_order: 0 */
   discountValue: number;
   maxUses: number;
   usesCount: number;
