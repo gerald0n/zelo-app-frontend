@@ -5,6 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { ManualOrderForm } from '@/app/pedidos/novo/nova-comanda-form';
 import { DeliveryFields } from '@/app/pedidos/novo/_components/DeliveryFields';
+import {
+  ManualOrderCouponField,
+  type AppliedManualOrderCoupon,
+} from '@/app/pedidos/novo/_components/ManualOrderCouponField';
 
 type FieldProps = { form: UseFormReturn<ManualOrderForm> };
 
@@ -107,8 +111,23 @@ export function IdentificationFields({ form }: FieldProps) {
   );
 }
 
-/** Passo 3 — forma de pagamento e observação. */
-export function PaymentFields({ form }: FieldProps) {
+type PaymentFieldsProps = FieldProps & {
+  subtotalCents: number;
+  deliveryFeeCents: number;
+  productIds: string[];
+  appliedCoupon: AppliedManualOrderCoupon | null;
+  onCouponChange: (coupon: AppliedManualOrderCoupon | null) => void;
+};
+
+/** Passo 3 — forma de pagamento, cupom e observação. */
+export function PaymentFields({
+  form,
+  subtotalCents,
+  deliveryFeeCents,
+  productIds,
+  appliedCoupon,
+  onCouponChange,
+}: PaymentFieldsProps) {
   return (
     <section className={card}>
       <p className={heading}>Pagamento</p>
@@ -123,14 +142,13 @@ export function PaymentFields({ form }: FieldProps) {
         <input type="checkbox" {...form.register('alreadyPaid')} />
         Pagamento já confirmado
       </Label>
-      <Label className="block text-xs font-semibold">
-        Cupom (opcional)
-        <Input
-          {...form.register('couponCode')}
-          placeholder="BOLO10"
-          className={`${field} uppercase`}
-        />
-      </Label>
+      <ManualOrderCouponField
+        subtotalCents={subtotalCents}
+        deliveryFeeCents={deliveryFeeCents}
+        productIds={productIds}
+        applied={appliedCoupon}
+        onChange={onCouponChange}
+      />
       <Label className="block text-xs font-semibold">
         Observação da comanda (opcional)
         <Input {...form.register('customerNote')} className={field} />

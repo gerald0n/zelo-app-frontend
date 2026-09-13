@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Minus, Plus, X } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Minus, Plus, Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/cn';
 import { formatCatalogPrice } from '@/modules/catalog/types';
@@ -21,28 +21,37 @@ type Props = {
   onChange: (items: ManualOrderItemDraft[]) => void;
 };
 
+/** Ignora acento/caixa pra busca ("cafe" acha "Café"). */
+function normalize(value: string): string {
+  return value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+const MAX_RESULTS = 12;
+
 export default function AdminManualOrderItemPicker({
   products,
   addons,
   items,
   onChange,
 }: Props) {
-  const [selectedProductId, setSelectedProductId] = useState('');
+  const [query, setQuery] = useState('');
   const productById = new Map(products.map((product) => [product.id, product]));
   const addonById = new Map(addons.map((addon) => [addon.id, addon]));
 
-  const addItem = () => {
-    if (!selectedProductId) return;
+  const results = useMemo(() => {
+    const active = products.filter((p) => p.isActive);
+    const q = normalize(query.trim());
+    const matches = q
+      ? active.filter((p) => normalize(p.name).includes(q))
+      : [...active].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+    return matches.slice(0, MAX_RESULTS);
+  }, [products, query]);
+
+  const addItem = (productId: string) => {
     onChange([
       ...items,
-      {
-        productId: selectedProductId,
-        quantity: 1,
-        customerNote: '',
-        addOnIds: [],
-      },
+      { productId, quantity: 1, customerNote: '', addOnIds: [] },
     ]);
-    setSelectedProductId('');
   };
 
   const updateItem = (index: number, patch: Partial<ManualOrderItemDraft>) => {
@@ -77,31 +86,53 @@ export default function AdminManualOrderItemPicker({
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-2">
-        <select
-          value={selectedProductId}
-          onChange={(e) => setSelectedProductId(e.target.value)}
-          className="h-10 flex-1 rounded-md border border-border px-3 text-sm"
-        >
-          <option value="">Selecione um produto</option>
-          {products
-            .filter((product) => product.isActive)
-            .map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.name} · {formatCatalogPrice(product.priceCents)}
-                {product.stockQuantity === 0 ? ' (esgotado)' : ''}
-              </option>
-            ))}
-        </select>
-        <button
-          type="button"
-          onClick={addItem}
-          disabled={!selectedProductId}
-          className="flex shrink-0 items-center justify-center rounded-md bg-primary px-3 py-2 text-white disabled:opacity-50"
-          aria-label="Adicionar item"
-        >
-          <Plus className="size-4" />
-        </button>
+      <div className="space-y-1.5">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar produto pelo nome…"
+            className="h-10 w-full rounded-md border border-border pl-9 pr-3 text-sm"
+          />
+        </div>
+
+        <div className="max-h-64 divide-y divide-border overflow-y-auto rounded-lg border border-border">
+          {results.length === 0 ? (
+            <p className="px-3 py-4 text-center text-xs text-muted-foreground">
+              Nenhum produto encontrado.
+            </p>
+          ) : (
+            results.map((product) => {
+              const outOfStock = product.stockQuantity === 0;
+              return (
+                <button
+                  key={product.id}
+                  type="button"
+                  onClick={() => addItem(product.id)}
+                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-accent"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">
+                      {product.name}
+                    </p>
+                    <p className="truncate text-2xs text-muted-foreground">
+                      {product.categoryName}
+                      {outOfStock ? ' · Esgotado' : ''}
+                      {!product.isAvailable && !outOfStock
+                        ? ' · Indisponível'
+                        : ''}
+                    </p>
+                  </div>
+                  <span className="flex shrink-0 items-center gap-1.5 text-xs font-semibold">
+                    {formatCatalogPrice(product.priceCents)}
+                    <Plus className="size-3.5 text-primary" />
+                  </span>
+                </button>
+              );
+            })
+          )}
+        </div>
       </div>
 
       {items.length === 0 ? (
