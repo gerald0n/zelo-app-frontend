@@ -71,7 +71,10 @@ function normalize(input: CouponInput): Result<CouponInput> {
     code,
     discountType: input.discountType,
     discountValue:
-      input.discountType === 'free_shipping' ? 0 : input.discountValue,
+      input.discountType === 'free_shipping' ||
+      input.discountType === 'full_order'
+        ? 0
+        : input.discountValue,
     maxUses: input.maxUses,
     isActive: input.isActive,
     startsAt,

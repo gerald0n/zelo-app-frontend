@@ -14,7 +14,8 @@ export const couponPreviewSchema = z.object({
 
 export type CouponPreviewInput = z.infer<typeof couponPreviewSchema>;
 
-export type CouponDiscountType = 'percent' | 'fixed' | 'free_shipping';
+export type CouponDiscountType =
+  'percent' | 'fixed' | 'free_shipping' | 'full_order';
 
 export type CouponPreview =
   | {
