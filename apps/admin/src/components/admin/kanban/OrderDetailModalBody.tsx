@@ -1,10 +1,11 @@
-import type { ReactNode } from 'react';
-import { ArrowRight, Loader2, Printer, X } from 'lucide-react';
+import { type ReactNode, useState } from 'react';
+import { ArrowRight, Check, Copy, Loader2, Printer, X } from 'lucide-react';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import { statusLabel } from '@/modules/orders/types';
 import { nextAdminStatus, type AdminOrderDetail } from '@/modules/admin/types';
 import OrderTimeline, { clock } from '@/components/admin/kanban/OrderTimeline';
 import WhatsappNotifyButton from '@/components/admin/WhatsappNotifyButton';
+import { buildOrderSummaryText } from '@/lib/admin/order-summary';
 import { cn } from '@/lib/cn';
 
 type Props = {
@@ -54,6 +55,7 @@ export default function OrderDetailModalBody({
   onReprintTicket,
   onClose,
 }: Props) {
+  const [copied, setCopied] = useState(false);
   const next = nextAdminStatus(order.status, order.deliveryMethod);
   const customer = order.customer ?? order.guest;
   const terminal = order.status === 'delivered' || order.status === 'cancelled';
@@ -77,6 +79,16 @@ export default function OrderDetailModalBody({
     order.deliveryMethod === 'delivery'
       ? 'Entrega'
       : 'Taxa de conveniência / embalagem';
+
+  const copySummary = async () => {
+    try {
+      await navigator.clipboard.writeText(buildOrderSummaryText(order));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Sem permissão de clipboard — nada a fazer além de deixar o botão mudo.
+    }
+  };
 
   return (
     <>
@@ -278,6 +290,18 @@ export default function OrderDetailModalBody({
           >
             <Printer className="size-3.5" />
             Imprimir comanda
+          </button>
+          <button
+            type="button"
+            onClick={copySummary}
+            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-semibold transition-colors hover:bg-accent"
+          >
+            {copied ? (
+              <Check className="size-3.5" />
+            ) : (
+              <Copy className="size-3.5" />
+            )}
+            {copied ? 'Copiado!' : 'Copiar resumo'}
           </button>
           {!terminal ? (
             <button
