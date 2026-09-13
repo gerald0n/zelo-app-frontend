@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { after } from 'next/server';
 import { hasWebPushConfig } from '@/config/env';
 import { err, ok, type Result } from '@/lib/errors';
 import { logger } from '@/lib/logger';
@@ -20,25 +21,33 @@ import type {
  * preenchido) — não no refresh silencioso de `last_seen_at` de uma
  * assinatura que já estava ativa. Nunca lança: falha aqui não pode derrubar
  * o cadastro da assinatura.
+ *
+ * Precisa do `after()`: sem ele o envio (fire-and-forget, sem `await`) corria
+ * risco de ser cancelado pela runtime serverless assim que a resposta do
+ * POST /push/subscriptions fosse devolvida — a primeira ativação de cada
+ * assinatura nova era a mais afetada, já que não havia nenhum outro I/O
+ * pendente na invocação segurando o processo vivo.
  */
 function sendActivationWelcomePush(input: PushSubscriptionInput): void {
   if (!hasWebPushConfig()) return;
 
-  sendWebPushNotification({
-    endpoint: input.endpoint,
-    p256dh: input.keys.p256dh,
-    auth: input.keys.auth,
-    payload: {
-      title: 'Zelo · Notificações ativadas 🎉',
-      body: 'Agora você recebe avisos por aqui sobre o andamento dos seus pedidos.',
-      url: '/conta/notificacoes',
-      tag: 'push-welcome',
-    },
-  }).catch((error) => {
-    logger.warn('Push: falha ao enviar boas-vindas de ativação', {
-      message: error instanceof Error ? error.message : String(error),
-    });
-  });
+  after(() =>
+    sendWebPushNotification({
+      endpoint: input.endpoint,
+      p256dh: input.keys.p256dh,
+      auth: input.keys.auth,
+      payload: {
+        title: 'Zelo · Notificações ativadas 🎉',
+        body: 'Agora você recebe avisos por aqui sobre o andamento dos seus pedidos.',
+        url: '/conta/notificacoes',
+        tag: 'push-welcome',
+      },
+    }).catch((error) => {
+      logger.warn('Push: falha ao enviar boas-vindas de ativação', {
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }),
+  );
 }
 
 export async function upsertPushSubscription(
