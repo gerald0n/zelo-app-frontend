@@ -4,6 +4,8 @@ import { Bike, CreditCard, ShoppingBag } from 'lucide-react';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import { statusLabel } from '@/modules/orders/types';
 import type { AdminOrderDetail } from '@/modules/admin/types';
+import { deliveryLocationLabel } from '@/lib/admin/order-address';
+import { DeliveryLocationMeta } from '@/components/admin/DeliveryLocationMeta';
 
 function formatClock(iso: string) {
   return new Date(iso).toLocaleTimeString('pt-BR', {
@@ -65,12 +67,17 @@ export function OrderDetailMain({ order }: { order: AdminOrderDetail }) {
               {order.deliveryMethod === 'delivery' ? 'Entrega' : 'Retirada'}
             </p>
             <p className="mt-0.5 text-xs">
-              {order.address?.formatted ?? 'Retirada na Zelo'}
+              {order.address
+                ? deliveryLocationLabel(order.address)
+                : 'Retirada na Zelo'}
             </p>
             {order.address?.referencePoint ? (
               <p className="mt-0.5 text-2xs text-muted-foreground">
                 Referência: {order.address.referencePoint}
               </p>
+            ) : null}
+            {order.deliveryMethod === 'delivery' ? (
+              <DeliveryLocationMeta order={order} />
             ) : null}
             {order.scheduledFor ? (
               <p className="mt-0.5 text-2xs text-muted-foreground">

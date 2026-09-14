@@ -20,10 +20,13 @@ export function useDeliveryQuote() {
   } = useCheckout();
 
   const details = checkout.addressDetails;
+  // Rua+número preenchidos OU coordenada já confirmada (GPS/pin) — o texto
+  // não é mais pré-requisito único quando o cliente já apontou o local no
+  // mapa (ex.: rua não reconhecida pelo Google).
   const canQuote =
     checkout.deliveryType === 'delivery' &&
-    details.street.trim().length > 1 &&
-    details.number.trim().length > 0;
+    ((details.street.trim().length > 1 && details.number.trim().length > 0) ||
+      (details.latitude != null && details.longitude != null));
 
   const [quoting, setQuoting] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);

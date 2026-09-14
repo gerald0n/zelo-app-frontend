@@ -74,6 +74,12 @@ export function toRpcPayload(
             reference_point: delivery.address.referencePoint ?? null,
             latitude: delivery.address.latitude,
             longitude: delivery.address.longitude,
+            location_source: delivery.address.locationSource ?? null,
+            location_accuracy_meters:
+              delivery.address.locationAccuracyMeters ?? null,
+            google_formatted_address:
+              delivery.address.formattedAddress ?? null,
+            location_diverged: delivery.address.locationDiverged ?? false,
           }
         : null,
     items: body.items.map((item) => ({

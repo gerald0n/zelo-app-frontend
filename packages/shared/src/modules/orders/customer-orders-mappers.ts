@@ -5,6 +5,24 @@ import {
   type OrderStatus,
 } from '@/modules/orders/types';
 import { mapReviewRow, type ReviewStatus } from '@/modules/reviews/types';
+import type { LocationSource } from '@/modules/delivery/geo';
+
+type OrderAddressRow = {
+  street: string;
+  number: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  complement: string | null;
+  reference_point: string | null;
+  route_distance_meters: number;
+  latitude: number | string | null;
+  longitude: number | string | null;
+  location_source: LocationSource | null;
+  location_accuracy_meters: number | string | null;
+  location_diverged: boolean | null;
+  google_formatted_address: string | null;
+};
 
 export const ORDER_LIST_SELECT = `
   id,
@@ -58,7 +76,13 @@ export const ORDER_DETAIL_SELECT = `
     state,
     complement,
     reference_point,
-    route_distance_meters
+    route_distance_meters,
+    latitude,
+    longitude,
+    location_source,
+    location_accuracy_meters,
+    location_diverged,
+    google_formatted_address
   ),
   order_items (
     id,
@@ -175,26 +199,8 @@ export function mapDetail(row: {
   created_at: string;
   updated_at: string;
   order_addresses:
-    | {
-        street: string;
-        number: string;
-        neighborhood: string;
-        city: string;
-        state: string;
-        complement: string | null;
-        reference_point: string | null;
-        route_distance_meters: number;
-      }
-    | Array<{
-        street: string;
-        number: string;
-        neighborhood: string;
-        city: string;
-        state: string;
-        complement: string | null;
-        reference_point: string | null;
-        route_distance_meters: number;
-      }>
+    | OrderAddressRow
+    | Array<OrderAddressRow>
     | null;
   order_items:
     | Array<{
@@ -282,6 +288,19 @@ export function mapDetail(row: {
           referencePoint: addressRaw.reference_point,
           formatted: formatAddress(addressRaw),
           routeDistanceMeters: addressRaw.route_distance_meters,
+          latitude:
+            addressRaw.latitude != null ? Number(addressRaw.latitude) : null,
+          longitude:
+            addressRaw.longitude != null
+              ? Number(addressRaw.longitude)
+              : null,
+          locationSource: addressRaw.location_source,
+          locationAccuracyMeters:
+            addressRaw.location_accuracy_meters != null
+              ? Number(addressRaw.location_accuracy_meters)
+              : null,
+          locationDiverged: addressRaw.location_diverged,
+          googleFormattedAddress: addressRaw.google_formatted_address,
         }
       : null,
     items: (row.order_items ?? []).map((item) => ({

@@ -24,8 +24,10 @@ function limitAddressWrite(request: Request) {
 
 const updateSchema = z.object({
   label: z.string().trim().max(40).optional(),
-  street: z.string().trim().min(1),
-  number: z.string().trim().min(1),
+  // Sem `.min(1)`: coordenada confirmada (GPS/pin) basta quando o Google não
+  // reconhece a rua.
+  street: z.string().trim().default(''),
+  number: z.string().trim().default(''),
   neighborhood: z.string().trim().default(''),
   complement: z.string().optional(),
   referencePoint: z.string().optional(),
@@ -35,6 +37,12 @@ const updateSchema = z.object({
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   isDefault: z.boolean().optional(),
+  locationSource: z
+    .enum(['geocoded', 'current_location', 'manual_pin'])
+    .optional(),
+  locationAccuracyMeters: z.number().optional(),
+  locationDiverged: z.boolean().optional(),
+  formattedAddress: z.string().optional(),
 });
 
 export async function PATCH(request: Request, context: RouteContext) {

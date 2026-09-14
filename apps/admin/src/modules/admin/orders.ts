@@ -23,89 +23,9 @@ export type {
   AdminOrderListItem,
 } from '@/modules/admin/types';
 export { nextAdminStatus } from '@/modules/admin/types';
+export { LIST_SELECT } from '@/modules/admin/orders-select';
 
-export const LIST_SELECT = `
-  id,
-  order_number,
-  status,
-  delivery_method,
-  payment_method,
-  payment_status,
-  mp_order_id,
-  timing,
-  scheduled_for,
-  total_cents,
-  created_at,
-  updated_at,
-  guest_name,
-  guest_phone_e164,
-  customers ( name, phone_e164 ),
-  order_addresses ( street, number, neighborhood ),
-  order_items ( product_name, quantity )
-`;
-
-const DETAIL_SELECT = `
-  id,
-  order_number,
-  status,
-  timing,
-  scheduled_for,
-  delivery_method,
-  payment_method,
-  payment_status,
-  mp_order_id,
-  subtotal_cents,
-  add_ons_total_cents,
-  delivery_fee_cents,
-  total_cents,
-  coupon_code,
-  coupon_discount_cents,
-  needs_change,
-  change_for_amount_cents,
-  customer_note,
-  internal_note,
-  cancellation_reason,
-  cancelled_at,
-  created_at,
-  updated_at,
-  guest_name,
-  guest_phone_e164,
-  customers ( id, name, phone_e164 ),
-  order_addresses (
-    street,
-    number,
-    neighborhood,
-    city,
-    state,
-    complement,
-    reference_point,
-    route_distance_meters
-  ),
-  order_items (
-    id,
-    product_id,
-    product_name,
-    quantity,
-    unit_price_cents,
-    line_total_cents,
-    customer_note,
-    order_item_add_ons (
-      add_on_id,
-      add_on_name,
-      quantity,
-      unit_price_cents
-    )
-  ),
-  order_status_history (
-    id,
-    previous_status,
-    new_status,
-    actor_type,
-    reason,
-    created_at
-  ),
-  order_reviews ( rating, comment, status, created_at )
-`;
+import { LIST_SELECT, DETAIL_SELECT } from '@/modules/admin/orders-select';
 
 export async function listAdminOrders(options?: {
   scope?: 'active' | 'scheduled' | 'done' | 'all';
@@ -259,6 +179,19 @@ export async function getAdminOrder(
           referencePoint: addressRaw.reference_point,
           formatted: formatAddress(addressRaw),
           routeDistanceMeters: addressRaw.route_distance_meters,
+          latitude:
+            addressRaw.latitude != null ? Number(addressRaw.latitude) : null,
+          longitude:
+            addressRaw.longitude != null
+              ? Number(addressRaw.longitude)
+              : null,
+          locationSource: addressRaw.location_source,
+          locationAccuracyMeters:
+            addressRaw.location_accuracy_meters != null
+              ? Number(addressRaw.location_accuracy_meters)
+              : null,
+          locationDiverged: addressRaw.location_diverged,
+          googleFormattedAddress: addressRaw.google_formatted_address,
         }
       : null,
     items: (data.order_items ?? []).map((item) => ({

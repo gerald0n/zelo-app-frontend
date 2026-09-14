@@ -4,10 +4,16 @@ import { useEffect, useState } from 'react';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { DeliveryMapConfirm } from '@/components/checkout/DeliveryMapConfirm';
 import { AddressAutocomplete } from '@/components/checkout/AddressAutocomplete';
+import { CurrentLocationButton } from '@/components/checkout/CurrentLocationButton';
 import { Input } from '@/components/ui/input';
-import type { ResolvedPlace } from '@/modules/delivery/places';
+import type { LocationSource } from '@/modules/delivery/geo';
 import { checkoutFieldClass, pageCtaBaseClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
+import { useAddressLocation } from '@/components/account/useAddressLocation';
+import {
+  validateAddress,
+  type QuotePreview,
+} from '@/components/account/validate-address';
 
 export type AddressFormValue = {
   label: string;
@@ -18,46 +24,12 @@ export type AddressFormValue = {
   referencePoint: string;
   latitude?: number;
   longitude?: number;
+  locationSource?: LocationSource;
+  locationAccuracyMeters?: number;
+  locationDiverged?: boolean;
+  formattedAddress?: string;
   isDefault: boolean;
 };
-
-type QuotePreview = {
-  inServiceArea: boolean;
-  routeDistanceMeters: number;
-  latitude: number;
-  longitude: number;
-  formattedAddress?: string;
-  locationPrecision?: 'high' | 'low';
-  message?: string;
-};
-
-async function validateAddress(payload: {
-  street: string;
-  number: string;
-  neighborhood: string;
-  complement: string;
-  referencePoint: string;
-  latitude?: number;
-  longitude?: number;
-}): Promise<{ ok: true; data: QuotePreview } | { ok: false; message: string }> {
-  try {
-    const response = await fetch('/api/v1/addresses/validate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const json = await response.json().catch(() => null);
-    if (!response.ok) {
-      return {
-        ok: false,
-        message: json?.error?.message ?? 'Não foi possível validar o endereço.',
-      };
-    }
-    return { ok: true, data: json.validation as QuotePreview };
-  } catch {
-    return { ok: false, message: 'Falha de rede ao validar o endereço.' };
-  }
-}
 
 export function AccountAddressForm({
   initial,
@@ -97,7 +69,28 @@ export function AccountAddressForm({
     initial?.latitude != null && initial?.longitude != null,
   );
 
-  const canQuote = street.trim().length > 0 && number.trim().length > 0;
+  const {
+    placeCoords,
+    locationSource,
+    locationAccuracyMeters,
+    locationDiverged,
+    resetLocation,
+    handleCenterChange,
+    handleResolvedPlace,
+    handleCurrentLocation,
+  } = useAddressLocation(
+    { street, number, neighborhood, setStreet, setNumber, setNeighborhood },
+    initial?.latitude != null && initial?.longitude != null
+      ? { latitude: initial.latitude, longitude: initial.longitude }
+      : null,
+  );
+
+  // Rua+número preenchidos OU coordenada já confirmada (GPS/pin) — o texto
+  // não é mais pré-requisito único quando o cliente já apontou o local no
+  // mapa (ex.: rua não reconhecida pelo Google).
+  const canQuote =
+    (street.trim().length > 0 && number.trim().length > 0) ||
+    placeCoords != null;
 
   // Endereço ficou incompleto → limpa a cotação obsoleta. Ajuste de estado no
   // render (padrão "adjusting state when a prop changes" do React), não em
@@ -111,18 +104,6 @@ export function AccountAddressForm({
       setConfirmed(false);
     }
   }
-
-  // Coordenada exata vinda do autocomplete (placeId → Place Details) ou do pin
-  // do mapa. Presa à rua: sobrevive a edições de número/bairro; some quando a
-  // rua é redigitada à mão.
-  const [placeCoords, setPlaceCoords] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(
-    initial?.latitude != null && initial?.longitude != null
-      ? { latitude: initial.latitude, longitude: initial.longitude }
-      : null,
-  );
 
   useEffect(() => {
     if (!canQuote) return;
@@ -154,22 +135,6 @@ export function AccountAddressForm({
     // cotação (que vai por rua + número + coordenada).
   }, [canQuote, street, number, placeCoords]);
 
-  // Pin do mapa arrastado: guarda a coordenada; o Effect re-valida com ela.
-  const handleCenterChange = (latitude: number, longitude: number) => {
-    setPlaceCoords({ latitude, longitude });
-  };
-
-  const handleResolvedPlace = (place: ResolvedPlace) => {
-    setStreet(place.street || street);
-    if (place.number) setNumber(place.number);
-    if (place.neighborhood) setNeighborhood(place.neighborhood);
-    setPlaceCoords(
-      Number.isFinite(place.latitude) && Number.isFinite(place.longitude)
-        ? { latitude: place.latitude, longitude: place.longitude }
-        : null,
-    );
-  };
-
   const isValid =
     canQuote && quote?.inServiceArea === true && confirmed && !quoting;
 
@@ -188,6 +153,10 @@ export function AccountAddressForm({
           referencePoint,
           latitude: quote.latitude,
           longitude: quote.longitude,
+          locationSource,
+          locationAccuracyMeters,
+          locationDiverged,
+          formattedAddress: quote.formattedAddress,
           isDefault,
         });
       }}
@@ -198,6 +167,7 @@ export function AccountAddressForm({
         placeholder="Apelido (Casa, Trabalho…)"
         className={checkoutFieldClass}
       />
+      <CurrentLocationButton onResolve={handleCurrentLocation} />
       <div className="grid min-w-0 grid-cols-3 gap-2">
         <AddressAutocomplete
           className="col-span-2"
@@ -205,7 +175,7 @@ export function AccountAddressForm({
           value={street}
           onChange={(text) => {
             setStreet(text);
-            setPlaceCoords(null);
+            resetLocation();
           }}
           onResolve={handleResolvedPlace}
           placeholder="Rua"
@@ -292,6 +262,8 @@ export function AccountAddressForm({
             onConfirm={() => setConfirmed(true)}
             onCenterChange={handleCenterChange}
             addressPreview={quote.formattedAddress}
+            accuracyMeters={locationAccuracyMeters}
+            diverged={locationDiverged}
           />
         </>
       ) : null}

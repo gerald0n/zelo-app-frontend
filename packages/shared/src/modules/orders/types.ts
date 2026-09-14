@@ -1,5 +1,6 @@
 import type { Database } from '@/types/database';
 import type { CustomerOrderReview } from '@/modules/reviews/types';
+import type { LocationSource } from '@/modules/delivery/geo';
 
 export type OrderStatus = Database['public']['Enums']['order_status'];
 export type DeliveryMethod = Database['public']['Enums']['delivery_method'];
@@ -62,6 +63,13 @@ export type CustomerOrder = {
     referencePoint: string | null;
     formatted: string;
     routeDistanceMeters: number;
+    /** `null` em pedidos antigos, anteriores a essas colunas existirem. */
+    latitude: number | null;
+    longitude: number | null;
+    locationSource: LocationSource | null;
+    locationAccuracyMeters: number | null;
+    locationDiverged: boolean | null;
+    googleFormattedAddress: string | null;
   } | null;
   items: CustomerOrderItem[];
   history: CustomerOrderHistoryEntry[];

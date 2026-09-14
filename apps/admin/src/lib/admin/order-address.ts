@@ -1,5 +1,17 @@
 /** Formatação dos endereços de pedido para as telas do admin. */
 
+/**
+ * Texto principal do "local de entrega" quando não há rua digitada (GPS/pin
+ * sem reverse geocode) — não inventa um endereço formatado a partir de
+ * campos vazios.
+ */
+export function deliveryLocationLabel(address: {
+  street: string;
+  formatted: string;
+}): string {
+  return address.street ? address.formatted : 'Localização confirmada pelo cliente';
+}
+
 type AddressParts = {
   street: string;
   number: string;

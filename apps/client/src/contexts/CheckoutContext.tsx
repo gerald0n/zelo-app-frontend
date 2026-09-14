@@ -8,6 +8,7 @@ import React, {
   useState,
 } from 'react';
 import type { DeliveryQuoteSource } from '@/modules/delivery';
+import type { LocationSource } from '@/modules/delivery/geo';
 
 export type DeliveryType = 'delivery' | 'pickup';
 export type ScheduleType = 'now' | 'scheduled';
@@ -24,8 +25,29 @@ export type CheckoutAddress = {
   postalCode: string;
   latitude?: number;
   longitude?: number;
+  /** Endereço formatado pelo Google pra coordenada atual (pode não existir). */
   formattedAddress?: string;
+  /** Como a coordenada atual foi definida. */
+  locationSource?: LocationSource;
+  /** `accuracy` do GPS quando `locationSource === 'current_location'`. */
+  locationAccuracyMeters?: number;
+  /** Pin arrastado longe de uma posição de alta confiança anterior. */
+  locationDiverged?: boolean;
 };
+
+/**
+ * Chaves que só carregam metadados da MESMA coordenada (não uma edição de
+ * endereço nova) — atualizam sem resetar cotação/distância/taxa já obtidas,
+ * só invalidam a confirmação do pin. Usado pelo arraste do pin
+ * (`revalidateWithCoords`), que dispara sua própria revalidação debounced.
+ */
+const LOCATION_METADATA_KEYS = new Set([
+  'latitude',
+  'longitude',
+  'locationSource',
+  'locationAccuracyMeters',
+  'locationDiverged',
+]);
 
 export type CheckoutState = {
   deliveryType: DeliveryType;
@@ -150,7 +172,7 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
       const keys = Object.keys(details);
       const onlyCoordinates =
         keys.length > 0 &&
-        keys.every((key) => key === 'latitude' || key === 'longitude');
+        keys.every((key) => LOCATION_METADATA_KEYS.has(key));
       if (onlyCoordinates) {
         return {
           ...p,

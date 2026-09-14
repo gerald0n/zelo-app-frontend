@@ -7,8 +7,10 @@ import { httpStatusFor } from '@/lib/errors';
 export const dynamic = 'force-dynamic';
 
 const bodySchema = z.object({
-  street: z.string().min(1),
-  number: z.string().min(1),
+  // Sem `.min(1)`: quando há lat/lng confirmada (GPS/pin), rua e número
+  // deixam de ser obrigatórios — `quoteDelivery` exige um dos dois.
+  street: z.string().default(''),
+  number: z.string().default(''),
   neighborhood: z.string().optional().default(''),
   complement: z.string().optional(),
   referencePoint: z.string().optional(),

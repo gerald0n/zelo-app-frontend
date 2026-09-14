@@ -6,6 +6,8 @@ import { nextAdminStatus, type AdminOrderDetail } from '@/modules/admin/types';
 import OrderTimeline, { clock } from '@/components/admin/kanban/OrderTimeline';
 import WhatsappNotifyButton from '@/components/admin/WhatsappNotifyButton';
 import { buildOrderSummaryText } from '@/lib/admin/order-summary';
+import { deliveryLocationLabel } from '@/lib/admin/order-address';
+import { DeliveryLocationMeta } from '@/components/admin/DeliveryLocationMeta';
 import { cn } from '@/lib/cn';
 
 type Props = {
@@ -170,12 +172,15 @@ export default function OrderDetailModalBody({
           <InfoCard label="Endereço de entrega">
             {order.address ? (
               <>
-                <p className="text-sm">{order.address.formatted}</p>
+                <p className="text-sm">
+                  {deliveryLocationLabel(order.address)}
+                </p>
                 {order.address.referencePoint ? (
                   <p className="text-xs text-muted-foreground">
                     Referência: {order.address.referencePoint}
                   </p>
                 ) : null}
+                <DeliveryLocationMeta order={order} />
               </>
             ) : (
               <p className="text-xs text-tone-warning-foreground">
