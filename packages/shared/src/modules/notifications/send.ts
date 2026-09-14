@@ -2,6 +2,7 @@ import 'server-only';
 
 import { hasWebPushConfig } from '@/config/env';
 import { logger } from '@/lib/logger';
+import { formatPhoneDisplay } from '@/lib/phone';
 import { sendWebPushNotification } from '@/lib/push/web-push';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import {
@@ -150,6 +151,45 @@ export async function notifyOrderStatusChange(options: {
     );
   } catch (error) {
     logger.warn('Push: falha inesperada (não afeta o pedido)', {
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+/**
+ * Avisa o painel que um cliente pediu ajuda pra entrar sem receber o SMS —
+ * clicar na notificação já abre `/suporte-acesso` com o pedido em destaque.
+ */
+export async function notifyAdminOtpSupportRequest(options: {
+  requestId: string;
+  phoneE164: string;
+}): Promise<void> {
+  if (!hasWebPushConfig()) return;
+
+  try {
+    const subscriptions = await listActiveAdminSubscriptions();
+    if (!subscriptions.length) return;
+
+    await Promise.all(
+      subscriptions.map(async (sub) => {
+        const result = await sendWebPushNotification({
+          endpoint: sub.endpoint,
+          p256dh: sub.p256dh,
+          auth: sub.auth,
+          payload: {
+            title: 'Cliente pediu ajuda pra acessar',
+            body: formatPhoneDisplay(options.phoneE164),
+            url: `/suporte-acesso?requestId=${options.requestId}`,
+            tag: `otp-support-${options.requestId}`,
+          },
+        });
+        if (!result.ok && result.gone) {
+          await revokeAdminPushSubscriptionByEndpoint(sub.endpoint);
+        }
+      }),
+    );
+  } catch (error) {
+    logger.warn('Push admin: falha inesperada (não afeta a solicitação)', {
       message: error instanceof Error ? error.message : String(error),
     });
   }

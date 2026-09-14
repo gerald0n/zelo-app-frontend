@@ -28,6 +28,8 @@ export const adminKeys = {
   customers: (page: number) => [...adminKeys.all, 'customers', page] as const,
   customerSearch: (q: string) =>
     [...adminKeys.all, 'customers', 'search', q] as const,
+  otpSupportRequests: () =>
+    [...adminKeys.all, 'otp-support-requests'] as const,
 };
 
 export const catalogKeys = {

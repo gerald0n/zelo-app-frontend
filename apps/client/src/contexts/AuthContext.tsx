@@ -29,6 +29,11 @@ type RequestOtpResult =
 type VerifyOtpResult =
   { ok: true; needsName: boolean } | { ok: false; message: string };
 
+type ManualOtpApprovalResult =
+  | { ok: true; approved: true; needsName: boolean }
+  | { ok: true; approved: false }
+  | { ok: false; message: string };
+
 type UpdateProfileResult = { ok: true } | { ok: false; message: string };
 
 type AuthContextType = {
@@ -40,6 +45,7 @@ type AuthContextType = {
     options?: { captchaToken?: string; website?: string },
   ) => Promise<RequestOtpResult>;
   verifyOtp: (phone: string, code: string) => Promise<VerifyOtpResult>;
+  checkManualOtpApproval: (phone: string) => Promise<ManualOtpApprovalResult>;
   updateProfile: (name: string) => Promise<UpdateProfileResult>;
   signOut: () => Promise<void>;
   identityReady: boolean;
@@ -159,6 +165,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const checkManualOtpApproval = useCallback(async (phone: string) => {
+    try {
+      const response = await fetch(
+        `/api/v1/auth/otp/manual-status?phone=${encodeURIComponent(phone)}`,
+        { cache: 'no-store' },
+      );
+      const json = await response.json().catch(() => null);
+      if (!response.ok) {
+        return {
+          ok: false as const,
+          message: json?.error?.message ?? 'Falha ao verificar aprovação.',
+        };
+      }
+      if (!json?.approved) {
+        return { ok: true as const, approved: false as const };
+      }
+      const customer = json.customer;
+      if (customer) {
+        setUser({
+          id: customer.id,
+          phone: customer.phoneE164,
+          name: customer.name ?? '',
+        });
+      }
+      resetCustomerRealtimeAuth();
+      return {
+        ok: true as const,
+        approved: true as const,
+        needsName:
+          customer?.needsName === true || !hasCustomerName(customer?.name),
+      };
+    } catch {
+      return {
+        ok: false as const,
+        message: 'Falha de rede ao verificar aprovação.',
+      };
+    }
+  }, []);
+
   const updateProfile = useCallback(async (name: string) => {
     try {
       const response = await fetch('/api/v1/auth/me', {
@@ -212,6 +257,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setPendingPhone,
         requestOtp,
         verifyOtp,
+        checkManualOtpApproval,
         updateProfile,
         signOut,
         identityReady,

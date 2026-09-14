@@ -17,6 +17,7 @@ import {
   LogOut,
   History,
   Users,
+  LifeBuoy,
 } from 'lucide-react';
 import { useAdmin } from '@/contexts/AdminContext';
 import { useAdminRealtime } from '@/contexts/AdminRealtimeContext';
@@ -64,6 +65,12 @@ const NAV = [
     label: 'Avaliações',
     icon: Star,
     match: (p: string) => p.startsWith('/avaliacoes'),
+  },
+  {
+    href: '/suporte-acesso',
+    label: 'Suporte de acesso',
+    icon: LifeBuoy,
+    match: (p: string) => p.startsWith('/suporte-acesso'),
   },
   {
     href: '/configuracoes',
