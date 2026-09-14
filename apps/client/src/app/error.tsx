@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { buildSupportWhatsappLink } from '@/lib/support-whatsapp';
 
 export default function Error({
   error,
@@ -15,6 +16,14 @@ export default function Error({
       Sentry.captureException(error),
     );
   }, [error]);
+
+  const handleSupport = async () => {
+    const message = `Encontrei um erro no app${
+      error.digest ? ` (código ${error.digest})` : ''
+    } e não consigo continuar.`;
+    const link = await buildSupportWhatsappLink(message);
+    if (link) window.open(link, '_blank');
+  };
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center bg-background px-6 text-center">
@@ -48,6 +57,13 @@ export default function Error({
           Cardápio
         </Link>
       </div>
+      <button
+        type="button"
+        onClick={() => void handleSupport()}
+        className="mt-4 text-xs font-semibold text-primary underline"
+      >
+        Falar com o suporte
+      </button>
     </main>
   );
 }
