@@ -1,6 +1,6 @@
 'use client';
 
-import { MessageCircle } from 'lucide-react';
+import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import {
   buildOrderWhatsappLink,
   type WhatsappOrderInfo,
@@ -37,7 +37,7 @@ export default function WhatsappNotifyButton({
         className,
       )}
     >
-      <MessageCircle className="size-3.5" />
+      <WhatsappIcon size={14} className="shrink-0" />
       Avisar no WhatsApp
     </a>
   );
