@@ -17,7 +17,12 @@ type PixRefundSweepResult = {
   failed: number;
 };
 
-const METHOD_LABEL = { pix: 'Pix', cash: 'Dinheiro', card: 'Cartão' } as const;
+const METHOD_LABEL = {
+  pix: 'Pix',
+  cash: 'Dinheiro',
+  card: 'Cartão',
+  pix_manual: 'Pix (manual)',
+} as const;
 
 function Line({
   label,
@@ -147,7 +152,7 @@ export function FinancialView({ period }: { period: ReportPeriod }) {
         <h2 className="font-serif text-base font-bold">
           Por forma de pagamento
         </h2>
-        {(['pix', 'cash', 'card'] as const).map((m) => (
+        {(['pix', 'cash', 'card', 'pix_manual'] as const).map((m) => (
           <Line
             key={m}
             label={`${METHOD_LABEL[m]} (${d.byMethod[m].count})`}

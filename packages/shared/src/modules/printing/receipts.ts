@@ -163,6 +163,7 @@ const PAYMENT_LABEL: Record<DeliverySlipData['paymentMethod'], string> = {
   pix: 'Pix',
   cash: 'Dinheiro',
   card: 'Cartão',
+  pix_manual: 'Pix (manual)',
 };
 
 function paymentStatusLabel(status: string): string {

@@ -494,6 +494,44 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_otp_support_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          consumed_at: string | null
+          expires_at: string | null
+          id: string
+          phone_e164: string
+          requested_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          consumed_at?: string | null
+          expires_at?: string | null
+          id?: string
+          phone_e164: string
+          requested_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          consumed_at?: string | null
+          expires_at?: string | null
+          id?: string
+          phone_e164?: string
+          requested_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_otp_support_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "admin_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           created_at: string
@@ -1297,6 +1335,48 @@ export type Database = {
           },
         ]
       }
+      promo_banners: {
+        Row: {
+          created_at: string
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          link_href: string | null
+          sort_order: number
+          starts_at: string | null
+          storage_path: string
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          link_href?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          storage_path: string
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          link_href?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          storage_path?: string
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       promotion_categories: {
         Row: {
           category_id: string
@@ -2079,7 +2159,7 @@ export type Database = {
         | "delivered"
         | "cancelled"
       order_timing: "immediate" | "scheduled"
-      payment_method: "pix" | "cash" | "card"
+      payment_method: "pix" | "cash" | "card" | "pix_manual"
       payment_status:
         | "pending"
         | "confirmed"
@@ -2228,7 +2308,7 @@ export const Constants = {
         "cancelled",
       ],
       order_timing: ["immediate", "scheduled"],
-      payment_method: ["pix", "cash", "card"],
+      payment_method: ["pix", "cash", "card", "pix_manual"],
       payment_status: [
         "pending",
         "confirmed",

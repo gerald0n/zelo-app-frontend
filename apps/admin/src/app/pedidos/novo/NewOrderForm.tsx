@@ -10,6 +10,7 @@ import AdminManualOrderItemPicker, {
 } from '@/components/admin/AdminManualOrderItemPicker';
 import { useAdmin } from '@/contexts/AdminContext';
 import { ApiError, apiJson } from '@/lib/api';
+import { paymentMethodLabel } from '@/lib/admin/payment-method-label';
 import { adminKeys } from '@/lib/query-keys';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import {
@@ -242,7 +243,7 @@ export function NewOrderForm({ enabled = true, onCreated, onCancel }: Props) {
             <p className="text-2xs text-muted-foreground">
               {deliveryMethod === 'delivery' ? 'Entrega' : 'Retirada no balcão'}{' '}
               ({timing === 'immediate' ? 'Imediato' : 'Agendado'}) ·{' '}
-              {paymentMethod === 'card' ? 'Cartão' : 'Dinheiro'}
+              {paymentMethodLabel(paymentMethod)}
             </p>
           </div>
           <button

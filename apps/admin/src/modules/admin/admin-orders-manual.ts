@@ -30,7 +30,7 @@ export async function createManualAdminOrder(input: {
     referencePoint?: string | null;
   } | null;
   deliveryFeeCents?: number;
-  paymentMethod: 'cash' | 'card';
+  paymentMethod: 'cash' | 'card' | 'pix_manual';
   alreadyPaid: boolean;
   customerNote?: string | null;
   couponCode?: string | null;

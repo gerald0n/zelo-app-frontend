@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { type UseFormReturn, useWatch } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -128,6 +129,15 @@ export function PaymentFields({
   appliedCoupon,
   onCouponChange,
 }: PaymentFieldsProps) {
+  const paymentMethod = useWatch({ control: form.control, name: 'paymentMethod' });
+  const isPixManual = paymentMethod === 'pix_manual';
+
+  // Pix confirmado manualmente é por definição já pago — não existe
+  // versão "pendente" dele na comanda manual.
+  useEffect(() => {
+    if (isPixManual) form.setValue('alreadyPaid', true);
+  }, [isPixManual, form]);
+
   return (
     <section className={card}>
       <p className={heading}>Pagamento</p>
@@ -136,12 +146,22 @@ export function PaymentFields({
         <select {...form.register('paymentMethod')} className={field}>
           <option value="cash">Dinheiro</option>
           <option value="card">Cartão</option>
+          <option value="pix_manual">Pix (confirmado)</option>
         </select>
       </label>
       <Label className="inline-flex items-center gap-2 text-xs font-semibold">
-        <input type="checkbox" {...form.register('alreadyPaid')} />
+        <input
+          type="checkbox"
+          disabled={isPixManual}
+          {...form.register('alreadyPaid')}
+        />
         Pagamento já confirmado
       </Label>
+      {isPixManual ? (
+        <p className="text-2xs text-muted-foreground">
+          Pix confirmado manualmente já entra como pago.
+        </p>
+      ) : null}
       <ManualOrderCouponField
         subtotalCents={subtotalCents}
         deliveryFeeCents={deliveryFeeCents}

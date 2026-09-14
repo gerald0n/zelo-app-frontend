@@ -28,7 +28,7 @@ export const manualOrderSchema = z
     deliveryFeeReais: z.number().min(0),
     timing: z.enum(['immediate', 'scheduled']),
     scheduledFor: z.string().optional(),
-    paymentMethod: z.enum(['cash', 'card']),
+    paymentMethod: z.enum(['cash', 'card', 'pix_manual']),
     alreadyPaid: z.boolean(),
     source: z.enum(['balcao', 'whatsapp', 'instagram']),
     customerNote: z.string().trim().optional(),
@@ -147,7 +147,10 @@ export function buildManualOrderPayload(
         ? reaisToCents(values.deliveryFeeReais)
         : undefined,
     paymentMethod: values.paymentMethod,
-    alreadyPaid: values.alreadyPaid,
+    // Pix (confirmado manualmente) é por definição já pago — não existe
+    // versão "pendente" dele na comanda manual.
+    alreadyPaid:
+      values.paymentMethod === 'pix_manual' ? true : values.alreadyPaid,
     customerNote: noteWithSource(values),
     couponCode: couponCode ? couponCode.trim().toUpperCase() : null,
   };
