@@ -8,7 +8,22 @@ import { formatCatalogPrice } from '@/modules/catalog/types';
 import type { OperationsReport, ReportPeriod } from '@/modules/admin/reports';
 import { ReportBar } from '@/app/_components/ReportBar';
 
-export function OperationsView({ period }: { period: ReportPeriod }) {
+function formatCancelledAt(iso: string): string {
+  return new Date(iso).toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+export function OperationsView({
+  period,
+  onSelectOrder,
+}: {
+  period: ReportPeriod;
+  onSelectOrder: (orderId: string) => void;
+}) {
   const query = useQuery({
     // Realtime invalida via `AdminRealtimeProvider` — fora do queryKey.
     queryKey: adminKeys.reports(`op-${period}`),
@@ -58,6 +73,31 @@ export function OperationsView({ period }: { period: ReportPeriod }) {
             ))
           )}
         </div>
+        {data.cancellations.recent.length > 0 ? (
+          <div className="space-y-1 border-t border-border pt-2">
+            {data.cancellations.recent.map((order) => (
+              <button
+                key={order.id}
+                type="button"
+                onClick={() => onSelectOrder(order.id)}
+                className="flex w-full items-center justify-between gap-2 rounded-lg px-1.5 py-1 text-left text-2xs transition-colors hover:bg-muted"
+              >
+                <span className="min-w-0 flex-1 truncate">
+                  <span className="font-bold text-foreground">
+                    #{order.orderNumber}
+                  </span>{' '}
+                  <span className="text-muted-foreground">
+                    {order.reason}
+                  </span>
+                </span>
+                <span className="shrink-0 text-muted-foreground">
+                  {formatCatalogPrice(order.totalCents)} ·{' '}
+                  {formatCancelledAt(order.cancelledAt)}
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       <section className="space-y-2 rounded-xl border border-border bg-card p-4">

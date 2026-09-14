@@ -6,6 +6,8 @@ import { requireAdmin } from '@/modules/admin/auth';
 
 export type ReportPeriod = 'today' | '7d' | '30d';
 
+const CANCELLATIONS_RECENT_LIMIT = 12;
+
 export type OperationsReport = {
   period: ReportPeriod;
   from: string;
@@ -13,6 +15,13 @@ export type OperationsReport = {
     total: number;
     valueCents: number;
     byReason: Array<{ reason: string; count: number }>;
+    recent: Array<{
+      id: string;
+      orderNumber: number;
+      reason: string;
+      totalCents: number;
+      cancelledAt: string;
+    }>;
   };
   production: {
     totalItems: number;
@@ -56,9 +65,10 @@ export async function getOperationsReport(
   const [cancelled, items] = await Promise.all([
     admin
       .from('orders')
-      .select('cancellation_reason, total_cents')
+      .select('id, order_number, cancellation_reason, total_cents, cancelled_at')
       .eq('status', 'cancelled')
-      .gte('cancelled_at', from),
+      .gte('cancelled_at', from)
+      .order('cancelled_at', { ascending: false }),
     admin
       .from('order_items')
       .select('product_name, quantity, orders!inner(status, created_at)')
@@ -96,6 +106,13 @@ export async function getOperationsReport(
       total: cancelledRows.length,
       valueCents: cancelledRows.reduce((sum, row) => sum + row.total_cents, 0),
       byReason: groupReasons(cancelledRows),
+      recent: cancelledRows.slice(0, CANCELLATIONS_RECENT_LIMIT).map((row) => ({
+        id: row.id,
+        orderNumber: row.order_number,
+        reason: row.cancellation_reason?.trim() || 'Sem motivo informado',
+        totalCents: row.total_cents,
+        cancelledAt: row.cancelled_at as string,
+      })),
     },
     production: {
       totalItems: production.reduce((sum, entry) => sum + entry.quantity, 0),
