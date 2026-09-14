@@ -882,6 +882,7 @@ export type Database = {
           customer_note: string | null
           delivery_fee_cents: number
           delivery_method: Database["public"]["Enums"]["delivery_method"]
+          fulfillment_location_id: string | null
           guest_name: string | null
           guest_phone_e164: string | null
           id: string
@@ -925,6 +926,7 @@ export type Database = {
           customer_note?: string | null
           delivery_fee_cents: number
           delivery_method: Database["public"]["Enums"]["delivery_method"]
+          fulfillment_location_id?: string | null
           guest_name?: string | null
           guest_phone_e164?: string | null
           id?: string
@@ -968,6 +970,7 @@ export type Database = {
           customer_note?: string | null
           delivery_fee_cents?: number
           delivery_method?: Database["public"]["Enums"]["delivery_method"]
+          fulfillment_location_id?: string | null
           guest_name?: string | null
           guest_phone_e164?: string | null
           id?: string
@@ -1010,6 +1013,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_fulfillment_location_id_fkey"
+            columns: ["fulfillment_location_id"]
+            isOneToOne: false
+            referencedRelation: "satellite_locations"
             referencedColumns: ["id"]
           },
           {
@@ -1221,6 +1231,7 @@ export type Database = {
           category_id: string
           created_at: string
           description: string | null
+          fulfillment_location_id: string | null
           id: string
           is_active: boolean
           is_available: boolean
@@ -1238,6 +1249,7 @@ export type Database = {
           category_id: string
           created_at?: string
           description?: string | null
+          fulfillment_location_id?: string | null
           id?: string
           is_active?: boolean
           is_available?: boolean
@@ -1255,6 +1267,7 @@ export type Database = {
           category_id?: string
           created_at?: string
           description?: string | null
+          fulfillment_location_id?: string | null
           id?: string
           is_active?: boolean
           is_available?: boolean
@@ -1273,6 +1286,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_fulfillment_location_id_fkey"
+            columns: ["fulfillment_location_id"]
+            isOneToOne: false
+            referencedRelation: "satellite_locations"
             referencedColumns: ["id"]
           },
         ]
@@ -1425,6 +1445,151 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      satellite_location_delivery_slots: {
+        Row: {
+          created_at: string
+          ends_at: string | null
+          id: string
+          label: string | null
+          location_id: string
+          sort_order: number
+          starts_at: string
+          weekday: number
+        }
+        Insert: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          label?: string | null
+          location_id: string
+          sort_order?: number
+          starts_at: string
+          weekday: number
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          label?: string | null
+          location_id?: string
+          sort_order?: number
+          starts_at?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "satellite_location_delivery_slots_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "satellite_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      satellite_location_hours: {
+        Row: {
+          created_at: string
+          delivery_enabled: boolean
+          id: string
+          is_closed: boolean
+          location_id: string
+          pickup_closes_at: string | null
+          pickup_opens_at: string | null
+          updated_at: string
+          weekday: number
+        }
+        Insert: {
+          created_at?: string
+          delivery_enabled?: boolean
+          id?: string
+          is_closed?: boolean
+          location_id: string
+          pickup_closes_at?: string | null
+          pickup_opens_at?: string | null
+          updated_at?: string
+          weekday: number
+        }
+        Update: {
+          created_at?: string
+          delivery_enabled?: boolean
+          id?: string
+          is_closed?: boolean
+          location_id?: string
+          pickup_closes_at?: string | null
+          pickup_opens_at?: string | null
+          updated_at?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "satellite_location_hours_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "satellite_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      satellite_locations: {
+        Row: {
+          address_line: string
+          city: string
+          created_at: string
+          fixed_delivery_fee_cents: number
+          free_delivery_radius_meters: number
+          id: string
+          is_active: boolean
+          latitude: number
+          longitude: number
+          max_delivery_radius_meters: number
+          min_lead_minutes: number
+          name: string
+          postal_code: string | null
+          slug: string
+          state: string
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          address_line: string
+          city: string
+          created_at?: string
+          fixed_delivery_fee_cents?: number
+          free_delivery_radius_meters?: number
+          id?: string
+          is_active?: boolean
+          latitude: number
+          longitude: number
+          max_delivery_radius_meters?: number
+          min_lead_minutes?: number
+          name: string
+          postal_code?: string | null
+          slug: string
+          state: string
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          address_line?: string
+          city?: string
+          created_at?: string
+          fixed_delivery_fee_cents?: number
+          free_delivery_radius_meters?: number
+          id?: string
+          is_active?: boolean
+          latitude?: number
+          longitude?: number
+          max_delivery_radius_meters?: number
+          min_lead_minutes?: number
+          name?: string
+          postal_code?: string | null
+          slug?: string
+          state?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       store_blackout_periods: {
         Row: {
@@ -1613,6 +1778,7 @@ export type Database = {
           customer_note: string | null
           delivery_fee_cents: number
           delivery_method: Database["public"]["Enums"]["delivery_method"]
+          fulfillment_location_id: string | null
           guest_name: string | null
           guest_phone_e164: string | null
           id: string
@@ -1675,6 +1841,7 @@ export type Database = {
           customer_note: string | null
           delivery_fee_cents: number
           delivery_method: Database["public"]["Enums"]["delivery_method"]
+          fulfillment_location_id: string | null
           guest_name: string | null
           guest_phone_e164: string | null
           id: string
@@ -1745,6 +1912,7 @@ export type Database = {
           customer_note: string | null
           delivery_fee_cents: number
           delivery_method: Database["public"]["Enums"]["delivery_method"]
+          fulfillment_location_id: string | null
           guest_name: string | null
           guest_phone_e164: string | null
           id: string
@@ -1802,6 +1970,7 @@ export type Database = {
           customer_note: string | null
           delivery_fee_cents: number
           delivery_method: Database["public"]["Enums"]["delivery_method"]
+          fulfillment_location_id: string | null
           guest_name: string | null
           guest_phone_e164: string | null
           id: string
@@ -1859,6 +2028,7 @@ export type Database = {
           customer_note: string | null
           delivery_fee_cents: number
           delivery_method: Database["public"]["Enums"]["delivery_method"]
+          fulfillment_location_id: string | null
           guest_name: string | null
           guest_phone_e164: string | null
           id: string

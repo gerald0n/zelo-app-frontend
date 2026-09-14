@@ -5,23 +5,105 @@ import { quoteDelivery } from '@/modules/delivery';
 import {
   getPublicCatalog,
   getPublicStore,
+  listPublicProducts,
 } from '@/modules/catalog/catalog-repository';
+import {
+  getSatelliteLocation,
+  listSatelliteProducts,
+} from '@/modules/catalog/satellite-repository';
 import {
   canPlaceImmediateOrder,
   listAvailableScheduleDates,
   listAvailableScheduleTimes,
   resolveCartSchedulingRule,
 } from '@/modules/scheduling/schedule';
-import type { CatalogStore } from '@/modules/catalog/types';
+import {
+  canPlaceImmediateSatelliteOrder,
+  isSatelliteSlotValid,
+} from '@/modules/scheduling/satellite-slots';
+import type { CatalogStore, SatelliteLocation } from '@/modules/catalog/types';
 import type { CreateOrderBody } from '@/modules/orders/create-order-schema';
 
 const MIXED_CART_MESSAGE =
   'Este pedido mistura categorias com regras de agendamento diferentes. ' +
   'Finalize uma categoria por vez.';
 
+async function validateSatelliteScheduling(
+  body: CreateOrderBody,
+): Promise<Result<{ scheduledFor: string | null }>> {
+  const locationResult = await getSatelliteLocation();
+  if (!locationResult.ok) return locationResult;
+  const location = locationResult.data;
+  if (!location || location.id !== body.fulfillmentLocationId) {
+    return err('NOT_FOUND', 'Unidade não encontrada.');
+  }
+  if (!location.isActive) {
+    return err('STORE_CLOSED', 'Esta unidade está indisponível no momento.');
+  }
+
+  // Pronta entrega: só o lote curado dessa unidade. Encomenda (mesmo via
+  // São Miguel): cardápio normal — vale o mesmo catálogo de Pereiro, já que
+  // dá tempo de preparar qualquer sabor.
+  const productsResult = body.prontaEntrega
+    ? await listSatelliteProducts(location.id)
+    : await listPublicProducts();
+  if (!productsResult.ok) return productsResult;
+  const validIds = new Set(productsResult.data.map((product) => product.id));
+  const hasInvalidItem = body.items.some(
+    (item) => !validIds.has(item.productId),
+  );
+  if (hasInvalidItem) {
+    return err(
+      'PRODUCT_UNAVAILABLE',
+      body.prontaEntrega
+        ? 'Um dos itens não está mais disponível na pronta entrega.'
+        : 'Um dos itens não está disponível para esta unidade.',
+    );
+  }
+
+  if (body.timing === 'immediate') {
+    if (body.deliveryMethod !== 'pickup') {
+      return err(
+        'VALIDATION_ERROR',
+        'Entrega imediata não disponível nesta unidade. Escolha um horário.',
+      );
+    }
+    if (!canPlaceImmediateSatelliteOrder(location)) {
+      return err(
+        'STORE_CLOSED',
+        'Unidade fechada agora. Escolha um horário para agendar.',
+      );
+    }
+    return ok({ scheduledFor: null });
+  }
+
+  if (!body.scheduledFor) {
+    return err('VALIDATION_ERROR', 'Informe data e horário do agendamento.');
+  }
+  const scheduled = new Date(body.scheduledFor);
+  if (Number.isNaN(scheduled.getTime())) {
+    return err('VALIDATION_ERROR', 'Data de agendamento inválida.');
+  }
+
+  const dateIso = body.scheduledFor.slice(0, 10);
+  const time = body.scheduledFor.slice(11, 16);
+  if (!isSatelliteSlotValid(location, dateIso, time, body.deliveryMethod)) {
+    return err(
+      'VALIDATION_ERROR',
+      'Horário de agendamento indisponível nesta unidade.',
+    );
+  }
+
+  return ok({ scheduledFor: body.scheduledFor });
+}
+
 export async function validateScheduling(
   body: CreateOrderBody,
 ): Promise<Result<{ scheduledFor: string | null }>> {
+  if (body.fulfillmentLocationId) {
+    return validateSatelliteScheduling(body);
+  }
+
   const catalogResult = await getPublicCatalog();
   if (!catalogResult.ok) return catalogResult;
   const { store, categories, products } = catalogResult.data;
@@ -129,12 +211,25 @@ export async function resolveDeliveryFee(body: CreateOrderBody): Promise<
     return err('VALIDATION_ERROR', 'Endereço é obrigatório para entrega.');
   }
 
-  const storeResult = await getPublicStore();
-  if (!storeResult.ok) return storeResult;
-  if (!storeResult.data) {
-    return err('NOT_FOUND', 'Loja não encontrada.');
+  let origin: CatalogStore | SatelliteLocation;
+  if (body.fulfillmentLocationId) {
+    const locationResult = await getSatelliteLocation();
+    if (!locationResult.ok) return locationResult;
+    if (
+      !locationResult.data ||
+      locationResult.data.id !== body.fulfillmentLocationId
+    ) {
+      return err('NOT_FOUND', 'Unidade não encontrada.');
+    }
+    origin = locationResult.data;
+  } else {
+    const storeResult = await getPublicStore();
+    if (!storeResult.ok) return storeResult;
+    if (!storeResult.data) {
+      return err('NOT_FOUND', 'Loja não encontrada.');
+    }
+    origin = storeResult.data;
   }
-  const store = storeResult.data;
 
   const quote = await quoteDelivery(
     {
@@ -150,14 +245,14 @@ export async function resolveDeliveryFee(body: CreateOrderBody): Promise<
       longitude: body.address.longitude,
     },
     {
-      latitude: store.latitude,
-      longitude: store.longitude,
-      freeDeliveryRadiusMeters: store.freeDeliveryRadiusMeters,
-      fixedDeliveryFeeCents: store.fixedDeliveryFeeCents,
-      maxDeliveryRadiusMeters: store.maxDeliveryRadiusMeters,
-      addressLine: store.addressLine,
-      city: store.city,
-      state: store.state,
+      latitude: origin.latitude,
+      longitude: origin.longitude,
+      freeDeliveryRadiusMeters: origin.freeDeliveryRadiusMeters,
+      fixedDeliveryFeeCents: origin.fixedDeliveryFeeCents,
+      maxDeliveryRadiusMeters: origin.maxDeliveryRadiusMeters,
+      addressLine: origin.addressLine,
+      city: origin.city,
+      state: origin.state,
     },
   );
 

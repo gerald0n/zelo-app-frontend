@@ -9,7 +9,7 @@ import {
   markCartExpired,
   replaceCartLines,
 } from '@/modules/carts/cart-repository';
-import { listPublicProducts } from '@/modules/catalog/catalog-repository';
+import { listOrderableProducts } from '@/modules/catalog/catalog-repository';
 import type { CatalogAddon, CatalogProduct } from '@/modules/catalog/types';
 import {
   mergeCartSyncLines,
@@ -83,7 +83,7 @@ async function persistAndHydrate(
   customerId: string,
   lines: CartSyncLine[],
 ): Promise<Result<{ items: CartItem[] }>> {
-  const catalog = await listPublicProducts();
+  const catalog = await listOrderableProducts();
   if (!catalog.ok) return catalog;
 
   const allowed: CartSyncLine[] = [];
@@ -125,7 +125,7 @@ export async function getCustomerCart(): Promise<
   const stored = await loadStoredLines(cart.data.id);
   if (!stored.ok) return stored;
 
-  const catalog = await listPublicProducts();
+  const catalog = await listOrderableProducts();
   if (!catalog.ok) return catalog;
 
   return ok({ items: hydrateLines(stored.data, catalog.data) });

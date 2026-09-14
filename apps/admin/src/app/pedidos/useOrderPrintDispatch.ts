@@ -9,7 +9,7 @@ import {
   buildDeliverySlip,
   buildKitchenTicket,
 } from '@/modules/printing/receipts';
-import type { CatalogStore } from '@/modules/catalog/types';
+import type { CatalogStore, SatelliteLocation } from '@/modules/catalog/types';
 import type {
   AdminOrderDetail,
   AdminOrderListItem,
@@ -43,8 +43,10 @@ export function useOrderPrintDispatch(input: {
   ordersLoaded: boolean;
   orders: AdminOrderListItem[];
   store: CatalogStore | null | undefined;
+  satelliteLocation: SatelliteLocation | null | undefined;
 }) {
-  const { ready, isAuthenticated, ordersLoaded, orders, store } = input;
+  const { ready, isAuthenticated, ordersLoaded, orders, store, satelliteLocation } =
+    input;
   const printer = usePrinter();
 
   const knownIdsRef = useRef<Set<string> | null>(null);
@@ -88,10 +90,12 @@ export function useOrderPrintDispatch(input: {
         kind: 'delivery',
         orderId,
         label,
-        bytes: buildDeliverySlip(orderToDeliverySlip(order, store)),
+        bytes: buildDeliverySlip(
+          orderToDeliverySlip(order, store, satelliteLocation),
+        ),
       });
     },
-    [fetchOrderDetail, printer, store],
+    [fetchOrderDetail, printer, store, satelliteLocation],
   );
 
   // Reconciliação com o servidor — uma vez por sessão.

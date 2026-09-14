@@ -15,6 +15,7 @@ export const PRODUCT_ADMIN_SELECT = `
   is_available,
   archived_at,
   sort_order,
+  fulfillment_location_id,
   categories ( name ),
   product_images ( id, storage_path, alt_text, sort_order, is_primary ),
   product_add_ons ( add_on_id )
@@ -62,6 +63,7 @@ export function mapAdminProduct(row: {
   is_available: boolean;
   archived_at: string | null;
   sort_order: number;
+  fulfillment_location_id: string | null;
   categories: { name: string } | Array<{ name: string }> | null;
   product_images: Array<{
     id: string;
@@ -92,5 +94,6 @@ export function mapAdminProduct(row: {
     sortOrder: row.sort_order,
     images: mapAdminImages(row.product_images),
     addonIds: (row.product_add_ons ?? []).map((link) => link.add_on_id),
+    fulfillmentLocationId: row.fulfillment_location_id,
   };
 }

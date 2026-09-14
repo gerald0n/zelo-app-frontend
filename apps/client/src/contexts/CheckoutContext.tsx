@@ -4,71 +4,44 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import type { DeliveryQuoteSource } from '@/modules/delivery';
-import type { LocationSource } from '@/modules/delivery/geo';
+import { useCartStore } from '@/modules/carts';
+import {
+  emptyAddressFor,
+  formatAddressSummary,
+  initialCheckoutState,
+  loadPersistedFulfillment,
+  LOCATION_METADATA_KEYS,
+  savePersistedFulfillment,
+  type CheckoutAddress,
+  type CheckoutState,
+  type DeliveryType,
+  type FulfillmentLocation,
+  type PaymentMethod,
+  type ScheduleType,
+} from '@/contexts/checkout-state';
 
-export type DeliveryType = 'delivery' | 'pickup';
-export type ScheduleType = 'now' | 'scheduled';
-export type PaymentMethod = 'pix' | 'cash' | 'card';
-
-export type CheckoutAddress = {
-  street: string;
-  number: string;
-  neighborhood: string;
-  complement: string;
-  referencePoint: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  latitude?: number;
-  longitude?: number;
-  /** Endereço formatado pelo Google pra coordenada atual (pode não existir). */
-  formattedAddress?: string;
-  /** Como a coordenada atual foi definida. */
-  locationSource?: LocationSource;
-  /** `accuracy` do GPS quando `locationSource === 'current_location'`. */
-  locationAccuracyMeters?: number;
-  /** Pin arrastado longe de uma posição de alta confiança anterior. */
-  locationDiverged?: boolean;
-};
-
-/**
- * Chaves que só carregam metadados da MESMA coordenada (não uma edição de
- * endereço nova) — atualizam sem resetar cotação/distância/taxa já obtidas,
- * só invalidam a confirmação do pin. Usado pelo arraste do pin
- * (`revalidateWithCoords`), que dispara sua própria revalidação debounced.
- */
-const LOCATION_METADATA_KEYS = new Set([
-  'latitude',
-  'longitude',
-  'locationSource',
-  'locationAccuracyMeters',
-  'locationDiverged',
-]);
-
-export type CheckoutState = {
-  deliveryType: DeliveryType;
-  scheduleType: ScheduleType;
-  scheduledDate?: string;
-  scheduledTime?: string;
-  /** Texto legado / resumo do endereço. */
-  address: string;
-  addressDetails: CheckoutAddress;
-  routeDistanceMeters?: number;
-  deliveryFeeCents: number;
-  deliveryInServiceArea?: boolean;
-  deliveryQuoteSource?: DeliveryQuoteSource;
-  locationConfirmed: boolean;
-  paymentMethod: PaymentMethod;
-  changeFor: string;
-  note: string;
-};
+export type {
+  CheckoutAddress,
+  CheckoutState,
+  DeliveryType,
+  FulfillmentLocation,
+  PaymentMethod,
+  ScheduleType,
+} from '@/contexts/checkout-state';
 
 type CheckoutContextType = {
   checkout: CheckoutState;
+  setFulfillmentLocation: (
+    location: FulfillmentLocation,
+    options?: { prontaEntrega?: boolean },
+  ) => void;
+  setSatelliteLocationId: (id: string) => void;
   setDeliveryType: (t: DeliveryType) => void;
   setScheduleType: (t: ScheduleType) => void;
   setScheduledDate: (d: string) => void;
@@ -93,47 +66,90 @@ type CheckoutContextType = {
   resetCheckout: () => void;
 };
 
-const emptyAddress: CheckoutAddress = {
-  street: '',
-  number: '',
-  neighborhood: '',
-  complement: '',
-  referencePoint: '',
-  city: 'Pereiro',
-  state: 'CE',
-  postalCode: '',
-};
-
-const initial: CheckoutState = {
-  deliveryType: 'delivery',
-  scheduleType: 'now',
-  address: '',
-  addressDetails: emptyAddress,
-  deliveryFeeCents: 0,
-  locationConfirmed: false,
-  paymentMethod: 'pix',
-  changeFor: '',
-  note: '',
-};
-
-function formatAddressSummary(details: CheckoutAddress): string {
-  const base = [
-    details.street,
-    details.number,
-    details.neighborhood,
-    details.city,
-    details.state,
-  ]
-    .filter(Boolean)
-    .join(', ');
-  if (details.complement) return `${base} · ${details.complement}`;
-  return base;
-}
-
 const CheckoutContext = createContext<CheckoutContextType | null>(null);
 
 export function CheckoutProvider({ children }: { children: React.ReactNode }) {
-  const [checkout, setCheckout] = useState<CheckoutState>(initial);
+  const [checkout, setCheckout] = useState<CheckoutState>(initialCheckoutState);
+
+  // Restaura fulfillmentLocation/satelliteLocationId/prontaEntrega após um
+  // F5 no meio do checkout — só se o carrinho (persistido à parte, no
+  // zustand) ainda tiver itens. Carrinho vazio = nada em andamento, então
+  // ignora um valor persistido antigo em vez de deixar o cliente "preso" no
+  // modo São Miguel pra sempre. A reidratação do zustand-persist é síncrona,
+  // então `getState()` aqui já reflete o carrinho salvo.
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    if (useCartStore.getState().items.length === 0) return;
+    const persisted = loadPersistedFulfillment();
+    if (!persisted) return;
+    if (persisted.fulfillmentLocation === 'pereiro' && !persisted.prontaEntrega) {
+      return;
+    }
+    // Mesmo padrão de `CartSync` (queueMicrotask após hidratação síncrona):
+    // adia a atualização pra fora do corpo síncrono do efeito.
+    queueMicrotask(() => {
+      setCheckout((p) => ({
+        ...p,
+        fulfillmentLocation: persisted.fulfillmentLocation,
+        satelliteLocationId: persisted.satelliteLocationId,
+        prontaEntrega: persisted.prontaEntrega,
+        addressDetails: emptyAddressFor(persisted.fulfillmentLocation),
+      }));
+    });
+  }, []);
+
+  // Mantém o localStorage em dia sempre que um destes três campos muda —
+  // são os únicos que sobrevivem a um refresh (ver comentário acima).
+  useEffect(() => {
+    savePersistedFulfillment({
+      fulfillmentLocation: checkout.fulfillmentLocation,
+      satelliteLocationId: checkout.satelliteLocationId,
+      prontaEntrega: checkout.prontaEntrega,
+    });
+  }, [
+    checkout.fulfillmentLocation,
+    checkout.satelliteLocationId,
+    checkout.prontaEntrega,
+  ]);
+
+  const setFulfillmentLocation = useCallback(
+    (location: FulfillmentLocation, options?: { prontaEntrega?: boolean }) => {
+      setCheckout((p) => {
+        if (
+          p.fulfillmentLocation === location &&
+          (options?.prontaEntrega ?? p.prontaEntrega) === p.prontaEntrega
+        ) {
+          return p;
+        }
+        return {
+          ...p,
+          fulfillmentLocation: location,
+          satelliteLocationId: location === 'pereiro' ? null : p.satelliteLocationId,
+          prontaEntrega: options?.prontaEntrega ?? false,
+          // Datas/horários/taxa de um local não valem pro outro.
+          scheduledDate: undefined,
+          scheduledTime: undefined,
+          scheduleType: 'now',
+          addressDetails: emptyAddressFor(location),
+          address: '',
+          routeDistanceMeters: undefined,
+          deliveryFeeCents: 0,
+          deliveryInServiceArea: undefined,
+          deliveryQuoteSource: undefined,
+          locationConfirmed: p.deliveryType === 'pickup',
+        };
+      });
+    },
+    [],
+  );
+
+  const setSatelliteLocationId = useCallback((id: string) => {
+    setCheckout((p) =>
+      p.satelliteLocationId === id ? p : { ...p, satelliteLocationId: id },
+    );
+  }, []);
 
   const setDeliveryType = useCallback((t: DeliveryType) => {
     setCheckout((p) => ({
@@ -267,12 +283,17 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const resetCheckout = useCallback(() => {
-    setCheckout(initial);
+    // Volta a fulfillmentLocation/prontaEntrega pro default — o efeito de
+    // persistência acima já regrava esse default no localStorage a partir
+    // daqui, não precisa limpar a chave manualmente.
+    setCheckout(initialCheckoutState);
   }, []);
 
   const value = useMemo(
     () => ({
       checkout,
+      setFulfillmentLocation,
+      setSatelliteLocationId,
       setDeliveryType,
       setScheduleType,
       setScheduledDate,
@@ -289,6 +310,8 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
     }),
     [
       checkout,
+      setFulfillmentLocation,
+      setSatelliteLocationId,
       setDeliveryType,
       setScheduleType,
       setScheduledDate,

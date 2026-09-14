@@ -138,14 +138,19 @@ export default function RevisaoPage() {
           : undefined,
       customerNote: checkout.note || undefined,
       couponCode: coupon?.code,
+      fulfillmentLocationId:
+        checkout.fulfillmentLocation === 'sao_miguel'
+          ? (checkout.satelliteLocationId ?? undefined)
+          : undefined,
+      prontaEntrega: checkout.prontaEntrega || undefined,
       address:
         checkout.deliveryType === 'delivery'
           ? {
               street: checkout.addressDetails.street,
               number: checkout.addressDetails.number,
               neighborhood: checkout.addressDetails.neighborhood,
-              city: checkout.addressDetails.city || 'Pereiro',
-              state: checkout.addressDetails.state || 'CE',
+              city: checkout.addressDetails.city,
+              state: checkout.addressDetails.state,
               postalCode: checkout.addressDetails.postalCode || undefined,
               complement: checkout.addressDetails.complement || undefined,
               referencePoint:

@@ -34,6 +34,13 @@ export {
 } from '@/modules/admin/catalog';
 export { listAdminAuditLogs, writeAuditLog } from '@/modules/admin/audit';
 export {
+  getAdminSatelliteLocation,
+  updateAdminSatelliteLocation,
+  replaceAdminSatelliteHours,
+  replaceAdminSatelliteDeliverySlots,
+  listAdminSatelliteLocations,
+} from '@/modules/admin/satellite-location';
+export {
   nextAdminStatus,
   type AdminOrderListItem,
   type AdminOrderDetail,

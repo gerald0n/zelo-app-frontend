@@ -90,6 +90,7 @@ export async function createAdminProduct(input: {
   isActive?: boolean;
   isAvailable?: boolean;
   addonIds?: string[];
+  fulfillmentLocationId?: string | null;
 }): Promise<Result<AdminProduct>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
@@ -111,6 +112,7 @@ export async function createAdminProduct(input: {
       sort_order: input.sortOrder ?? 0,
       is_active: input.isActive ?? true,
       is_available: input.isAvailable ?? true,
+      fulfillment_location_id: input.fulfillmentLocationId ?? null,
     })
     .select('id')
     .single();
@@ -176,6 +178,7 @@ export async function duplicateAdminProduct(
     isActive: source.data.isActive,
     isAvailable: false,
     addonIds: source.data.addonIds,
+    fulfillmentLocationId: source.data.fulfillmentLocationId,
   });
   if (!created.ok) return created;
 
@@ -204,6 +207,7 @@ export async function updateAdminProduct(options: {
   isActive?: boolean;
   isAvailable?: boolean;
   addonIds?: string[];
+  fulfillmentLocationId?: string | null;
 }): Promise<Result<AdminProduct>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
@@ -237,6 +241,9 @@ export async function updateAdminProduct(options: {
   if (typeof options.isActive === 'boolean') patch.is_active = options.isActive;
   if (typeof options.isAvailable === 'boolean') {
     patch.is_available = options.isAvailable;
+  }
+  if (options.fulfillmentLocationId !== undefined) {
+    patch.fulfillment_location_id = options.fulfillmentLocationId;
   }
 
   const admin = createAdminSupabaseClient();

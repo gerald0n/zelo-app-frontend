@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getPublicStore } from '@/modules/catalog/catalog-repository';
+import { getSatelliteLocation } from '@/modules/catalog/satellite-repository';
 import { quoteDelivery } from '@/modules/delivery';
 import { httpStatusFor } from '@/lib/errors';
 
@@ -19,6 +20,7 @@ const bodySchema = z.object({
   postalCode: z.string().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  fulfillmentLocation: z.enum(['pereiro', 'sao_miguel']).optional(),
 });
 
 export async function POST(request: Request) {
@@ -36,35 +38,42 @@ export async function POST(request: Request) {
     );
   }
 
-  const storeResult = await getPublicStore();
-  if (!storeResult.ok) {
+  const originResult =
+    parsed.data.fulfillmentLocation === 'sao_miguel'
+      ? await getSatelliteLocation()
+      : await getPublicStore();
+
+  if (!originResult.ok) {
     return NextResponse.json(
-      { error: storeResult.error },
-      { status: httpStatusFor(storeResult.error.code) },
+      { error: originResult.error },
+      { status: httpStatusFor(originResult.error.code) },
     );
   }
-  if (!storeResult.data) {
+  if (!originResult.data) {
     return NextResponse.json(
       {
         error: {
           code: 'NOT_FOUND',
-          message: 'Loja não encontrada.',
+          message:
+            parsed.data.fulfillmentLocation === 'sao_miguel'
+              ? 'Unidade não encontrada.'
+              : 'Loja não encontrada.',
         },
       },
       { status: 404 },
     );
   }
 
-  const store = storeResult.data;
+  const origin = originResult.data;
   const quote = await quoteDelivery(parsed.data, {
-    latitude: store.latitude,
-    longitude: store.longitude,
-    freeDeliveryRadiusMeters: store.freeDeliveryRadiusMeters,
-    fixedDeliveryFeeCents: store.fixedDeliveryFeeCents,
-    maxDeliveryRadiusMeters: store.maxDeliveryRadiusMeters,
-    addressLine: store.addressLine,
-    city: store.city,
-    state: store.state,
+    latitude: origin.latitude,
+    longitude: origin.longitude,
+    freeDeliveryRadiusMeters: origin.freeDeliveryRadiusMeters,
+    fixedDeliveryFeeCents: origin.fixedDeliveryFeeCents,
+    maxDeliveryRadiusMeters: origin.maxDeliveryRadiusMeters,
+    addressLine: origin.addressLine,
+    city: origin.city,
+    state: origin.state,
   });
 
   if (!quote.ok) {

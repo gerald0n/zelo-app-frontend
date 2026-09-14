@@ -1,4 +1,4 @@
-import type { CatalogStore } from '@/modules/catalog/types';
+import type { CatalogStore, SatelliteLocation } from '@/modules/catalog/types';
 import type {
   DeliverySlipData,
   KitchenTicketData,
@@ -48,16 +48,30 @@ export function orderToKitchenTicket(
 export function orderToDeliverySlip(
   order: AdminOrderDetail,
   store: CatalogStore,
+  /** Pedido de São Miguel/RN imprime o endereço da unidade, não o de Pereiro. */
+  satelliteLocation?: SatelliteLocation | null,
 ): DeliverySlipData {
+  const origin =
+    order.fulfillmentLocationId && satelliteLocation?.id === order.fulfillmentLocationId
+      ? {
+          name: satelliteLocation.name,
+          cnpj: store.cnpj,
+          addressLine: satelliteLocation.addressLine,
+          city: satelliteLocation.city,
+          state: satelliteLocation.state,
+          phoneE164: store.phoneE164,
+        }
+      : {
+          name: store.name,
+          cnpj: store.cnpj,
+          addressLine: store.addressLine,
+          city: store.city,
+          state: store.state,
+          phoneE164: store.phoneE164,
+        };
+
   return {
-    store: {
-      name: store.name,
-      cnpj: store.cnpj,
-      addressLine: store.addressLine,
-      city: store.city,
-      state: store.state,
-      phoneE164: store.phoneE164,
-    },
+    store: origin,
     orderNumber: order.number,
     createdAt: order.createdAt,
     deliveryMethod: order.deliveryMethod,

@@ -1,6 +1,7 @@
 import type { DeliveryQuoteSource } from '@/modules/delivery';
 
 export type CheckoutOptions = {
+  fulfillmentLocation: 'pereiro';
   store: {
     id: string;
     name: string;
@@ -25,6 +26,46 @@ export type CheckoutOptions = {
     timesByDate: Record<string, { delivery: string[]; pickup: string[] }>;
   };
 };
+
+/**
+ * Shape do local satélite (São Miguel/RN) — dias fixos + retirada "qualquer
+ * horário numa janela" (sem grade) + lista curta de horários de entrega.
+ * Deliberadamente diferente de `CheckoutOptions.scheduling` (motor separado,
+ * ver `scheduling/satellite-slots.ts`).
+ */
+export type SatelliteDeliverySlotOption = {
+  weekday: number;
+  startsAt: string;
+  endsAt: string | null;
+  label: string | null;
+  sortOrder: number;
+};
+
+export type SatelliteCheckoutOptions = {
+  fulfillmentLocation: 'sao_miguel';
+  store: {
+    id: string;
+    name: string;
+    addressLine: string;
+    city: string;
+    state: string;
+    latitude: number;
+    longitude: number;
+    freeDeliveryRadiusMeters: number;
+    fixedDeliveryFeeCents: number;
+  };
+  neighborhoods: Array<{ id: string; name: string }>;
+  scheduling: {
+    storeOpen: boolean;
+    allowSameDay: boolean;
+    mixedCart: boolean;
+    availableDates: string[];
+    pickupWindowByDate: Record<string, { opensAt: string; closesAt: string }>;
+    deliverySlotsByDate: Record<string, SatelliteDeliverySlotOption[]>;
+  };
+};
+
+export type AnyCheckoutOptions = CheckoutOptions | SatelliteCheckoutOptions;
 
 export type ValidationResult = {
   inServiceArea: boolean;

@@ -35,6 +35,7 @@ type Props = {
   product: AdminProduct | null;
   categories: AdminCategory[];
   addons: AdminAddon[];
+  satelliteLocations: Array<{ id: string; slug: string; name: string }>;
   isPending: boolean;
   uploadPending: boolean;
   onSubmit: (values: ProductForm) => void;
@@ -52,6 +53,7 @@ export function ProductFormModal({
   product,
   categories,
   addons,
+  satelliteLocations,
   isPending,
   uploadPending,
   onSubmit,
@@ -119,6 +121,7 @@ export function ProductFormModal({
           editingProduct={product !== null}
           categories={categories}
           addons={addons}
+          satelliteLocations={satelliteLocations}
           isPending={isPending}
           onSubmit={onSubmit}
           onCancel={onClose}

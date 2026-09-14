@@ -8,9 +8,6 @@ import {
 import { geocodeAddressOsm } from '@/modules/delivery/osm';
 import { haversineDistanceMeters } from '@/modules/delivery/geo';
 
-/** Centro de Pereiro-CE — âncora quando não conseguimos localizar o endereço. */
-const PEREIRO_CENTER = { latitude: -6.0485, longitude: -38.4612 } as const;
-
 export type DeliveryQuoteSource =
   | 'google_maps'
   | 'openstreetmap'
@@ -63,13 +60,13 @@ export type StoreOrigin = {
   state: string;
 };
 
-function composeAddress(input: DeliveryAddressInput): string {
+function composeAddress(input: DeliveryAddressInput, store: StoreOrigin): string {
   const parts = [
     input.street,
     input.number,
     input.neighborhood,
-    input.city ?? 'Pereiro',
-    input.state ?? 'CE',
+    input.city ?? store.city,
+    input.state ?? store.state,
     'Brasil',
   ].filter(Boolean);
   return parts.join(', ');
@@ -87,12 +84,13 @@ function composeStreetAddress(input: DeliveryAddressInput): string {
 }
 
 /**
- * Trava a geocodificação na cidade da loja. Sem isso o Google resolve
- * "Centro" como Sobral (cidade grande ~250 km a noroeste).
+ * Trava a geocodificação na cidade da origem (loja ou local satélite). Sem
+ * isso o Google resolve "Centro" como a cidade grande mais próxima (ex.:
+ * Sobral, ~250 km a noroeste de Pereiro).
  */
-function geocodeComponents(input: DeliveryAddressInput): string {
-  const locality = input.city ?? 'Pereiro';
-  const area = input.state ?? 'CE';
+function geocodeComponents(input: DeliveryAddressInput, store: StoreOrigin): string {
+  const locality = input.city ?? store.city;
+  const area = input.state ?? store.state;
   return `locality:${locality}|administrative_area:${area}|country:BR`;
 }
 
@@ -102,7 +100,10 @@ const LOW_CONFIDENCE_LOCATION_TYPES = new Set([
   'APPROXIMATE',
 ]);
 
-async function resolveCoordinates(input: DeliveryAddressInput): Promise<{
+async function resolveCoordinates(
+  input: DeliveryAddressInput,
+  store: StoreOrigin,
+): Promise<{
   latitude: number;
   longitude: number;
   formattedAddress: string;
@@ -133,7 +134,7 @@ async function resolveCoordinates(input: DeliveryAddressInput): Promise<{
     return {
       latitude: input.latitude,
       longitude: input.longitude,
-      formattedAddress: composeAddress(input),
+      formattedAddress: composeAddress(input, store),
       source: hasGoogleMapsServerKey() ? 'google_maps' : 'openstreetmap',
       locationPrecision: 'high',
     };
@@ -141,7 +142,7 @@ async function resolveCoordinates(input: DeliveryAddressInput): Promise<{
 
   if (hasGoogleMapsServerKey()) {
     const geo = await geocodeAddress(composeStreetAddress(input), {
-      components: geocodeComponents(input),
+      components: geocodeComponents(input, store),
     });
     if (geo.ok) {
       return {
@@ -158,7 +159,7 @@ async function resolveCoordinates(input: DeliveryAddressInput): Promise<{
     }
   }
 
-  const osm = await geocodeAddressOsm(composeAddress(input));
+  const osm = await geocodeAddressOsm(composeAddress(input, store), store);
   if (osm.ok) {
     return {
       latitude: osm.data.latitude,
@@ -171,11 +172,12 @@ async function resolveCoordinates(input: DeliveryAddressInput): Promise<{
     };
   }
 
-  // Não localizamos: ancora no centro de Pereiro e pede o pin no mapa.
+  // Não localizamos: ancora na origem (loja ou local satélite) e pede o pin
+  // no mapa.
   return {
-    latitude: PEREIRO_CENTER.latitude,
-    longitude: PEREIRO_CENTER.longitude,
-    formattedAddress: composeAddress(input),
+    latitude: store.latitude,
+    longitude: store.longitude,
+    formattedAddress: composeAddress(input, store),
     source: 'local_fallback',
     locationPrecision: 'low',
   };
@@ -201,7 +203,7 @@ export async function quoteDelivery(
     );
   }
 
-  const resolved = await resolveCoordinates(input);
+  const resolved = await resolveCoordinates(input, store);
   const straightMeters = Math.round(
     haversineDistanceMeters(
       { latitude: store.latitude, longitude: store.longitude },

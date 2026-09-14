@@ -11,6 +11,7 @@ import { BusinessHoursForm } from '@/app/configuracoes/_sections/BusinessHoursFo
 import { PrinterSection } from '@/app/configuracoes/_sections/PrinterSection';
 import { PushBroadcastSection } from '@/app/configuracoes/_sections/PushBroadcastSection';
 import { PushSection } from '@/app/configuracoes/_sections/PushSection';
+import { SatelliteLocationSection } from '@/app/configuracoes/_sections/SatelliteLocationSection';
 import { StoreForm } from '@/app/configuracoes/_sections/StoreForm';
 import { adminContainerClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
@@ -102,6 +103,7 @@ export default function AdminConfiguracoesPage() {
             onCreate={(values) => config.blackoutMutation.mutate(values)}
             onDelete={(id) => config.deleteBlackoutMutation.mutate(id)}
           />
+          <SatelliteLocationSection />
         </div>
       ) : null}
 

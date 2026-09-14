@@ -23,3 +23,12 @@ export {
   weekdayOfDateIso,
   type StoreWallClock,
 } from '@/modules/scheduling/tz';
+export {
+  buildSatelliteSchedulingSnapshot,
+  canPlaceImmediateSatelliteOrder,
+  isSatelliteSlotValid,
+  listSatelliteActiveDates,
+  listSatelliteDeliverySlots,
+  listSatellitePickupWindow,
+  type SatelliteSchedulingSnapshot,
+} from '@/modules/scheduling/satellite-slots';

@@ -78,6 +78,8 @@ export type AdminProduct = {
   sortOrder: number;
   images: AdminProductImage[];
   addonIds: string[];
+  /** Presente = produto de "pronta entrega" exclusivo de um local satélite (ex.: São Miguel/RN), não do catálogo normal. */
+  fulfillmentLocationId: string | null;
 };
 
 export type AdminCategory = {

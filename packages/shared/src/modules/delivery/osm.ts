@@ -1,15 +1,25 @@
 import { err, ok, type Result } from '@/lib/errors';
 import { logger } from '@/lib/logger';
-import type { GeocodeResult } from '@/modules/delivery/maps';
+import type { GeoPoint, GeocodeResult } from '@/modules/delivery/maps';
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
 const USER_AGENT = 'ZeloConfeitaria/1.0 (https://zeloconfeitaria.com.br)';
 
-/** Recorte urbano de Pereiro-CE para viés de geocodificação (left, bottom, right, top). */
-const PEREIRO_VIEWBOX = '-38.49,-6.075,-38.44,-6.025';
+/** Margem (graus) ao redor da origem pro recorte de viés de geocodificação. */
+const VIEWBOX_MARGIN_DEGREES = 0.05;
+
+/** Recorte (left, bottom, right, top) centrado na origem — loja ou local satélite. */
+function viewboxAround(origin: GeoPoint): string {
+  const left = origin.longitude - VIEWBOX_MARGIN_DEGREES;
+  const right = origin.longitude + VIEWBOX_MARGIN_DEGREES;
+  const bottom = origin.latitude - VIEWBOX_MARGIN_DEGREES;
+  const top = origin.latitude + VIEWBOX_MARGIN_DEGREES;
+  return `${left},${bottom},${right},${top}`;
+}
 
 export async function geocodeAddressOsm(
   address: string,
+  origin: GeoPoint,
 ): Promise<Result<GeocodeResult>> {
   try {
     const url = new URL(NOMINATIM_URL);
@@ -18,7 +28,7 @@ export async function geocodeAddressOsm(
     url.searchParams.set('limit', '1');
     url.searchParams.set('addressdetails', '1');
     url.searchParams.set('countrycodes', 'br');
-    url.searchParams.set('viewbox', PEREIRO_VIEWBOX);
+    url.searchParams.set('viewbox', viewboxAround(origin));
     url.searchParams.set('bounded', '1');
 
     const response = await fetch(url, {

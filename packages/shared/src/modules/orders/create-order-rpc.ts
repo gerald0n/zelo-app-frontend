@@ -59,6 +59,8 @@ export function toRpcPayload(
         : null,
     customer_note: body.customerNote ?? null,
     coupon_code: body.couponCode ? body.couponCode.toUpperCase() : null,
+    fulfillment_location_id: body.fulfillmentLocationId ?? null,
+    pronta_entrega: body.prontaEntrega ?? false,
     delivery_fee_cents: delivery.deliveryFeeCents,
     route_distance_meters: delivery.routeDistanceMeters,
     address:

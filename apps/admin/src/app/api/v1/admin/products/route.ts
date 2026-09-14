@@ -22,6 +22,7 @@ const createSchema = z.object({
   isActive: z.boolean().optional(),
   isAvailable: z.boolean().optional(),
   addonIds: z.array(z.string().uuid()).optional(),
+  fulfillmentLocationId: z.string().uuid().nullable().optional(),
 });
 
 export async function GET() {

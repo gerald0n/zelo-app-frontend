@@ -44,6 +44,7 @@ export const DETAIL_SELECT = `
   cancelled_at,
   created_at,
   updated_at,
+  fulfillment_location_id,
   guest_name,
   guest_phone_e164,
   customers ( id, name, phone_e164 ),
