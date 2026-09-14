@@ -1,6 +1,7 @@
 import { getGoogleMapsApiKey } from '@/config/env';
 import { err, ok, type Result } from '@/lib/errors';
 import { logger } from '@/lib/logger';
+import { findPereiroNeighborhood } from '@/modules/delivery/pereiro';
 
 export type GeoPoint = {
   latitude: number;
@@ -24,6 +25,10 @@ export type GeocodeResult = GeoPoint & {
   state?: string;
   postalCode?: string;
   locationType?: GeocodeLocationType;
+  /** Só preenchidos por `reverseGeocodeCoords` — `geocodeAddress` não usa. */
+  street?: string;
+  number?: string;
+  neighborhood?: string;
 };
 
 export function hasGoogleMapsServerKey(): boolean {
@@ -183,6 +188,14 @@ export async function reverseGeocodeCoords(
     const find = (type: string) =>
       components.find((item) => item.types.includes(type));
 
+    // Mesma cascata de bairro que `fetchPlaceDetails` usa do lado cliente
+    // (Places API) — duplicada aqui porque este módulo é server-only.
+    const neighborhoodRaw =
+      find('sublocality_level_1')?.long_name ??
+      find('sublocality')?.long_name ??
+      find('administrative_area_level_4')?.long_name ??
+      '';
+
     return ok({
       latitude: point.latitude,
       longitude: point.longitude,
@@ -190,6 +203,9 @@ export async function reverseGeocodeCoords(
       city: find('administrative_area_level_2')?.long_name,
       state: find('administrative_area_level_1')?.short_name,
       postalCode: find('postal_code')?.long_name,
+      street: find('route')?.long_name ?? '',
+      number: find('street_number')?.long_name ?? '',
+      neighborhood: findPereiroNeighborhood(neighborhoodRaw)?.name ?? '',
     });
   } catch (cause) {
     logger.captureAppError(

@@ -8,6 +8,7 @@ import {
   quoteDelivery,
   type DeliveryAddressInput,
 } from '@/modules/delivery';
+import type { LocationSource } from '@/modules/delivery/geo';
 import {
   ensureCustomerRecord,
   resolveCustomerForCheckout,
@@ -28,11 +29,19 @@ export type SavedAddress = {
   longitude: number;
   isDefault: boolean;
   lastUsedAt: string | null;
+  locationSource: LocationSource | null;
+  locationAccuracyMeters: number | null;
+  locationDiverged: boolean | null;
+  googleFormattedAddress: string | null;
 };
 
 export type SavedAddressInput = DeliveryAddressInput & {
   label?: string;
   isDefault?: boolean;
+  locationSource?: LocationSource;
+  locationAccuracyMeters?: number;
+  locationDiverged?: boolean;
+  formattedAddress?: string;
 };
 
 function mapRow(row: {
@@ -50,6 +59,10 @@ function mapRow(row: {
   longitude: number | string;
   is_default: boolean;
   last_used_at: string | null;
+  location_source: LocationSource | null;
+  location_accuracy_meters: number | string | null;
+  location_diverged: boolean | null;
+  google_formatted_address: string | null;
 }): SavedAddress {
   return {
     id: row.id,
@@ -66,11 +79,18 @@ function mapRow(row: {
     longitude: Number(row.longitude),
     isDefault: row.is_default,
     lastUsedAt: row.last_used_at,
+    locationSource: row.location_source,
+    locationAccuracyMeters:
+      row.location_accuracy_meters != null
+        ? Number(row.location_accuracy_meters)
+        : null,
+    locationDiverged: row.location_diverged,
+    googleFormattedAddress: row.google_formatted_address,
   };
 }
 
 const SELECT_COLUMNS =
-  'id, label, street, number, neighborhood, city, state, postal_code, complement, reference_point, latitude, longitude, is_default, last_used_at';
+  'id, label, street, number, neighborhood, city, state, postal_code, complement, reference_point, latitude, longitude, is_default, last_used_at, location_source, location_accuracy_meters, location_diverged, google_formatted_address';
 
 async function requireCustomerId(): Promise<Result<string>> {
   const identity = await resolveCustomerForCheckout();
@@ -207,6 +227,10 @@ export async function createSavedAddress(
       latitude: quoted.data.latitude,
       longitude: quoted.data.longitude,
       is_default: makeDefault,
+      location_source: input.locationSource ?? null,
+      location_accuracy_meters: input.locationAccuracyMeters ?? null,
+      location_diverged: input.locationDiverged ?? false,
+      google_formatted_address: input.formattedAddress ?? null,
     })
     .select(SELECT_COLUMNS)
     .single();
@@ -252,6 +276,10 @@ export async function updateSavedAddress(
       latitude: quoted.data.latitude,
       longitude: quoted.data.longitude,
       is_default: Boolean(input.isDefault),
+      location_source: input.locationSource ?? null,
+      location_accuracy_meters: input.locationAccuracyMeters ?? null,
+      location_diverged: input.locationDiverged ?? false,
+      google_formatted_address: input.formattedAddress ?? null,
     })
     .eq('id', addressId)
     .eq('customer_id', customerId.data)

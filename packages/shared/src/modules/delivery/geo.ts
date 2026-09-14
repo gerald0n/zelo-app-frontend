@@ -2,6 +2,23 @@ import type { GeoPoint } from '@/modules/delivery/maps';
 
 const EARTH_RADIUS_METERS = 6_371_000;
 
+/** Como a coordenada confirmada de um endereço/pedido foi definida. */
+export type LocationSource = 'geocoded' | 'current_location' | 'manual_pin';
+
+/**
+ * Distância (m) acima da qual um pin arrastado é considerado divergente da
+ * posição de alta confiança anterior (autocomplete/geocode preciso) — só
+ * avaliado quando essa posição de referência existir, pra não gerar falso
+ * positivo ao corrigir um fallback genérico (centro da cidade).
+ */
+export const PIN_DIVERGENCE_METERS = 250;
+
+/**
+ * Acima desse `accuracy` (m) do GPS do navegador, avisamos o cliente pra
+ * conferir o pin — não bloqueia o fluxo, só é informativo.
+ */
+export const LOW_GPS_ACCURACY_METERS = 100;
+
 /**
  * Fator de sinuosidade: quanto uma rota por rua costuma ser mais longa que a
  * linha reta em malha urbana. Usado só quando não há rota do Google.

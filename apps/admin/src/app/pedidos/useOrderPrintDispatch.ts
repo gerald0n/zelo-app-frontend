@@ -17,8 +17,12 @@ import type {
 import type { OrderStatus } from '@/modules/orders/types';
 
 const DELIVERY_SLIP_STATUSES: OrderStatus[] = [
+  // `ready_for_delivery` não é mais alcançado por pedidos novos (o admin
+  // pula direto pra `out_for_delivery`), mas fica na lista pra imprimir o
+  // romaneio de qualquer pedido que ainda esteja parado nesse status.
   'ready_for_delivery',
   'ready_for_pickup',
+  'out_for_delivery',
 ];
 
 /**

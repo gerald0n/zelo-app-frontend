@@ -15,8 +15,10 @@ const orderItemSchema = z.object({
 });
 
 const addressSchema = z.object({
-  street: z.string().min(1),
-  number: z.string().min(1),
+  // Sem `.min(1)`: a coordenada confirmada (latitude/longitude, sempre
+  // obrigatória) passa a ser suficiente quando o Google não reconhece a rua.
+  street: z.string().optional().default(''),
+  number: z.string().optional().default(''),
   neighborhood: z.string().optional().default(''),
   city: z.string().min(1),
   state: z.string().min(1),
@@ -25,6 +27,12 @@ const addressSchema = z.object({
   referencePoint: z.string().optional(),
   latitude: z.number(),
   longitude: z.number(),
+  locationSource: z
+    .enum(['geocoded', 'current_location', 'manual_pin'])
+    .optional(),
+  locationAccuracyMeters: z.number().optional(),
+  locationDiverged: z.boolean().optional(),
+  formattedAddress: z.string().optional(),
 });
 
 export const createOrderBodySchema = z.object({

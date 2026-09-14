@@ -195,13 +195,14 @@ export function nextAdminStatus(
   deliveryMethod: CustomerOrder['deliveryMethod'],
 ): OrderStatus | null {
   if (status === 'in_production') {
-    return deliveryMethod === 'pickup'
-      ? 'ready_for_pickup'
-      : 'ready_for_delivery';
+    return deliveryMethod === 'pickup' ? 'ready_for_pickup' : 'out_for_delivery';
   }
   const map: Partial<Record<OrderStatus, OrderStatus>> = {
     received: 'confirmed',
     confirmed: 'in_production',
+    // `ready_for_delivery` não é mais alcançado por pedidos novos (ver acima),
+    // mas fica aqui pra pedidos que já estavam parados nesse status quando
+    // essa mudança entrou no ar continuarem avançando normalmente.
     ready_for_delivery: 'out_for_delivery',
     ready_for_pickup: 'delivered',
     out_for_delivery: 'delivered',

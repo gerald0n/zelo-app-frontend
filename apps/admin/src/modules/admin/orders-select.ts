@@ -1,0 +1,90 @@
+/** `select()` do Supabase para listagem e detalhe de pedidos no admin. */
+
+export const LIST_SELECT = `
+  id,
+  order_number,
+  status,
+  delivery_method,
+  payment_method,
+  payment_status,
+  mp_order_id,
+  timing,
+  scheduled_for,
+  total_cents,
+  created_at,
+  updated_at,
+  guest_name,
+  guest_phone_e164,
+  customers ( name, phone_e164 ),
+  order_addresses ( street, number, neighborhood ),
+  order_items ( product_name, quantity )
+`;
+
+export const DETAIL_SELECT = `
+  id,
+  order_number,
+  status,
+  timing,
+  scheduled_for,
+  delivery_method,
+  payment_method,
+  payment_status,
+  mp_order_id,
+  subtotal_cents,
+  add_ons_total_cents,
+  delivery_fee_cents,
+  total_cents,
+  coupon_code,
+  coupon_discount_cents,
+  needs_change,
+  change_for_amount_cents,
+  customer_note,
+  internal_note,
+  cancellation_reason,
+  cancelled_at,
+  created_at,
+  updated_at,
+  guest_name,
+  guest_phone_e164,
+  customers ( id, name, phone_e164 ),
+  order_addresses (
+    street,
+    number,
+    neighborhood,
+    city,
+    state,
+    complement,
+    reference_point,
+    route_distance_meters,
+    latitude,
+    longitude,
+    location_source,
+    location_accuracy_meters,
+    location_diverged,
+    google_formatted_address
+  ),
+  order_items (
+    id,
+    product_id,
+    product_name,
+    quantity,
+    unit_price_cents,
+    line_total_cents,
+    customer_note,
+    order_item_add_ons (
+      add_on_id,
+      add_on_name,
+      quantity,
+      unit_price_cents
+    )
+  ),
+  order_status_history (
+    id,
+    previous_status,
+    new_status,
+    actor_type,
+    reason,
+    created_at
+  ),
+  order_reviews ( rating, comment, status, created_at )
+`;

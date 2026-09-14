@@ -171,7 +171,9 @@ export function buildSecurityHeaders(): Header[] {
     { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
     {
       key: 'Permissions-Policy',
-      value: 'camera=(), microphone=(), geolocation=(), payment=()',
+      // geolocation=(self): botão "usar minha localização atual" no
+      // checkout precisa de navigator.geolocation no próprio domínio.
+      value: 'camera=(), microphone=(), geolocation=(self), payment=()',
     },
     {
       key: 'Strict-Transport-Security',

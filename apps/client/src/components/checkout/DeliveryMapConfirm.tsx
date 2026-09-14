@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { Loader2, MapPin } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { LOW_GPS_ACCURACY_METERS } from '@/modules/delivery/geo';
 
 const DeliveryGoogleMap = dynamic(
   () =>
@@ -29,6 +30,10 @@ type DeliveryMapConfirmProps = {
   onCenterChange?: (latitude: number, longitude: number) => void;
   /** Endereço resolvido por reverse geocode para o pin atual. */
   addressPreview?: string;
+  /** `accuracy` do GPS, quando o pin veio da localização atual. */
+  accuracyMeters?: number;
+  /** Pin arrastado longe do endereço digitado/geocodificado. */
+  diverged?: boolean;
 };
 
 function MapEmbedFallback({
@@ -59,6 +64,8 @@ export function DeliveryMapConfirm({
   onConfirm,
   onCenterChange,
   addressPreview,
+  accuracyMeters,
+  diverged,
 }: DeliveryMapConfirmProps) {
   const [mapStatus, setMapStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading',
@@ -70,9 +77,22 @@ export function DeliveryMapConfirm({
       <div>
         <p className="text-base font-semibold">Confirme a localização</p>
         <p className="mt-0.5 text-sm leading-snug text-muted-foreground">
-          Arraste o mapa até o pin ficar em cima do seu endereço.
+          Confira se o pin está exatamente no local da entrega. Se
+          necessário, ajuste-o no mapa.
         </p>
       </div>
+
+      {accuracyMeters != null && accuracyMeters > LOW_GPS_ACCURACY_METERS ? (
+        <p className="text-xs text-tone-warning-foreground">
+          Localização com precisão baixa (~{Math.round(accuracyMeters)}m) —
+          confira se o pin está no lugar certo.
+        </p>
+      ) : null}
+      {diverged ? (
+        <p className="text-xs text-tone-warning-foreground">
+          O pin ficou longe do endereço digitado — confirme que está certo.
+        </p>
+      ) : null}
 
       <div className="relative h-64 overflow-hidden rounded-md border border-border bg-muted sm:h-80">
         {mapStatus === 'error' ? (

@@ -6,12 +6,20 @@ import {
   CheckCircle2,
   Loader2,
 } from 'lucide-react';
+import { useRef } from 'react';
 import { useCheckout } from '@/contexts/CheckoutContext';
 import { Input } from '@/components/ui/input';
 import { DeliveryMapConfirm } from '@/components/checkout/DeliveryMapConfirm';
 import { AddressAutocomplete } from '@/components/checkout/AddressAutocomplete';
+import { CurrentLocationButton } from '@/components/checkout/CurrentLocationButton';
+import type { CurrentLocationResult } from '@/hooks/useCurrentLocation';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import type { SavedAddress } from '@/modules/customers/addresses';
+import type { ResolvedPlace } from '@/modules/delivery/places';
+import {
+  PIN_DIVERGENCE_METERS,
+  haversineDistanceMeters,
+} from '@/modules/delivery/geo';
 import { checkoutFieldClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 import type { CheckoutOptions } from '@/app/checkout/recebimento/recebimento-helpers';
@@ -42,6 +50,74 @@ export function DeliveryAddressSection({
   const deliveryFee =
     checkout.deliveryType === 'delivery' ? checkout.deliveryFeeCents : 0;
 
+  // Posição de alta confiança mais recente (autocomplete/geocode preciso ou
+  // GPS com boa precisão) — referência pra detectar se um arraste manual do
+  // pin depois diverge muito do que foi resolvido pelo texto/GPS. `null`
+  // quando não há referência confiável (ex.: fallback genérico do centro da
+  // cidade) — nesse caso não faz sentido comparar.
+  const highConfidenceOriginRef = useRef<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+
+  function handleGeocodedPlace(place: ResolvedPlace) {
+    const latitude = Number.isFinite(place.latitude)
+      ? place.latitude
+      : undefined;
+    const longitude = Number.isFinite(place.longitude)
+      ? place.longitude
+      : undefined;
+    if (latitude != null && longitude != null) {
+      highConfidenceOriginRef.current = { latitude, longitude };
+    }
+    setAddressDetails({
+      street: place.street || details.street,
+      number: place.number || details.number,
+      neighborhood: place.neighborhood || details.neighborhood,
+      city: 'Pereiro',
+      state: 'CE',
+      latitude,
+      longitude,
+      locationSource: 'geocoded',
+      locationAccuracyMeters: undefined,
+      locationDiverged: false,
+    });
+  }
+
+  function handleCurrentLocation(result: CurrentLocationResult) {
+    if (result.accuracy <= PIN_DIVERGENCE_METERS) {
+      highConfidenceOriginRef.current = {
+        latitude: result.latitude,
+        longitude: result.longitude,
+      };
+    } else {
+      highConfidenceOriginRef.current = null;
+    }
+    setAddressDetails({
+      // Preserva o que o cliente já digitou — o reverse geocode do GPS só
+      // preenche o que ainda está vazio.
+      street: details.street || result.address?.street || details.street,
+      number: details.number || result.address?.number || details.number,
+      neighborhood:
+        details.neighborhood ||
+        result.address?.neighborhood ||
+        details.neighborhood,
+      city: 'Pereiro',
+      state: 'CE',
+      latitude: result.latitude,
+      longitude: result.longitude,
+      formattedAddress: result.address?.formattedAddress,
+      locationSource: 'current_location',
+      locationAccuracyMeters: result.accuracy,
+      locationDiverged: false,
+    });
+    // Garante revalidação mesmo se rua/número/cidade/UF não mudarem (ex.:
+    // clicar "usar localização atual" de novo já com os campos preenchidos)
+    // — o efeito principal de `useDeliveryQuote` só observa esses campos,
+    // não lat/lng diretamente.
+    revalidateWithCoords(result.latitude, result.longitude);
+  }
+
   return (
     <div className="mt-2 min-w-0 space-y-2.5">
       <p className="text-base font-semibold">Endereço de entrega</p>
@@ -53,6 +129,10 @@ export function DeliveryAddressSection({
               type="button"
               onClick={() => {
                 onSelectSaved(address.id);
+                highConfidenceOriginRef.current = {
+                  latitude: address.latitude,
+                  longitude: address.longitude,
+                };
                 setAddressDetails({
                   street: address.street,
                   number: address.number,
@@ -64,6 +144,11 @@ export function DeliveryAddressSection({
                   postalCode: address.postalCode ?? '',
                   latitude: address.latitude,
                   longitude: address.longitude,
+                  formattedAddress: address.googleFormattedAddress ?? undefined,
+                  locationSource: address.locationSource ?? undefined,
+                  locationAccuracyMeters:
+                    address.locationAccuracyMeters ?? undefined,
+                  locationDiverged: address.locationDiverged ?? false,
                 });
               }}
               className={cn(
@@ -81,6 +166,7 @@ export function DeliveryAddressSection({
           ))}
         </div>
       ) : null}
+      <CurrentLocationButton onResolve={handleCurrentLocation} />
       <div className="grid min-w-0 grid-cols-3 gap-2">
         <AddressAutocomplete
           className="col-span-2"
@@ -91,23 +177,12 @@ export function DeliveryAddressSection({
               street: text,
               latitude: undefined,
               longitude: undefined,
+              locationSource: undefined,
+              locationAccuracyMeters: undefined,
+              locationDiverged: undefined,
             })
           }
-          onResolve={(place) =>
-            setAddressDetails({
-              street: place.street || details.street,
-              number: place.number || details.number,
-              neighborhood: place.neighborhood || details.neighborhood,
-              city: 'Pereiro',
-              state: 'CE',
-              latitude: Number.isFinite(place.latitude)
-                ? place.latitude
-                : undefined,
-              longitude: Number.isFinite(place.longitude)
-                ? place.longitude
-                : undefined,
-            })
-          }
+          onResolve={handleGeocodedPlace}
           bias={options?.store}
           placeholder="Rua"
           aria-label="Rua"
@@ -199,9 +274,22 @@ export function DeliveryAddressSection({
               confirmed={checkout.locationConfirmed}
               onConfirm={() => setLocationConfirmed(true)}
               onCenterChange={(lat, lng) => {
+                const diverged = highConfidenceOriginRef.current
+                  ? haversineDistanceMeters(highConfidenceOriginRef.current, {
+                      latitude: lat,
+                      longitude: lng,
+                    }) > PIN_DIVERGENCE_METERS
+                  : false;
+                setAddressDetails({
+                  locationSource: 'manual_pin',
+                  locationAccuracyMeters: undefined,
+                  locationDiverged: diverged,
+                });
                 revalidateWithCoords(lat, lng);
               }}
               addressPreview={checkout.addressDetails.formattedAddress}
+              accuracyMeters={checkout.addressDetails.locationAccuracyMeters}
+              diverged={checkout.addressDetails.locationDiverged}
             />
           ) : null}
         </>

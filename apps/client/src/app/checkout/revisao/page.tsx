@@ -99,8 +99,16 @@ export default function RevisaoPage() {
   const total = Math.max(0, subtotal + deliveryFee - couponDiscount);
   const productIds = [...new Set(items.map((item) => item.productId))];
 
+  // Pedido de entrega com endereço fora da área, ou cuja localização não foi
+  // explicitamente confirmada no mapa, não pode ser enviado — evita aceitar
+  // silenciosamente uma posição default (centro da cidade) como válida.
+  const locationNotConfirmed =
+    checkout.deliveryType === 'delivery' &&
+    checkout.deliveryInServiceArea === true &&
+    !checkout.locationConfirmed;
+
   const handleConfirm = async () => {
-    if (submitting || items.length === 0) return;
+    if (submitting || items.length === 0 || locationNotConfirmed) return;
 
     const ok = await confirm({
       title: 'Confirmar pedido',
@@ -144,6 +152,11 @@ export default function RevisaoPage() {
                 checkout.addressDetails.referencePoint || undefined,
               latitude: checkout.addressDetails.latitude!,
               longitude: checkout.addressDetails.longitude!,
+              locationSource: checkout.addressDetails.locationSource,
+              locationAccuracyMeters:
+                checkout.addressDetails.locationAccuracyMeters,
+              locationDiverged: checkout.addressDetails.locationDiverged,
+              formattedAddress: checkout.addressDetails.formattedAddress,
             }
           : undefined,
       items: items.map((item) => ({
@@ -304,13 +317,20 @@ export default function RevisaoPage() {
             </div>
             <button
               type="button"
-              disabled={submitting || items.length === 0}
+              disabled={
+                submitting || items.length === 0 || locationNotConfirmed
+              }
               onClick={() => void handleConfirm()}
               className={pagePrimaryButtonClass}
             >
               {submitting ? <Loader2 className="size-5 animate-spin" /> : null}
               {submitting ? 'Enviando…' : 'Fazer pedido'}
             </button>
+            {locationNotConfirmed ? (
+              <p className="text-center text-xs text-destructive">
+                Confirme a localização no mapa antes de concluir o pedido.
+              </p>
+            ) : null}
           </div>
         </div>
       </div>

@@ -226,3 +226,40 @@ export async function fetchPlaceDetails(
     return null;
   }
 }
+
+export type ReverseGeocodedAddress = {
+  street: string;
+  number: string;
+  neighborhood: string;
+  formattedAddress: string;
+};
+
+/**
+ * Reverse geocode de uma coordenada (GPS ou pin arrastado) pro endereço mais
+ * próximo, via rota própria do backend (`getGoogleMapsApiKey`, chave
+ * server-side) — diferente do resto do arquivo, não depende de
+ * `BROWSER_KEY`/`hasPlacesBrowserKey()`, então funciona mesmo sem a chave
+ * pública do Places configurada no navegador.
+ *
+ * `null` só em falha de infraestrutura (rede, rate limit, API fora do ar) —
+ * não achar rua/número não é erro, volta como string vazia.
+ */
+export async function fetchAddressFromCoordinates(
+  latitude: number,
+  longitude: number,
+  signal?: AbortSignal,
+): Promise<ReverseGeocodedAddress | null> {
+  try {
+    const response = await fetch('/api/v1/addresses/reverse-geocode', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ latitude, longitude }),
+      signal,
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.address as ReverseGeocodedAddress;
+  } catch {
+    return null;
+  }
+}

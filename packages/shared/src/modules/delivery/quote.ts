@@ -192,10 +192,12 @@ export async function quoteDelivery(
   input: DeliveryAddressInput,
   store: StoreOrigin,
 ): Promise<Result<DeliveryQuote>> {
-  if (!input.street.trim() || !input.number.trim()) {
+  const hasAddressText = Boolean(input.street.trim() && input.number.trim());
+  const hasCoords = input.latitude != null && input.longitude != null;
+  if (!hasAddressText && !hasCoords) {
     return err(
       'VALIDATION_ERROR',
-      'Informe a rua e o número para calcular a entrega.',
+      'Informe a rua e o número, ou confirme sua localização no mapa.',
     );
   }
 
