@@ -1,4 +1,8 @@
-import { statusLabel, type OrderStatus } from '@/modules/orders/types';
+import {
+  customerFacingStatus,
+  statusLabel,
+  type OrderStatus,
+} from '@/modules/orders/types';
 import type { AdminOrderDetail } from '@/modules/admin/types';
 import { cn } from '@/lib/cn';
 
@@ -7,7 +11,6 @@ const STEP_LABEL: Partial<Record<OrderStatus, string>> = {
   confirmed: 'Confirmado',
   in_production: 'Produção',
   ready_for_pickup: 'Pronto',
-  ready_for_delivery: 'Pronto',
   out_for_delivery: 'Saiu',
   delivered: 'Entregue',
 };
@@ -18,7 +21,6 @@ function stepsFor(method: AdminOrderDetail['deliveryMethod']): OrderStatus[] {
         'received',
         'confirmed',
         'in_production',
-        'ready_for_delivery',
         'out_for_delivery',
         'delivered',
       ]
@@ -41,7 +43,9 @@ export function clock(iso: string) {
 /** Stepper "Recebido → … → Entregue" com o horário de cada etapa do histórico. */
 export default function OrderTimeline({ order }: { order: AdminOrderDetail }) {
   const steps = stepsFor(order.deliveryMethod);
-  const currentIndex = steps.indexOf(order.status);
+  // Pedidos que ficaram parados em `ready_for_delivery` (status legado, sem
+  // coluna própria) contam como se já estivessem em `out_for_delivery`.
+  const currentIndex = steps.indexOf(customerFacingStatus(order.status));
 
   const timeOf = (status: OrderStatus) => {
     const entry = order.history.find((h) => h.newStatus === status);
