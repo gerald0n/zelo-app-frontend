@@ -16,6 +16,7 @@ import { ProductThumb } from '@/components/product-thumb';
 import {
   categoryTone,
   formatCatalogPrice,
+  type CatalogBanner,
   type CatalogCategory,
   type CatalogProduct,
 } from '@/modules/catalog/types';
@@ -33,6 +34,7 @@ type Props = {
   testimonials: PublicTestimonial[];
   /** IDs dos mais vendidos nos últimos 30 dias, do mais pro menos vendido. */
   bestSellerProductIds: string[];
+  banners: CatalogBanner[];
 };
 
 export default function HomeCatalog({
@@ -41,6 +43,7 @@ export default function HomeCatalog({
   categoryNames,
   testimonials,
   bestSellerProductIds,
+  banners,
 }: Props) {
   const [active, setActive] = useState<Filter>('Todos');
   const { addItem, items } = useCart();
@@ -136,7 +139,7 @@ export default function HomeCatalog({
       <div className="mx-auto flex min-h-dvh w-full min-w-0 max-w-md flex-1 flex-col bg-background max-lg:min-h-full lg:max-w-none">
         <StoreHeader />
         <StoreStrip />
-        <MenuHeroCarousel />
+        <MenuHeroCarousel banners={banners} />
 
         {bestSellers.items.length > 0 ? (
           <section className="pt-4" aria-labelledby="best-sellers-heading">

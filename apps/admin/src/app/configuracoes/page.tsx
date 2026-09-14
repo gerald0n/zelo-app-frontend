@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { useConfiguracoes } from '@/app/configuracoes/useConfiguracoes';
 import { AdminPasswordForm } from '@/app/configuracoes/_sections/AdminPasswordForm';
 import { AuditLogSection } from '@/app/configuracoes/_sections/AuditLogSection';
+import { BannersSection } from '@/app/configuracoes/_sections/BannersSection';
 import { BlackoutsSection } from '@/app/configuracoes/_sections/BlackoutsSection';
 import { LogoutButton } from '@/app/configuracoes/_sections/LogoutButton';
 import { BusinessHoursForm } from '@/app/configuracoes/_sections/BusinessHoursForm';
@@ -116,6 +117,7 @@ export default function AdminConfiguracoesPage() {
 
       {tab === 'marketing' ? (
         <div className="space-y-4">
+          <BannersSection />
           <PushBroadcastSection />
         </div>
       ) : null}

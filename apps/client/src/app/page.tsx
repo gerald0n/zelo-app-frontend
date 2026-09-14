@@ -1,6 +1,7 @@
 import HomeCatalog from '@/components/HomeCatalog';
 import {
   getCachedBestSellingProductIds,
+  getCachedPublicBanners,
   getCachedPublicCatalog,
 } from '@/modules/catalog/cached-catalog';
 import { listPublicTestimonials } from '@/modules/reviews';
@@ -8,11 +9,13 @@ import { listPublicTestimonials } from '@/modules/reviews';
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const [catalog, testimonials, bestSellerProductIds] = await Promise.all([
-    getCachedPublicCatalog(),
-    listPublicTestimonials(),
-    getCachedBestSellingProductIds(),
-  ]);
+  const [catalog, testimonials, bestSellerProductIds, banners] =
+    await Promise.all([
+      getCachedPublicCatalog(),
+      listPublicTestimonials(),
+      getCachedBestSellingProductIds(),
+      getCachedPublicBanners(),
+    ]);
 
   if (!catalog.ok) {
     return (
@@ -38,6 +41,7 @@ export default async function HomePage() {
       categoryNames={categoryNames}
       testimonials={testimonials.ok ? testimonials.data : []}
       bestSellerProductIds={bestSellerProductIds}
+      banners={banners.ok ? banners.data : []}
     />
   );
 }

@@ -30,6 +30,7 @@ export const adminKeys = {
     [...adminKeys.all, 'customers', 'search', q] as const,
   otpSupportRequests: () =>
     [...adminKeys.all, 'otp-support-requests'] as const,
+  banners: () => [...adminKeys.all, 'banners'] as const,
 };
 
 export const catalogKeys = {

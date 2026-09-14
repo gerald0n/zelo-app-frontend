@@ -60,6 +60,14 @@ export type CatalogBlackout = {
   reason: string | null;
 };
 
+export type CatalogBanner = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  linkHref: string | null;
+  imageUrl: string;
+};
+
 export type CatalogPaymentMethods = {
   pix: boolean;
   cash: boolean;

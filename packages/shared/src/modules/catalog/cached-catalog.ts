@@ -3,12 +3,14 @@ import 'server-only';
 import { unstable_cache } from 'next/cache';
 import { err, ok, type Result } from '@/lib/errors';
 import {
+  BANNERS_CACHE_TAG,
   BEST_SELLERS_CACHE_TTL_SECONDS,
   CATALOG_CACHE_TAG,
   CATALOG_CACHE_TTL_SECONDS,
   STORE_CACHE_TAG,
 } from '@/modules/catalog/cache';
 import { listPublicBestSellingProductIds } from '@/modules/catalog/best-sellers-repository';
+import { getPublicBanners } from '@/modules/catalog/banners-repository';
 import {
   getPublicCatalog,
   getPublicProductBySlugOrId,
@@ -80,6 +82,16 @@ const cachedBestSellingProductIds = unstable_cache(
   { revalidate: BEST_SELLERS_CACHE_TTL_SECONDS },
 );
 
+const cachedBanners = unstable_cache(
+  async () => {
+    const result = await getPublicBanners();
+    if (!result.ok) throw new Error(result.error.message);
+    return result.data;
+  },
+  ['catalog:banners'],
+  { tags: [BANNERS_CACHE_TAG], revalidate: CATALOG_CACHE_TTL_SECONDS },
+);
+
 const cachedProductBySlugOrId = unstable_cache(
   async (slugOrId: string) => {
     const result = await getPublicProductBySlugOrId(slugOrId);
@@ -108,6 +120,10 @@ export function getCachedPublicCatalog() {
 
 export function getCachedPublicStore() {
   return toResult(() => cachedStore());
+}
+
+export function getCachedPublicBanners() {
+  return toResult(() => cachedBanners());
 }
 
 export function getCachedBestSellingProductIds() {
