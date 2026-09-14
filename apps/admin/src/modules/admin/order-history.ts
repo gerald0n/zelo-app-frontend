@@ -96,6 +96,7 @@ export async function listAdminOrderHistory(options: {
   });
 
   const q = options.q?.trim().toLowerCase();
+  const qDigits = q?.replace(/\D/g, '') ?? '';
   const filtered = !q
     ? mapped
     : mapped.filter(
@@ -103,6 +104,8 @@ export async function listAdminOrderHistory(options: {
           order.number.toLowerCase().includes(q) ||
           String(order.orderNumber).includes(q) ||
           order.customerName?.toLowerCase().includes(q) ||
+          (qDigits.length >= 4 &&
+            order.customerPhone?.replace(/\D/g, '').includes(qDigits)) ||
           order.items.some((item) => item.name.toLowerCase().includes(q)),
       );
 

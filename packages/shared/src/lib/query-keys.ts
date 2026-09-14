@@ -25,6 +25,9 @@ export const adminKeys = {
   satelliteHours: () => [...adminKeys.all, 'satellite-hours'] as const,
   satelliteDeliverySlots: () =>
     [...adminKeys.all, 'satellite-delivery-slots'] as const,
+  customers: (page: number) => [...adminKeys.all, 'customers', page] as const,
+  customerSearch: (q: string) =>
+    [...adminKeys.all, 'customers', 'search', q] as const,
 };
 
 export const catalogKeys = {

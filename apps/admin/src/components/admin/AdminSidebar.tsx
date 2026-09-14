@@ -16,6 +16,7 @@ import {
   Sun,
   LogOut,
   History,
+  Users,
 } from 'lucide-react';
 import { useAdmin } from '@/contexts/AdminContext';
 import { useAdminRealtime } from '@/contexts/AdminRealtimeContext';
@@ -45,6 +46,12 @@ const NAV = [
     label: 'Histórico',
     icon: History,
     match: (p: string) => p.startsWith('/historico'),
+  },
+  {
+    href: '/clientes',
+    label: 'Clientes',
+    icon: Users,
+    match: (p: string) => p.startsWith('/clientes'),
   },
   {
     href: '/catalogo',

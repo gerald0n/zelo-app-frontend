@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { type UseFormReturn, useWatch } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { CustomerCombobox } from '@/components/admin/CustomerCombobox';
 import type { ManualOrderForm } from '@/app/pedidos/novo/nova-comanda-form';
 import { DeliveryFields } from '@/app/pedidos/novo/_components/DeliveryFields';
 import {
@@ -45,7 +46,7 @@ export function IdentificationFields({ form }: FieldProps) {
         <p className={heading}>Cliente</p>
         <Label className="block text-xs font-semibold">
           Nome do cliente
-          <Input {...form.register('guestName')} className={field} />
+          <CustomerCombobox form={form} className={field} />
           <ErrorText message={e.guestName?.message} />
         </Label>
         <Label className="block text-xs font-semibold">
