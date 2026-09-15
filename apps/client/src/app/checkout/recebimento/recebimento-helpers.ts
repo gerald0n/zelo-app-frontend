@@ -2,6 +2,8 @@ import type { DeliveryQuoteSource } from '@/modules/delivery';
 
 export type CheckoutOptions = {
   fulfillmentLocation: 'pereiro';
+  /** `false` quando o local satélite (São Miguel) está desativado no admin. */
+  satelliteAvailable: boolean;
   store: {
     id: string;
     name: string;

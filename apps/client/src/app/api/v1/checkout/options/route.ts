@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       );
     }
     const location = locationResult.data;
-    if (!location) {
+    if (!location || !location.isActive) {
       return NextResponse.json(
         { error: { code: 'NOT_FOUND', message: 'Unidade não encontrada.' } },
         { status: 404 },
@@ -87,8 +87,13 @@ export async function POST(request: Request) {
     productIds,
   );
 
+  const satelliteLocationResult = await getSatelliteLocation();
+  const satelliteAvailable =
+    satelliteLocationResult.ok && Boolean(satelliteLocationResult.data?.isActive);
+
   return NextResponse.json({
     fulfillmentLocation: 'pereiro',
+    satelliteAvailable,
     store: {
       id: store.id,
       name: store.name,

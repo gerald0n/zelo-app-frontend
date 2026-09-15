@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function ProntaEntregaPage() {
   const locationResult = await getSatelliteLocation();
-  if (!locationResult.ok || !locationResult.data) {
+  if (!locationResult.ok || !locationResult.data || !locationResult.data.isActive) {
     return (
       <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-3 px-6 text-center">
         <h1 className="font-serif text-2xl font-semibold">Pronta entrega</h1>
