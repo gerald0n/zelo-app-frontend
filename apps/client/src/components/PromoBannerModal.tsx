@@ -3,18 +3,16 @@
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { X } from 'lucide-react';
-import { buildSupportWhatsappLink } from '@/lib/support-whatsapp';
 import {
   isPromoBannerBlockedPath,
   markPromoBannerShown,
+  PROMO_BANNER_CATEGORY_HREF,
   wasPromoBannerShownThisSession,
 } from '@/lib/promo-banner';
 
 const BANNER_ALT = 'Esfirras disponíveis no nosso cardápio';
-const WHATSAPP_MESSAGE =
-  'Olá! Vi o banner de esfirras e quero fazer uma reserva.';
-const DEFAULT_RESERVE_HREF = '/loja';
 
 /**
  * Banner promocional fixo (hardcoded), exibido uma vez por sessão ao abrir
@@ -23,7 +21,6 @@ const DEFAULT_RESERVE_HREF = '/loja';
 export function PromoBannerModal() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [reserveHref, setReserveHref] = useState(DEFAULT_RESERVE_HREF);
 
   useEffect(() => {
     if (isPromoBannerBlockedPath(pathname)) return;
@@ -34,19 +31,6 @@ export function PromoBannerModal() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpen(true);
   }, [pathname]);
-
-  useEffect(() => {
-    if (!open) return;
-    let active = true;
-
-    void buildSupportWhatsappLink(WHATSAPP_MESSAGE).then((link) => {
-      if (active && link) setReserveHref(link);
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [open]);
 
   if (!open) return null;
 
@@ -67,7 +51,7 @@ export function PromoBannerModal() {
         role="dialog"
         aria-modal="true"
         aria-label={BANNER_ALT}
-        className="relative z-10 w-full max-w-sm overflow-hidden rounded-2xl bg-card shadow-2xl sm:max-w-2xl"
+        className="relative z-10 w-full max-w-[280px] overflow-hidden rounded-2xl bg-card shadow-2xl sm:max-w-2xl"
       >
         <button
           type="button"
@@ -78,13 +62,7 @@ export function PromoBannerModal() {
           <X className="size-[18px]" />
         </button>
 
-        <a
-          href={reserveHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={close}
-          className="block"
-        >
+        <Link href={PROMO_BANNER_CATEGORY_HREF} onClick={close} className="block">
           <Image
             src="/promo/banner-vertical.png"
             alt={BANNER_ALT}
@@ -101,7 +79,7 @@ export function PromoBannerModal() {
             className="hidden w-full sm:block"
             priority
           />
-        </a>
+        </Link>
       </div>
     </div>
   );

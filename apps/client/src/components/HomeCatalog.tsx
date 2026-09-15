@@ -24,6 +24,7 @@ import type { PublicTestimonial } from '@/modules/reviews/types';
 import { useCart } from '@/contexts/CartContext';
 import { useShopExperience } from '@/contexts/ShopExperienceContext';
 import { cn } from '@/lib/utils';
+import { usePromoBannerCategoryFilter } from '@/hooks/usePromoBannerCategoryFilter';
 
 type Filter = 'Todos' | 'Favoritos' | string;
 
@@ -47,6 +48,7 @@ export default function HomeCatalog({
 }: Props) {
   const [active, setActive] = useState<Filter>('Todos');
   const { addItem, items } = useCart();
+  usePromoBannerCategoryFilter(categories, setActive);
   const { favorites, notify } = useShopExperience();
   const quantityByProduct = useMemo(() => {
     const quantities = new Map<string, number>();
