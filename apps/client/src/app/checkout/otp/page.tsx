@@ -20,6 +20,8 @@ import {
 } from '@/lib/layout';
 
 const OTP_LENGTH = 6;
+// Mantém sincronizado com RESEND_COOLDOWN_MS em packages/shared/src/modules/auth/otp.ts
+const RESEND_COOLDOWN_SECONDS = 45;
 const PENDING_PHONE_KEY = '@zelo/pendingPhone';
 const DEBUG_OTP_KEY = '@zelo/debugOtp';
 const OTP_CHANNEL_KEY = '@zelo/otpChannel';
@@ -52,7 +54,7 @@ export default function OtpPage() {
     checkManualOtpApproval,
   } = useAuth();
   const [otp, setOtp] = useState('');
-  const [countdown, setCountdown] = useState(60);
+  const [countdown, setCountdown] = useState(RESEND_COOLDOWN_SECONDS);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [website, setWebsite] = useState('');
@@ -197,7 +199,7 @@ export default function OtpPage() {
     } catch {
       /* ignore */
     }
-    setCountdown(60);
+    setCountdown(RESEND_COOLDOWN_SECONDS);
     setOtp('');
     setHasResent(true);
   };
