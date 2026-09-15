@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { UtensilsCrossed, ReceiptText, User } from 'lucide-react';
+import { UtensilsCrossed, ReceiptText, Heart, User } from 'lucide-react';
 import LiquidGlassTabs from '@/components/LiquidGlassTabs';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { shouldHideCustomerNav } from '@/lib/layout';
@@ -18,6 +18,12 @@ const TABS = [
     label: 'Pedidos',
     icon: ReceiptText,
     match: (p: string) => p.startsWith('/pedidos'),
+  },
+  {
+    href: '/favoritos',
+    label: 'Favoritos',
+    icon: Heart,
+    match: (p: string) => p.startsWith('/favoritos'),
   },
   {
     href: '/conta',

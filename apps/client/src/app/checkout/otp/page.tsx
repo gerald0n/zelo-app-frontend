@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2 } from 'lucide-react';
@@ -12,6 +12,8 @@ import { BotTrap } from '@/components/BotTrap';
 import { checkoutContinuePath } from '@/modules/auth/checkout-path';
 import { consumeAuthReturnTo } from '@/modules/auth/auth-return';
 import { buildSupportWhatsappLink } from '@/lib/support-whatsapp';
+import { OtpDigitBoxes } from '@/app/checkout/otp/OtpDigitBoxes';
+import { useSessionItem } from '@/app/checkout/otp/use-session-item';
 import {
   checkoutDesktopContainerClass,
   pageHeaderBarClass,
@@ -25,22 +27,6 @@ const RESEND_COOLDOWN_SECONDS = 45;
 const PENDING_PHONE_KEY = '@zelo/pendingPhone';
 const DEBUG_OTP_KEY = '@zelo/debugOtp';
 const OTP_CHANNEL_KEY = '@zelo/otpChannel';
-
-function readSessionItem(key: string): string {
-  try {
-    return sessionStorage.getItem(key) || '';
-  } catch {
-    return '';
-  }
-}
-
-function useSessionItem(key: string): string {
-  return useSyncExternalStore(
-    () => () => {},
-    () => readSessionItem(key),
-    () => '',
-  );
-}
 
 export default function OtpPage() {
   const router = useRouter();
@@ -242,29 +228,11 @@ export default function OtpPage() {
           ) : null}
         </div>
 
-        <button
-          type="button"
-          onClick={() => inputRef.current?.focus()}
-          className="mt-1 flex w-full justify-center gap-2"
-        >
-          {Array.from({ length: OTP_LENGTH }).map((_, i) => (
-            <div
-              key={i}
-              className={cn(
-                'flex h-12 w-10 items-center justify-center rounded-md border-[1.5px] bg-card transition-colors duration-150',
-                i === otp.length
-                  ? 'border-primary'
-                  : otp[i]
-                    ? 'border-foreground'
-                    : 'border-border',
-              )}
-            >
-              <span className="font-mono text-2xl font-bold tabular-nums">
-                {otp[i] ?? ''}
-              </span>
-            </div>
-          ))}
-        </button>
+        <OtpDigitBoxes
+          otp={otp}
+          length={OTP_LENGTH}
+          onFocus={() => inputRef.current?.focus()}
+        />
 
         {/*
           Input real escondido: o `sr-only` no wrapper garante que ele não

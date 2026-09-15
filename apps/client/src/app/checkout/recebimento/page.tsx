@@ -54,12 +54,13 @@ export default function RecebimentoPage() {
   );
 
   const isSatellite = checkout.fulfillmentLocation === 'sao_miguel';
-  // Já estar vendo opções de São Miguel implica que a unidade está ativa
-  // (a API responde 404 quando desativada) — só a resposta de Pereiro
-  // carrega a flag explícita. Assume disponível até a primeira resposta
-  // chegar, pra não sumir/reaparecer o toggle.
-  const satelliteAvailable =
-    !options || options.fulfillmentLocation === 'sao_miguel'
+  // Já estar vendo opções de São Miguel implica que a unidade está ativa (a
+  // API responde 404 quando desativada) — só a resposta de Pereiro carrega a
+  // flag explícita. `null` = ainda não sabemos (nada carregado), pra não
+  // piscar o toggle aparecendo com as duas opções e sumindo em seguida.
+  const satelliteAvailable: boolean | null = !options
+    ? null
+    : options.fulfillmentLocation === 'sao_miguel'
       ? true
       : options.satelliteAvailable;
   const mixedCart = options?.scheduling.mixedCart ?? false;
