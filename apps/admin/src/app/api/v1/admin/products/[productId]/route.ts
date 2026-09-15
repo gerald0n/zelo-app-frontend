@@ -25,6 +25,15 @@ const patchSchema = z.object({
   addonIds: z.array(z.string().uuid()).optional(),
   fulfillmentLocationId: z.string().uuid().nullable().optional(),
   archive: z.boolean().optional(),
+  productType: z.enum(['standard', 'pizza_flavor']).optional(),
+  pizzaSizePrices: z
+    .array(
+      z.object({
+        sizeId: z.string().uuid(),
+        priceCents: z.number().int().min(0).max(1_000_000),
+      }),
+    )
+    .optional(),
 });
 
 export async function PATCH(request: Request, context: RouteContext) {

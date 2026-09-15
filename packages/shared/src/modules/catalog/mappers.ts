@@ -12,6 +12,8 @@ import {
   type CatalogBlackout,
   type CatalogBusinessHour,
   type CatalogCategory,
+  type CatalogPizzaAddon,
+  type CatalogPizzaSize,
   type CatalogProduct,
   type CatalogStore,
   type SatelliteDeliverySlot,
@@ -33,6 +35,10 @@ type SatelliteHourRow =
   Database['public']['Tables']['satellite_location_hours']['Row'];
 type SatelliteDeliverySlotRow =
   Database['public']['Tables']['satellite_location_delivery_slots']['Row'];
+type PizzaSizeRow = Database['public']['Tables']['pizza_sizes']['Row'];
+type PizzaAddonRow = Database['public']['Tables']['pizza_addons']['Row'];
+type PizzaFlavorPriceRow =
+  Database['public']['Tables']['pizza_flavor_prices']['Row'];
 
 type ProductJoinRow = ProductRow & {
   product_images?: ImageRow[] | null;
@@ -40,6 +46,7 @@ type ProductJoinRow = ProductRow & {
     sort_order: number;
     add_ons: AddonRow | null;
   }> | null;
+  pizza_flavor_prices?: PizzaFlavorPriceRow[] | null;
 };
 
 export function mapCategory(row: CategoryRow): CatalogCategory {
@@ -110,6 +117,10 @@ export function mapProduct(
       : {}),
     image: primary ? productImagePublicUrl(primary.storage_path) : null,
     imageAlt: primary?.alt_text ?? null,
+    previewImage: row.preview_image_storage_path
+      ? productImagePublicUrl(row.preview_image_storage_path)
+      : null,
+    previewImageAlt: row.preview_image_alt_text ?? null,
     images: images.map((img) => ({
       url: productImagePublicUrl(img.storage_path),
       alt: img.alt_text ?? null,
@@ -119,6 +130,36 @@ export function mapProduct(
     addons,
     sortOrder: row.sort_order,
     rating: rating && rating.count > 0 ? rating : null,
+    productType:
+      row.product_type === 'pizza_flavor' ? 'pizza_flavor' : 'standard',
+    ...(row.product_type === 'pizza_flavor'
+      ? {
+          pizzaPrices: (row.pizza_flavor_prices ?? []).map((p) => ({
+            sizeId: p.size_id,
+            priceCents: p.price_cents,
+          })),
+        }
+      : {}),
+  };
+}
+
+export function mapPizzaSize(row: PizzaSizeRow): CatalogPizzaSize {
+  return {
+    id: row.id,
+    name: row.name,
+    diameterCm: row.diameter_cm,
+    sortOrder: row.sort_order,
+  };
+}
+
+export function mapPizzaAddon(row: PizzaAddonRow): CatalogPizzaAddon {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    priceHalfCents: row.price_half_cents,
+    priceFullCents: row.price_full_cents,
+    sortOrder: row.sort_order,
   };
 }
 

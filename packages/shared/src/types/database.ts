@@ -188,14 +188,52 @@ export type Database = {
           },
         ]
       }
+      cart_item_pizza_addons: {
+        Row: {
+          applies_to: Database["public"]["Enums"]["pizza_addon_application"]
+          cart_item_id: string
+          created_at: string
+          pizza_addon_id: string
+        }
+        Insert: {
+          applies_to: Database["public"]["Enums"]["pizza_addon_application"]
+          cart_item_id: string
+          created_at?: string
+          pizza_addon_id: string
+        }
+        Update: {
+          applies_to?: Database["public"]["Enums"]["pizza_addon_application"]
+          cart_item_id?: string
+          created_at?: string
+          pizza_addon_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_item_pizza_addons_cart_item_id_fkey"
+            columns: ["cart_item_id"]
+            isOneToOne: false
+            referencedRelation: "cart_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_item_pizza_addons_pizza_addon_id_fkey"
+            columns: ["pizza_addon_id"]
+            isOneToOne: false
+            referencedRelation: "pizza_addons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cart_items: {
         Row: {
           cart_id: string
           created_at: string
           customer_note: string | null
           id: string
+          pizza_size_id: string | null
           product_id: string
           quantity: number
+          secondary_product_id: string | null
           updated_at: string
         }
         Insert: {
@@ -203,8 +241,10 @@ export type Database = {
           created_at?: string
           customer_note?: string | null
           id?: string
+          pizza_size_id?: string | null
           product_id: string
           quantity: number
+          secondary_product_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -212,8 +252,10 @@ export type Database = {
           created_at?: string
           customer_note?: string | null
           id?: string
+          pizza_size_id?: string | null
           product_id?: string
           quantity?: number
+          secondary_product_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -225,8 +267,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "cart_items_pizza_size_id_fkey"
+            columns: ["pizza_size_id"]
+            isOneToOne: false
+            referencedRelation: "pizza_sizes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "cart_items_product_id_fkey"
             columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_secondary_product_id_fkey"
+            columns: ["secondary_product_id"]
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
@@ -747,6 +803,54 @@ export type Database = {
           },
         ]
       }
+      order_item_pizza_addons: {
+        Row: {
+          applies_to: Database["public"]["Enums"]["pizza_addon_application"]
+          created_at: string
+          id: string
+          line_total_cents: number
+          order_item_id: string
+          pizza_addon_id: string | null
+          pizza_addon_name: string
+          unit_price_cents: number
+        }
+        Insert: {
+          applies_to: Database["public"]["Enums"]["pizza_addon_application"]
+          created_at?: string
+          id?: string
+          line_total_cents: number
+          order_item_id: string
+          pizza_addon_id?: string | null
+          pizza_addon_name: string
+          unit_price_cents: number
+        }
+        Update: {
+          applies_to?: Database["public"]["Enums"]["pizza_addon_application"]
+          created_at?: string
+          id?: string
+          line_total_cents?: number
+          order_item_id?: string
+          pizza_addon_id?: string | null
+          pizza_addon_name?: string
+          unit_price_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_item_pizza_addons_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_item_pizza_addons_pizza_addon_id_fkey"
+            columns: ["pizza_addon_id"]
+            isOneToOne: false
+            referencedRelation: "pizza_addons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string
@@ -754,10 +858,13 @@ export type Database = {
           id: string
           line_total_cents: number
           order_id: string
+          pizza_size_id: string | null
           product_description: string | null
           product_id: string | null
           product_name: string
           quantity: number
+          secondary_product_id: string | null
+          secondary_product_name: string | null
           unit_price_cents: number
           weight_max_grams: number | null
           weight_min_grams: number | null
@@ -768,10 +875,13 @@ export type Database = {
           id?: string
           line_total_cents: number
           order_id: string
+          pizza_size_id?: string | null
           product_description?: string | null
           product_id?: string | null
           product_name: string
           quantity: number
+          secondary_product_id?: string | null
+          secondary_product_name?: string | null
           unit_price_cents: number
           weight_max_grams?: number | null
           weight_min_grams?: number | null
@@ -782,10 +892,13 @@ export type Database = {
           id?: string
           line_total_cents?: number
           order_id?: string
+          pizza_size_id?: string | null
           product_description?: string | null
           product_id?: string | null
           product_name?: string
           quantity?: number
+          secondary_product_id?: string | null
+          secondary_product_name?: string | null
           unit_price_cents?: number
           weight_max_grams?: number | null
           weight_min_grams?: number | null
@@ -799,8 +912,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "order_items_pizza_size_id_fkey"
+            columns: ["pizza_size_id"]
+            isOneToOne: false
+            referencedRelation: "pizza_sizes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "order_items_product_id_fkey"
             columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_secondary_product_id_fkey"
+            columns: ["secondary_product_id"]
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
@@ -1125,6 +1252,111 @@ export type Database = {
           },
         ]
       }
+      pizza_addons: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          price_full_cents: number
+          price_half_cents: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          price_full_cents: number
+          price_half_cents: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          price_full_cents?: number
+          price_half_cents?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pizza_flavor_prices: {
+        Row: {
+          created_at: string
+          price_cents: number
+          product_id: string
+          size_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          price_cents: number
+          product_id: string
+          size_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          price_cents?: number
+          product_id?: string
+          size_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pizza_flavor_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pizza_flavor_prices_size_id_fkey"
+            columns: ["size_id"]
+            isOneToOne: false
+            referencedRelation: "pizza_sizes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pizza_sizes: {
+        Row: {
+          created_at: string
+          diameter_cm: number
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          diameter_cm: number
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          diameter_cm?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       product_add_ons: {
         Row: {
           add_on_id: string
@@ -1274,7 +1506,10 @@ export type Database = {
           is_active: boolean
           is_available: boolean
           name: string
+          preview_image_alt_text: string | null
+          preview_image_storage_path: string | null
           price_cents: number
+          product_type: string
           slug: string
           sort_order: number
           stock_quantity: number | null
@@ -1292,7 +1527,10 @@ export type Database = {
           is_active?: boolean
           is_available?: boolean
           name: string
+          preview_image_alt_text?: string | null
+          preview_image_storage_path?: string | null
           price_cents: number
+          product_type?: string
           slug: string
           sort_order?: number
           stock_quantity?: number | null
@@ -1310,7 +1548,10 @@ export type Database = {
           is_active?: boolean
           is_available?: boolean
           name?: string
+          preview_image_alt_text?: string | null
+          preview_image_storage_path?: string | null
           price_cents?: number
+          product_type?: string
           slug?: string
           sort_order?: number
           stock_quantity?: number | null
@@ -2166,6 +2407,7 @@ export type Database = {
         | "failed"
         | "cancelled"
         | "refunded"
+      pizza_addon_application: "whole" | "flavor1" | "flavor2"
       review_status: "pending" | "approved" | "hidden"
       status_change_actor_type: "customer" | "admin" | "system"
     }
@@ -2183,12 +2425,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2212,11 +2454,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2237,11 +2479,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2262,11 +2504,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2279,11 +2521,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2316,6 +2558,7 @@ export const Constants = {
         "cancelled",
         "refunded",
       ],
+      pizza_addon_application: ["whole", "flavor1", "flavor2"],
       review_status: ["pending", "approved", "hidden"],
       status_change_actor_type: ["customer", "admin", "system"],
     },

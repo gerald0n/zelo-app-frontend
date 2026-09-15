@@ -141,7 +141,7 @@ export function buildContentSecurityPolicy(nonce?: string): string {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     production
       ? "img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://maps.gstatic.com https://maps.googleapis.com https://khms0.googleapis.com https://khms1.googleapis.com"
-      : "img-src 'self' data: blob: https:",
+      : "img-src 'self' data: blob: https: http:",
     // Os arquivos de fonte referenciados pelo CSS acima vêm de fonts.gstatic.com.
     "font-src 'self' data: https://fonts.gstatic.com",
     connectSrc.join(' '),

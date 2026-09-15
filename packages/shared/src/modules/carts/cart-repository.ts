@@ -107,7 +107,7 @@ export async function loadStoredLines(
   const { data, error } = await admin
     .from('cart_items')
     .select(
-      'id, product_id, quantity, customer_note, cart_item_add_ons ( add_on_id )',
+      'id, product_id, quantity, customer_note, pizza_size_id, secondary_product_id, cart_item_add_ons ( add_on_id ), cart_item_pizza_addons ( pizza_addon_id, applies_to )',
     )
     .eq('cart_id', cartId)
     .order('created_at', { ascending: true });
@@ -123,7 +123,13 @@ export async function loadStoredLines(
     product_id: string;
     quantity: number;
     customer_note: string | null;
+    pizza_size_id: string | null;
+    secondary_product_id: string | null;
     cart_item_add_ons: Array<{ add_on_id: string }> | null;
+    cart_item_pizza_addons: Array<{
+      pizza_addon_id: string;
+      applies_to: 'whole' | 'flavor1' | 'flavor2';
+    }> | null;
   }>;
 
   const lines: CartSyncLine[] = rows.map((row) => ({
@@ -133,6 +139,14 @@ export async function loadStoredLines(
       .map((link) => link.add_on_id)
       .sort(),
     customerNote: row.customer_note?.trim() || undefined,
+    pizzaSizeId: row.pizza_size_id ?? undefined,
+    secondaryProductId: row.secondary_product_id ?? undefined,
+    pizzaAddons: row.cart_item_pizza_addons?.length
+      ? row.cart_item_pizza_addons.map((a) => ({
+          pizzaAddonId: a.pizza_addon_id,
+          appliesTo: a.applies_to,
+        }))
+      : undefined,
   }));
 
   return ok(lines);
@@ -162,6 +176,8 @@ export async function replaceCartLines(
         product_id: line.productId,
         quantity: line.quantity,
         customer_note: line.customerNote ?? null,
+        pizza_size_id: line.pizzaSizeId ?? null,
+        secondary_product_id: line.secondaryProductId ?? null,
       })
       .select('id')
       .single();
@@ -177,23 +193,46 @@ export async function replaceCartLines(
 
     itemIds.push(inserted.data.id);
 
-    if (line.addOnIds.length === 0) continue;
+    if (line.addOnIds.length > 0) {
+      const addOns = await admin.from('cart_item_add_ons').insert(
+        line.addOnIds.map((addOnId) => ({
+          cart_item_id: inserted.data.id,
+          add_on_id: addOnId,
+          quantity: 1,
+        })),
+      );
 
-    const addOns = await admin.from('cart_item_add_ons').insert(
-      line.addOnIds.map((addOnId) => ({
-        cart_item_id: inserted.data.id,
-        add_on_id: addOnId,
-        quantity: 1,
-      })),
-    );
+      if (addOns.error) {
+        logger.error('Falha ao gravar adicionais do carrinho', {
+          message: addOns.error.message,
+        });
+        return err(
+          'INTERNAL_ERROR',
+          'Não foi possível atualizar o carrinho.',
+          { cause: addOns.error },
+        );
+      }
+    }
 
-    if (addOns.error) {
-      logger.error('Falha ao gravar adicionais do carrinho', {
-        message: addOns.error.message,
-      });
-      return err('INTERNAL_ERROR', 'Não foi possível atualizar o carrinho.', {
-        cause: addOns.error,
-      });
+    if (line.pizzaAddons?.length) {
+      const pizzaAddons = await admin.from('cart_item_pizza_addons').insert(
+        line.pizzaAddons.map((addon) => ({
+          cart_item_id: inserted.data.id,
+          pizza_addon_id: addon.pizzaAddonId,
+          applies_to: addon.appliesTo,
+        })),
+      );
+
+      if (pizzaAddons.error) {
+        logger.error('Falha ao gravar adicionais de pizza do carrinho', {
+          message: pizzaAddons.error.message,
+        });
+        return err(
+          'INTERNAL_ERROR',
+          'Não foi possível atualizar o carrinho.',
+          { cause: pizzaAddons.error },
+        );
+      }
     }
   }
 

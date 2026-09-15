@@ -30,6 +30,7 @@ import {
 import type {
   AdminAddon,
   AdminCategory,
+  AdminPizzaSize,
   AdminProduct,
 } from '@/modules/admin/types';
 
@@ -38,6 +39,7 @@ type Props = {
   products: AdminProduct[];
   addons: AdminAddon[];
   satelliteLocations: Array<{ id: string; slug: string; name: string }>;
+  pizzaSizes: AdminPizzaSize[];
   invalidateCatalog: () => Promise<void>;
   onError: (message: string) => void;
 };
@@ -68,6 +70,7 @@ export function ProductsTab({
   products,
   addons,
   satelliteLocations,
+  pizzaSizes,
   invalidateCatalog,
   onError,
 }: Props) {
@@ -81,6 +84,10 @@ export function ProductsTab({
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [showProductForm, setShowProductForm] = useState(false);
   const [cropTarget, setCropTarget] = useState<{
+    productId: string;
+    file: File;
+  } | null>(null);
+  const [previewCropTarget, setPreviewCropTarget] = useState<{
     productId: string;
     file: File;
   } | null>(null);
@@ -107,6 +114,8 @@ export function ProductsTab({
     setPrimaryImageMutation,
     reorderImagesMutation,
     deleteImageMutation,
+    uploadPreviewImageMutation,
+    deletePreviewImageMutation,
   } = useProductMutations({
     editingProduct,
     invalidateCatalog,
@@ -182,6 +191,13 @@ export function ProductsTab({
                 : '',
             addonIds: product.addonIds,
             fulfillmentLocationId: product.fulfillmentLocationId ?? '',
+            productType: product.productType,
+            pizzaSizePricesReais: Object.fromEntries(
+              product.pizzaSizePrices.map((p) => [
+                p.sizeId,
+                centsToReais(p.priceCents),
+              ]),
+            ),
           }
         : emptyProductForm(categories[0]?.id ?? '', products.length),
     );
@@ -245,6 +261,7 @@ export function ProductsTab({
         categories={categories}
         addons={addons}
         satelliteLocations={satelliteLocations}
+        pizzaSizes={pizzaSizes}
         isPending={productMutation.isPending}
         uploadPending={uploadMutation.isPending}
         onSubmit={(values) => productMutation.mutate(values)}
@@ -255,6 +272,15 @@ export function ProductsTab({
         setPrimaryImage={setPrimaryImageMutation}
         reorderImages={reorderImagesMutation}
         deleteImage={deleteImageMutation}
+        previewUploadPending={uploadPreviewImageMutation.isPending}
+        onAddPreviewImage={(file) =>
+          editingProduct &&
+          setPreviewCropTarget({ productId: editingProduct.id, file })
+        }
+        onDeletePreviewImage={() =>
+          editingProduct &&
+          deletePreviewImageMutation.mutate({ productId: editingProduct.id })
+        }
         onClose={() => {
           setShowProductForm(false);
           setEditingProductId(null);
@@ -278,6 +304,21 @@ export function ProductsTab({
             file: croppedFile,
           });
           setCropTarget(null);
+        }}
+      />
+
+      <ImageCropDialog
+        open={previewCropTarget != null}
+        file={previewCropTarget?.file ?? null}
+        title="Recortar imagem de preview (1:1)"
+        onCancel={() => setPreviewCropTarget(null)}
+        onConfirm={async (croppedFile) => {
+          if (!previewCropTarget) return;
+          await uploadPreviewImageMutation.mutateAsync({
+            productId: previewCropTarget.productId,
+            file: croppedFile,
+          });
+          setPreviewCropTarget(null);
         }}
       />
 

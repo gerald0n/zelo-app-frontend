@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { pizzaOrderDetailLines } from '@/modules/carts';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 
 export default function DesktopCartPanel() {
@@ -45,6 +46,11 @@ export default function DesktopCartPanel() {
                   {formatCatalogPrice(item.price * item.quantity)}
                 </p>
               </div>
+              {pizzaOrderDetailLines(item).map((line) => (
+                <p key={line} className="text-xs text-muted-foreground">
+                  {line}
+                </p>
+              ))}
               <div className="inline-flex items-center rounded-md border border-border">
                 <button
                   type="button"

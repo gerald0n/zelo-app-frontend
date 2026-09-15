@@ -7,10 +7,12 @@ import type { UseMutationResult } from '@tanstack/react-query';
 import type { UseFormReturn } from 'react-hook-form';
 import { ProductFormCard } from '@/app/catalogo/_tabs/ProductFormCard';
 import { ProductImagesManager } from '@/app/catalogo/_tabs/ProductImagesManager';
+import { ProductPreviewImageField } from '@/app/catalogo/_tabs/ProductPreviewImageField';
 import type { ProductForm } from '@/app/catalogo/catalog-forms';
 import type {
   AdminAddon,
   AdminCategory,
+  AdminPizzaSize,
   AdminProduct,
 } from '@/modules/admin/types';
 
@@ -36,6 +38,7 @@ type Props = {
   categories: AdminCategory[];
   addons: AdminAddon[];
   satelliteLocations: Array<{ id: string; slug: string; name: string }>;
+  pizzaSizes: AdminPizzaSize[];
   isPending: boolean;
   uploadPending: boolean;
   onSubmit: (values: ProductForm) => void;
@@ -43,6 +46,9 @@ type Props = {
   setPrimaryImage: ImageMutation;
   reorderImages: ReorderMutation;
   deleteImage: ImageMutation;
+  previewUploadPending: boolean;
+  onAddPreviewImage: (file: File) => void;
+  onDeletePreviewImage: () => void;
   onClose: () => void;
 };
 
@@ -54,6 +60,7 @@ export function ProductFormModal({
   categories,
   addons,
   satelliteLocations,
+  pizzaSizes,
   isPending,
   uploadPending,
   onSubmit,
@@ -61,6 +68,9 @@ export function ProductFormModal({
   setPrimaryImage,
   reorderImages,
   deleteImage,
+  previewUploadPending,
+  onAddPreviewImage,
+  onDeletePreviewImage,
   onClose,
 }: Props) {
   useEffect(() => {
@@ -116,12 +126,21 @@ export function ProductFormModal({
             }
           />
         ) : null}
+        {product && product.productType === 'pizza_flavor' ? (
+          <ProductPreviewImageField
+            previewImageUrl={product.previewImageUrl}
+            busy={previewUploadPending}
+            onAddFile={onAddPreviewImage}
+            onDelete={onDeletePreviewImage}
+          />
+        ) : null}
         <ProductFormCard
           form={form}
           editingProduct={product !== null}
           categories={categories}
           addons={addons}
           satelliteLocations={satelliteLocations}
+          pizzaSizes={pizzaSizes}
           isPending={isPending}
           onSubmit={onSubmit}
           onCancel={onClose}
