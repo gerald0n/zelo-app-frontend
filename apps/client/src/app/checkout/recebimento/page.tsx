@@ -30,6 +30,7 @@ export default function RecebimentoPage() {
   const router = useRouter();
   const {
     checkout,
+    setFulfillmentLocation,
     setSatelliteLocationId,
     setScheduleType,
     setScheduledDate,
@@ -53,6 +54,14 @@ export default function RecebimentoPage() {
   );
 
   const isSatellite = checkout.fulfillmentLocation === 'sao_miguel';
+  // Já estar vendo opções de São Miguel implica que a unidade está ativa
+  // (a API responde 404 quando desativada) — só a resposta de Pereiro
+  // carrega a flag explícita. Assume disponível até a primeira resposta
+  // chegar, pra não sumir/reaparecer o toggle.
+  const satelliteAvailable =
+    !options || options.fulfillmentLocation === 'sao_miguel'
+      ? true
+      : options.satelliteAvailable;
   const mixedCart = options?.scheduling.mixedCart ?? false;
   const storeOpen = options?.scheduling.storeOpen ?? false;
   const allowSameDay = options?.scheduling.allowSameDay ?? true;
@@ -113,6 +122,16 @@ export default function RecebimentoPage() {
         const json = await response.json();
         if (!response.ok) {
           if (!cancelled) {
+            // Unidade de São Miguel foi desativada no admin (ou nunca
+            // existiu) — volta pro cardápio de Pereiro em vez de travar
+            // numa unidade indisponível.
+            if (
+              response.status === 404 &&
+              checkout.fulfillmentLocation === 'sao_miguel'
+            ) {
+              setFulfillmentLocation('pereiro');
+              return;
+            }
             setOptionsError(
               json?.error?.message ?? 'Não foi possível carregar opções.',
             );
@@ -129,7 +148,7 @@ export default function RecebimentoPage() {
     return () => {
       cancelled = true;
     };
-  }, [productIdsKey, checkout.fulfillmentLocation]);
+  }, [productIdsKey, checkout.fulfillmentLocation, setFulfillmentLocation]);
 
   useEffect(() => {
     if (!user) return;
@@ -248,7 +267,9 @@ export default function RecebimentoPage() {
             </div>
           ) : null}
 
-          {!checkout.prontaEntrega ? <FulfillmentLocationToggle /> : null}
+          {!checkout.prontaEntrega && satelliteAvailable ? (
+            <FulfillmentLocationToggle />
+          ) : null}
 
           {options && options.fulfillmentLocation === 'sao_miguel' ? (
             <SatelliteScheduleSection

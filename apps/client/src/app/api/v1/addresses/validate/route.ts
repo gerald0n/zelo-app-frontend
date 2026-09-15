@@ -49,7 +49,13 @@ export async function POST(request: Request) {
       { status: httpStatusFor(originResult.error.code) },
     );
   }
-  if (!originResult.data) {
+  const isSatelliteInactive =
+    parsed.data.fulfillmentLocation === 'sao_miguel' &&
+    originResult.data != null &&
+    'isActive' in originResult.data &&
+    !originResult.data.isActive;
+
+  if (!originResult.data || isSatelliteInactive) {
     return NextResponse.json(
       {
         error: {
