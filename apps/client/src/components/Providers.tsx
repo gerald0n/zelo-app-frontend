@@ -18,6 +18,7 @@ import DesktopNavigation from '@/components/DesktopNavigation';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { PwaInstallProvider } from '@/contexts/PwaInstallContext';
 import { PushPermissionPrompt } from '@/components/PushPermissionPrompt';
+import { PromoBannerModal } from '@/components/PromoBannerModal';
 import LockMobileZoom from '@/components/LockMobileZoom';
 import RefreshOnVisible from '@/components/RefreshOnVisible';
 import { shouldHideCustomerNav } from '@/lib/layout';
@@ -83,6 +84,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                 <LockMobileZoom />
                 <RefreshOnVisible />
                 <PushPermissionPrompt />
+                <PromoBannerModal />
                 <AppShell>{children}</AppShell>
               </PwaInstallProvider>
             </CheckoutProvider>
