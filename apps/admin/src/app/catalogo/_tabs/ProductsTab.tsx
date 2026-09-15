@@ -10,7 +10,7 @@ import {
   productSchema,
   type ProductForm,
 } from '@/app/catalogo/catalog-forms';
-import { ImageCropDialog } from '@/components/ImageCropDialog';
+import { ProductImageCropDialogs } from '@/app/catalogo/_tabs/ProductImageCropDialogs';
 import { ProductCategoryFilter } from '@/app/catalogo/_tabs/ProductCategoryFilter';
 import { ProductCollection } from '@/app/catalogo/_tabs/ProductCollection';
 import { ProductFormModal } from '@/app/catalogo/_tabs/ProductFormModal';
@@ -33,6 +33,8 @@ import type {
   AdminPizzaSize,
   AdminProduct,
 } from '@/modules/admin/types';
+
+type CropTarget = { productId: string; file: File } | null;
 
 type Props = {
   categories: AdminCategory[];
@@ -83,14 +85,8 @@ export function ProductsTab({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [showProductForm, setShowProductForm] = useState(false);
-  const [cropTarget, setCropTarget] = useState<{
-    productId: string;
-    file: File;
-  } | null>(null);
-  const [previewCropTarget, setPreviewCropTarget] = useState<{
-    productId: string;
-    file: File;
-  } | null>(null);
+  const [cropTarget, setCropTarget] = useState<CropTarget>(null);
+  const [previewCropTarget, setPreviewCropTarget] = useState<CropTarget>(null);
 
   const productForm = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
@@ -287,39 +283,13 @@ export function ProductsTab({
         }}
       />
 
-      {/* Depois do modal de produto no DOM: como os dois usam o mesmo
-          z-index, o portal montado por último fica por cima. */}
-      <ImageCropDialog
-        open={cropTarget != null}
-        file={cropTarget?.file ?? null}
-        onCancel={() => setCropTarget(null)}
-        onConfirm={async (croppedFile) => {
-          if (!cropTarget) return;
-          // `mutateAsync` só resolve depois do `onSuccess` (invalidateCatalog),
-          // então quando fechamos o modal a imagem nova já chegou — nada de
-          // "fecha e some, aí de repente troca". Se der erro, rejeita e o
-          // próprio modal mostra a mensagem e continua aberto.
-          await uploadMutation.mutateAsync({
-            productId: cropTarget.productId,
-            file: croppedFile,
-          });
-          setCropTarget(null);
-        }}
-      />
-
-      <ImageCropDialog
-        open={previewCropTarget != null}
-        file={previewCropTarget?.file ?? null}
-        title="Recortar imagem de preview (1:1)"
-        onCancel={() => setPreviewCropTarget(null)}
-        onConfirm={async (croppedFile) => {
-          if (!previewCropTarget) return;
-          await uploadPreviewImageMutation.mutateAsync({
-            productId: previewCropTarget.productId,
-            file: croppedFile,
-          });
-          setPreviewCropTarget(null);
-        }}
+      <ProductImageCropDialogs
+        cropTarget={cropTarget}
+        onCropTargetChange={setCropTarget}
+        uploadMutation={uploadMutation}
+        previewCropTarget={previewCropTarget}
+        onPreviewCropTargetChange={setPreviewCropTarget}
+        uploadPreviewImageMutation={uploadPreviewImageMutation}
       />
 
       {sort === 'manual' && view === 'grid' ? (
