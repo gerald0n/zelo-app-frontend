@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "prettier": "^3.9.6",
-    "supabase": "^2.116.0"
+    "supabase": "^2.117.0"
   },
   "packageManager": "pnpm@8.15.6",
   "engines": {
