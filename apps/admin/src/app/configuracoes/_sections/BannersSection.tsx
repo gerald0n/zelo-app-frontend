@@ -4,11 +4,15 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { GalleryHorizontal, Loader2, Plus, Trash2, Upload } from 'lucide-react';
 import { useAppDialog } from '@/contexts/AppDialogContext';
+import { ImageCropDialog } from '@/components/ImageCropDialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ApiError, apiJson } from '@/lib/api';
 import { adminKeys } from '@/lib/query-keys';
 import { cn } from '@/lib/cn';
+
+/** Mesma proporção do resize no servidor (`uploadBannerImage`, 1600x900). */
+const BANNER_ASPECT = 16 / 9;
 
 type AdminBanner = {
   id: string;
@@ -44,6 +48,7 @@ function BannerCard({ banner }: { banner: AdminBanner }) {
   const { confirm } = useAppDialog();
   const [draft, setDraft] = useState<BannerDraft>(() => draftFrom(banner));
   const [dirty, setDirty] = useState(false);
+  const [cropFile, setCropFile] = useState<File | null>(null);
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: adminKeys.banners() });
@@ -129,11 +134,23 @@ function BannerCard({ banner }: { banner: AdminBanner }) {
             className="hidden"
             onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file) uploadMutation.mutate(file);
+              if (file) setCropFile(file);
               event.target.value = '';
             }}
           />
         </label>
+
+        <ImageCropDialog
+          open={cropFile != null}
+          file={cropFile}
+          aspect={BANNER_ASPECT}
+          title="Recortar imagem do banner (16:9)"
+          onCancel={() => setCropFile(null)}
+          onConfirm={async (croppedFile) => {
+            await uploadMutation.mutateAsync(croppedFile);
+            setCropFile(null);
+          }}
+        />
 
         <div className="min-w-0 flex-1 space-y-2">
           <Input
