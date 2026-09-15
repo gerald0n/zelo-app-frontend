@@ -13,39 +13,41 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 
 /**
  * Recorta `file` na área `areaPixels` (em pixels reais da imagem, vinda do
- * `onCropComplete` do react-easy-crop) e devolve um `File` novo. O container do
- * card exibe 1:1, então a área já chega quadrada; aqui só materializamos o corte.
+ * `onCropComplete` do react-easy-crop) e devolve um `File` novo. O container
+ * exibe a proporção desejada (1:1 pra produto, wide pra banner), então a área
+ * já chega no formato certo; aqui só materializamos o corte.
  */
 export async function cropImageToFile(
   file: File,
   areaPixels: Area,
-  { type = 'image/webp' }: { type?: string } = {},
+  { type = 'image/webp', suffix = '' }: { type?: string; suffix?: string } = {},
 ): Promise<File> {
   const objectUrl = URL.createObjectURL(file);
   try {
     const image = await loadImage(objectUrl);
 
-    // O card exibe 1:1, então o output tem que ser um quadrado exato. A área do
-    // react-easy-crop já chega ~quadrada; forçamos um único lado e travamos o
-    // recorte dentro dos limites reais da imagem pra o browser não esticar nada.
-    const side = Math.round(Math.min(areaPixels.width, areaPixels.height));
+    // A área do react-easy-crop já vem na proporção configurada no Cropper;
+    // só travamos o recorte dentro dos limites reais da imagem pra o browser
+    // não esticar nada.
+    const width = Math.round(areaPixels.width);
+    const height = Math.round(areaPixels.height);
     const sx = Math.max(
       0,
-      Math.min(Math.round(areaPixels.x), image.naturalWidth - side),
+      Math.min(Math.round(areaPixels.x), image.naturalWidth - width),
     );
     const sy = Math.max(
       0,
-      Math.min(Math.round(areaPixels.y), image.naturalHeight - side),
+      Math.min(Math.round(areaPixels.y), image.naturalHeight - height),
     );
 
     const canvas = document.createElement('canvas');
-    canvas.width = side;
-    canvas.height = side;
+    canvas.width = width;
+    canvas.height = height;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas indisponível neste navegador.');
 
-    ctx.drawImage(image, sx, sy, side, side, 0, 0, side, side);
+    ctx.drawImage(image, sx, sy, width, height, 0, 0, width, height);
 
     const blob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob(resolve, type, 0.9);
@@ -54,7 +56,7 @@ export async function cropImageToFile(
 
     const baseName = file.name.replace(/\.[^.]+$/, '') || 'imagem';
     const extension = type === 'image/png' ? 'png' : 'webp';
-    return new File([blob], `${baseName}-1x1.${extension}`, {
+    return new File([blob], `${baseName}${suffix}.${extension}`, {
       type: blob.type || type,
     });
   } finally {
