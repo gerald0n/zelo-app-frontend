@@ -33,11 +33,11 @@
     "react-dom": ">=19"
   },
   "devDependencies": {
-    "@types/node": "^26.4.0",
+    "@types/node": "^26.5.1",
     "@types/react": "^19",
     "@types/web-push": "^3.6.4",
     "eslint": "^9",
-    "eslint-config-next": "16.3.4",
+    "eslint-config-next": "16.3.5",
     "eslint-config-prettier": "^10.1.8",
     "next": "16.3.5",
     "prettier": "^3.9.6",
