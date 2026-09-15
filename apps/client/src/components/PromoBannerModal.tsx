@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 import { X } from 'lucide-react';
 import { buildSupportWhatsappLink } from '@/lib/support-whatsapp';
 import {
@@ -84,17 +85,21 @@ export function PromoBannerModal() {
           onClick={close}
           className="block"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element -- SVG local; o otimizador do next/image não processa SVG. */}
-          <img
-            src="/promo/esfirras-banner-mobile.svg"
+          <Image
+            src="/promo/banner-vertical.png"
             alt={BANNER_ALT}
+            width={941}
+            height={1672}
             className="block w-full sm:hidden"
+            priority
           />
-          {/* eslint-disable-next-line @next/next/no-img-element -- SVG local; o otimizador do next/image não processa SVG. */}
-          <img
-            src="/promo/esfirras-banner-desktop.svg"
+          <Image
+            src="/promo/banner-horizontal.png"
             alt={BANNER_ALT}
+            width={1672}
+            height={941}
             className="hidden w-full sm:block"
+            priority
           />
         </a>
       </div>
