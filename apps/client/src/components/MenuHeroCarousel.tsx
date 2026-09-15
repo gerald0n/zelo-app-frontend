@@ -171,7 +171,7 @@ export default function MenuHeroCarousel({
             );
 
             const className = cn(
-              'relative min-w-full shrink-0 snap-center overflow-hidden bg-primary px-4 pb-10 pt-5',
+              'relative min-w-full shrink-0 snap-center overflow-hidden bg-primary px-4 pb-10 pt-5 lg:min-h-[420px] lg:px-8 lg:pb-14 lg:pt-8',
               !slide.imageUrl && 'text-primary-foreground',
             );
 

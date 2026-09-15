@@ -12,22 +12,39 @@ type Props = {
   file: File | null;
   onCancel: () => void;
   /**
-   * Recebe o arquivo já recortado 1:1. Pode devolver uma Promise (o upload):
+   * Recebe o arquivo já recortado. Pode devolver uma Promise (o upload):
    * enquanto ela não resolve o modal fica travado em "Enviando…". Ao resolver,
    * quem fecha o modal é o pai; se rejeitar, o erro aparece aqui e o modal fica.
    */
   onConfirm: (croppedFile: File) => void | Promise<void>;
+  /** Proporção largura/altura do recorte. Padrão 1:1 (imagem de produto). */
+  aspect?: number;
+  /** Título mostrado no topo do modal. Padrão "Recortar imagem (1:1)". */
+  title?: string;
 };
 
 /**
- * Modal de recorte 1:1 antes de enviar a imagem de um produto. Segue o padrão
- * do `ProductFormModal` (portal no body, fecha no Esc / clique fora).
+ * Modal de recorte antes de enviar uma imagem (produto, banner, etc.). Segue o
+ * padrão do `ProductFormModal` (portal no body, fecha no Esc / clique fora).
  */
-export function ImageCropDialog({ open, file, onCancel, onConfirm }: Props) {
+export function ImageCropDialog({
+  open,
+  file,
+  onCancel,
+  onConfirm,
+  aspect,
+  title,
+}: Props) {
   if (!open || !file) return null;
 
   return createPortal(
-    <CropDialogBody file={file} onCancel={onCancel} onConfirm={onConfirm} />,
+    <CropDialogBody
+      file={file}
+      onCancel={onCancel}
+      onConfirm={onConfirm}
+      aspect={aspect ?? 1}
+      title={title ?? 'Recortar imagem (1:1)'}
+    />,
     document.body,
   );
 }
@@ -36,10 +53,14 @@ function CropDialogBody({
   file,
   onCancel,
   onConfirm,
+  aspect,
+  title,
 }: {
   file: File;
   onCancel: () => void;
   onConfirm: (croppedFile: File) => void | Promise<void>;
+  aspect: number;
+  title: string;
 }) {
   // O object URL precisa nascer e morrer dentro do mesmo effect: assim, no
   // ciclo mount→cleanup→mount do StrictMode, o segundo mount recria a URL em
@@ -117,19 +138,22 @@ function CropDialogBody({
           <X className="size-5" />
         </button>
 
-        <p className="font-serif text-base font-bold">Recortar imagem (1:1)</p>
+        <p className="font-serif text-base font-bold">{title}</p>
 
-        {/* Container quadrado = área de recorte: com objectFit "cover" o que
+        {/* Container na proporção do recorte: com objectFit "cover" o que
             aparece aqui é exatamente o que é salvo (WYSIWYG). O default
             "contain" do react-easy-crop força zoom em fotos retrato e o
             resultado não bate com o enquadramento. */}
-        <div className="relative mx-auto aspect-square w-full max-w-[340px] overflow-hidden rounded-lg bg-muted">
+        <div
+          className="relative mx-auto w-full max-w-[340px] overflow-hidden rounded-lg bg-muted"
+          style={{ aspectRatio: aspect }}
+        >
           {objectUrl ? (
             <Cropper
               image={objectUrl}
               crop={crop}
               zoom={zoom}
-              aspect={1}
+              aspect={aspect}
               objectFit="cover"
               showGrid={false}
               restrictPosition
