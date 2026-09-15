@@ -80,6 +80,36 @@ export type AdminProduct = {
   addonIds: string[];
   /** Presente = produto de "pronta entrega" exclusivo de um local satélite (ex.: São Miguel/RN), não do catálogo normal. */
   fulfillmentLocationId: string | null;
+  /** 'pizza_flavor' = sabor de pizza; `priceCents` é ignorado, usar `pizzaSizePrices`. */
+  productType: 'standard' | 'pizza_flavor';
+  /** Preço deste sabor por tamanho de pizza — só relevante quando `productType = 'pizza_flavor'`. */
+  pizzaSizePrices: Array<{ sizeId: string; priceCents: number }>;
+  /**
+   * Foto de preview do sabor sem borda (só o recheio), usada no círculo do
+   * construtor de pizza no client. Só relevante quando
+   * `productType = 'pizza_flavor'`. `null` = não configurada.
+   */
+  previewImageUrl: string | null;
+  previewImageAltText: string | null;
+};
+
+export type AdminPizzaSize = {
+  id: string;
+  name: string;
+  diameterCm: number;
+  sortOrder: number;
+  isActive: boolean;
+};
+
+export type AdminPizzaAddon = {
+  id: string;
+  name: string;
+  description: string | null;
+  priceHalfCents: number;
+  priceFullCents: number;
+  sortOrder: number;
+  isActive: boolean;
+  archivedAt: string | null;
 };
 
 export type AdminCategory = {

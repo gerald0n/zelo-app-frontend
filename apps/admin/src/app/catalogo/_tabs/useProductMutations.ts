@@ -51,6 +51,16 @@ export function useProductMutations({
           : null,
         addonIds: values.addonIds,
         fulfillmentLocationId: values.fulfillmentLocationId || null,
+        productType: values.productType,
+        pizzaSizePrices:
+          values.productType === 'pizza_flavor'
+            ? Object.entries(values.pizzaSizePricesReais).map(
+                ([sizeId, priceReais]) => ({
+                  sizeId,
+                  priceCents: reaisToCents(priceReais),
+                }),
+              )
+            : [],
       };
       if (editingProduct) {
         return apiJson(`/api/v1/admin/products/${editingProduct.id}`, {
@@ -259,6 +269,45 @@ export function useProductMutations({
     },
   });
 
+  const uploadPreviewImageMutation = useMutation({
+    mutationFn: async (input: { productId: string; file: File }) => {
+      const form = new FormData();
+      form.set('productId', input.productId);
+      form.set('file', input.file);
+      form.set('altText', input.file.name);
+      return apiJson('/api/v1/admin/uploads/product-preview-image', {
+        method: 'POST',
+        body: form,
+      });
+    },
+    onSuccess: invalidateCatalog,
+    onError: (error) => {
+      onError(
+        error instanceof ApiError
+          ? error.message
+          : 'Falha no upload da imagem de preview.',
+      );
+    },
+  });
+
+  const deletePreviewImageMutation = useMutation({
+    mutationFn: (input: { productId: string }) =>
+      apiJson(`/api/v1/admin/products/${input.productId}/preview-image`, {
+        method: 'DELETE',
+      }),
+    onSuccess: async () => {
+      onError('');
+      await invalidateCatalog();
+    },
+    onError: (error) => {
+      onError(
+        error instanceof ApiError
+          ? error.message
+          : 'Falha ao remover a imagem de preview.',
+      );
+    },
+  });
+
   return {
     productMutation,
     patchMutation,
@@ -269,5 +318,7 @@ export function useProductMutations({
     setPrimaryImageMutation,
     reorderImagesMutation,
     deleteImageMutation,
+    uploadPreviewImageMutation,
+    deletePreviewImageMutation,
   };
 }

@@ -42,6 +42,36 @@ export type CatalogProduct = {
   sortOrder: number;
   /** Média (0–5, 1 casa) e nº de avaliações aprovadas. `null` = ainda sem. */
   rating: { average: number; count: number } | null;
+  /** 'pizza_flavor' = sabor de pizza; `price` é ignorado, usar `pizzaPrices`. */
+  productType: 'standard' | 'pizza_flavor';
+  /** Preço deste sabor por tamanho de pizza. Só presente quando `productType = 'pizza_flavor'`. */
+  pizzaPrices?: Array<{ sizeId: string; priceCents: number }>;
+  /**
+   * Foto de preview do sabor sem a borda da massa (só o recheio), usada no
+   * círculo do construtor de pizza — a borda é sobreposta via CSS por cima
+   * dela. Só relevante quando `productType = 'pizza_flavor'`; `null` quando
+   * não configurada (o preview cai de volta pra `image`).
+   */
+  previewImage: string | null;
+  previewImageAlt: string | null;
+};
+
+/** Tamanho de pizza (global, não por sabor) — ver `pizza_sizes`. */
+export type CatalogPizzaSize = {
+  id: string;
+  name: string;
+  diameterCm: number;
+  sortOrder: number;
+};
+
+/** Adicional de pizza, com preço diferente se aplicado à metade ou à pizza toda. */
+export type CatalogPizzaAddon = {
+  id: string;
+  name: string;
+  description: string | null;
+  priceHalfCents: number;
+  priceFullCents: number;
+  sortOrder: number;
 };
 
 export type CatalogBusinessHour = {

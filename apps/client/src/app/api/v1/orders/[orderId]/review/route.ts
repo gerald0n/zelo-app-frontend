@@ -11,6 +11,15 @@ type RouteContext = { params: Promise<{ orderId: string }> };
 const bodySchema = z.object({
   rating: z.number().int().min(1).max(5),
   comment: z.string().trim().max(REVIEW_COMMENT_MAX).optional(),
+  productRatings: z
+    .array(
+      z.object({
+        productId: z.string(),
+        rating: z.number().int().min(1).max(5),
+      }),
+    )
+    .max(50)
+    .optional(),
 });
 
 export async function POST(request: Request, context: RouteContext) {
@@ -33,6 +42,7 @@ export async function POST(request: Request, context: RouteContext) {
     orderId,
     rating: parsed.data.rating,
     comment: parsed.data.comment ?? null,
+    productRatings: parsed.data.productRatings,
   });
 
   if (!result.ok) {

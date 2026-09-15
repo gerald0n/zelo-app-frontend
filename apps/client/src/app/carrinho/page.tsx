@@ -9,6 +9,7 @@ import {
   type CatalogProduct,
 } from '@/modules/catalog/types';
 import {
+  pizzaOrderDetailLines,
   revalidateCartAgainstCatalog,
   useCart,
   useCartStore,
@@ -57,6 +58,11 @@ function CartItemRow({ item }: { item: CartItem }) {
             {item.selectedAddons.map((a) => a.name).join(', ')}
           </p>
         ) : null}
+        {pizzaOrderDetailLines(item).map((line) => (
+          <p key={line} className="text-xs text-muted-foreground">
+            {line}
+          </p>
+        ))}
         {item.note ? (
           <p className="line-clamp-2 text-xs italic text-muted-foreground">
             Obs.: {item.note}
@@ -260,7 +266,12 @@ export default function CarrinhoPage() {
   }
 
   return (
-    <div className={cn('flex min-h-dvh w-full flex-col bg-background', shellWideClass)}>
+    <div
+      className={cn(
+        'flex min-h-dvh w-full flex-col bg-background',
+        shellWideClass,
+      )}
+    >
       <header className={pageHeaderBarClass}>
         <Link href="/" aria-label="Voltar ao cardápio">
           <ArrowLeft className="size-6" />

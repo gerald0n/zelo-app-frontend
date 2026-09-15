@@ -10,6 +10,7 @@ import {
   mapAdminProduct,
   PRODUCT_ADMIN_SELECT,
 } from '@/modules/admin/catalog/product-mappers';
+import { upsertPizzaSizePrices } from '@/modules/admin/catalog/pizza';
 import type { AdminProduct } from '@/modules/admin/types';
 import type { Database } from '@/types/database';
 
@@ -91,6 +92,8 @@ export async function createAdminProduct(input: {
   isAvailable?: boolean;
   addonIds?: string[];
   fulfillmentLocationId?: string | null;
+  productType?: 'standard' | 'pizza_flavor';
+  pizzaSizePrices?: Array<{ sizeId: string; priceCents: number }>;
 }): Promise<Result<AdminProduct>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
@@ -113,6 +116,7 @@ export async function createAdminProduct(input: {
       is_active: input.isActive ?? true,
       is_available: input.isAvailable ?? true,
       fulfillment_location_id: input.fulfillmentLocationId ?? null,
+      product_type: input.productType ?? 'standard',
     })
     .select('id')
     .single();
@@ -121,6 +125,11 @@ export async function createAdminProduct(input: {
     return err('INTERNAL_ERROR', 'Não foi possível criar o produto.', {
       cause: error,
     });
+  }
+
+  if (input.productType === 'pizza_flavor' && input.pizzaSizePrices?.length) {
+    const priced = await upsertPizzaSizePrices(data.id, input.pizzaSizePrices);
+    if (!priced.ok) return priced;
   }
 
   if (input.addonIds?.length) {
@@ -157,42 +166,6 @@ export async function createAdminProduct(input: {
  * pausada (`is_available = false`) pra não aparecer no catálogo antes de o
  * admin revisar. Fica logo depois do original na ordenação.
  */
-export async function duplicateAdminProduct(
-  productId: string,
-): Promise<Result<AdminProduct>> {
-  const auth = await requireAdmin();
-  if (!auth.ok) return auth;
-
-  const source = await getAdminProduct(productId);
-  if (!source.ok) return source;
-
-  const created = await createAdminProduct({
-    categoryId: source.data.categoryId,
-    name: `${source.data.name} (cópia)`,
-    description: source.data.description,
-    priceCents: source.data.priceCents,
-    weightMinGrams: source.data.weightMinGrams,
-    weightMaxGrams: source.data.weightMaxGrams,
-    stockQuantity: source.data.stockQuantity,
-    sortOrder: source.data.sortOrder + 1,
-    isActive: source.data.isActive,
-    isAvailable: false,
-    addonIds: source.data.addonIds,
-    fulfillmentLocationId: source.data.fulfillmentLocationId,
-  });
-  if (!created.ok) return created;
-
-  await writeAuditLog({
-    actorId: auth.data.id,
-    action: 'product.duplicate',
-    entityType: 'product',
-    entityId: created.data.id,
-    metadata: { sourceId: productId },
-  });
-
-  return created;
-}
-
 export async function updateAdminProduct(options: {
   productId: string;
   categoryId?: string;
@@ -208,6 +181,8 @@ export async function updateAdminProduct(options: {
   isAvailable?: boolean;
   addonIds?: string[];
   fulfillmentLocationId?: string | null;
+  productType?: 'standard' | 'pizza_flavor';
+  pizzaSizePrices?: Array<{ sizeId: string; priceCents: number }>;
 }): Promise<Result<AdminProduct>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
@@ -244,6 +219,9 @@ export async function updateAdminProduct(options: {
   }
   if (options.fulfillmentLocationId !== undefined) {
     patch.fulfillment_location_id = options.fulfillmentLocationId;
+  }
+  if (options.productType !== undefined) {
+    patch.product_type = options.productType;
   }
 
   const admin = createAdminSupabaseClient();
@@ -282,7 +260,19 @@ export async function updateAdminProduct(options: {
     }
   }
 
-  if (Object.keys(patch).length === 0 && !options.addonIds) {
+  if (options.pizzaSizePrices) {
+    const priced = await upsertPizzaSizePrices(
+      options.productId,
+      options.pizzaSizePrices,
+    );
+    if (!priced.ok) return priced;
+  }
+
+  if (
+    Object.keys(patch).length === 0 &&
+    !options.addonIds &&
+    !options.pizzaSizePrices
+  ) {
     return err('VALIDATION_ERROR', 'Nenhuma alteração informada.');
   }
 

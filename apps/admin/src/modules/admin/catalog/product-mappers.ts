@@ -16,9 +16,13 @@ export const PRODUCT_ADMIN_SELECT = `
   archived_at,
   sort_order,
   fulfillment_location_id,
+  product_type,
+  preview_image_storage_path,
+  preview_image_alt_text,
   categories ( name ),
   product_images ( id, storage_path, alt_text, sort_order, is_primary ),
-  product_add_ons ( add_on_id )
+  product_add_ons ( add_on_id ),
+  pizza_flavor_prices ( size_id, price_cents )
 `;
 
 export function mapAdminImages(
@@ -64,6 +68,9 @@ export function mapAdminProduct(row: {
   archived_at: string | null;
   sort_order: number;
   fulfillment_location_id: string | null;
+  product_type: string;
+  preview_image_storage_path: string | null;
+  preview_image_alt_text: string | null;
   categories: { name: string } | Array<{ name: string }> | null;
   product_images: Array<{
     id: string;
@@ -73,6 +80,10 @@ export function mapAdminProduct(row: {
     is_primary: boolean;
   }> | null;
   product_add_ons: Array<{ add_on_id: string }> | null;
+  pizza_flavor_prices: Array<{
+    size_id: string;
+    price_cents: number;
+  }> | null;
 }): AdminProduct {
   const category = Array.isArray(row.categories)
     ? row.categories[0]
@@ -95,5 +106,17 @@ export function mapAdminProduct(row: {
     images: mapAdminImages(row.product_images),
     addonIds: (row.product_add_ons ?? []).map((link) => link.add_on_id),
     fulfillmentLocationId: row.fulfillment_location_id,
+    productType: row.product_type === 'pizza_flavor' ? 'pizza_flavor' : 'standard',
+    pizzaSizePrices: (row.pizza_flavor_prices ?? []).map((p) => ({
+      sizeId: p.size_id,
+      priceCents: p.price_cents,
+    })),
+    previewImageUrl: row.preview_image_storage_path
+      ? productImagePublicUrl(row.preview_image_storage_path, {
+          width: 400,
+          height: 400,
+        })
+      : null,
+    previewImageAltText: row.preview_image_alt_text,
   };
 }
