@@ -10,6 +10,7 @@ import { cn } from '@/lib/cn';
 const PRIMARY_ROUTES = [
   { label: 'Cardápio', href: '/', match: '/' },
   { label: 'Pedidos', href: '/pedidos', match: '/pedidos' },
+  { label: 'Favoritos', href: '/favoritos', match: '/favoritos' },
   { label: 'Conta', href: '/conta', match: '/conta' },
 ];
 
