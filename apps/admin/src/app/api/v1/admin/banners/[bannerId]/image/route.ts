@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { httpStatusFor } from '@/lib/errors';
-import { uploadBannerImage } from '@/modules/admin/banners';
+import { uploadBannerImage } from '@/modules/admin/banners/upload';
 
 export const dynamic = 'force-dynamic';
 

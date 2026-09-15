@@ -4,8 +4,8 @@ import { httpStatusFor } from '@/lib/errors';
 import {
   createAdminProduct,
   listAdminProducts,
-  reorderAdminProducts,
-} from '@/modules/admin/catalog';
+} from '@/modules/admin/catalog/products';
+import { reorderAdminProducts } from '@/modules/admin/catalog/reorder';
 
 export const dynamic = 'force-dynamic';
 

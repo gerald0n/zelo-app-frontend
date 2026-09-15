@@ -4,7 +4,7 @@ import { httpStatusFor } from '@/lib/errors';
 import {
   createAdminBlackout,
   listAdminBlackouts,
-} from '@/modules/admin/catalog';
+} from '@/modules/admin/catalog/store-hours';
 
 export const dynamic = 'force-dynamic';
 

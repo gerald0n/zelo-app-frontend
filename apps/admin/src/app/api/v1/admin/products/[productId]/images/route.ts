@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { httpStatusFor } from '@/lib/errors';
-import { reorderProductImages } from '@/modules/admin/catalog';
+import { reorderProductImages } from '@/modules/admin/catalog/product-images';
 
 export const dynamic = 'force-dynamic';
 

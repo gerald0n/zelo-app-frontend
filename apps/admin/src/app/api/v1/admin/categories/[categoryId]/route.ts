@@ -4,7 +4,7 @@ import { httpStatusFor } from '@/lib/errors';
 import {
   archiveAdminCategory,
   updateAdminCategory,
-} from '@/modules/admin/catalog';
+} from '@/modules/admin/catalog/categories';
 import { categorySchedulingRuleInputSchema } from '@/modules/scheduling/category-rules';
 
 export const dynamic = 'force-dynamic';

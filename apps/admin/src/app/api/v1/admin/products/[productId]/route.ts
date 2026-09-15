@@ -4,7 +4,7 @@ import { httpStatusFor } from '@/lib/errors';
 import {
   archiveAdminProduct,
   updateAdminProduct,
-} from '@/modules/admin/catalog';
+} from '@/modules/admin/catalog/products';
 
 export const dynamic = 'force-dynamic';
 

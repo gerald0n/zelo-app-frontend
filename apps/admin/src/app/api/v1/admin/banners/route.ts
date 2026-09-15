@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { httpStatusFor } from '@/lib/errors';
-import { createBanner, listAdminBanners } from '@/modules/admin/banners';
+import { createBanner, listAdminBanners } from '@/modules/admin/banners/crud';
 
 export const dynamic = 'force-dynamic';
 

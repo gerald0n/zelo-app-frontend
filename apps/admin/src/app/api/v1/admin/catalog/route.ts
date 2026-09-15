@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
 import { httpStatusFor } from '@/lib/errors';
-import {
-  listAdminAddons,
-  listAdminCategories,
-  listAdminProducts,
-} from '@/modules/admin/catalog';
+import { listAdminAddons } from '@/modules/admin/catalog/addons';
+import { listAdminCategories } from '@/modules/admin/catalog/categories';
+import { listAdminProducts } from '@/modules/admin/catalog/products';
 import { listAdminCoupons } from '@/modules/admin/coupons';
 import { listAdminPromotions } from '@/modules/admin/promotions';
 import { listAdminSatelliteLocations } from '@/modules/admin/satellite-location';

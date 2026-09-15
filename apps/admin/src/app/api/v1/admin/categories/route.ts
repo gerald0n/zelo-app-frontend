@@ -4,8 +4,8 @@ import { httpStatusFor } from '@/lib/errors';
 import {
   createAdminCategory,
   listAdminCategories,
-  reorderAdminCategories,
-} from '@/modules/admin/catalog';
+} from '@/modules/admin/catalog/categories';
+import { reorderAdminCategories } from '@/modules/admin/catalog/reorder';
 import { categorySchedulingRuleInputSchema } from '@/modules/scheduling/category-rules';
 
 export const dynamic = 'force-dynamic';
