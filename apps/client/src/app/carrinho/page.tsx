@@ -19,6 +19,7 @@ import { useShopExperience } from '@/contexts/ShopExperienceContext';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 import { checkoutContinuePath } from '@/modules/auth/checkout-path';
 import { ProductThumb } from '@/components/product-thumb';
+import { CartRecommendation } from '@/components/CartRecommendation';
 import { Separator } from '@/components/ui/separator';
 import {
   pageHeaderBarClass,
@@ -279,6 +280,7 @@ export default function CarrinhoPage() {
           {items.map((item) => (
             <CartItemRow key={item.id} item={item} />
           ))}
+          <CartRecommendation items={items} />
         </div>
 
         <div className="mt-2 space-y-2 rounded-xl border border-border bg-card p-3 lg:sticky lg:top-6 lg:col-span-1 lg:mt-0">

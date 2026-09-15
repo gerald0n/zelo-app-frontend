@@ -1958,6 +1958,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_pair_recommendation: {
+        Args: { p_min_count?: number; p_product_id: string; p_since: string }
+        Returns: string
+      }
       get_top_selling_products: {
         Args: { p_limit?: number; p_since: string }
         Returns: {
