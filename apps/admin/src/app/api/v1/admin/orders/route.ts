@@ -39,7 +39,7 @@ const createManualOrderSchema = z.object({
   scheduledFor: z.string().datetime().nullable().optional(),
   address: addressSchema.nullable().optional(),
   deliveryFeeCents: z.number().int().min(0).optional(),
-  paymentMethod: z.enum(['cash', 'card']),
+  paymentMethod: z.enum(['cash', 'card', 'pix_manual']),
   alreadyPaid: z.boolean().default(false),
   customerNote: z.string().trim().max(1000).nullable().optional(),
   couponCode: z.string().trim().min(3).max(32).nullable().optional(),

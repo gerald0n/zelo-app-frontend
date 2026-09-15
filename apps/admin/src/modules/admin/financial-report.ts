@@ -5,7 +5,7 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/modules/admin/auth';
 import type { ReportPeriod } from '@/modules/admin/reports';
 
-type Method = 'pix' | 'cash' | 'card';
+type Method = 'pix' | 'cash' | 'card' | 'pix_manual';
 
 export type FinancialReport = {
   period: ReportPeriod;
@@ -87,6 +87,7 @@ export async function getFinancialReport(
     pix: empty(),
     cash: empty(),
     card: empty(),
+    pix_manual: empty(),
   };
   const gross = { totalCents: 0, orderCount: 0 };
   const fees = { totalCents: 0, realCents: 0, estimatedCents: 0 };
@@ -94,7 +95,7 @@ export async function getFinancialReport(
   const pixTransactions: FinancialReport['pixTransactions'] = [];
 
   for (const row of (ordersRes.data ?? []) as OrderRow[]) {
-    const method = (['pix', 'cash', 'card'] as const).includes(
+    const method = (['pix', 'cash', 'card', 'pix_manual'] as const).includes(
       row.payment_method as Method,
     )
       ? (row.payment_method as Method)

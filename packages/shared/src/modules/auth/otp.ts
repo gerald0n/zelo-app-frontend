@@ -225,7 +225,7 @@ export async function verifyCustomerOtp(options: {
   });
 }
 
-async function upsertCustomerFromPhone(
+export async function upsertCustomerFromPhone(
   phoneE164: string,
 ): Promise<Result<CustomerIdentity>> {
   const admin = createAdminSupabaseClient();

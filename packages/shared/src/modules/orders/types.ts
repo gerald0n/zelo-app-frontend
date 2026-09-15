@@ -71,6 +71,8 @@ export type CustomerOrder = {
     locationDiverged: boolean | null;
     googleFormattedAddress: string | null;
   } | null;
+  /** Presente = pedido fulfilled por um local satélite (ex.: São Miguel/RN), não Pereiro. */
+  fulfillmentLocationId: string | null;
   items: CustomerOrderItem[];
   history: CustomerOrderHistoryEntry[];
   canCancel: boolean;

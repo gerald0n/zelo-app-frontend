@@ -5,11 +5,13 @@ import { err, ok, type Result } from '@/lib/errors';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { getPublicStore } from '@/modules/catalog/catalog-repository';
+import { getSatelliteLocation } from '@/modules/catalog/satellite-repository';
 import {
   clearCustomerCart,
   getCustomerCartId,
 } from '@/modules/carts/persist-cart';
 import { canPlaceImmediateOrder } from '@/modules/scheduling/schedule';
+import { canPlaceImmediateSatelliteOrder } from '@/modules/scheduling/satellite-slots';
 import {
   ensureCustomerRecord,
   findIdempotentResponse,
@@ -191,15 +193,24 @@ export async function previewCheckout(body: CreateOrderBody): Promise<
     storeOpen: boolean;
   }>
 > {
-  const storeResult = await getPublicStore();
-  if (!storeResult.ok) return storeResult;
-  if (!storeResult.data) return err('NOT_FOUND', 'Loja não encontrada.');
-
   const schedule = await validateScheduling(body);
   if (!schedule.ok) return schedule;
 
   const delivery = await resolveDeliveryFee(body);
   if (!delivery.ok) return delivery;
+
+  let storeOpen: boolean;
+  if (body.fulfillmentLocationId) {
+    const locationResult = await getSatelliteLocation();
+    if (!locationResult.ok) return locationResult;
+    if (!locationResult.data) return err('NOT_FOUND', 'Unidade não encontrada.');
+    storeOpen = canPlaceImmediateSatelliteOrder(locationResult.data);
+  } else {
+    const storeResult = await getPublicStore();
+    if (!storeResult.ok) return storeResult;
+    if (!storeResult.data) return err('NOT_FOUND', 'Loja não encontrada.');
+    storeOpen = canPlaceImmediateOrder(storeResult.data);
+  }
 
   const admin = createAdminSupabaseClient();
   let subtotalCents = 0;
@@ -244,6 +255,6 @@ export async function previewCheckout(body: CreateOrderBody): Promise<
     deliveryFeeCents: delivery.data.deliveryFeeCents,
     totalCents: subtotalCents + delivery.data.deliveryFeeCents,
     routeDistanceMeters: delivery.data.routeDistanceMeters,
-    storeOpen: canPlaceImmediateOrder(storeResult.data),
+    storeOpen,
   });
 }

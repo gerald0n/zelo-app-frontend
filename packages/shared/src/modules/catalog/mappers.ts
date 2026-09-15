@@ -14,6 +14,9 @@ import {
   type CatalogCategory,
   type CatalogProduct,
   type CatalogStore,
+  type SatelliteDeliverySlot,
+  type SatelliteLocation,
+  type SatelliteWeekdayHour,
 } from '@/modules/catalog/types';
 
 type ProductRow = Database['public']['Tables']['products']['Row'];
@@ -24,6 +27,12 @@ type BlackoutRow =
   Database['public']['Tables']['store_blackout_periods']['Row'];
 type ImageRow = Database['public']['Tables']['product_images']['Row'];
 type AddonRow = Database['public']['Tables']['add_ons']['Row'];
+type SatelliteLocationRow =
+  Database['public']['Tables']['satellite_locations']['Row'];
+type SatelliteHourRow =
+  Database['public']['Tables']['satellite_location_hours']['Row'];
+type SatelliteDeliverySlotRow =
+  Database['public']['Tables']['satellite_location_delivery_slots']['Row'];
 
 type ProductJoinRow = ProductRow & {
   product_images?: ImageRow[] | null;
@@ -176,5 +185,57 @@ export function mapStore(
         (a, b) =>
           new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
       ),
+  };
+}
+
+export function mapSatelliteHour(row: SatelliteHourRow): SatelliteWeekdayHour {
+  return {
+    weekday: row.weekday,
+    isClosed: row.is_closed,
+    pickupOpensAt: row.pickup_opens_at,
+    pickupClosesAt: row.pickup_closes_at,
+    deliveryEnabled: row.delivery_enabled,
+  };
+}
+
+export function mapSatelliteDeliverySlot(
+  row: SatelliteDeliverySlotRow,
+): SatelliteDeliverySlot {
+  return {
+    weekday: row.weekday,
+    startsAt: row.starts_at,
+    endsAt: row.ends_at,
+    label: row.label,
+    sortOrder: row.sort_order,
+  };
+}
+
+export function mapSatelliteLocation(
+  row: SatelliteLocationRow,
+  hours: SatelliteHourRow[],
+  deliverySlots: SatelliteDeliverySlotRow[],
+): SatelliteLocation {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    addressLine: row.address_line,
+    city: row.city,
+    state: row.state,
+    postalCode: row.postal_code,
+    latitude: Number(row.latitude),
+    longitude: Number(row.longitude),
+    freeDeliveryRadiusMeters: row.free_delivery_radius_meters,
+    fixedDeliveryFeeCents: row.fixed_delivery_fee_cents,
+    maxDeliveryRadiusMeters: row.max_delivery_radius_meters,
+    minLeadMinutes: row.min_lead_minutes,
+    timezone: row.timezone,
+    isActive: row.is_active,
+    hours: hours
+      .map(mapSatelliteHour)
+      .sort((a, b) => a.weekday - b.weekday),
+    deliverySlots: deliverySlots
+      .map(mapSatelliteDeliverySlot)
+      .sort((a, b) => a.weekday - b.weekday || a.sortOrder - b.sortOrder),
   };
 }

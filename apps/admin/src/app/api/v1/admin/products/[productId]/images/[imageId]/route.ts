@@ -4,7 +4,7 @@ import { httpStatusFor } from '@/lib/errors';
 import {
   deleteProductImage,
   setPrimaryProductImage,
-} from '@/modules/admin/catalog';
+} from '@/modules/admin/catalog/product-images';
 
 export const dynamic = 'force-dynamic';
 

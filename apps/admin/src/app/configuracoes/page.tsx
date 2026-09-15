@@ -5,12 +5,14 @@ import { Loader2 } from 'lucide-react';
 import { useConfiguracoes } from '@/app/configuracoes/useConfiguracoes';
 import { AdminPasswordForm } from '@/app/configuracoes/_sections/AdminPasswordForm';
 import { AuditLogSection } from '@/app/configuracoes/_sections/AuditLogSection';
+import { BannersSection } from '@/app/configuracoes/_sections/BannersSection';
 import { BlackoutsSection } from '@/app/configuracoes/_sections/BlackoutsSection';
 import { LogoutButton } from '@/app/configuracoes/_sections/LogoutButton';
 import { BusinessHoursForm } from '@/app/configuracoes/_sections/BusinessHoursForm';
 import { PrinterSection } from '@/app/configuracoes/_sections/PrinterSection';
 import { PushBroadcastSection } from '@/app/configuracoes/_sections/PushBroadcastSection';
 import { PushSection } from '@/app/configuracoes/_sections/PushSection';
+import { SatelliteLocationSection } from '@/app/configuracoes/_sections/SatelliteLocationSection';
 import { StoreForm } from '@/app/configuracoes/_sections/StoreForm';
 import { adminContainerClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
@@ -102,6 +104,7 @@ export default function AdminConfiguracoesPage() {
             onCreate={(values) => config.blackoutMutation.mutate(values)}
             onDelete={(id) => config.deleteBlackoutMutation.mutate(id)}
           />
+          <SatelliteLocationSection />
         </div>
       ) : null}
 
@@ -114,6 +117,7 @@ export default function AdminConfiguracoesPage() {
 
       {tab === 'marketing' ? (
         <div className="space-y-4">
+          <BannersSection />
           <PushBroadcastSection />
         </div>
       ) : null}

@@ -8,7 +8,7 @@ import {
   resumeStore,
   setStoreAcceptingOrders,
   updateAdminStore,
-} from '@/modules/admin/catalog';
+} from '@/modules/admin/catalog/store';
 
 export const dynamic = 'force-dynamic';
 

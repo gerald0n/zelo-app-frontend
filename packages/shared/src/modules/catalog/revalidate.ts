@@ -25,6 +25,7 @@ export function catalogTagsForAuditAction(
   ) {
     return ['catalog'];
   }
+  if (action.startsWith('banner.')) return ['banners'];
   return [];
 }
 

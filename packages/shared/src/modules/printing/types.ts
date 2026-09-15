@@ -57,7 +57,7 @@ export type DeliverySlipData = {
   discountCents: number;
   deliveryFeeCents: number;
   totalCents: number;
-  paymentMethod: 'pix' | 'cash' | 'card';
+  paymentMethod: 'pix' | 'cash' | 'card' | 'pix_manual';
   paymentStatus: string;
   needsChange: boolean | null;
   changeForAmountCents: number | null;

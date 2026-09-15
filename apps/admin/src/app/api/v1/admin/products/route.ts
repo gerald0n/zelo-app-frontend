@@ -4,8 +4,8 @@ import { httpStatusFor } from '@/lib/errors';
 import {
   createAdminProduct,
   listAdminProducts,
-  reorderAdminProducts,
-} from '@/modules/admin/catalog';
+} from '@/modules/admin/catalog/products';
+import { reorderAdminProducts } from '@/modules/admin/catalog/reorder';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,6 +22,7 @@ const createSchema = z.object({
   isActive: z.boolean().optional(),
   isAvailable: z.boolean().optional(),
   addonIds: z.array(z.string().uuid()).optional(),
+  fulfillmentLocationId: z.string().uuid().nullable().optional(),
 });
 
 export async function GET() {

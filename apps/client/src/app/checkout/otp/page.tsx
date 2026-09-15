@@ -11,6 +11,7 @@ import { formatPhoneDisplay } from '@/lib/phone';
 import { BotTrap } from '@/components/BotTrap';
 import { checkoutContinuePath } from '@/modules/auth/checkout-path';
 import { consumeAuthReturnTo } from '@/modules/auth/auth-return';
+import { buildSupportWhatsappLink } from '@/lib/support-whatsapp';
 import {
   checkoutDesktopContainerClass,
   pageHeaderBarClass,
@@ -48,12 +49,15 @@ export default function OtpPage() {
     setPendingPhone,
     requestOtp,
     verifyOtp,
+    checkManualOtpApproval,
   } = useAuth();
   const [otp, setOtp] = useState('');
   const [countdown, setCountdown] = useState(60);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [website, setWebsite] = useState('');
+  const [hasResent, setHasResent] = useState(false);
+  const [supportRequested, setSupportRequested] = useState(false);
   const [captchaToken, setCaptchaToken] = useState('');
   const onCaptchaToken = useCallback((token: string) => {
     setCaptchaToken(token);
@@ -99,6 +103,21 @@ export default function OtpPage() {
 
   const formattedPhone = resolvedPhone ? formatPhoneDisplay(resolvedPhone) : '';
 
+  const finishLogin = (needsName: boolean) => {
+    verifiedHere.current = true;
+    try {
+      sessionStorage.removeItem(DEBUG_OTP_KEY);
+    } catch {
+      /* ignore */
+    }
+    if (needsName) {
+      // Falta o nome: segue pra /checkout/nome mantendo o destino de retorno.
+      router.replace('/checkout/nome');
+      return;
+    }
+    router.replace(consumeAuthReturnTo() ?? '/checkout/recebimento');
+  };
+
   const handleConfirm = async (code = otp) => {
     if (code.length < OTP_LENGTH || submitting) return;
     setError('');
@@ -109,18 +128,40 @@ export default function OtpPage() {
       setError(result.message);
       return;
     }
-    verifiedHere.current = true;
+    finishLogin(result.needsName);
+  };
+
+  // Só depois do primeiro reenvio (o cliente já esperou o código e não
+  // chegou) é que passamos a checar se o admin aprovou manualmente — assim
+  // evitamos poll desnecessário no caminho feliz.
+  useEffect(() => {
+    if (!hasResent || !resolvedPhone || verifiedHere.current) return;
+    const poll = async () => {
+      const result = await checkManualOtpApproval(resolvedPhone);
+      if (result.ok && result.approved) {
+        finishLogin(result.needsName);
+      }
+    };
+    const timer = setInterval(() => void poll(), 4000);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasResent, resolvedPhone]);
+
+  const handleSupportRequest = async () => {
+    setSupportRequested(true);
     try {
-      sessionStorage.removeItem(DEBUG_OTP_KEY);
+      await fetch('/api/v1/auth/otp/support-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: resolvedPhone }),
+      });
     } catch {
-      /* ignore */
+      /* segue pro WhatsApp mesmo se o registro falhar */
     }
-    if (result.needsName) {
-      // Falta o nome: segue pra /checkout/nome mantendo o destino de retorno.
-      router.replace('/checkout/nome');
-      return;
-    }
-    router.replace(consumeAuthReturnTo() ?? '/checkout/recebimento');
+    const link = await buildSupportWhatsappLink(
+      `Não estou recebendo o código de verificação para o telefone ${formattedPhone}. Podem me ajudar?`,
+    );
+    if (link) window.open(link, '_blank');
   };
 
   const handleInput = (text: string) => {
@@ -158,6 +199,7 @@ export default function OtpPage() {
     }
     setCountdown(60);
     setOtp('');
+    setHasResent(true);
   };
 
   return (
@@ -255,6 +297,18 @@ export default function OtpPage() {
             ? `Reenviar código em ${countdown}s`
             : 'Reenviar código'}
         </button>
+
+        {hasResent ? (
+          <button
+            type="button"
+            onClick={() => void handleSupportRequest()}
+            className="-mt-2 text-left text-sm font-medium text-primary underline"
+          >
+            {supportRequested
+              ? 'Solicitação enviada — falar de novo com o suporte'
+              : 'Ainda não recebeu? Fale com o suporte aqui'}
+          </button>
+        ) : null}
 
         <div className="relative">
           <BotTrap

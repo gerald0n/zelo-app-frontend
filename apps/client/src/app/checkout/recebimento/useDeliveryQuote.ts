@@ -51,13 +51,14 @@ export function useDeliveryQuote() {
   const buildValidationKey = useEffectEvent(
     (coords?: { latitude?: number; longitude?: number }) =>
       JSON.stringify({
+        fulfillmentLocation: checkout.fulfillmentLocation,
         street: details.street.trim(),
         number: details.number.trim(),
         neighborhood: details.neighborhood.trim(),
         complement: details.complement.trim(),
         referencePoint: details.referencePoint.trim(),
-        city: details.city || 'Pereiro',
-        state: details.state || 'CE',
+        city: details.city,
+        state: details.state,
         postalCode: details.postalCode.trim(),
         latitude: coords?.latitude ?? details.latitude ?? null,
         longitude: coords?.longitude ?? details.longitude ?? null,
@@ -79,13 +80,14 @@ export function useDeliveryQuote() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            fulfillmentLocation: checkout.fulfillmentLocation,
             street: details.street,
             number: details.number,
             neighborhood: details.neighborhood,
             complement: details.complement || undefined,
             referencePoint: details.referencePoint || undefined,
-            city: details.city || 'Pereiro',
-            state: details.state || 'CE',
+            city: details.city,
+            state: details.state,
             postalCode: details.postalCode || undefined,
             latitude: coords?.latitude ?? details.latitude,
             longitude: coords?.longitude ?? details.longitude,
@@ -124,6 +126,7 @@ export function useDeliveryQuote() {
     return () => window.clearTimeout(timer);
   }, [
     canQuote,
+    checkout.fulfillmentLocation,
     details.street,
     details.number,
     details.city,

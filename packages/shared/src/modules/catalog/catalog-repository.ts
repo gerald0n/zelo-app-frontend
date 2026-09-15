@@ -6,6 +6,7 @@ import { createPublicSupabaseClient } from '@/lib/supabase/public';
 import { hasSupabasePublicConfig } from '@/config/env';
 import { mapCategory, mapProduct, mapStore } from '@/modules/catalog/mappers';
 import { listProductRatings } from '@/modules/catalog/product-ratings';
+import { listAllSatelliteProducts } from '@/modules/catalog/satellite-repository';
 import type { ActivePromotion } from '@/modules/catalog/promotions';
 import type {
   CatalogCategory,
@@ -173,6 +174,7 @@ export async function listPublicProducts(): Promise<Result<CatalogProduct[]>> {
         .select(PRODUCT_SELECT)
         .eq('is_active', true)
         .is('archived_at', null)
+        .is('fulfillment_location_id', null)
         .order('sort_order', { ascending: true }),
       listActivePromotions(supabase),
       listProductRatings(supabase),
@@ -197,6 +199,27 @@ export async function listPublicProducts(): Promise<Result<CatalogProduct[]>> {
   }
 }
 
+/**
+ * Catálogo normal + produtos de pronta entrega (qualquer local satélite) —
+ * "qualquer produto que um cliente pode legitimamente ter num pedido".
+ * `listPublicProducts()` sozinho exclui produtos satélite de propósito (pra
+ * não aparecerem na vitrine normal), mas isso os deixaria "removidos do
+ * catálogo" em qualquer revalidação/hidratação de carrinho — usado pelo
+ * carrinho salvo no servidor e pela revalidação da tela de carrinho, que não
+ * sabem em qual "modo" (encomenda/pronta entrega) o item foi adicionado.
+ */
+export async function listOrderableProducts(): Promise<
+  Result<CatalogProduct[]>
+> {
+  const [catalog, satellite] = await Promise.all([
+    listPublicProducts(),
+    listAllSatelliteProducts(),
+  ]);
+  if (!catalog.ok) return catalog;
+  if (!satellite.ok) return satellite;
+  return ok([...catalog.data, ...satellite.data]);
+}
+
 export async function getPublicProductBySlugOrId(
   slugOrId: string,
 ): Promise<Result<CatalogProduct | null>> {
@@ -211,6 +234,7 @@ export async function getPublicProductBySlugOrId(
       .eq('slug', slugOrId)
       .eq('is_active', true)
       .is('archived_at', null)
+      .is('fulfillment_location_id', null)
       .maybeSingle();
 
     if (bySlug.error) {
@@ -241,6 +265,7 @@ export async function getPublicProductBySlugOrId(
       .eq('id', slugOrId)
       .eq('is_active', true)
       .is('archived_at', null)
+      .is('fulfillment_location_id', null)
       .maybeSingle();
 
     if (byId.error) {

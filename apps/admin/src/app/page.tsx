@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { ChevronRight, Loader2 } from 'lucide-react';
 import AdminOrderCard from '@/components/admin/AdminOrderCard';
+import AdminOrderDetailModal from '@/components/admin/kanban/AdminOrderDetailModal';
 import { useRequireAdmin } from '@/hooks/useRequireAdmin';
 import { apiJson } from '@/lib/api';
 import { adminContainerClass } from '@/lib/layout';
@@ -29,6 +30,7 @@ const PERIODS: DashboardPeriod[] = ['30d', '7d', 'today'];
 export default function AdminDashboardPage() {
   const { isAuthenticated, ready } = useRequireAdmin();
   const [period, setPeriod] = useState<DashboardPeriod>('30d');
+  const [detailOrderId, setDetailOrderId] = useState<string | null>(null);
 
   // Fronteiras calculadas no fuso do cliente (capturadas ao trocar de
   // período / montar). O servidor só agrega dentro delas.
@@ -142,7 +144,7 @@ export default function AdminDashboardPage() {
           </div>
 
           <h2 className="font-serif text-base font-bold pt-1">Operação</h2>
-          <OperationsView period={period} />
+          <OperationsView period={period} onSelectOrder={setDetailOrderId} />
 
           <h2 className="font-serif text-base font-bold pt-1">Financeiro</h2>
           <FinancialView period={period} />
@@ -170,6 +172,11 @@ export default function AdminDashboardPage() {
           )}
         </>
       )}
+
+      <AdminOrderDetailModal
+        orderId={detailOrderId}
+        onClose={() => setDetailOrderId(null)}
+      />
     </div>
   );
 }

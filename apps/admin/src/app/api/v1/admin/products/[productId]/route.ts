@@ -4,7 +4,7 @@ import { httpStatusFor } from '@/lib/errors';
 import {
   archiveAdminProduct,
   updateAdminProduct,
-} from '@/modules/admin/catalog';
+} from '@/modules/admin/catalog/products';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +23,7 @@ const patchSchema = z.object({
   isActive: z.boolean().optional(),
   isAvailable: z.boolean().optional(),
   addonIds: z.array(z.string().uuid()).optional(),
+  fulfillmentLocationId: z.string().uuid().nullable().optional(),
   archive: z.boolean().optional(),
 });
 

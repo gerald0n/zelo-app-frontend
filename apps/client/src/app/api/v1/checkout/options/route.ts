@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getPublicCatalog } from '@/modules/catalog/catalog-repository';
+import { getSatelliteLocation } from '@/modules/catalog/satellite-repository';
 import {
   buildSchedulingSnapshot,
   resolveCartSchedulingRule,
 } from '@/modules/scheduling/schedule';
+import { buildSatelliteSchedulingSnapshot } from '@/modules/scheduling/satellite-slots';
 import { getCatalogStoreHoursLabel } from '@/modules/catalog/store-hours';
 import { httpStatusFor } from '@/lib/errors';
 import { PEREIRO_URBAN_NEIGHBORHOODS } from '@/modules/delivery';
@@ -13,12 +15,56 @@ export const dynamic = 'force-dynamic';
 
 const bodySchema = z.object({
   productIds: z.array(z.string().uuid()).max(200).optional(),
+  fulfillmentLocation: z.enum(['pereiro', 'sao_miguel']).optional(),
 });
 
 export async function POST(request: Request) {
   const json = await request.json().catch(() => null);
   const parsed = bodySchema.safeParse(json ?? {});
   const productIds = parsed.success ? (parsed.data.productIds ?? []) : [];
+  const fulfillmentLocation = parsed.success
+    ? (parsed.data.fulfillmentLocation ?? 'pereiro')
+    : 'pereiro';
+
+  if (fulfillmentLocation === 'sao_miguel') {
+    const locationResult = await getSatelliteLocation();
+    if (!locationResult.ok) {
+      return NextResponse.json(
+        { error: locationResult.error },
+        { status: httpStatusFor(locationResult.error.code) },
+      );
+    }
+    const location = locationResult.data;
+    if (!location) {
+      return NextResponse.json(
+        { error: { code: 'NOT_FOUND', message: 'Unidade não encontrada.' } },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({
+      fulfillmentLocation: 'sao_miguel',
+      store: {
+        id: location.id,
+        name: location.name,
+        addressLine: location.addressLine,
+        city: location.city,
+        state: location.state,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        freeDeliveryRadiusMeters: location.freeDeliveryRadiusMeters,
+        fixedDeliveryFeeCents: location.fixedDeliveryFeeCents,
+      },
+      // Bairros de Pereiro não se aplicam a São Miguel — sem autocomplete
+      // com viés por enquanto.
+      neighborhoods: [],
+      scheduling: {
+        ...buildSatelliteSchedulingSnapshot(location),
+        mixedCart: false,
+        allowSameDay: true,
+      },
+    });
+  }
 
   const catalogResult = await getPublicCatalog();
   if (!catalogResult.ok) {
@@ -42,6 +88,7 @@ export async function POST(request: Request) {
   );
 
   return NextResponse.json({
+    fulfillmentLocation: 'pereiro',
     store: {
       id: store.id,
       name: store.name,

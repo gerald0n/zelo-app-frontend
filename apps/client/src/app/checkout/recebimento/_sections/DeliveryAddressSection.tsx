@@ -22,10 +22,10 @@ import {
 } from '@/modules/delivery/geo';
 import { checkoutFieldClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
-import type { CheckoutOptions } from '@/app/checkout/recebimento/recebimento-helpers';
+import type { AnyCheckoutOptions } from '@/app/checkout/recebimento/recebimento-helpers';
 
 type Props = {
-  options: CheckoutOptions | null;
+  options: AnyCheckoutOptions | null;
   savedAddresses: SavedAddress[];
   selectedSavedId: string | null;
   onSelectSaved: (id: string) => void;
@@ -74,8 +74,8 @@ export function DeliveryAddressSection({
       street: place.street || details.street,
       number: place.number || details.number,
       neighborhood: place.neighborhood || details.neighborhood,
-      city: 'Pereiro',
-      state: 'CE',
+      city: details.city,
+      state: details.state,
       latitude,
       longitude,
       locationSource: 'geocoded',
@@ -102,8 +102,8 @@ export function DeliveryAddressSection({
         details.neighborhood ||
         result.address?.neighborhood ||
         details.neighborhood,
-      city: 'Pereiro',
-      state: 'CE',
+      city: details.city,
+      state: details.state,
       latitude: result.latitude,
       longitude: result.longitude,
       formattedAddress: result.address?.formattedAddress,

@@ -5,6 +5,7 @@ import { formatCatalogPrice } from '@/modules/catalog/types';
 import { statusLabel } from '@/modules/orders/types';
 import type { AdminOrderDetail } from '@/modules/admin/types';
 import { deliveryLocationLabel } from '@/lib/admin/order-address';
+import { paymentMethodLabel } from '@/lib/admin/payment-method-label';
 import { DeliveryLocationMeta } from '@/components/admin/DeliveryLocationMeta';
 
 function formatClock(iso: string) {
@@ -98,11 +99,7 @@ export function OrderDetailMain({ order }: { order: AdminOrderDetail }) {
           <div>
             <p className="text-2xs text-muted-foreground">Pagamento</p>
             <p className="mt-0.5 text-xs">
-              {order.paymentMethod === 'pix'
-                ? 'Pix'
-                : order.paymentMethod === 'cash'
-                  ? 'Dinheiro'
-                  : 'Cartão'}
+              {paymentMethodLabel(order.paymentMethod)}
               {order.paymentMethod === 'pix'
                 ? ` · ${PIX_STATUS_LABEL[order.paymentStatus] ?? 'Aguardando'}`
                 : order.paymentStatus === 'confirmed'

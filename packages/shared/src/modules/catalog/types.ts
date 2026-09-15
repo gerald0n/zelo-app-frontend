@@ -60,6 +60,14 @@ export type CatalogBlackout = {
   reason: string | null;
 };
 
+export type CatalogBanner = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  linkHref: string | null;
+  imageUrl: string;
+};
+
 export type CatalogPaymentMethods = {
   pix: boolean;
   cash: boolean;
@@ -94,6 +102,57 @@ export type CatalogStore = {
   acceptsPayments: CatalogPaymentMethods;
   businessHours: CatalogBusinessHour[];
   blackoutPeriods: CatalogBlackout[];
+};
+
+/**
+ * Um horário fixo de entrega oferecido pelo local satélite num dia da
+ * semana — lista curta e explícita (ex.: rota do meio-dia + um horário à
+ * noite), não uma grade derivada por intervalo como a de Pereiro.
+ */
+export type SatelliteDeliverySlot = {
+  weekday: number;
+  /** HH:MM. */
+  startsAt: string;
+  /** HH:MM — fim da janela, quando o slot representa um intervalo (ex.: rota do meio-dia). */
+  endsAt: string | null;
+  label: string | null;
+  sortOrder: number;
+};
+
+export type SatelliteWeekdayHour = {
+  weekday: number;
+  isClosed: boolean;
+  /** HH:MM — janela de retirada (sem grade de horários, é "qualquer horário nessa janela"). */
+  pickupOpensAt: string | null;
+  pickupClosesAt: string | null;
+  deliveryEnabled: boolean;
+};
+
+/**
+ * Segundo local de atendimento (satélite), ativo só em alguns dias da
+ * semana, com endereço/raio/taxa próprios — ver `packages/shared/src/modules/scheduling/satellite-slots.ts`.
+ * O shape de geo/raio/taxa é compatível com `StoreOrigin`
+ * (`@/modules/delivery/quote`), então dá pra passar direto pro cálculo de
+ * taxa de entrega sem adaptação.
+ */
+export type SatelliteLocation = {
+  id: string;
+  slug: string;
+  name: string;
+  addressLine: string;
+  city: string;
+  state: string;
+  postalCode: string | null;
+  latitude: number;
+  longitude: number;
+  freeDeliveryRadiusMeters: number;
+  fixedDeliveryFeeCents: number;
+  maxDeliveryRadiusMeters: number;
+  minLeadMinutes: number;
+  timezone: string;
+  isActive: boolean;
+  hours: SatelliteWeekdayHour[];
+  deliverySlots: SatelliteDeliverySlot[];
 };
 
 export function formatWeightGrams(

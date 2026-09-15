@@ -20,6 +20,17 @@ export const adminKeys = {
     [...adminKeys.all, 'product-reviews', tab] as const,
   reviewsPending: () => [...adminKeys.all, 'reviews-pending'] as const,
   pixRefundsPending: () => [...adminKeys.all, 'pix-refunds-pending'] as const,
+  satelliteLocation: () =>
+    [...adminKeys.all, 'satellite-location'] as const,
+  satelliteHours: () => [...adminKeys.all, 'satellite-hours'] as const,
+  satelliteDeliverySlots: () =>
+    [...adminKeys.all, 'satellite-delivery-slots'] as const,
+  customers: (page: number) => [...adminKeys.all, 'customers', page] as const,
+  customerSearch: (q: string) =>
+    [...adminKeys.all, 'customers', 'search', q] as const,
+  otpSupportRequests: () =>
+    [...adminKeys.all, 'otp-support-requests'] as const,
+  banners: () => [...adminKeys.all, 'banners'] as const,
 };
 
 export const catalogKeys = {

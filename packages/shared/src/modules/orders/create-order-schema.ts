@@ -46,6 +46,14 @@ export const createOrderBodySchema = z.object({
   couponCode: z.string().trim().min(3).max(32).optional(),
   address: addressSchema.optional(),
   items: z.array(orderItemSchema).min(1),
+  /** Presente = pedido pro local satélite (São Miguel/RN), não Pereiro. */
+  fulfillmentLocationId: z.string().uuid().optional(),
+  /**
+   * `true` = pedido de "pronta entrega" (lote curado, exclusivo do local
+   * satélite). `false`/ausente = encomenda — cardápio normal, vale em
+   * qualquer local (Pereiro ou um satélite).
+   */
+  prontaEntrega: z.boolean().optional(),
 });
 
 export type CreateOrderBody = z.infer<typeof createOrderBodySchema>;

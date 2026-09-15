@@ -50,6 +50,7 @@ export function useProductMutations({
           ? Number(values.stockQuantity)
           : null,
         addonIds: values.addonIds,
+        fulfillmentLocationId: values.fulfillmentLocationId || null,
       };
       if (editingProduct) {
         return apiJson(`/api/v1/admin/products/${editingProduct.id}`, {

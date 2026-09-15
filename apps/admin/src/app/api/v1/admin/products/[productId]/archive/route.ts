@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { httpStatusFor } from '@/lib/errors';
-import { archiveAdminProduct } from '@/modules/admin/catalog';
+import { archiveAdminProduct } from '@/modules/admin/catalog/products';
 
 export const dynamic = 'force-dynamic';
 

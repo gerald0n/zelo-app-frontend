@@ -56,6 +56,10 @@ export default function AdminCatalogoPage() {
     () => catalogQuery.data?.coupons ?? [],
     [catalogQuery.data?.coupons],
   );
+  const satelliteLocations = useMemo(
+    () => catalogQuery.data?.satelliteLocations ?? [],
+    [catalogQuery.data?.satelliteLocations],
+  );
 
   const invalidateCatalog = async () => {
     await queryClient.invalidateQueries({ queryKey: adminKeys.catalog() });
@@ -138,6 +142,7 @@ export default function AdminCatalogoPage() {
           categories={categories}
           products={products}
           addons={addons}
+          satelliteLocations={satelliteLocations}
           invalidateCatalog={invalidateCatalog}
           onError={setFormError}
         />

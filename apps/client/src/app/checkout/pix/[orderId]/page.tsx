@@ -12,6 +12,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { formatCatalogPrice } from '@/modules/catalog/types';
+import { buildSupportWhatsappLink } from '@/lib/support-whatsapp';
 import {
   pageBodyPadClass,
   pageHeaderBarClass,
@@ -45,6 +46,12 @@ function PixContent({ orderId }: { orderId: string }) {
   };
 
   const handleRegenerate = regenerate;
+
+  const handleSupport = async () => {
+    const message = `Meu pedido #${view?.orderNumber ?? ''} teve problema no pagamento Pix e não consigo concluir.`;
+    const link = await buildSupportWhatsappLink(message);
+    if (link) window.open(link, '_blank');
+  };
 
   if (loading && !view) {
     return (
@@ -116,6 +123,13 @@ function PixContent({ orderId }: { orderId: string }) {
             >
               Voltar ao cardápio
             </Link>
+            <button
+              type="button"
+              onClick={() => void handleSupport()}
+              className="text-xs font-semibold text-primary underline"
+            >
+              Falar com o suporte
+            </button>
           </div>
         ) : expired ? (
           <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 text-center">
@@ -136,6 +150,13 @@ function PixContent({ orderId }: { orderId: string }) {
                 <RefreshCw className="size-4" />
               )}
               Gerar novo código
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleSupport()}
+              className="text-xs font-semibold text-primary underline"
+            >
+              Falar com o suporte
             </button>
           </div>
         ) : view?.pix ? (

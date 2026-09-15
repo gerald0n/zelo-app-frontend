@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, Loader2, Search, X } from 'lucide-react';
 import { useRequireAdmin } from '@/hooks/useRequireAdmin';
@@ -31,9 +32,10 @@ function formatDate(iso: string): string {
   });
 }
 
-export default function AdminHistoricoPage() {
+function AdminHistoricoContent() {
   const { ready, isAuthenticated } = useRequireAdmin();
-  const [q, setQ] = useState('');
+  const searchParams = useSearchParams();
+  const [q, setQ] = useState(() => searchParams.get('q') ?? '');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [page, setPage] = useState(1);
@@ -259,5 +261,19 @@ export default function AdminHistoricoPage() {
         onClose={() => setDetailOrderId(null)}
       />
     </div>
+  );
+}
+
+export default function AdminHistoricoPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-dvh items-center justify-center">
+          <Loader2 className="size-5 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <AdminHistoricoContent />
+    </Suspense>
   );
 }

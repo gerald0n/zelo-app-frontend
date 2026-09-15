@@ -37,6 +37,7 @@ type Props = {
   categories: AdminCategory[];
   products: AdminProduct[];
   addons: AdminAddon[];
+  satelliteLocations: Array<{ id: string; slug: string; name: string }>;
   invalidateCatalog: () => Promise<void>;
   onError: (message: string) => void;
 };
@@ -66,6 +67,7 @@ export function ProductsTab({
   categories,
   products,
   addons,
+  satelliteLocations,
   invalidateCatalog,
   onError,
 }: Props) {
@@ -179,6 +181,7 @@ export function ProductsTab({
                 ? String(product.stockQuantity)
                 : '',
             addonIds: product.addonIds,
+            fulfillmentLocationId: product.fulfillmentLocationId ?? '',
           }
         : emptyProductForm(categories[0]?.id ?? '', products.length),
     );
@@ -241,6 +244,7 @@ export function ProductsTab({
         product={editingProduct}
         categories={categories}
         addons={addons}
+        satelliteLocations={satelliteLocations}
         isPending={productMutation.isPending}
         uploadPending={uploadMutation.isPending}
         onSubmit={(values) => productMutation.mutate(values)}

@@ -13,6 +13,7 @@ type Props = {
   editingProduct: boolean;
   categories: AdminCategory[];
   addons: AdminAddon[];
+  satelliteLocations: Array<{ id: string; slug: string; name: string }>;
   isPending: boolean;
   onSubmit: (values: ProductForm) => void;
   onCancel: () => void;
@@ -23,6 +24,7 @@ export function ProductFormCard({
   editingProduct,
   categories,
   addons,
+  satelliteLocations,
   isPending,
   onSubmit,
   onCancel,
@@ -83,6 +85,22 @@ export function ProductFormCard({
             className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
           />
         </Label>
+        {satelliteLocations.length > 0 ? (
+          <label className="block text-xs font-semibold sm:col-span-2">
+            Catálogo
+            <select
+              {...form.register('fulfillmentLocationId')}
+              className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+            >
+              <option value="">Normal (Pereiro)</option>
+              {satelliteLocations.map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.name} — pronta entrega
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         <Label className="block text-xs font-semibold sm:col-span-2">
           Descrição
           <Textarea

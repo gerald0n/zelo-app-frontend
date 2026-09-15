@@ -68,6 +68,7 @@ export const ORDER_DETAIL_SELECT = `
   cancelled_at,
   created_at,
   updated_at,
+  fulfillment_location_id,
   order_addresses (
     street,
     number,
@@ -198,6 +199,7 @@ export function mapDetail(row: {
   cancelled_at: string | null;
   created_at: string;
   updated_at: string;
+  fulfillment_location_id: string | null;
   order_addresses:
     | OrderAddressRow
     | Array<OrderAddressRow>
@@ -267,6 +269,7 @@ export function mapDetail(row: {
     paymentMethod: row.payment_method,
     paymentStatus: row.payment_status,
     hasPixCharge: row.mp_order_id !== null,
+    fulfillmentLocationId: row.fulfillment_location_id,
     subtotalCents: row.subtotal_cents + row.add_ons_total_cents,
     deliveryFeeCents: row.delivery_fee_cents,
     totalCents: row.total_cents,

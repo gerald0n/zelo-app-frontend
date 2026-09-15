@@ -168,6 +168,7 @@ export async function getAdminOrder(
     cancelledAt: data.cancelled_at,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
+    fulfillmentLocationId: data.fulfillment_location_id,
     address: addressRaw
       ? {
           street: addressRaw.street,

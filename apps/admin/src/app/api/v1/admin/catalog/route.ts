@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
 import { httpStatusFor } from '@/lib/errors';
-import {
-  listAdminAddons,
-  listAdminCategories,
-  listAdminProducts,
-} from '@/modules/admin/catalog';
+import { listAdminAddons } from '@/modules/admin/catalog/addons';
+import { listAdminCategories } from '@/modules/admin/catalog/categories';
+import { listAdminProducts } from '@/modules/admin/catalog/products';
 import { listAdminCoupons } from '@/modules/admin/coupons';
 import { listAdminPromotions } from '@/modules/admin/promotions';
+import { listAdminSatelliteLocations } from '@/modules/admin/satellite-location';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,8 +16,10 @@ export async function GET() {
     listAdminAddons(),
     listAdminPromotions(),
     listAdminCoupons(),
+    listAdminSatelliteLocations(),
   ]);
-  const [categories, products, addons, promotions, coupons] = results;
+  const [categories, products, addons, promotions, coupons, satelliteLocations] =
+    results;
 
   if (!categories.ok) {
     return NextResponse.json(
@@ -50,6 +51,12 @@ export async function GET() {
       { status: httpStatusFor(coupons.error.code) },
     );
   }
+  if (!satelliteLocations.ok) {
+    return NextResponse.json(
+      { error: satelliteLocations.error },
+      { status: httpStatusFor(satelliteLocations.error.code) },
+    );
+  }
 
   return NextResponse.json({
     categories: categories.data,
@@ -57,5 +64,6 @@ export async function GET() {
     addons: addons.data,
     promotions: promotions.data,
     coupons: coupons.data,
+    satelliteLocations: satelliteLocations.data,
   });
 }

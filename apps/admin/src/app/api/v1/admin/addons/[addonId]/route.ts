@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { httpStatusFor } from '@/lib/errors';
-import { archiveAdminAddon, updateAdminAddon } from '@/modules/admin/catalog';
+import { archiveAdminAddon, updateAdminAddon } from '@/modules/admin/catalog/addons';
 
 export const dynamic = 'force-dynamic';
 

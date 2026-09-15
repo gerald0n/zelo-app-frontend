@@ -7,6 +7,7 @@ import OrderTimeline, { clock } from '@/components/admin/kanban/OrderTimeline';
 import WhatsappNotifyButton from '@/components/admin/WhatsappNotifyButton';
 import { buildOrderSummaryText } from '@/lib/admin/order-summary';
 import { deliveryLocationLabel } from '@/lib/admin/order-address';
+import { paymentMethodLabel } from '@/lib/admin/payment-method-label';
 import { DeliveryLocationMeta } from '@/components/admin/DeliveryLocationMeta';
 import { cn } from '@/lib/cn';
 
@@ -22,12 +23,7 @@ type Props = {
 };
 
 function paymentText(order: AdminOrderDetail) {
-  const method =
-    order.paymentMethod === 'pix'
-      ? 'Pix'
-      : order.paymentMethod === 'cash'
-        ? 'Dinheiro'
-        : 'Cartão';
+  const method = paymentMethodLabel(order.paymentMethod);
   if (order.paymentStatus === 'refunded') return `${method} — Estornado`;
   if (order.paymentStatus === 'confirmed') {
     return `${method} — ${order.paymentMethod === 'pix' ? 'Aprovado' : 'Pago'}`;

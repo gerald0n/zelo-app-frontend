@@ -19,7 +19,7 @@ import { useRequireAdmin } from '@/hooks/useRequireAdmin';
 import { useUiPref } from '@/hooks/useUiPref';
 import { ApiError, apiJson } from '@/lib/api';
 import { adminKeys } from '@/lib/query-keys';
-import type { CatalogStore } from '@/modules/catalog/types';
+import type { CatalogStore, SatelliteLocation } from '@/modules/catalog/types';
 import { type AdminOrderListItem } from '@/modules/admin/types';
 import { type OrderStatus } from '@/modules/orders/types';
 import { useOrderPrintDispatch } from './useOrderPrintDispatch';
@@ -50,6 +50,15 @@ export default function AdminPedidosPage() {
       apiJson<{ store: CatalogStore | null }>('/api/v1/admin/store'),
   });
 
+  const satelliteLocationQuery = useQuery({
+    queryKey: adminKeys.satelliteLocation(),
+    enabled: ready && isAuthenticated,
+    queryFn: () =>
+      apiJson<{ location: SatelliteLocation | null }>(
+        '/api/v1/admin/satellite-location',
+      ),
+  });
+
   const ordersQuery = useQuery({
     // Realtime invalida esta query pelo `AdminRealtimeProvider` (não vai no
     // queryKey — senão troca a identidade e pisca o spinner a cada evento).
@@ -78,6 +87,7 @@ export default function AdminPedidosPage() {
     ordersLoaded: Boolean(ordersQuery.data),
     orders: allOrders,
     store: storeQuery.data?.store,
+    satelliteLocation: satelliteLocationQuery.data?.location,
   });
 
   const displayStatusFor = useCallback(

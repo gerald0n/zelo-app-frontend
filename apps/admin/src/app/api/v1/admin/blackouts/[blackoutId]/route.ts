@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { httpStatusFor } from '@/lib/errors';
-import { deleteAdminBlackout } from '@/modules/admin/catalog';
+import { deleteAdminBlackout } from '@/modules/admin/catalog/store-hours';
 
 export const dynamic = 'force-dynamic';
 

@@ -12,7 +12,7 @@ import {
   buildDeliverySlip,
   buildKitchenTicket,
 } from '@/modules/printing/receipts';
-import type { CatalogStore } from '@/modules/catalog/types';
+import type { CatalogStore, SatelliteLocation } from '@/modules/catalog/types';
 import { nextAdminStatus, type AdminOrderDetail } from '@/modules/admin/types';
 import { useAdminRealtime } from '@/contexts/AdminRealtimeContext';
 
@@ -51,6 +51,15 @@ export function useAdminOrderDetail(id: string | null) {
     enabled: ready && isAuthenticated,
     queryFn: () =>
       apiJson<{ store: CatalogStore | null }>('/api/v1/admin/store'),
+  });
+
+  const satelliteLocationQuery = useQuery({
+    queryKey: adminKeys.satelliteLocation(),
+    enabled: ready && isAuthenticated,
+    queryFn: () =>
+      apiJson<{ location: SatelliteLocation | null }>(
+        '/api/v1/admin/satellite-location',
+      ),
   });
 
   // Busca pura: sempre vê o `id` atual, não faz setState.
@@ -193,7 +202,9 @@ export function useAdminOrderDetail(id: string | null) {
   const reprintSlip = async () => {
     const store = storeQuery.data?.store;
     if (!order || !store) return;
-    const bytes = buildDeliverySlip(orderToDeliverySlip(order, store));
+    const bytes = buildDeliverySlip(
+      orderToDeliverySlip(order, store, satelliteLocationQuery.data?.location),
+    );
     const result = await printer.printRaw(bytes);
     if (!result.ok) {
       setError(result.reason);

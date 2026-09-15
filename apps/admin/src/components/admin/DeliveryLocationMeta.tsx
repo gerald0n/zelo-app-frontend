@@ -1,3 +1,4 @@
+import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import {
   buildMapsRouteUrl,
   buildShareLocationMessage,
@@ -59,8 +60,9 @@ export function DeliveryLocationMeta({ order }: { order: AdminOrderDetail }) {
             href={buildWhatsappShareUrl(buildShareLocationMessage(order))}
             target="_blank"
             rel="noreferrer"
-            className="text-2xs font-semibold text-primary underline"
+            className="inline-flex items-center gap-1 text-2xs font-semibold text-primary underline"
           >
+            <WhatsappIcon size={12} className="shrink-0" />
             Compartilhar localização
           </a>
         </div>

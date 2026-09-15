@@ -17,6 +17,7 @@ export type CatalogResponse = {
   addons: AdminAddon[];
   promotions: AdminPromotion[];
   coupons: AdminCoupon[];
+  satelliteLocations: Array<{ id: string; slug: string; name: string }>;
 };
 
 const hhmmOrEmpty = z
@@ -63,6 +64,8 @@ export const productSchema = z.object({
   weightMaxGrams: z.string().optional(),
   stockQuantity: z.string().optional(),
   addonIds: z.array(z.string().uuid()),
+  /** `''` = catálogo normal (Pereiro); caso contrário, id do local satélite. */
+  fulfillmentLocationId: z.string().optional(),
 });
 
 export const addonSchema = z.object({
@@ -116,6 +119,7 @@ export function emptyProductForm(
     weightMaxGrams: '',
     stockQuantity: '',
     addonIds: [],
+    fulfillmentLocationId: '',
   };
 }
 export type AddonForm = z.infer<typeof addonSchema>;
