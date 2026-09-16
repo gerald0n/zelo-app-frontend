@@ -20,11 +20,14 @@ type ProductUpdate = Database['public']['Tables']['products']['Update'];
 export async function listAdminProducts(): Promise<Result<AdminProduct[]>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('products')
     .select(PRODUCT_ADMIN_SELECT)
+    .eq('store_id', storeId.data)
     .is('archived_at', null)
     .order('sort_order', { ascending: true });
 
@@ -43,12 +46,15 @@ export async function getAdminProduct(
 ): Promise<Result<AdminProduct>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('products')
     .select(PRODUCT_ADMIN_SELECT)
     .eq('id', productId)
+    .eq('store_id', storeId.data)
     .is('archived_at', null)
     .maybeSingle();
 
@@ -63,6 +69,7 @@ export async function getAdminProduct(
 
 async function ensureUniqueSlug(
   baseSlug: string,
+  storeId: string,
   excludeId?: string,
 ): Promise<string> {
   const admin = createAdminSupabaseClient();
@@ -71,7 +78,12 @@ async function ensureUniqueSlug(
 
   for (;;) {
     const slug = suffix === 0 ? candidate : `${candidate}-${suffix}`;
-    let query = admin.from('products').select('id').eq('slug', slug).limit(1);
+    let query = admin
+      .from('products')
+      .select('id')
+      .eq('slug', slug)
+      .eq('store_id', storeId)
+      .limit(1);
     if (excludeId) query = query.neq('id', excludeId);
     const { data } = await query.maybeSingle();
     if (!data) return slug;
@@ -102,7 +114,10 @@ export async function createAdminProduct(input: {
   if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
-  const slug = await ensureUniqueSlug(slugify(input.slug || input.name));
+  const slug = await ensureUniqueSlug(
+    slugify(input.slug || input.name),
+    storeId.data,
+  );
 
   const { data, error } = await admin
     .from('products')
@@ -190,6 +205,8 @@ export async function updateAdminProduct(options: {
 }): Promise<Result<AdminProduct>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const patch: ProductUpdate = {};
   if (typeof options.categoryId === 'string') {
@@ -203,7 +220,11 @@ export async function updateAdminProduct(options: {
     patch.price_cents = options.priceCents;
   }
   if (typeof options.slug === 'string') {
-    patch.slug = await ensureUniqueSlug(slugify(options.slug), options.productId);
+    patch.slug = await ensureUniqueSlug(
+      slugify(options.slug),
+      storeId.data,
+      options.productId,
+    );
   }
   if (options.weightMinGrams !== undefined) {
     patch.weight_min_grams = options.weightMinGrams;
@@ -235,6 +256,7 @@ export async function updateAdminProduct(options: {
       .from('products')
       .update(patch)
       .eq('id', options.productId)
+      .eq('store_id', storeId.data)
       .is('archived_at', null);
     if (error) {
       return err('INTERNAL_ERROR', 'Não foi possível atualizar o produto.', {
@@ -311,12 +333,15 @@ export async function archiveAdminProduct(
 ): Promise<Result<true>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('products')
     .update({ archived_at: new Date().toISOString(), is_active: false })
     .eq('id', productId)
+    .eq('store_id', storeId.data)
     .is('archived_at', null)
     .select('id')
     .maybeSingle();

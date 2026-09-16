@@ -48,11 +48,14 @@ export async function upsertPizzaSizePrices(
 export async function listAdminPizzaSizes(): Promise<Result<AdminPizzaSize[]>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('pizza_sizes')
     .select('id, name, diameter_cm, sort_order, is_active')
+    .eq('store_id', storeId.data)
     .order('sort_order', { ascending: true });
 
   if (error) {
@@ -75,6 +78,8 @@ export async function listAdminPizzaSizes(): Promise<Result<AdminPizzaSize[]>> {
 export async function listAdminPizzaAddons(): Promise<Result<AdminPizzaAddon[]>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
@@ -82,6 +87,7 @@ export async function listAdminPizzaAddons(): Promise<Result<AdminPizzaAddon[]>>
     .select(
       'id, name, description, price_half_cents, price_full_cents, sort_order, is_active, archived_at',
     )
+    .eq('store_id', storeId.data)
     .is('archived_at', null)
     .order('sort_order', { ascending: true });
 
@@ -180,6 +186,8 @@ export async function updateAdminPizzaAddon(options: {
 }): Promise<Result<AdminPizzaAddon>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const patch: PizzaAddonUpdate = {};
   if (typeof options.name === 'string') patch.name = options.name.trim();
@@ -204,6 +212,7 @@ export async function updateAdminPizzaAddon(options: {
     .from('pizza_addons')
     .update(patch)
     .eq('id', options.pizzaAddonId)
+    .eq('store_id', storeId.data)
     .is('archived_at', null)
     .select(
       'id, name, description, price_half_cents, price_full_cents, sort_order, is_active, archived_at',
@@ -244,12 +253,15 @@ export async function archiveAdminPizzaAddon(
 ): Promise<Result<true>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('pizza_addons')
     .update({ archived_at: new Date().toISOString(), is_active: false })
     .eq('id', pizzaAddonId)
+    .eq('store_id', storeId.data)
     .is('archived_at', null)
     .select('id')
     .maybeSingle();

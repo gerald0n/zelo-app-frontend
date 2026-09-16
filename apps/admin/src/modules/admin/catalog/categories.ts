@@ -85,11 +85,14 @@ function schedulingPatch(
 export async function listAdminCategories(): Promise<Result<AdminCategory[]>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('categories')
     .select(CATEGORY_COLUMNS)
+    .eq('store_id', storeId.data)
     .is('archived_at', null)
     .order('sort_order', { ascending: true });
 
@@ -166,6 +169,8 @@ export async function updateAdminCategory(options: {
 }): Promise<Result<AdminCategory>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const patch: CategoryUpdate = { ...schedulingPatch(options.scheduling) };
   if (typeof options.name === 'string') patch.name = options.name.trim();
@@ -185,6 +190,7 @@ export async function updateAdminCategory(options: {
     .from('categories')
     .update(patch)
     .eq('id', options.categoryId)
+    .eq('store_id', storeId.data)
     .is('archived_at', null)
     .select(CATEGORY_COLUMNS)
     .maybeSingle();
@@ -217,12 +223,15 @@ export async function archiveAdminCategory(
 ): Promise<Result<true>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('categories')
     .update({ archived_at: new Date().toISOString(), is_active: false })
     .eq('id', categoryId)
+    .eq('store_id', storeId.data)
     .is('archived_at', null)
     .select('id')
     .maybeSingle();

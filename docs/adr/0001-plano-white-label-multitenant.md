@@ -239,10 +239,35 @@ possível:
   ora, risco baixo (só afeta preview, não a ordem real) e fica pra uma
   passada futura se necessário.
 
+**Quinta fatia, feita e validada — leitura/edição do admin por id.** Os
+`insert` do admin já tinham sido corrigidos na terceira fatia; faltava o
+`list`/`get`/`update`/`archive` — hoje inofensivo (só existe 1 tenant), mas
+sem isso um admin de outro tenant veria/editaria o catálogo inteiro da Zelo,
+já que RLS ainda não existe:
+- `products.ts`: `listAdminProducts`, `getAdminProduct`,
+  `ensureUniqueSlug` (unicidade de slug agora é por tenant, não global),
+  `updateAdminProduct`, `archiveAdminProduct`.
+- `categories.ts`: `listAdminCategories`, `updateAdminCategory`,
+  `archiveAdminCategory`.
+- `addons.ts`: `listAdminAddons`, `updateAdminAddon`, `archiveAdminAddon`.
+- `pizza.ts`: `listAdminPizzaSizes`, `listAdminPizzaAddons`,
+  `updateAdminPizzaAddon`, `archiveAdminPizzaAddon`.
+- Validado: typecheck de `apps/admin` limpo, `db:reset` local ok.
+- **Gap conhecido, não corrigido**: `updateAdminProduct` faz o `update` de
+  `products` já scopado por `store_id`, mas os efeitos em cascata
+  (`product_add_ons`, `upsertPizzaSizePrices`) não verificam se o
+  `productId` pertence de fato àquele tenant antes de gravar — hoje
+  inofensivo (não há como um admin de outro tenant ter o id de um produto da
+  Zelo pra explorar isso), mas é exatamente o tipo de lacuna que RLS
+  resolveria de raiz. Registrado aqui pra não esquecer.
+- **Ainda sem essa mesma passada**: `banners/crud.ts`, `faq/crud.ts`,
+  `promo-modal-banners/crud.ts`, `coupons.ts`, `promotions.ts`,
+  `push-templates/crud.ts` — os `insert` já estão corrigidos (terceira
+  fatia), mas `list`/`update`/`archive` desses módulos ainda não.
+
 **Não feito ainda:**
-- Admin (`apps/admin/src/modules/admin/catalog/*`) continua sem scoping nos
-  lookups de leitura por id — painel hoje só existe pra Zelo, então não é
-  urgente, mas fica pendente.
+- A lista de `list`/`update`/`archive` do parágrafo acima
+  (banners/FAQ/cupons/promoções/push).
 - RLS do Supabase por `store_id` em todas as tabelas de negócio: **ainda não
   desenhado**. Investigado e descartado por ora: usar `x-store-id` (header
   arbitrário) dentro de policy do Postgres exigiria expor `request.headers`

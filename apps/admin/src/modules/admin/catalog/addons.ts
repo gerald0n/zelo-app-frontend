@@ -13,6 +13,8 @@ type AddonUpdate = Database['public']['Tables']['add_ons']['Update'];
 export async function listAdminAddons(): Promise<Result<AdminAddon[]>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
@@ -20,6 +22,7 @@ export async function listAdminAddons(): Promise<Result<AdminAddon[]>> {
     .select(
       'id, name, description, price_cents, is_active, is_available, archived_at',
     )
+    .eq('store_id', storeId.data)
     .is('archived_at', null)
     .order('name', { ascending: true });
 
@@ -101,6 +104,8 @@ export async function updateAdminAddon(options: {
 }): Promise<Result<AdminAddon>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const patch: AddonUpdate = {};
   if (typeof options.name === 'string') patch.name = options.name.trim();
@@ -124,6 +129,7 @@ export async function updateAdminAddon(options: {
     .from('add_ons')
     .update(patch)
     .eq('id', options.addonId)
+    .eq('store_id', storeId.data)
     .is('archived_at', null)
     .select('id, name, description, price_cents, is_active, is_available')
     .maybeSingle();
@@ -156,12 +162,15 @@ export async function updateAdminAddon(options: {
 export async function archiveAdminAddon(addonId: string): Promise<Result<true>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('add_ons')
     .update({ archived_at: new Date().toISOString(), is_active: false })
     .eq('id', addonId)
+    .eq('store_id', storeId.data)
     .is('archived_at', null)
     .select('id')
     .maybeSingle();
