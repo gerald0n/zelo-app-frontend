@@ -169,11 +169,10 @@ export default function MenuHeroCarousel({
             const className = cn(
               'relative min-w-full shrink-0 snap-center overflow-hidden bg-primary',
               slide.imageUrl
-                ? // Banner cadastrado: imagem já traz a informação, sem texto
-                  // por cima — cada tela mostra um recorte central diferente
-                  // da mesma imagem via object-cover (9:16 no mobile, 16:9
-                  // no desktop, sem precisar de dois uploads).
-                  'aspect-[9/16] lg:aspect-[16/9]'
+                ? // Banner cadastrado: o admin só gera um master 16:9 (sem
+                  // variante vertical), então mantemos essa proporção em
+                  // todas as telas — usar 9:16 no mobile distorcia o banner.
+                  'aspect-[16/9]'
                 : 'px-4 pb-10 pt-5 text-primary-foreground lg:min-h-[420px] lg:px-8 lg:pb-14 lg:pt-8',
             );
 
