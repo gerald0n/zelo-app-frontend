@@ -167,13 +167,11 @@ export default function MenuHeroCarousel({
             );
 
             const className = cn(
-              'relative min-w-full shrink-0 snap-center overflow-hidden bg-primary',
-              slide.imageUrl
-                ? // Banner cadastrado: o admin só gera um master 16:9 (sem
-                  // variante vertical), então mantemos essa proporção em
-                  // todas as telas — usar 9:16 no mobile distorcia o banner.
-                  'aspect-[16/9]'
-                : 'px-4 pb-10 pt-5 text-primary-foreground lg:min-h-[420px] lg:px-8 lg:pb-14 lg:pt-8',
+              // Mesma altura do slide de fallback (texto) em cada breakpoint,
+              // pra não pular de tamanho quando o admin cadastra um banner.
+              'relative min-h-[192px] min-w-full shrink-0 snap-center overflow-hidden bg-primary lg:min-h-[420px]',
+              !slide.imageUrl &&
+                'px-4 pb-10 pt-5 text-primary-foreground lg:px-8 lg:pb-14 lg:pt-8',
             );
 
             return slide.linkHref ? (
