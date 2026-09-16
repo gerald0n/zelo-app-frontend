@@ -6,7 +6,6 @@ import type { CatalogAddon, CatalogProduct } from '@/modules/catalog/types';
 import {
   CART_PERSIST_VERSION,
   CART_STORAGE_KEY,
-  CART_TTL_MS,
   computeCartTotals,
   isSameCartLine,
   mergeDuplicateCartItems,
@@ -14,12 +13,18 @@ import {
   type CartItem,
   type CartTotals,
 } from '@/modules/carts/types';
+import {
+  buildPizzaCartLine,
+  type AddPizzaItemArgs,
+} from '@/modules/carts/pizza-cart-line';
+import {
+  isExpired,
+  migrateCartPersisted,
+  now,
+  type CartPersisted,
+} from '@/modules/carts/cart-persist';
 
-type CartPersisted = {
-  version: number;
-  updatedAt: number;
-  items: CartItem[];
-};
+export type { AddPizzaItemArgs };
 
 type CartActions = {
   addItem: (
@@ -28,6 +33,7 @@ type CartActions = {
     selectedAddons: CatalogAddon[],
     note?: string,
   ) => void;
+  addPizzaItem: (args: AddPizzaItemArgs) => void;
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   updateItem: (
@@ -50,14 +56,6 @@ type CartActions = {
 };
 
 type CartStore = CartPersisted & CartActions;
-
-function now() {
-  return Date.now();
-}
-
-function isExpired(updatedAt: number) {
-  return now() - updatedAt > CART_TTL_MS;
-}
 
 export const useCartStore = create<CartStore>()(
   persist(
@@ -120,6 +118,83 @@ export const useCartStore = create<CartStore>()(
                 selectedAddons: availableAddons,
                 note: normalizedNote,
                 image: product.image,
+              },
+            ],
+            updatedAt: now(),
+          };
+        });
+      },
+
+      addPizzaItem({
+        product,
+        secondaryProduct,
+        size,
+        quantity,
+        selectedPizzaAddons,
+        note,
+      }) {
+        if (quantity <= 0 || !product.available) return;
+        if (secondaryProduct && !secondaryProduct.available) return;
+
+        const {
+          name,
+          basePrice,
+          price,
+          normalizedNote,
+          pizzaSize,
+          secondaryFlavor,
+          pizzaAddons,
+        } = buildPizzaCartLine({
+          product,
+          secondaryProduct,
+          size,
+          selectedPizzaAddons,
+          note,
+        });
+
+        const incoming = {
+          productId: product.id,
+          selectedAddons: [] as CatalogAddon[],
+          note: normalizedNote,
+          pizzaSize,
+          secondaryFlavor,
+          selectedPizzaAddons: pizzaAddons,
+        };
+
+        set((state) => {
+          const items = mergeDuplicateCartItems(state.items);
+          const matchIndex = items.findIndex((item) =>
+            isSameCartLine(item, incoming),
+          );
+
+          if (matchIndex >= 0) {
+            return {
+              items: items.map((item, index) =>
+                index === matchIndex
+                  ? { ...item, quantity: item.quantity + quantity }
+                  : item,
+              ),
+              updatedAt: now(),
+            };
+          }
+
+          return {
+            items: [
+              ...items,
+              {
+                id: `${product.id}_${now()}`,
+                productId: product.id,
+                slug: product.slug,
+                name,
+                basePrice,
+                price,
+                quantity,
+                selectedAddons: [],
+                note: normalizedNote,
+                image: product.image,
+                pizzaSize,
+                secondaryFlavor,
+                selectedPizzaAddons: pizzaAddons,
               },
             ],
             updatedAt: now(),
@@ -213,31 +288,7 @@ export const useCartStore = create<CartStore>()(
         updatedAt: state.updatedAt,
         items: state.items,
       }),
-      migrate: (persisted) => {
-        const data = persisted as CartPersisted | undefined;
-        if (!data || typeof data !== 'object') {
-          return {
-            version: CART_PERSIST_VERSION,
-            updatedAt: now(),
-            items: [],
-          };
-        }
-        if (
-          data.version !== CART_PERSIST_VERSION ||
-          isExpired(data.updatedAt)
-        ) {
-          return {
-            version: CART_PERSIST_VERSION,
-            updatedAt: now(),
-            items: [],
-          };
-        }
-        return {
-          version: CART_PERSIST_VERSION,
-          updatedAt: data.updatedAt,
-          items: Array.isArray(data.items) ? data.items : [],
-        };
-      },
+      migrate: migrateCartPersisted,
       onRehydrateStorage: () => (state) => {
         if (!state) return;
         const invalid =
@@ -270,6 +321,7 @@ export function selectCartTotals(items: CartItem[]): CartTotals {
 export function useCart() {
   const items = useCartStore((state) => state.items);
   const addItem = useCartStore((state) => state.addItem);
+  const addPizzaItem = useCartStore((state) => state.addPizzaItem);
   const removeItem = useCartStore((state) => state.removeItem);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const updateItem = useCartStore((state) => state.updateItem);
@@ -283,6 +335,7 @@ export function useCart() {
   return {
     items,
     addItem,
+    addPizzaItem,
     removeItem,
     updateQuantity,
     updateItem,

@@ -13,6 +13,7 @@ import { type CatalogResponse, type Tab } from '@/app/catalogo/catalog-forms';
 import { AddonsTab } from '@/app/catalogo/_tabs/AddonsTab';
 import { CategoriesTab } from '@/app/catalogo/_tabs/CategoriesTab';
 import { CouponsTab } from '@/app/catalogo/_tabs/CouponsTab';
+import { PizzaAddonsTab } from '@/app/catalogo/_tabs/PizzaAddonsTab';
 import { ProductsTab } from '@/app/catalogo/_tabs/ProductsTab';
 import { PromotionsTab } from '@/app/catalogo/_tabs/PromotionsTab';
 
@@ -22,6 +23,7 @@ const tabs: Array<{ id: Tab; label: string }> = [
   { id: 'promotions', label: 'Promoções' },
   { id: 'coupons', label: 'Cupons' },
   { id: 'addons', label: 'Adicionais' },
+  { id: 'pizza-addons', label: 'Adicionais de pizza' },
 ];
 
 export default function AdminCatalogoPage() {
@@ -59,6 +61,14 @@ export default function AdminCatalogoPage() {
   const satelliteLocations = useMemo(
     () => catalogQuery.data?.satelliteLocations ?? [],
     [catalogQuery.data?.satelliteLocations],
+  );
+  const pizzaSizes = useMemo(
+    () => catalogQuery.data?.pizzaSizes ?? [],
+    [catalogQuery.data?.pizzaSizes],
+  );
+  const pizzaAddons = useMemo(
+    () => catalogQuery.data?.pizzaAddons ?? [],
+    [catalogQuery.data?.pizzaAddons],
   );
 
   const invalidateCatalog = async () => {
@@ -143,6 +153,7 @@ export default function AdminCatalogoPage() {
           products={products}
           addons={addons}
           satelliteLocations={satelliteLocations}
+          pizzaSizes={pizzaSizes}
           invalidateCatalog={invalidateCatalog}
           onError={setFormError}
         />
@@ -159,6 +170,14 @@ export default function AdminCatalogoPage() {
       {tab === 'addons' && !isLoading ? (
         <AddonsTab
           addons={addons}
+          invalidateCatalog={invalidateCatalog}
+          onError={setFormError}
+        />
+      ) : null}
+
+      {tab === 'pizza-addons' && !isLoading ? (
+        <PizzaAddonsTab
+          pizzaAddons={pizzaAddons}
           invalidateCatalog={invalidateCatalog}
           onError={setFormError}
         />

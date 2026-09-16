@@ -4,12 +4,21 @@ import { err, ok, type Result } from '@/lib/errors';
 import { logger } from '@/lib/logger';
 import { createPublicSupabaseClient } from '@/lib/supabase/public';
 import { hasSupabasePublicConfig } from '@/config/env';
-import { mapCategory, mapProduct, mapStore } from '@/modules/catalog/mappers';
+import { mapCategory, mapProduct } from '@/modules/catalog/mappers';
 import { listProductRatings } from '@/modules/catalog/product-ratings';
+import {
+  listPublicPizzaAddons,
+  listPublicPizzaSizes,
+} from '@/modules/catalog/pizza-repository';
+import { getPublicStore } from '@/modules/catalog/store-repository';
+
+export { getPublicStore } from '@/modules/catalog/store-repository';
 import { listAllSatelliteProducts } from '@/modules/catalog/satellite-repository';
 import type { ActivePromotion } from '@/modules/catalog/promotions';
 import type {
   CatalogCategory,
+  CatalogPizzaAddon,
+  CatalogPizzaSize,
   CatalogProduct,
   CatalogStore,
 } from '@/modules/catalog/types';
@@ -22,7 +31,8 @@ const PRODUCT_SELECT = `
   product_add_ons (
     sort_order,
     add_ons (*)
-  )
+  ),
+  pizza_flavor_prices (*)
 `;
 
 const PROMOTIONS_SELECT = `
@@ -64,74 +74,6 @@ async function listActivePromotions(
     categoryIds: (row.promotion_categories ?? []).map((c) => c.category_id),
     productIds: (row.promotion_products ?? []).map((p) => p.product_id),
   }));
-}
-
-export async function getPublicStore(): Promise<Result<CatalogStore | null>> {
-  if (!hasSupabasePublicConfig()) return notConfigured();
-
-  try {
-    const supabase = createPublicSupabaseClient();
-    const { data: store, error: storeError } = await supabase
-      .from('stores')
-      .select('*')
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    if (storeError) {
-      logger.error('Falha ao ler loja', { message: storeError.message });
-      return err(
-        'INTEGRATION_UNAVAILABLE',
-        'Não foi possível carregar a loja.',
-        {
-          cause: storeError,
-        },
-      );
-    }
-
-    if (!store) return ok(null);
-
-    const [
-      { data: hours, error: hoursError },
-      { data: blackouts, error: blackoutsError },
-    ] = await Promise.all([
-      supabase
-        .from('store_business_hours')
-        .select('*')
-        .eq('store_id', store.id)
-        .order('weekday', { ascending: true }),
-      supabase
-        .from('store_blackout_periods')
-        .select('id, starts_at, ends_at, reason')
-        .eq('store_id', store.id)
-        .order('starts_at', { ascending: true }),
-    ]);
-
-    if (hoursError) {
-      logger.error('Falha ao ler horários', { message: hoursError.message });
-      return err(
-        'INTEGRATION_UNAVAILABLE',
-        'Não foi possível carregar os horários.',
-        { cause: hoursError },
-      );
-    }
-
-    if (blackoutsError) {
-      logger.error('Falha ao ler bloqueios', {
-        message: blackoutsError.message,
-      });
-      return err(
-        'INTEGRATION_UNAVAILABLE',
-        'Não foi possível carregar os períodos bloqueados.',
-        { cause: blackoutsError },
-      );
-    }
-
-    return ok(mapStore(store, hours ?? [], blackouts ?? []));
-  } catch (cause) {
-    logger.error('Erro inesperado ao ler loja', {});
-    return err('INTERNAL_ERROR', 'Erro ao carregar a loja.', { cause });
-  }
 }
 
 export async function listPublicCategories(): Promise<
@@ -322,17 +264,29 @@ export async function getPublicCatalog(): Promise<
     store: CatalogStore | null;
     categories: CatalogCategory[];
     products: CatalogProduct[];
+    pizzaSizes: CatalogPizzaSize[];
+    pizzaAddons: CatalogPizzaAddon[];
   }>
 > {
-  const [storeResult, categoriesResult, productsResult] = await Promise.all([
+  const [
+    storeResult,
+    categoriesResult,
+    productsResult,
+    pizzaSizesResult,
+    pizzaAddonsResult,
+  ] = await Promise.all([
     getPublicStore(),
     listPublicCategories(),
     listPublicProducts(),
+    listPublicPizzaSizes(),
+    listPublicPizzaAddons(),
   ]);
 
   if (!storeResult.ok) return storeResult;
   if (!categoriesResult.ok) return categoriesResult;
   if (!productsResult.ok) return productsResult;
+  if (!pizzaSizesResult.ok) return pizzaSizesResult;
+  if (!pizzaAddonsResult.ok) return pizzaAddonsResult;
 
   const visibleCategories = filterVisibleCategories(
     categoriesResult.data,
@@ -343,5 +297,7 @@ export async function getPublicCatalog(): Promise<
     store: storeResult.data,
     categories: visibleCategories,
     products: productsResult.data,
+    pizzaSizes: pizzaSizesResult.data,
+    pizzaAddons: pizzaAddonsResult.data,
   });
 }

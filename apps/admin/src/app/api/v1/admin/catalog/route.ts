@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { httpStatusFor } from '@/lib/errors';
 import { listAdminAddons } from '@/modules/admin/catalog/addons';
 import { listAdminCategories } from '@/modules/admin/catalog/categories';
+import {
+  listAdminPizzaAddons,
+  listAdminPizzaSizes,
+} from '@/modules/admin/catalog/pizza';
 import { listAdminProducts } from '@/modules/admin/catalog/products';
 import { listAdminCoupons } from '@/modules/admin/coupons';
 import { listAdminPromotions } from '@/modules/admin/promotions';
@@ -17,9 +21,19 @@ export async function GET() {
     listAdminPromotions(),
     listAdminCoupons(),
     listAdminSatelliteLocations(),
+    listAdminPizzaSizes(),
+    listAdminPizzaAddons(),
   ]);
-  const [categories, products, addons, promotions, coupons, satelliteLocations] =
-    results;
+  const [
+    categories,
+    products,
+    addons,
+    promotions,
+    coupons,
+    satelliteLocations,
+    pizzaSizes,
+    pizzaAddons,
+  ] = results;
 
   if (!categories.ok) {
     return NextResponse.json(
@@ -57,6 +71,18 @@ export async function GET() {
       { status: httpStatusFor(satelliteLocations.error.code) },
     );
   }
+  if (!pizzaSizes.ok) {
+    return NextResponse.json(
+      { error: pizzaSizes.error },
+      { status: httpStatusFor(pizzaSizes.error.code) },
+    );
+  }
+  if (!pizzaAddons.ok) {
+    return NextResponse.json(
+      { error: pizzaAddons.error },
+      { status: httpStatusFor(pizzaAddons.error.code) },
+    );
+  }
 
   return NextResponse.json({
     categories: categories.data,
@@ -65,5 +91,7 @@ export async function GET() {
     promotions: promotions.data,
     coupons: coupons.data,
     satelliteLocations: satelliteLocations.data,
+    pizzaSizes: pizzaSizes.data,
+    pizzaAddons: pizzaAddons.data,
   });
 }

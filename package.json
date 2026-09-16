@@ -17,7 +17,8 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:status": "supabase status",
-    "gen:types": "supabase gen types typescript --local > packages/shared/src/types/database.ts"
+    "gen:types": "supabase gen types typescript --local > packages/shared/src/types/database.ts",
+    "seed:pizza-images": "node scripts/seed-pizza-flavor-images.mjs"
   },
   "devDependencies": {
     "prettier": "^3.9.6",

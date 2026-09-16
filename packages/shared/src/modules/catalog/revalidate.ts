@@ -21,6 +21,7 @@ export function catalogTagsForAuditAction(
     action.startsWith('product_review.') ||
     action.startsWith('category.') ||
     action.startsWith('addon.') ||
+    action.startsWith('pizza_addon.') ||
     action.startsWith('promotion.')
   ) {
     return ['catalog'];

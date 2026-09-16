@@ -3,9 +3,10 @@
 
 -- IDs fixos para reprodutibilidade
 -- store:        a0000000-0000-4000-8000-000000000001
--- categories:   b0000000-0000-4000-8000-00000000000{1..4}
--- products:     c0000000-0000-4000-8000-0000000000{01..13}
+-- categories:   b0000000-0000-4000-8000-00000000000{1..5} (5 = Pizzas)
+-- products:     c0000000-0000-4000-8000-0000000000{01..13}; pizzas 14..23
 -- add_ons:      d0000000-0000-4000-8000-00000000000{1..2}
+-- pizza_addons: e0000000-0000-4000-8000-00000000000{1..4}
 
 insert into public.stores (
   id,
@@ -69,7 +70,8 @@ insert into public.categories (
   ('b0000000-0000-4000-8000-000000000001', 'Cookies', 1, true, true, 120, null, null, 30),
   ('b0000000-0000-4000-8000-000000000002', 'Pudins', 2, true, false, 120, '17:00', '10:00', 60),
   ('b0000000-0000-4000-8000-000000000003', 'Empadas', 3, true, true, 120, null, null, 30),
-  ('b0000000-0000-4000-8000-000000000004', 'Coxinhas', 4, true, true, 120, null, null, 30);
+  ('b0000000-0000-4000-8000-000000000004', 'Coxinhas', 4, true, true, 120, null, null, 30),
+  ('b0000000-0000-4000-8000-000000000005', 'Pizzas', 5, true, true, 120, null, null, 30);
 
 insert into public.products (
   id,
@@ -82,7 +84,8 @@ insert into public.products (
   weight_max_grams,
   sort_order,
   is_active,
-  is_available
+  is_available,
+  product_type
 ) values
   (
     'c0000000-0000-4000-8000-000000000001',
@@ -90,7 +93,7 @@ insert into public.products (
     'Cookie Kinder',
     'cookie-kinder',
     'Cookie artesanal recheado com chocolate Kinder Bueno cremoso, crocante por fora e macio por dentro.',
-    1200, 120, 120, 1, true, true
+    1200, 120, 120, 1, true, true, 'standard'
   ),
   (
     'c0000000-0000-4000-8000-000000000002',
@@ -98,7 +101,7 @@ insert into public.products (
     'Cookie Nutella',
     'cookie-nutella',
     'Cookie irresistível com recheio generoso de Nutella derretendo a cada mordida.',
-    1200, 120, 120, 2, true, true
+    1200, 120, 120, 2, true, true, 'standard'
   ),
   (
     'c0000000-0000-4000-8000-000000000003',
@@ -106,7 +109,7 @@ insert into public.products (
     'Cookie Brownie',
     'cookie-brownie',
     'Cookie intenso de chocolate com textura de brownie, crocante nas bordas e cremoso no centro.',
-    1200, 120, 120, 3, true, true
+    1200, 120, 120, 3, true, true, 'standard'
   ),
   (
     'c0000000-0000-4000-8000-000000000004',
@@ -114,7 +117,7 @@ insert into public.products (
     'Cookie Oreo',
     'cookie-oreo',
     'Cookie artesanal com pedaços generosos de biscoito Oreo e cream cheese no recheio.',
-    1200, 120, 120, 4, true, true
+    1200, 120, 120, 4, true, true, 'standard'
   ),
   (
     'c0000000-0000-4000-8000-000000000005',
@@ -122,7 +125,7 @@ insert into public.products (
     'Mini Pudim',
     'mini-pudim',
     'Pudim de leite condensado individual, cremoso e com calda de caramelo artesanal.',
-    800, 120, 120, 1, true, true
+    800, 120, 120, 1, true, true, 'standard'
   ),
   (
     'c0000000-0000-4000-8000-000000000006',
@@ -130,7 +133,7 @@ insert into public.products (
     'Pudim 500 g',
     'pudim-500g',
     'Pudim de leite condensado tradicional, ideal para compartilhar. Calda de caramelo generosa.',
-    2800, 500, 500, 2, true, true
+    2800, 500, 500, 2, true, true, 'standard'
   ),
   (
     'c0000000-0000-4000-8000-000000000007',
@@ -138,7 +141,7 @@ insert into public.products (
     'Pudim 1 kg',
     'pudim-1kg',
     'Pudim de leite condensado família, perfeito para celebrações. Calda de caramelo abundante.',
-    4800, 1000, 1000, 3, true, true
+    4800, 1000, 1000, 3, true, true, 'standard'
   ),
   (
     'c0000000-0000-4000-8000-000000000008',
@@ -146,7 +149,7 @@ insert into public.products (
     'Empada de Frango',
     'empada-frango',
     'Empada caseira com massa amanteigada e recheio cremoso de frango desfiado temperado.',
-    700, 100, 100, 1, true, true
+    700, 100, 100, 1, true, true, 'standard'
   ),
   (
     'c0000000-0000-4000-8000-000000000009',
@@ -154,7 +157,7 @@ insert into public.products (
     'Empada de Carne de Sol',
     'empada-carne-sol',
     'Empada caseira com massa amanteigada e recheio suculento de carne de sol com queijo.',
-    800, 100, 100, 2, true, true
+    800, 100, 100, 2, true, true, 'standard'
   ),
   (
     'c0000000-0000-4000-8000-000000000010',
@@ -162,7 +165,7 @@ insert into public.products (
     'Coxinha de Frango',
     'coxinha-frango',
     'Coxinha crocante com recheio de frango desfiado e cream cheese artesanal.',
-    600, 150, 160, 1, true, true
+    600, 150, 160, 1, true, true, 'standard'
   ),
   (
     'c0000000-0000-4000-8000-000000000011',
@@ -170,7 +173,7 @@ insert into public.products (
     'Coxinha de Carne de Sol',
     'coxinha-carne-sol',
     'Coxinha crocante com recheio de carne de sol suculenta e queijo coalho.',
-    700, 150, 160, 2, true, true
+    700, 150, 160, 2, true, true, 'standard'
   ),
   (
     'c0000000-0000-4000-8000-000000000012',
@@ -178,7 +181,7 @@ insert into public.products (
     'Coxinha de Frango c/ Catupiry',
     'coxinha-frango-catupiry',
     'Coxinha com frango desfiado e catupiry cremoso. Combinação clássica irresistível.',
-    700, 165, 175, 3, true, true
+    700, 165, 175, 3, true, true, 'standard'
   ),
   (
     'c0000000-0000-4000-8000-000000000013',
@@ -186,8 +189,111 @@ insert into public.products (
     'Coxinha de Carne de Sol c/ Catupiry',
     'coxinha-carne-sol-catupiry',
     'Coxinha com carne de sol e catupiry. Sabor nordestino com cremosidade incomparável.',
-    800, 165, 175, 4, true, true
+    800, 165, 175, 4, true, true, 'standard'
+  ),
+  (
+    'c0000000-0000-4000-8000-000000000014',
+    'b0000000-0000-4000-8000-000000000005',
+    'Calabresa',
+    'pizza-calabresa',
+    'Molho, mussarela, calabresa e cebola.',
+    0, null, null, 1, true, true, 'pizza_flavor'
+  ),
+  (
+    'c0000000-0000-4000-8000-000000000015',
+    'b0000000-0000-4000-8000-000000000005',
+    'Mussarela',
+    'pizza-mussarela',
+    'Molho, mussarela e tomate.',
+    0, null, null, 2, true, true, 'pizza_flavor'
+  ),
+  (
+    'c0000000-0000-4000-8000-000000000016',
+    'b0000000-0000-4000-8000-000000000005',
+    'Frango com Catupiry',
+    'pizza-frango-catupiry',
+    'Molho, mussarela, frango e catupiry.',
+    0, null, null, 3, true, true, 'pizza_flavor'
+  ),
+  (
+    'c0000000-0000-4000-8000-000000000017',
+    'b0000000-0000-4000-8000-000000000005',
+    'Peito de Peru',
+    'pizza-peito-peru',
+    'Molho, mussarela, cream cheese, peito de peru, bacon, alho poró e parmesão.',
+    0, null, null, 10, true, true, 'pizza_flavor'
+  ),
+  (
+    'c0000000-0000-4000-8000-000000000018',
+    'b0000000-0000-4000-8000-000000000005',
+    'Mista',
+    'pizza-mista',
+    'Molho, presunto e mussarela.',
+    0, null, null, 4, true, true, 'pizza_flavor'
+  ),
+  (
+    'c0000000-0000-4000-8000-000000000019',
+    'b0000000-0000-4000-8000-000000000005',
+    'Frango',
+    'pizza-frango',
+    'Molho, mussarela e frango.',
+    0, null, null, 5, true, true, 'pizza_flavor'
+  ),
+  (
+    'c0000000-0000-4000-8000-000000000020',
+    'b0000000-0000-4000-8000-000000000005',
+    'Carne de Sol',
+    'pizza-carne-de-sol',
+    'Molho, mussarela, carne de sol e cebola roxa.',
+    0, null, null, 6, true, true, 'pizza_flavor'
+  ),
+  (
+    'c0000000-0000-4000-8000-000000000021',
+    'b0000000-0000-4000-8000-000000000005',
+    'Nordestina',
+    'pizza-nordestina',
+    'Molho, mussarela, cream cheese, carne de sol e queijo coalho.',
+    0, null, null, 7, true, true, 'pizza_flavor'
+  ),
+  (
+    'c0000000-0000-4000-8000-000000000022',
+    'b0000000-0000-4000-8000-000000000005',
+    'Lombo Canadense',
+    'pizza-lombo-canadense',
+    'Molho, mussarela, lombo canadense e catupiry.',
+    0, null, null, 8, true, true, 'pizza_flavor'
+  ),
+  (
+    'c0000000-0000-4000-8000-000000000023',
+    'b0000000-0000-4000-8000-000000000005',
+    'Arretada',
+    'pizza-arretada',
+    'Molho, mussarela, calabresa, queijo coalho e bacon.',
+    0, null, null, 9, true, true, 'pizza_flavor'
   );
+
+-- Preço de cada sabor no tamanho G (único tamanho ativo no lançamento).
+insert into public.pizza_flavor_prices (product_id, size_id, price_cents)
+select v.product_id, ps.id, v.price_cents
+from (values
+  ('c0000000-0000-4000-8000-000000000014'::uuid, 4500),
+  ('c0000000-0000-4000-8000-000000000015'::uuid, 4500),
+  ('c0000000-0000-4000-8000-000000000016'::uuid, 5500),
+  ('c0000000-0000-4000-8000-000000000017'::uuid, 7400),
+  ('c0000000-0000-4000-8000-000000000018'::uuid, 4500),
+  ('c0000000-0000-4000-8000-000000000019'::uuid, 4500),
+  ('c0000000-0000-4000-8000-000000000020'::uuid, 4500),
+  ('c0000000-0000-4000-8000-000000000021'::uuid, 6000),
+  ('c0000000-0000-4000-8000-000000000022'::uuid, 7000),
+  ('c0000000-0000-4000-8000-000000000023'::uuid, 7000)
+) as v(product_id, price_cents)
+cross join lateral (select id from public.pizza_sizes where name = 'G') as ps;
+
+insert into public.pizza_addons (id, name, description, price_half_cents, price_full_cents, sort_order) values
+  ('e0000000-0000-4000-8000-000000000001', 'Catupiry', null, 800, 1500, 1),
+  ('e0000000-0000-4000-8000-000000000002', 'Bacon', null, 400, 800, 2),
+  ('e0000000-0000-4000-8000-000000000003', 'Cream Cheese', null, 750, 1500, 3),
+  ('e0000000-0000-4000-8000-000000000004', 'Alho Poró', null, 250, 500, 4);
 
 insert into public.add_ons (
   id,

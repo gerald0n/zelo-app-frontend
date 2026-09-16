@@ -51,11 +51,28 @@ function Stars({
   );
 }
 
+function useOrderProducts(order: CustomerOrder) {
+  const products: Array<{ productId: string; name: string }> = [];
+  const seen = new Set<string>();
+  for (const item of order.items) {
+    if (!item.productId || seen.has(item.productId)) continue;
+    seen.add(item.productId);
+    products.push({ productId: item.productId, name: item.name });
+  }
+  return products;
+}
+
 export function ReviewInvite({ order, autoFocus, onSubmitted }: Props) {
   const { notify } = useShopExperience();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const products = useOrderProducts(order);
+  // Só guarda os ajustes individuais explícitos do cliente; produtos sem
+  // ajuste usam a nota geral do pedido como padrão.
+  const [productOverrides, setProductOverrides] = useState<
+    Record<string, number>
+  >({});
 
   if (order.review) {
     const pending = order.review.status === 'pending';
@@ -90,12 +107,17 @@ export function ReviewInvite({ order, autoFocus, onSubmitted }: Props) {
     }
     setSubmitting(true);
     try {
+      const productRatings = products.map((product) => ({
+        productId: product.productId,
+        rating: productOverrides[product.productId] ?? rating,
+      }));
       const response = await fetch(`/api/v1/orders/${order.id}/review`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           rating,
           comment: comment.trim() || undefined,
+          productRatings,
         }),
       });
       const json = await response.json();
@@ -137,6 +159,35 @@ export function ReviewInvite({ order, autoFocus, onSubmitted }: Props) {
         rows={3}
         className="mt-3 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
       />
+
+      {products.length > 1 ? (
+        <div className="mt-4 space-y-2 border-t border-border pt-3">
+          <p className="text-sm font-medium text-foreground">
+            Quer avaliar os itens separadamente?
+          </p>
+          <ul className="space-y-2">
+            {products.map((product) => (
+              <li
+                key={product.productId}
+                className="flex items-center justify-between gap-3"
+              >
+                <span className="text-sm text-muted-foreground">
+                  {product.name}
+                </span>
+                <Stars
+                  value={productOverrides[product.productId] ?? rating}
+                  onChange={(value) =>
+                    setProductOverrides((prev) => ({
+                      ...prev,
+                      [product.productId]: value,
+                    }))
+                  }
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <button
         type="button"

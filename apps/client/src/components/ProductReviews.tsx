@@ -1,14 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2, Star } from 'lucide-react';
 import { apiJson } from '@/lib/api';
-import { useShopExperience } from '@/contexts/ShopExperienceContext';
-import {
-  REVIEW_COMMENT_MAX,
-  type ProductReviewsView,
-} from '@/modules/reviews/types';
+import type { ProductReviewsView } from '@/modules/reviews/types';
 import { cn } from '@/lib/utils';
 
 function Stars({
@@ -59,15 +54,9 @@ function formatDate(iso: string) {
 
 type Props = {
   productId: string;
-  productName: string;
 };
 
-export default function ProductReviews({ productId, productName }: Props) {
-  const { notify } = useShopExperience();
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-
+export default function ProductReviews({ productId }: Props) {
   const query = useQuery({
     queryKey: ['catalog', 'product-reviews', productId],
     queryFn: () =>
@@ -78,40 +67,6 @@ export default function ProductReviews({ productId, productName }: Props) {
   const view = query.data ?? null;
   const loading = query.isLoading;
 
-  const submit = async () => {
-    if (rating < 1) {
-      notify('Escolha de 1 a 5 estrelas.', 'error');
-      return;
-    }
-    setSubmitting(true);
-    try {
-      const response = await fetch(
-        `/api/v1/catalog/products/${productId}/reviews`,
-        {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            rating,
-            comment: comment.trim() || undefined,
-          }),
-        },
-      );
-      const json = await response.json();
-      if (!response.ok) {
-        notify(json?.error?.message ?? 'Não foi possível enviar.', 'error');
-        return;
-      }
-      notify('Avaliação enviada. Obrigado! 💛');
-      setRating(0);
-      setComment('');
-      void query.refetch();
-    } catch {
-      notify('Falha de rede ao enviar a avaliação.', 'error');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   if (loading && !view) {
     return (
       <section className="mt-6 flex justify-center py-6">
@@ -121,7 +76,7 @@ export default function ProductReviews({ productId, productName }: Props) {
   }
   if (!view) return null;
 
-  const { summary, items, canReview, myReview } = view;
+  const { summary, items, myReview } = view;
 
   return (
     <section className="mt-6 space-y-4 border-t border-border pt-5">
@@ -156,33 +111,6 @@ export default function ProductReviews({ productId, productName }: Props) {
                 ? 'Publicada. Obrigado pelo retorno! 💛'
                 : 'Obrigado pelo retorno. 💛'}
           </p>
-        </div>
-      ) : canReview ? (
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-sm font-semibold">
-            Você já pediu {productName}. Que tal avaliar?
-          </p>
-          <div className="mt-2">
-            <Stars value={rating} size="lg" onChange={setRating} />
-          </div>
-          <textarea
-            value={comment}
-            onChange={(e) =>
-              setComment(e.target.value.slice(0, REVIEW_COMMENT_MAX))
-            }
-            placeholder="Conte o que achou (opcional)"
-            rows={3}
-            className="mt-3 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-          />
-          <button
-            type="button"
-            onClick={() => void submit()}
-            disabled={submitting}
-            className="mt-3 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-transform active:scale-[0.99] disabled:opacity-60"
-          >
-            {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
-            Enviar avaliação
-          </button>
         </div>
       ) : null}
 
