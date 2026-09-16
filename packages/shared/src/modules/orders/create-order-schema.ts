@@ -12,6 +12,18 @@ const orderItemSchema = z.object({
       }),
     )
     .default([]),
+  /** Tamanho da pizza — só presente em itens de pizza. */
+  pizzaSizeId: z.string().uuid().optional(),
+  /** Segundo sabor (meio a meio) — só presente em itens de pizza. */
+  secondaryProductId: z.string().uuid().optional(),
+  pizzaAddons: z
+    .array(
+      z.object({
+        pizzaAddonId: z.string().uuid(),
+        appliesTo: z.enum(['whole', 'flavor1', 'flavor2']),
+      }),
+    )
+    .default([]),
 });
 
 const addressSchema = z.object({

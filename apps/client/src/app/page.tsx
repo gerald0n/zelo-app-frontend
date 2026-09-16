@@ -42,6 +42,8 @@ export default async function HomePage() {
       testimonials={testimonials.ok ? testimonials.data : []}
       bestSellerProductIds={bestSellerProductIds}
       banners={banners.ok ? banners.data : []}
+      pizzaSizes={catalog.data.pizzaSizes}
+      pizzaAddons={catalog.data.pizzaAddons}
     />
   );
 }

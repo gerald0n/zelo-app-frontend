@@ -23,6 +23,15 @@ const createSchema = z.object({
   isAvailable: z.boolean().optional(),
   addonIds: z.array(z.string().uuid()).optional(),
   fulfillmentLocationId: z.string().uuid().nullable().optional(),
+  productType: z.enum(['standard', 'pizza_flavor']).optional(),
+  pizzaSizePrices: z
+    .array(
+      z.object({
+        sizeId: z.string().uuid(),
+        priceCents: z.number().int().min(0).max(1_000_000),
+      }),
+    )
+    .optional(),
 });
 
 export async function GET() {

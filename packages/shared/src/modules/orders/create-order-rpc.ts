@@ -92,6 +92,12 @@ export function toRpcPayload(
         add_on_id: addon.addOnId,
         quantity: addon.quantity,
       })),
+      pizza_size_id: item.pizzaSizeId ?? null,
+      secondary_product_id: item.secondaryProductId ?? null,
+      pizza_addons: item.pizzaAddons.map((addon) => ({
+        pizza_addon_id: addon.pizzaAddonId,
+        applies_to: addon.appliesTo,
+      })),
     })),
   };
 }

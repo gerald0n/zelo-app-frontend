@@ -3,13 +3,20 @@ import type {
   AdminAddon,
   AdminCategory,
   AdminCoupon,
+  AdminPizzaAddon,
+  AdminPizzaSize,
   AdminProduct,
   AdminPromotion,
   PromotionScope,
 } from '@/modules/admin/types';
 
 export type Tab =
-  'products' | 'categories' | 'addons' | 'promotions' | 'coupons';
+  | 'products'
+  | 'categories'
+  | 'addons'
+  | 'pizza-addons'
+  | 'promotions'
+  | 'coupons';
 
 export type CatalogResponse = {
   categories: AdminCategory[];
@@ -18,6 +25,8 @@ export type CatalogResponse = {
   promotions: AdminPromotion[];
   coupons: AdminCoupon[];
   satelliteLocations: Array<{ id: string; slug: string; name: string }>;
+  pizzaSizes: AdminPizzaSize[];
+  pizzaAddons: AdminPizzaAddon[];
 };
 
 const hhmmOrEmpty = z
@@ -66,6 +75,9 @@ export const productSchema = z.object({
   addonIds: z.array(z.string().uuid()),
   /** `''` = catálogo normal (Pereiro); caso contrário, id do local satélite. */
   fulfillmentLocationId: z.string().optional(),
+  productType: z.enum(['standard', 'pizza_flavor']),
+  /** Preço em reais por tamanho de pizza (chave = sizeId). Só usado quando `productType = 'pizza_flavor'`. */
+  pizzaSizePricesReais: z.record(z.string(), z.number().min(0)),
 });
 
 export const addonSchema = z.object({
@@ -74,6 +86,14 @@ export const addonSchema = z.object({
   priceReais: z.number().min(0, 'Preço inválido.'),
   isActive: z.boolean(),
   isAvailable: z.boolean(),
+});
+
+export const pizzaAddonSchema = z.object({
+  name: z.string().trim().min(1, 'Informe o nome.'),
+  description: z.string().optional(),
+  priceHalfReais: z.number().min(0, 'Preço inválido.'),
+  priceFullReais: z.number().min(0, 'Preço inválido.'),
+  isActive: z.boolean(),
 });
 
 export const promotionSchema = z
@@ -120,9 +140,22 @@ export function emptyProductForm(
     stockQuantity: '',
     addonIds: [],
     fulfillmentLocationId: '',
+    productType: 'standard',
+    pizzaSizePricesReais: {},
   };
 }
 export type AddonForm = z.infer<typeof addonSchema>;
+export type PizzaAddonForm = z.infer<typeof pizzaAddonSchema>;
+
+export function emptyPizzaAddonForm(): PizzaAddonForm {
+  return {
+    name: '',
+    description: '',
+    priceHalfReais: 0,
+    priceFullReais: 0,
+    isActive: true,
+  };
+}
 export type PromotionForm = z.infer<typeof promotionSchema>;
 
 export const promotionScopeLabels: Record<PromotionScope, string> = {

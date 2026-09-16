@@ -34,8 +34,6 @@ export type PublicProductReview = {
 export type ProductReviewsView = {
   summary: ProductRatingSummary;
   items: PublicProductReview[];
-  /** Cliente logado tem pedido entregue com o item e ainda não avaliou. */
-  canReview: boolean;
   /** Avaliação que o cliente logado já enviou (qualquer status). */
   myReview: CustomerProductReview | null;
 };

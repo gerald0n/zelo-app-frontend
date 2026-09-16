@@ -6,7 +6,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/cn';
 import type { ProductForm } from '@/app/catalogo/catalog-forms';
-import type { AdminAddon, AdminCategory } from '@/modules/admin/types';
+import type {
+  AdminAddon,
+  AdminCategory,
+  AdminPizzaSize,
+} from '@/modules/admin/types';
 
 type Props = {
   form: UseFormReturn<ProductForm>;
@@ -14,6 +18,7 @@ type Props = {
   categories: AdminCategory[];
   addons: AdminAddon[];
   satelliteLocations: Array<{ id: string; slug: string; name: string }>;
+  pizzaSizes: AdminPizzaSize[];
   isPending: boolean;
   onSubmit: (values: ProductForm) => void;
   onCancel: () => void;
@@ -25,12 +30,17 @@ export function ProductFormCard({
   categories,
   addons,
   satelliteLocations,
+  pizzaSizes,
   isPending,
   onSubmit,
   onCancel,
 }: Props) {
   const selectedAddonIds =
     useWatch({ control: form.control, name: 'addonIds' }) ?? [];
+  const productType = useWatch({ control: form.control, name: 'productType' });
+  const isPizzaFlavor = productType === 'pizza_flavor';
+  const pizzaSizePricesReais =
+    useWatch({ control: form.control, name: 'pizzaSizePricesReais' }) ?? {};
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 p-4">
@@ -58,15 +68,27 @@ export function ProductFormCard({
             ))}
           </select>
         </label>
-        <Label className="block text-xs font-semibold">
-          Preço (R$)
-          <Input
-            type="number"
-            step="0.01"
-            {...form.register('priceReais', { valueAsNumber: true })}
+        <label className="block text-xs font-semibold">
+          Tipo
+          <select
+            {...form.register('productType')}
             className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
-          />
-        </Label>
+          >
+            <option value="standard">Padrão</option>
+            <option value="pizza_flavor">Sabor de pizza</option>
+          </select>
+        </label>
+        {!isPizzaFlavor ? (
+          <Label className="block text-xs font-semibold">
+            Preço (R$)
+            <Input
+              type="number"
+              step="0.01"
+              {...form.register('priceReais', { valueAsNumber: true })}
+              className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+            />
+          </Label>
+        ) : null}
         <Label className="block text-xs font-semibold">
           Ordem
           <Input
@@ -110,6 +132,36 @@ export function ProductFormCard({
           />
         </Label>
       </div>
+      {isPizzaFlavor ? (
+        <div className="space-y-1.5">
+          <p className="text-xs font-semibold">Preço por tamanho (R$)</p>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {pizzaSizes.map((size) => (
+              <Label key={size.id} className="block text-xs font-semibold">
+                {size.name} ({size.diameterCm}cm)
+                {!size.isActive ? (
+                  <span className="ml-1 font-normal text-muted-foreground">
+                    inativo
+                  </span>
+                ) : null}
+                <Input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  value={pizzaSizePricesReais[size.id] ?? 0}
+                  onChange={(e) =>
+                    form.setValue('pizzaSizePricesReais', {
+                      ...form.getValues('pizzaSizePricesReais'),
+                      [size.id]: e.target.valueAsNumber || 0,
+                    })
+                  }
+                  className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                />
+              </Label>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <div className="flex flex-wrap gap-4 text-xs">
         <Label className="inline-flex items-center gap-2 font-semibold">
           <input type="checkbox" {...form.register('isActive')} />

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useCheckout } from '@/contexts/CheckoutContext';
 import { useCart } from '@/contexts/CartContext';
+import { pizzaOrderDetailLines } from '@/modules/carts';
 import CheckoutProgress from '@/components/CheckoutProgress';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import { cn } from '@/lib/cn';
@@ -24,6 +25,7 @@ import {
 } from '@/lib/layout';
 import { randomUUID } from '@/lib/random-id';
 import { useAppDialog } from '@/contexts/AppDialogContext';
+import { cartItemsToOrderItems } from '@/modules/orders/cart-to-order-items';
 import {
   CouponField,
   type AppliedCoupon,
@@ -164,15 +166,7 @@ export default function RevisaoPage() {
               formattedAddress: checkout.addressDetails.formattedAddress,
             }
           : undefined,
-      items: items.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        customerNote: item.note || undefined,
-        addOns: item.selectedAddons.map((addon) => ({
-          addOnId: addon.id,
-          quantity: 1,
-        })),
-      })),
+      items: cartItemsToOrderItems(items),
     };
 
     try {
@@ -240,7 +234,17 @@ export default function RevisaoPage() {
                 <span className="w-6 text-sm text-muted-foreground">
                   {item.quantity}×
                 </span>
-                <span className="min-w-0 flex-1 text-sm">{item.name}</span>
+                <span className="min-w-0 flex-1 text-sm">
+                  {item.name}
+                  {pizzaOrderDetailLines(item).map((line) => (
+                    <span
+                      key={line}
+                      className="block text-xs text-muted-foreground"
+                    >
+                      {line}
+                    </span>
+                  ))}
+                </span>
                 <span className="text-sm font-medium tabular-nums">
                   {formatCatalogPrice(item.price * item.quantity)}
                 </span>

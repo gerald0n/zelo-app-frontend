@@ -212,7 +212,7 @@ export default function ProdutoClient({
             </p>
           </div>
 
-          <ProductReviews productId={product.id} productName={product.name} />
+          <ProductReviews productId={product.id} />
         </div>
 
         <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2.5 border-t border-border bg-background px-3 pb-4 pt-2.5 lg:static lg:mt-4 lg:rounded-xl lg:border lg:bg-card lg:p-3 lg:shadow-sm">

@@ -18,7 +18,53 @@ export type SubmitOrderReviewInput = {
   orderId: string;
   rating: number;
   comment?: string | null;
+  productRatings?: Array<{ productId: string; rating: number }>;
 };
+
+/**
+ * Cria/atualiza a avaliação por produto pra cada item do pedido, a partir da
+ * avaliação do pedido que acabou de ser salva. Best-effort: erro aqui não
+ * derruba a avaliação do pedido, que já foi persistida.
+ */
+async function fanOutProductReviews(input: {
+  orderId: string;
+  customerId: string;
+  customerName: string;
+  comment: string | null;
+  orderProductIds: Set<string>;
+  productRatings: Array<{ productId: string; rating: number }>;
+}): Promise<void> {
+  const rows = input.productRatings
+    .filter(
+      (item) =>
+        input.orderProductIds.has(item.productId) &&
+        Number.isInteger(item.rating) &&
+        item.rating >= 1 &&
+        item.rating <= 5,
+    )
+    .map((item) => ({
+      product_id: item.productId,
+      customer_id: input.customerId,
+      order_id: input.orderId,
+      rating: item.rating,
+      comment: input.comment,
+      customer_display_name: buildReviewDisplayName(input.customerName),
+    }));
+
+  if (rows.length === 0) return;
+
+  const admin = createAdminSupabaseClient();
+  const { error } = await admin
+    .from('product_reviews')
+    .upsert(rows, { onConflict: 'product_id,customer_id', ignoreDuplicates: true });
+
+  if (error) {
+    logger.warn('Falha ao propagar avaliação para os produtos do pedido', {
+      orderId: input.orderId,
+      message: error.message,
+    });
+  }
+}
 
 /**
  * Cliente avalia um pedido entregue. Uma avaliação por pedido; entra como
@@ -81,6 +127,25 @@ export async function submitOrderReview(
       cause: error,
     });
   }
+
+  const orderProductIds = new Set(
+    order.data.items
+      .map((item) => item.productId)
+      .filter((id): id is string => id !== null),
+  );
+  const productRatings =
+    input.productRatings && input.productRatings.length > 0
+      ? input.productRatings
+      : [...orderProductIds].map((productId) => ({ productId, rating }));
+
+  await fanOutProductReviews({
+    orderId: input.orderId,
+    customerId: ensured.data.id,
+    customerName: ensured.data.name,
+    comment,
+    orderProductIds,
+    productRatings,
+  });
 
   return ok({
     rating: data.rating,
