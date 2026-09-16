@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { GalleryHorizontal, Loader2, Plus, Trash2, Upload } from 'lucide-react';
 import { useAppDialog } from '@/contexts/AppDialogContext';
+import { BannerLinkCombobox } from '@/components/admin/BannerLinkCombobox';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,8 +17,6 @@ const BANNER_ASPECT = 16 / 9;
 
 type AdminBanner = {
   id: string;
-  title: string;
-  subtitle: string | null;
   linkHref: string | null;
   sortOrder: number;
   isActive: boolean;
@@ -28,16 +27,12 @@ type AdminBanner = {
 };
 
 type BannerDraft = {
-  title: string;
-  subtitle: string;
   linkHref: string;
   sortOrder: string;
 };
 
 function draftFrom(banner: AdminBanner): BannerDraft {
   return {
-    title: banner.title,
-    subtitle: banner.subtitle ?? '',
     linkHref: banner.linkHref ?? '',
     sortOrder: String(banner.sortOrder),
   };
@@ -89,8 +84,6 @@ function BannerCard({ banner }: { banner: AdminBanner }) {
 
   const saveDraft = () => {
     patchMutation.mutate({
-      title: draft.title.trim(),
-      subtitle: draft.subtitle.trim() || null,
       linkHref: draft.linkHref.trim() || null,
       sortOrder: Number(draft.sortOrder) || 0,
     });
@@ -100,7 +93,7 @@ function BannerCard({ banner }: { banner: AdminBanner }) {
   const handleDelete = async () => {
     const ok = await confirm({
       title: 'Remover banner',
-      description: `Remover "${banner.title}" do carrossel?`,
+      description: 'Remover este banner do carrossel?',
       confirmLabel: 'Remover',
       tone: 'destructive',
     });
@@ -115,6 +108,7 @@ function BannerCard({ banner }: { banner: AdminBanner }) {
             'relative flex h-20 w-32 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md border border-dashed border-border bg-muted/40 text-muted-foreground',
             uploadMutation.isPending && 'opacity-60',
           )}
+          title="Enviar imagem (16:9 — aparece recortada para 9:16 no celular)"
         >
           {banner.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -153,37 +147,27 @@ function BannerCard({ banner }: { banner: AdminBanner }) {
         />
 
         <div className="min-w-0 flex-1 space-y-2">
-          <Input
-            value={draft.title}
-            onChange={(e) => {
-              setDraft((d) => ({ ...d, title: e.target.value }));
+          <BannerLinkCombobox
+            value={draft.linkHref}
+            onChange={(href) => {
+              setDraft((d) => ({ ...d, linkHref: href }));
               setDirty(true);
             }}
-            placeholder="Título"
             className="h-8 text-xs"
           />
-          <Input
-            value={draft.subtitle}
-            onChange={(e) => {
-              setDraft((d) => ({ ...d, subtitle: e.target.value }));
-              setDirty(true);
-            }}
-            placeholder="Subtítulo (opcional)"
-            className="h-8 text-xs"
-          />
+          <p className="text-2xs text-muted-foreground">
+            A imagem já deve trazer o texto do banner — aqui só configura
+            para onde ele leva ao ser tocado. Envie em 16:9: no celular ela
+            aparece recortada para 9:16 (mantenha o conteúdo importante
+            centralizado).
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_auto] gap-2">
-        <Input
-          value={draft.linkHref}
-          onChange={(e) => {
-            setDraft((d) => ({ ...d, linkHref: e.target.value }));
-            setDirty(true);
-          }}
-          placeholder="Link ao tocar (opcional, ex.: /produto/bolo-de-ninho)"
-          className="h-8 text-xs"
-        />
+      <div className="flex items-center justify-end gap-2">
+        <Label className="text-2xs font-semibold text-muted-foreground">
+          Ordem
+        </Label>
         <Input
           value={draft.sortOrder}
           onChange={(e) => {
@@ -191,7 +175,6 @@ function BannerCard({ banner }: { banner: AdminBanner }) {
             setDirty(true);
           }}
           inputMode="numeric"
-          placeholder="Ordem"
           className="h-8 w-16 text-xs"
         />
       </div>
@@ -237,7 +220,7 @@ function BannerCard({ banner }: { banner: AdminBanner }) {
   );
 }
 
-/** Banners do carrossel da home do client — imagem, título, link opcional. */
+/** Banners do carrossel da home do client — imagem e link opcional. */
 export function BannersSection() {
   const queryClient = useQueryClient();
 
@@ -250,7 +233,7 @@ export function BannersSection() {
     mutationFn: () =>
       apiJson('/api/v1/admin/banners', {
         method: 'POST',
-        body: JSON.stringify({ title: 'Novo banner' }),
+        body: JSON.stringify({}),
       }),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: adminKeys.banners() }),

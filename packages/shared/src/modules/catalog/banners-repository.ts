@@ -27,7 +27,7 @@ export async function getPublicBanners(): Promise<Result<CatalogBanner[]>> {
     const supabase = createPublicSupabaseClient();
     const { data, error } = await supabase
       .from('promo_banners')
-      .select('id, title, subtitle, link_href, storage_path')
+      .select('id, link_href, storage_path')
       .not('storage_path', 'eq', '')
       .order('sort_order', { ascending: true });
 
@@ -43,8 +43,6 @@ export async function getPublicBanners(): Promise<Result<CatalogBanner[]>> {
     return ok(
       (data ?? []).map((row) => ({
         id: row.id,
-        title: row.title,
-        subtitle: row.subtitle,
         linkHref: row.link_href,
         imageUrl: bannerImagePublicUrl(row.storage_path, { width: 1200 }),
       })),

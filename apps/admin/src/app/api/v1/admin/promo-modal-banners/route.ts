@@ -1,0 +1,48 @@
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { httpStatusFor } from '@/lib/errors';
+import {
+  createPromoModalBanner,
+  listAdminPromoModalBanners,
+} from '@/modules/admin/promo-modal-banners/crud';
+
+export const dynamic = 'force-dynamic';
+
+const createSchema = z.object({
+  title: z.string().trim().min(1).max(120),
+  linkHref: z.string().trim().max(500).nullable().optional(),
+  sortOrder: z.number().int().min(0).optional(),
+});
+
+export async function GET() {
+  const result = await listAdminPromoModalBanners();
+  if (!result.ok) {
+    return NextResponse.json(
+      { error: result.error },
+      { status: httpStatusFor(result.error.code) },
+    );
+  }
+  return NextResponse.json({ banners: result.data });
+}
+
+export async function POST(request: Request) {
+  const json = await request.json().catch(() => null);
+  const parsed = createSchema.safeParse(json);
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        error: { code: 'VALIDATION_ERROR', message: 'Dados do banner inválidos.' },
+      },
+      { status: 400 },
+    );
+  }
+
+  const result = await createPromoModalBanner(parsed.data);
+  if (!result.ok) {
+    return NextResponse.json(
+      { error: result.error },
+      { status: httpStatusFor(result.error.code) },
+    );
+  }
+  return NextResponse.json({ banner: result.data }, { status: 201 });
+}

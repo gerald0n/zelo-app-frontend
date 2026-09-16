@@ -90,12 +90,25 @@ export type CatalogBlackout = {
   reason: string | null;
 };
 
+/** Imagem já traz toda a informação do banner — sem título/subtítulo. */
 export type CatalogBanner = {
   id: string;
-  title: string;
-  subtitle: string | null;
   linkHref: string | null;
   imageUrl: string;
+};
+
+export type CatalogFaqItem = {
+  id: string;
+  question: string;
+  answer: string;
+};
+
+export type CatalogPromoModalBanner = {
+  id: string;
+  title: string;
+  linkHref: string | null;
+  imageUrlVertical: string;
+  imageUrlHorizontal: string;
 };
 
 export type CatalogPaymentMethods = {

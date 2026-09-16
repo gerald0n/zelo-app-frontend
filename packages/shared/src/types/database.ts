@@ -618,6 +618,36 @@ export type Database = {
         }
         Relationships: []
       }
+      faq_items: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          is_active: boolean
+          question: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          question: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          question?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       http_rate_limits: {
         Row: {
           bucket: string
@@ -1587,7 +1617,7 @@ export type Database = {
           starts_at: string | null
           storage_path: string
           subtitle: string | null
-          title: string
+          title: string | null
           updated_at: string
         }
         Insert: {
@@ -1600,7 +1630,7 @@ export type Database = {
           starts_at?: string | null
           storage_path: string
           subtitle?: string | null
-          title: string
+          title?: string | null
           updated_at?: string
         }
         Update: {
@@ -1613,6 +1643,48 @@ export type Database = {
           starts_at?: string | null
           storage_path?: string
           subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      promo_modal_banners: {
+        Row: {
+          created_at: string
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          link_href: string | null
+          sort_order: number
+          starts_at: string | null
+          storage_path_horizontal: string
+          storage_path_vertical: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          link_href?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          storage_path_horizontal?: string
+          storage_path_vertical?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          link_href?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          storage_path_horizontal?: string
+          storage_path_vertical?: string
           title?: string
           updated_at?: string
         }
@@ -1763,6 +1835,113 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_template_sends: {
+        Row: {
+          customers: number
+          devices: number
+          failed: number
+          id: string
+          revoked: number
+          sent: number
+          sent_at: string
+          sent_by: string | null
+          template_id: string
+          triggered_by: string
+        }
+        Insert: {
+          customers: number
+          devices: number
+          failed: number
+          id?: string
+          revoked: number
+          sent: number
+          sent_at?: string
+          sent_by?: string | null
+          template_id: string
+          triggered_by: string
+        }
+        Update: {
+          customers?: number
+          devices?: number
+          failed?: number
+          id?: string
+          revoked?: number
+          sent?: number
+          sent_at?: string
+          sent_by?: string | null
+          template_id?: string
+          triggered_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_template_sends_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "admin_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_template_sends_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "push_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_templates: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          last_sent_at: string | null
+          mode: string
+          scheduled_at: string | null
+          send_count: number
+          status: string
+          title: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_sent_at?: string | null
+          mode: string
+          scheduled_at?: string | null
+          send_count?: number
+          status?: string
+          title: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_sent_at?: string | null
+          mode?: string
+          scheduled_at?: string | null
+          send_count?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "admin_profiles"
             referencedColumns: ["id"]
           },
         ]

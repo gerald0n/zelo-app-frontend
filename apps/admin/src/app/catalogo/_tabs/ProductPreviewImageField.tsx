@@ -31,7 +31,7 @@ export function ProductPreviewImageField({
           <p className="text-xs font-semibold">Imagem de preview</p>
           <p className="text-2xs text-muted-foreground">
             Só o recheio, sem borda — a massa é adicionada por cima no
-            construtor de pizza.
+            construtor de pizza. Proporção recomendada: 1:1 (quadrada).
           </p>
         </div>
       </div>

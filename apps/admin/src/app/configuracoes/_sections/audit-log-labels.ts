@@ -32,7 +32,11 @@ const ACTION_LABELS: Record<string, string> = {
   'store.resume': 'Loja reaberta',
   'review.moderate': 'Avaliação de pedido moderada',
   'product_review.moderate': 'Avaliação de produto moderada',
-  'notification.broadcast': 'Notificação enviada a clientes',
+  'push_template.create': 'Modelo de push criado',
+  'push_template.update': 'Modelo de push atualizado',
+  'push_template.delete': 'Modelo de push removido',
+  'push_template.cancel_schedule': 'Agendamento de push cancelado',
+  'push_template.send': 'Notificação enviada a clientes',
 };
 
 export function actionLabel(action: string): string {
@@ -143,7 +147,7 @@ export function auditDetail(log: AdminAuditLog): string | null {
     return parts.length ? parts.join(' · ') : null;
   }
 
-  if (log.action === 'notification.broadcast') {
+  if (log.action === 'push_template.send') {
     const title = asString(meta.title);
     const sent = typeof meta.sent === 'number' ? meta.sent : null;
     const devices = typeof meta.devices === 'number' ? meta.devices : null;

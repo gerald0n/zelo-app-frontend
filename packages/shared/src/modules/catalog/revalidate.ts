@@ -27,6 +27,8 @@ export function catalogTagsForAuditAction(
     return ['catalog'];
   }
   if (action.startsWith('banner.')) return ['banners'];
+  if (action.startsWith('faq_item.')) return ['faq'];
+  if (action.startsWith('promo_modal_banner.')) return ['promo-modal-banners'];
   return [];
 }
 

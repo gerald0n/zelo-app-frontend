@@ -31,8 +31,15 @@ export const adminKeys = {
   otpSupportRequests: () =>
     [...adminKeys.all, 'otp-support-requests'] as const,
   banners: () => [...adminKeys.all, 'banners'] as const,
+  faq: () => [...adminKeys.all, 'faq'] as const,
+  promoModalBanners: () => [...adminKeys.all, 'promo-modal-banners'] as const,
+  pushTemplates: () => [...adminKeys.all, 'push-templates'] as const,
+  pushBroadcastRecipients: () =>
+    [...adminKeys.all, 'push-broadcast-recipients'] as const,
 };
 
 export const catalogKeys = {
   store: () => ['catalog', 'store'] as const,
+  faq: () => ['catalog', 'faq'] as const,
+  promoModalBanners: () => ['catalog', 'promo-modal-banners'] as const,
 };

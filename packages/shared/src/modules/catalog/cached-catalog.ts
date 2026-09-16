@@ -7,10 +7,14 @@ import {
   BEST_SELLERS_CACHE_TTL_SECONDS,
   CATALOG_CACHE_TAG,
   CATALOG_CACHE_TTL_SECONDS,
+  FAQ_CACHE_TAG,
+  PROMO_MODAL_BANNERS_CACHE_TAG,
   STORE_CACHE_TAG,
 } from '@/modules/catalog/cache';
 import { listPublicBestSellingProductIds } from '@/modules/catalog/best-sellers-repository';
 import { getPublicBanners } from '@/modules/catalog/banners-repository';
+import { getPublicFaqItems } from '@/modules/catalog/faq-repository';
+import { getPublicPromoModalBanners } from '@/modules/catalog/promo-modal-banners-repository';
 import {
   getPublicCatalog,
   getPublicProductBySlugOrId,
@@ -92,6 +96,29 @@ const cachedBanners = unstable_cache(
   { tags: [BANNERS_CACHE_TAG], revalidate: CATALOG_CACHE_TTL_SECONDS },
 );
 
+const cachedFaqItems = unstable_cache(
+  async () => {
+    const result = await getPublicFaqItems();
+    if (!result.ok) throw new Error(result.error.message);
+    return result.data;
+  },
+  ['catalog:faq'],
+  { tags: [FAQ_CACHE_TAG], revalidate: CATALOG_CACHE_TTL_SECONDS },
+);
+
+const cachedPromoModalBanners = unstable_cache(
+  async () => {
+    const result = await getPublicPromoModalBanners();
+    if (!result.ok) throw new Error(result.error.message);
+    return result.data;
+  },
+  ['catalog:promo-modal-banners'],
+  {
+    tags: [PROMO_MODAL_BANNERS_CACHE_TAG],
+    revalidate: CATALOG_CACHE_TTL_SECONDS,
+  },
+);
+
 const cachedProductBySlugOrId = unstable_cache(
   async (slugOrId: string) => {
     const result = await getPublicProductBySlugOrId(slugOrId);
@@ -124,6 +151,14 @@ export function getCachedPublicStore() {
 
 export function getCachedPublicBanners() {
   return toResult(() => cachedBanners());
+}
+
+export function getCachedPublicFaqItems() {
+  return toResult(() => cachedFaqItems());
+}
+
+export function getCachedPublicPromoModalBanners() {
+  return toResult(() => cachedPromoModalBanners());
 }
 
 export function getCachedBestSellingProductIds() {

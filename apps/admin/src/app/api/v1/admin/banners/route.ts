@@ -6,8 +6,6 @@ import { createBanner, listAdminBanners } from '@/modules/admin/banners/crud';
 export const dynamic = 'force-dynamic';
 
 const createSchema = z.object({
-  title: z.string().trim().min(1).max(120),
-  subtitle: z.string().trim().max(200).nullable().optional(),
   linkHref: z.string().trim().max(500).nullable().optional(),
   sortOrder: z.number().int().min(0).optional(),
 });
