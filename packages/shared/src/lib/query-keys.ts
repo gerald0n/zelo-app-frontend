@@ -33,6 +33,9 @@ export const adminKeys = {
   banners: () => [...adminKeys.all, 'banners'] as const,
   faq: () => [...adminKeys.all, 'faq'] as const,
   promoModalBanners: () => [...adminKeys.all, 'promo-modal-banners'] as const,
+  pushTemplates: () => [...adminKeys.all, 'push-templates'] as const,
+  pushBroadcastRecipients: () =>
+    [...adminKeys.all, 'push-broadcast-recipients'] as const,
 };
 
 export const catalogKeys = {

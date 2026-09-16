@@ -1839,6 +1839,113 @@ export type Database = {
           },
         ]
       }
+      push_template_sends: {
+        Row: {
+          customers: number
+          devices: number
+          failed: number
+          id: string
+          revoked: number
+          sent: number
+          sent_at: string
+          sent_by: string | null
+          template_id: string
+          triggered_by: string
+        }
+        Insert: {
+          customers: number
+          devices: number
+          failed: number
+          id?: string
+          revoked: number
+          sent: number
+          sent_at?: string
+          sent_by?: string | null
+          template_id: string
+          triggered_by: string
+        }
+        Update: {
+          customers?: number
+          devices?: number
+          failed?: number
+          id?: string
+          revoked?: number
+          sent?: number
+          sent_at?: string
+          sent_by?: string | null
+          template_id?: string
+          triggered_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_template_sends_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "admin_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_template_sends_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "push_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_templates: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          last_sent_at: string | null
+          mode: string
+          scheduled_at: string | null
+          send_count: number
+          status: string
+          title: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_sent_at?: string | null
+          mode: string
+          scheduled_at?: string | null
+          send_count?: number
+          status?: string
+          title: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_sent_at?: string | null
+          mode?: string
+          scheduled_at?: string | null
+          send_count?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "admin_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       satellite_location_delivery_slots: {
         Row: {
           created_at: string

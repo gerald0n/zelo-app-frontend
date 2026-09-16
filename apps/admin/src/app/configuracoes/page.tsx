@@ -12,8 +12,8 @@ import { BusinessHoursForm } from '@/app/configuracoes/_sections/BusinessHoursFo
 import { FaqSection } from '@/app/configuracoes/_sections/FaqSection';
 import { PrinterSection } from '@/app/configuracoes/_sections/PrinterSection';
 import { PromoModalBannerSection } from '@/app/configuracoes/_sections/PromoModalBannerSection';
-import { PushBroadcastSection } from '@/app/configuracoes/_sections/PushBroadcastSection';
 import { PushSection } from '@/app/configuracoes/_sections/PushSection';
+import { PushTemplatesSection } from '@/app/configuracoes/_sections/PushTemplatesSection';
 import { SatelliteLocationSection } from '@/app/configuracoes/_sections/SatelliteLocationSection';
 import { StoreForm } from '@/app/configuracoes/_sections/StoreForm';
 import { adminContainerClass } from '@/lib/layout';
@@ -122,7 +122,7 @@ export default function AdminConfiguracoesPage() {
           <BannersSection />
           <PromoModalBannerSection />
           <FaqSection />
-          <PushBroadcastSection />
+          <PushTemplatesSection />
         </div>
       ) : null}
 
