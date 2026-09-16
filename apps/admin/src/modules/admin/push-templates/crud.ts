@@ -4,6 +4,7 @@ import { err, ok, type Result } from '@/lib/errors';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { writeAuditLog } from '@/modules/admin/audit';
 import { requireAdmin } from '@/modules/admin/auth';
+import { requireRequestStoreId } from '@/modules/tenant/resolve-store-id';
 import {
   PUSH_TEMPLATE_SELECT,
   mapPushTemplate,
@@ -64,11 +65,14 @@ export async function createPushTemplate(
 
   const scheduling = validateScheduling(input.mode, input.scheduledAt);
   if (!scheduling.ok) return scheduling;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('push_templates')
     .insert({
+      store_id: storeId.data,
       title: input.title,
       body: input.body,
       url: input.url ?? null,

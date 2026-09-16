@@ -2,6 +2,7 @@ import 'server-only';
 
 import { unstable_cache } from 'next/cache';
 import { err, ok, type Result } from '@/lib/errors';
+import { getRequestStoreId } from '@/modules/tenant/resolve-store-id';
 import {
   BANNERS_CACHE_TAG,
   BEST_SELLERS_CACHE_TTL_SECONDS,
@@ -33,8 +34,8 @@ import {
  */
 
 const cachedCatalog = unstable_cache(
-  async () => {
-    const result = await getPublicCatalog();
+  async (storeId?: string) => {
+    const result = await getPublicCatalog(storeId);
     if (!result.ok) throw new Error(result.error.message);
     return result.data;
   },
@@ -45,9 +46,12 @@ const cachedCatalog = unstable_cache(
   },
 );
 
+// `storeId` como argumento (não lido via `headers()` aqui dentro — isso
+// quebraria o unstable_cache) entra automaticamente na chave do cache: cada
+// tenant tem sua própria entrada, mesmo com a mesma `keyParts` base.
 const cachedStore = unstable_cache(
-  async () => {
-    const result = await getPublicStore();
+  async (storeId?: string) => {
+    const result = await getPublicStore(storeId);
     if (!result.ok) throw new Error(result.error.message);
     return result.data;
   },
@@ -56,8 +60,8 @@ const cachedStore = unstable_cache(
 );
 
 const cachedProducts = unstable_cache(
-  async () => {
-    const result = await listPublicProducts();
+  async (storeId?: string) => {
+    const result = await listPublicProducts(storeId);
     if (!result.ok) throw new Error(result.error.message);
     return result.data;
   },
@@ -87,8 +91,8 @@ const cachedBestSellingProductIds = unstable_cache(
 );
 
 const cachedBanners = unstable_cache(
-  async () => {
-    const result = await getPublicBanners();
+  async (storeId?: string) => {
+    const result = await getPublicBanners(storeId);
     if (!result.ok) throw new Error(result.error.message);
     return result.data;
   },
@@ -97,8 +101,8 @@ const cachedBanners = unstable_cache(
 );
 
 const cachedFaqItems = unstable_cache(
-  async () => {
-    const result = await getPublicFaqItems();
+  async (storeId?: string) => {
+    const result = await getPublicFaqItems(storeId);
     if (!result.ok) throw new Error(result.error.message);
     return result.data;
   },
@@ -107,8 +111,8 @@ const cachedFaqItems = unstable_cache(
 );
 
 const cachedPromoModalBanners = unstable_cache(
-  async () => {
-    const result = await getPublicPromoModalBanners();
+  async (storeId?: string) => {
+    const result = await getPublicPromoModalBanners(storeId);
     if (!result.ok) throw new Error(result.error.message);
     return result.data;
   },
@@ -120,8 +124,8 @@ const cachedPromoModalBanners = unstable_cache(
 );
 
 const cachedProductBySlugOrId = unstable_cache(
-  async (slugOrId: string) => {
-    const result = await getPublicProductBySlugOrId(slugOrId);
+  async (slugOrId: string, storeId?: string) => {
+    const result = await getPublicProductBySlugOrId(slugOrId, storeId);
     if (!result.ok) throw new Error(result.error.message);
     return result.data;
   },
@@ -141,34 +145,48 @@ async function toResult<T>(run: () => Promise<T>): Promise<Result<T>> {
   }
 }
 
-export function getCachedPublicCatalog() {
-  return toResult(() => cachedCatalog());
+export async function getCachedPublicCatalog() {
+  const storeId = await getRequestStoreId();
+  return toResult(() => cachedCatalog(storeId));
 }
 
-export function getCachedPublicStore() {
-  return toResult(() => cachedStore());
+export async function getCachedPublicStore() {
+  const storeId = await getRequestStoreId();
+  return toResult(() => cachedStore(storeId));
 }
 
-export function getCachedPublicBanners() {
-  return toResult(() => cachedBanners());
+export async function getCachedPublicBanners() {
+  const storeId = await getRequestStoreId();
+  return toResult(() => cachedBanners(storeId));
 }
 
-export function getCachedPublicFaqItems() {
-  return toResult(() => cachedFaqItems());
+export async function getCachedPublicFaqItems() {
+  const storeId = await getRequestStoreId();
+  return toResult(() => cachedFaqItems(storeId));
 }
 
-export function getCachedPublicPromoModalBanners() {
-  return toResult(() => cachedPromoModalBanners());
+export async function getCachedPublicPromoModalBanners() {
+  const storeId = await getRequestStoreId();
+  return toResult(() => cachedPromoModalBanners(storeId));
 }
 
+/**
+ * Mais vendidos ainda não é filtrado por tenant — a RPC `get_top_selling_products`
+ * (SQL, `security definer`) precisaria de um `p_store_id` novo, e mudar essa
+ * função é uma mudança de banco à parte, não incluída nesta fatia da Fase C
+ * (ver ADR-0001). Hoje devolve o ranking global, correto só enquanto existir
+ * um tenant.
+ */
 export function getCachedBestSellingProductIds() {
   return cachedBestSellingProductIds();
 }
 
-export function listCachedPublicProducts() {
-  return toResult(() => cachedProducts());
+export async function listCachedPublicProducts() {
+  const storeId = await getRequestStoreId();
+  return toResult(() => cachedProducts(storeId));
 }
 
-export function getCachedPublicProductBySlugOrId(slugOrId: string) {
-  return toResult(() => cachedProductBySlugOrId(slugOrId));
+export async function getCachedPublicProductBySlugOrId(slugOrId: string) {
+  const storeId = await getRequestStoreId();
+  return toResult(() => cachedProductBySlugOrId(slugOrId, storeId));
 }

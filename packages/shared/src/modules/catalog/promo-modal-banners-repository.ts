@@ -21,14 +21,14 @@ function notConfigured<T>(): Result<T> {
  * com as duas imagens já enviadas (mesma regra de `not storage_path eq ''`
  * usada em `getPublicBanners`).
  */
-export async function getPublicPromoModalBanners(): Promise<
-  Result<CatalogPromoModalBanner[]>
-> {
+export async function getPublicPromoModalBanners(
+  storeId?: string,
+): Promise<Result<CatalogPromoModalBanner[]>> {
   if (!hasSupabasePublicConfig()) return notConfigured();
 
   try {
     const supabase = createPublicSupabaseClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from('promo_modal_banners')
       .select(
         'id, title, link_href, storage_path_vertical, storage_path_horizontal',
@@ -36,6 +36,8 @@ export async function getPublicPromoModalBanners(): Promise<
       .not('storage_path_vertical', 'eq', '')
       .not('storage_path_horizontal', 'eq', '')
       .order('sort_order', { ascending: true });
+    if (storeId) query = query.eq('store_id', storeId);
+    const { data, error } = await query;
 
     if (error) {
       logger.error('Falha ao ler banners do modal', { message: error.message });

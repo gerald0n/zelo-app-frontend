@@ -14,17 +14,28 @@ function notConfigured<T>(): Result<T> {
   );
 }
 
-export async function getPublicStore(): Promise<Result<CatalogStore | null>> {
+/**
+ * `storeId` (ADR-0001, Fase C): quando informado, busca aquele tenant
+ * específico em vez do fallback de loja única. Opcional e com o
+ * comportamento antigo preservado para não quebrar chamadores que ainda não
+ * foram migrados — a migração é incremental, não um corte único.
+ */
+export async function getPublicStore(
+  storeId?: string,
+): Promise<Result<CatalogStore | null>> {
   if (!hasSupabasePublicConfig()) return notConfigured();
 
   try {
     const supabase = createPublicSupabaseClient();
-    const { data: store, error: storeError } = await supabase
-      .from('stores')
-      .select('*')
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
+    const storeQuery = storeId
+      ? supabase.from('stores').select('*').eq('id', storeId).maybeSingle()
+      : supabase
+          .from('stores')
+          .select('*')
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+    const { data: store, error: storeError } = await storeQuery;
 
     if (storeError) {
       logger.error('Falha ao ler loja', { message: storeError.message });

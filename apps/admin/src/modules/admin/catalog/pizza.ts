@@ -6,6 +6,7 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { writeAuditLog } from '@/modules/admin/audit';
 import { requireAdmin } from '@/modules/admin/auth';
 import type { AdminPizzaAddon, AdminPizzaSize } from '@/modules/admin/types';
+import { requireRequestStoreId } from '@/modules/tenant/resolve-store-id';
 import type { Database } from '@/types/database';
 
 type PizzaAddonUpdate = Database['public']['Tables']['pizza_addons']['Update'];
@@ -19,8 +20,12 @@ export async function upsertPizzaSizePrices(
   await admin.from('pizza_flavor_prices').delete().eq('product_id', productId);
   if (sizePrices.length === 0) return ok(true);
 
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
+
   const { error } = await admin.from('pizza_flavor_prices').insert(
     sizePrices.map((p) => ({
+      store_id: storeId.data,
       product_id: productId,
       size_id: p.sizeId,
       price_cents: p.priceCents,
@@ -112,11 +117,14 @@ export async function createAdminPizzaAddon(input: {
 }): Promise<Result<AdminPizzaAddon>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('pizza_addons')
     .insert({
+      store_id: storeId.data,
       name: input.name.trim(),
       description: input.description?.trim() || null,
       price_half_cents: input.priceHalfCents,

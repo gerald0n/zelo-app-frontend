@@ -19,6 +19,7 @@ export type Database = {
           is_available: boolean
           name: string
           price_cents: number
+          store_id: string | null
           updated_at: string
         }
         Insert: {
@@ -30,6 +31,7 @@ export type Database = {
           is_available?: boolean
           name: string
           price_cents: number
+          store_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -41,9 +43,18 @@ export type Database = {
           is_available?: boolean
           name?: string
           price_cents?: number
+          store_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "add_ons_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       admin_profiles: {
         Row: {
@@ -52,6 +63,7 @@ export type Database = {
           id: string
           is_active: boolean
           must_set_password: boolean
+          store_id: string | null
           updated_at: string
         }
         Insert: {
@@ -60,6 +72,7 @@ export type Database = {
           id: string
           is_active?: boolean
           must_set_password?: boolean
+          store_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -68,9 +81,18 @@ export type Database = {
           id?: string
           is_active?: boolean
           must_set_password?: boolean
+          store_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "admin_profiles_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       admin_push_subscriptions: {
         Row: {
@@ -298,6 +320,7 @@ export type Database = {
           id: string
           last_activity_at: string
           source_order_id: string | null
+          store_id: string | null
           updated_at: string
         }
         Insert: {
@@ -308,6 +331,7 @@ export type Database = {
           id?: string
           last_activity_at?: string
           source_order_id?: string | null
+          store_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -318,6 +342,7 @@ export type Database = {
           id?: string
           last_activity_at?: string
           source_order_id?: string | null
+          store_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -333,6 +358,13 @@ export type Database = {
             columns: ["source_order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carts_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
         ]
@@ -352,6 +384,7 @@ export type Database = {
           scheduling_weekday_earliest: string | null
           scheduling_weekend_earliest: string | null
           sort_order: number
+          store_id: string | null
           updated_at: string
         }
         Insert: {
@@ -368,6 +401,7 @@ export type Database = {
           scheduling_weekday_earliest?: string | null
           scheduling_weekend_earliest?: string | null
           sort_order?: number
+          store_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -384,9 +418,18 @@ export type Database = {
           scheduling_weekday_earliest?: string | null
           scheduling_weekend_earliest?: string | null
           sort_order?: number
+          store_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categories_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coupons: {
         Row: {
@@ -399,6 +442,7 @@ export type Database = {
           is_active: boolean
           max_uses: number
           starts_at: string | null
+          store_id: string | null
           updated_at: string
           uses_count: number
         }
@@ -412,6 +456,7 @@ export type Database = {
           is_active?: boolean
           max_uses: number
           starts_at?: string | null
+          store_id?: string | null
           updated_at?: string
           uses_count?: number
         }
@@ -425,10 +470,19 @@ export type Database = {
           is_active?: boolean
           max_uses?: number
           starts_at?: string | null
+          store_id?: string | null
           updated_at?: string
           uses_count?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "coupons_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       customer_addresses: {
         Row: {
@@ -596,6 +650,7 @@ export type Database = {
           internal_note: string | null
           name: string
           phone_e164: string
+          store_id: string | null
           updated_at: string
         }
         Insert: {
@@ -605,6 +660,7 @@ export type Database = {
           internal_note?: string | null
           name: string
           phone_e164: string
+          store_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -614,9 +670,18 @@ export type Database = {
           internal_note?: string | null
           name?: string
           phone_e164?: string
+          store_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customers_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       faq_items: {
         Row: {
@@ -626,6 +691,7 @@ export type Database = {
           is_active: boolean
           question: string
           sort_order: number
+          store_id: string | null
           updated_at: string
         }
         Insert: {
@@ -635,6 +701,7 @@ export type Database = {
           is_active?: boolean
           question: string
           sort_order?: number
+          store_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -644,9 +711,18 @@ export type Database = {
           is_active?: boolean
           question?: string
           sort_order?: number
+          store_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "faq_items_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       http_rate_limits: {
         Row: {
@@ -1102,6 +1178,7 @@ export type Database = {
           scheduled_for: string | null
           source_order_id: string | null
           status: Database["public"]["Enums"]["order_status"]
+          store_id: string | null
           subtotal_cents: number
           timing: Database["public"]["Enums"]["order_timing"]
           total_cents: number
@@ -1146,6 +1223,7 @@ export type Database = {
           scheduled_for?: string | null
           source_order_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
+          store_id?: string | null
           subtotal_cents: number
           timing: Database["public"]["Enums"]["order_timing"]
           total_cents: number
@@ -1190,6 +1268,7 @@ export type Database = {
           scheduled_for?: string | null
           source_order_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
+          store_id?: string | null
           subtotal_cents?: number
           timing?: Database["public"]["Enums"]["order_timing"]
           total_cents?: number
@@ -1222,6 +1301,13 @@ export type Database = {
             columns: ["source_order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
         ]
@@ -1293,6 +1379,7 @@ export type Database = {
           price_full_cents: number
           price_half_cents: number
           sort_order: number
+          store_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1305,6 +1392,7 @@ export type Database = {
           price_full_cents: number
           price_half_cents: number
           sort_order?: number
+          store_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1317,9 +1405,18 @@ export type Database = {
           price_full_cents?: number
           price_half_cents?: number
           sort_order?: number
+          store_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pizza_addons_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pizza_flavor_prices: {
         Row: {
@@ -1327,6 +1424,7 @@ export type Database = {
           price_cents: number
           product_id: string
           size_id: string
+          store_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1334,6 +1432,7 @@ export type Database = {
           price_cents: number
           product_id: string
           size_id: string
+          store_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1341,6 +1440,7 @@ export type Database = {
           price_cents?: number
           product_id?: string
           size_id?: string
+          store_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1358,6 +1458,13 @@ export type Database = {
             referencedRelation: "pizza_sizes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pizza_flavor_prices_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
         ]
       }
       pizza_sizes: {
@@ -1368,6 +1475,7 @@ export type Database = {
           is_active: boolean
           name: string
           sort_order: number
+          store_id: string | null
         }
         Insert: {
           created_at?: string
@@ -1376,6 +1484,7 @@ export type Database = {
           is_active?: boolean
           name: string
           sort_order?: number
+          store_id?: string | null
         }
         Update: {
           created_at?: string
@@ -1384,8 +1493,17 @@ export type Database = {
           is_active?: boolean
           name?: string
           sort_order?: number
+          store_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pizza_sizes_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_add_ons: {
         Row: {
@@ -1543,6 +1661,7 @@ export type Database = {
           slug: string
           sort_order: number
           stock_quantity: number | null
+          store_id: string | null
           updated_at: string
           weight_max_grams: number | null
           weight_min_grams: number | null
@@ -1564,6 +1683,7 @@ export type Database = {
           slug: string
           sort_order?: number
           stock_quantity?: number | null
+          store_id?: string | null
           updated_at?: string
           weight_max_grams?: number | null
           weight_min_grams?: number | null
@@ -1585,6 +1705,7 @@ export type Database = {
           slug?: string
           sort_order?: number
           stock_quantity?: number | null
+          store_id?: string | null
           updated_at?: string
           weight_max_grams?: number | null
           weight_min_grams?: number | null
@@ -1604,6 +1725,13 @@ export type Database = {
             referencedRelation: "satellite_locations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "products_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
         ]
       }
       promo_banners: {
@@ -1616,6 +1744,7 @@ export type Database = {
           sort_order: number
           starts_at: string | null
           storage_path: string
+          store_id: string | null
           subtitle: string | null
           title: string | null
           updated_at: string
@@ -1629,6 +1758,7 @@ export type Database = {
           sort_order?: number
           starts_at?: string | null
           storage_path: string
+          store_id?: string | null
           subtitle?: string | null
           title?: string | null
           updated_at?: string
@@ -1642,11 +1772,20 @@ export type Database = {
           sort_order?: number
           starts_at?: string | null
           storage_path?: string
+          store_id?: string | null
           subtitle?: string | null
-          title?: string
+          title?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "promo_banners_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       promo_modal_banners: {
         Row: {
@@ -1659,6 +1798,7 @@ export type Database = {
           starts_at: string | null
           storage_path_horizontal: string
           storage_path_vertical: string
+          store_id: string | null
           title: string | null
           updated_at: string
         }
@@ -1672,6 +1812,7 @@ export type Database = {
           starts_at?: string | null
           storage_path_horizontal?: string
           storage_path_vertical?: string
+          store_id?: string | null
           title?: string | null
           updated_at?: string
         }
@@ -1685,10 +1826,19 @@ export type Database = {
           starts_at?: string | null
           storage_path_horizontal?: string
           storage_path_vertical?: string
+          store_id?: string | null
           title?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "promo_modal_banners_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       promotion_categories: {
         Row: {
@@ -1766,6 +1916,7 @@ export type Database = {
           name: string
           scope: string
           starts_at: string | null
+          store_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1777,6 +1928,7 @@ export type Database = {
           name: string
           scope: string
           starts_at?: string | null
+          store_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1788,9 +1940,18 @@ export type Database = {
           name?: string
           scope?: string
           starts_at?: string | null
+          store_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "promotions_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       push_subscriptions: {
         Row: {
@@ -1904,6 +2065,7 @@ export type Database = {
           scheduled_at: string | null
           send_count: number
           status: string
+          store_id: string | null
           title: string
           updated_at: string
           url: string | null
@@ -1918,6 +2080,7 @@ export type Database = {
           scheduled_at?: string | null
           send_count?: number
           status?: string
+          store_id?: string | null
           title: string
           updated_at?: string
           url?: string | null
@@ -1932,6 +2095,7 @@ export type Database = {
           scheduled_at?: string | null
           send_count?: number
           status?: string
+          store_id?: string | null
           title?: string
           updated_at?: string
           url?: string | null
@@ -1942,6 +2106,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "admin_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_templates_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
         ]
@@ -2048,6 +2219,7 @@ export type Database = {
           postal_code: string | null
           slug: string
           state: string
+          store_id: string | null
           timezone: string
           updated_at: string
         }
@@ -2067,6 +2239,7 @@ export type Database = {
           postal_code?: string | null
           slug: string
           state: string
+          store_id?: string | null
           timezone?: string
           updated_at?: string
         }
@@ -2086,10 +2259,19 @@ export type Database = {
           postal_code?: string | null
           slug?: string
           state?: string
+          store_id?: string | null
           timezone?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "satellite_locations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       store_blackout_periods: {
         Row: {
@@ -2182,11 +2364,15 @@ export type Database = {
           city: string
           cnpj: string | null
           created_at: string
+          domain: string | null
+          features: Json
           fixed_delivery_fee_cents: number
+          font_config: Json
           free_delivery_radius_meters: number
           id: string
           is_open_override: boolean | null
           latitude: number
+          logo_url: string | null
           longitude: number
           max_delivery_radius_meters: number
           name: string
@@ -2197,6 +2383,7 @@ export type Database = {
           pix_copy_paste: string | null
           postal_code: string | null
           state: string
+          theme: Json
           timezone: string
           updated_at: string
           whatsapp_e164: string
@@ -2209,11 +2396,15 @@ export type Database = {
           city: string
           cnpj?: string | null
           created_at?: string
+          domain?: string | null
+          features?: Json
           fixed_delivery_fee_cents?: number
+          font_config?: Json
           free_delivery_radius_meters?: number
           id?: string
           is_open_override?: boolean | null
           latitude: number
+          logo_url?: string | null
           longitude: number
           max_delivery_radius_meters?: number
           name: string
@@ -2224,6 +2415,7 @@ export type Database = {
           pix_copy_paste?: string | null
           postal_code?: string | null
           state: string
+          theme?: Json
           timezone?: string
           updated_at?: string
           whatsapp_e164: string
@@ -2236,11 +2428,15 @@ export type Database = {
           city?: string
           cnpj?: string | null
           created_at?: string
+          domain?: string | null
+          features?: Json
           fixed_delivery_fee_cents?: number
+          font_config?: Json
           free_delivery_radius_meters?: number
           id?: string
           is_open_override?: boolean | null
           latitude?: number
+          logo_url?: string | null
           longitude?: number
           max_delivery_radius_meters?: number
           name?: string
@@ -2251,6 +2447,7 @@ export type Database = {
           pix_copy_paste?: string | null
           postal_code?: string | null
           state?: string
+          theme?: Json
           timezone?: string
           updated_at?: string
           whatsapp_e164?: string
@@ -2303,6 +2500,7 @@ export type Database = {
           scheduled_for: string | null
           source_order_id: string | null
           status: Database["public"]["Enums"]["order_status"]
+          store_id: string | null
           subtotal_cents: number
           timing: Database["public"]["Enums"]["order_timing"]
           total_cents: number
@@ -2366,6 +2564,7 @@ export type Database = {
           scheduled_for: string | null
           source_order_id: string | null
           status: Database["public"]["Enums"]["order_status"]
+          store_id: string | null
           subtotal_cents: number
           timing: Database["public"]["Enums"]["order_timing"]
           total_cents: number
@@ -2441,6 +2640,65 @@ export type Database = {
           scheduled_for: string | null
           source_order_id: string | null
           status: Database["public"]["Enums"]["order_status"]
+          store_id: string | null
+          subtotal_cents: number
+          timing: Database["public"]["Enums"]["order_timing"]
+          total_cents: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      reschedule_order: {
+        Args: {
+          p_actor_type: Database["public"]["Enums"]["status_change_actor_type"]
+          p_new_scheduled_for: string
+          p_order_id: string
+        }
+        Returns: {
+          add_ons_total_cents: number
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          change_for_amount_cents: number | null
+          coupon_code: string | null
+          coupon_discount_cents: number
+          coupon_id: string | null
+          created_at: string
+          customer_id: string | null
+          customer_note: string | null
+          delivery_fee_cents: number
+          delivery_method: Database["public"]["Enums"]["delivery_method"]
+          fulfillment_location_id: string | null
+          guest_name: string | null
+          guest_phone_e164: string | null
+          id: string
+          internal_note: string | null
+          kitchen_printed_at: string | null
+          mp_order_id: string | null
+          mp_payment_id: string | null
+          mp_refund_id: string | null
+          needs_change: boolean | null
+          order_number: number
+          paid_at: string | null
+          payment_fee_cents: number | null
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_net_cents: number | null
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          pix_attempt: number
+          pix_expires_at: string | null
+          pix_qr_code: string | null
+          pix_qr_code_base64: string | null
+          pix_ticket_url: string | null
+          refunded_at: string | null
+          scheduled_for: string | null
+          source_order_id: string | null
+          status: Database["public"]["Enums"]["order_status"]
+          store_id: string | null
           subtotal_cents: number
           timing: Database["public"]["Enums"]["order_timing"]
           total_cents: number
@@ -2499,6 +2757,7 @@ export type Database = {
           scheduled_for: string | null
           source_order_id: string | null
           status: Database["public"]["Enums"]["order_status"]
+          store_id: string | null
           subtotal_cents: number
           timing: Database["public"]["Enums"]["order_timing"]
           total_cents: number
@@ -2557,6 +2816,7 @@ export type Database = {
           scheduled_for: string | null
           source_order_id: string | null
           status: Database["public"]["Enums"]["order_status"]
+          store_id: string | null
           subtotal_cents: number
           timing: Database["public"]["Enums"]["order_timing"]
           total_cents: number

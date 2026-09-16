@@ -7,6 +7,7 @@ import { writeAuditLog } from '@/modules/admin/audit';
 import { requireAdmin } from '@/modules/admin/auth';
 import type { AdminCategory } from '@/modules/admin/types';
 import type { CategorySchedulingInput } from '@/modules/scheduling/category-rules';
+import { requireRequestStoreId } from '@/modules/tenant/resolve-store-id';
 import type { Database } from '@/types/database';
 
 type CategoryRow = Database['public']['Tables']['categories']['Row'];
@@ -115,9 +116,12 @@ export async function createAdminCategory(input: {
 }): Promise<Result<AdminCategory>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const insert: CategoryInsert = {
+    store_id: storeId.data,
     name: input.name.trim(),
     description: input.description?.trim() || null,
     sort_order: input.sortOrder ?? 0,

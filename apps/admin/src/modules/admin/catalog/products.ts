@@ -12,6 +12,7 @@ import {
 } from '@/modules/admin/catalog/product-mappers';
 import { upsertPizzaSizePrices } from '@/modules/admin/catalog/pizza';
 import type { AdminProduct } from '@/modules/admin/types';
+import { requireRequestStoreId } from '@/modules/tenant/resolve-store-id';
 import type { Database } from '@/types/database';
 
 type ProductUpdate = Database['public']['Tables']['products']['Update'];
@@ -97,6 +98,8 @@ export async function createAdminProduct(input: {
 }): Promise<Result<AdminProduct>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const slug = await ensureUniqueSlug(slugify(input.slug || input.name));
@@ -104,6 +107,7 @@ export async function createAdminProduct(input: {
   const { data, error } = await admin
     .from('products')
     .insert({
+      store_id: storeId.data,
       category_id: input.categoryId,
       name: input.name.trim(),
       slug,

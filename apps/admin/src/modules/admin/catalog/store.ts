@@ -6,6 +6,7 @@ import { writeAuditLog } from '@/modules/admin/audit';
 import { requireAdmin } from '@/modules/admin/auth';
 import { getPublicStore } from '@/modules/catalog/catalog-repository';
 import { isCatalogStorePaused } from '@/modules/catalog/store-hours';
+import { getRequestStoreId } from '@/modules/tenant/resolve-store-id';
 import type { CatalogStore } from '@/modules/catalog/types';
 import type { Database } from '@/types/database';
 
@@ -14,7 +15,8 @@ type StoreUpdate = Database['public']['Tables']['stores']['Update'];
 export async function getAdminStore(): Promise<Result<CatalogStore | null>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
-  return getPublicStore();
+  const storeId = await getRequestStoreId();
+  return getPublicStore(storeId);
 }
 
 export async function updateAdminStore(input: {
@@ -39,8 +41,9 @@ export async function updateAdminStore(input: {
 }): Promise<Result<CatalogStore>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await getRequestStoreId();
 
-  const current = await getPublicStore();
+  const current = await getPublicStore(storeId);
   if (!current.ok) return current;
   if (!current.data) return err('NOT_FOUND', 'Loja não encontrada.');
 
@@ -153,7 +156,7 @@ export async function updateAdminStore(input: {
     metadata: patch,
   });
 
-  const refreshed = await getPublicStore();
+  const refreshed = await getPublicStore(storeId);
   if (!refreshed.ok) return refreshed;
   if (!refreshed.data) return err('NOT_FOUND', 'Loja não encontrada.');
   return ok(refreshed.data);
@@ -201,8 +204,9 @@ export async function pauseStore(input: {
 }): Promise<Result<StorePauseState>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await getRequestStoreId();
 
-  const current = await getPublicStore();
+  const current = await getPublicStore(storeId);
   if (!current.ok) return current;
   if (!current.data) return err('NOT_FOUND', 'Loja não encontrada.');
 
@@ -241,7 +245,7 @@ export async function pauseStore(input: {
     metadata: { pausedUntil: until, reason },
   });
 
-  const refreshed = await getPublicStore();
+  const refreshed = await getPublicStore(storeId);
   if (!refreshed.ok) return refreshed;
   if (!refreshed.data) return err('NOT_FOUND', 'Loja não encontrada.');
   return ok(pauseState(refreshed.data));
@@ -250,8 +254,9 @@ export async function pauseStore(input: {
 export async function resumeStore(): Promise<Result<StorePauseState>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await getRequestStoreId();
 
-  const current = await getPublicStore();
+  const current = await getPublicStore(storeId);
   if (!current.ok) return current;
   if (!current.data) return err('NOT_FOUND', 'Loja não encontrada.');
 
@@ -273,7 +278,7 @@ export async function resumeStore(): Promise<Result<StorePauseState>> {
     entityId: current.data.id,
   });
 
-  const refreshed = await getPublicStore();
+  const refreshed = await getPublicStore(storeId);
   if (!refreshed.ok) return refreshed;
   if (!refreshed.data) return err('NOT_FOUND', 'Loja não encontrada.');
   return ok(pauseState(refreshed.data));

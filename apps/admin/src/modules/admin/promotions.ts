@@ -13,6 +13,7 @@ import {
   type PromotionRow,
 } from '@/modules/admin/promotion-rules';
 import type { AdminPromotion } from '@/modules/admin/types';
+import { requireRequestStoreId } from '@/modules/tenant/resolve-store-id';
 import type { Database } from '@/types/database';
 
 type PromotionUpdate = Database['public']['Tables']['promotions']['Update'];
@@ -119,6 +120,8 @@ export async function createAdminPromotion(
 
   const shape = validatePromotionShape(input);
   if (!shape.ok) return shape;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
 
@@ -128,6 +131,7 @@ export async function createAdminPromotion(
   const { data, error } = await admin
     .from('promotions')
     .insert({
+      store_id: storeId.data,
       name: input.name.trim(),
       scope: input.scope,
       discount_percent: input.discountPercent,

@@ -5,6 +5,7 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { writeAuditLog } from '@/modules/admin/audit';
 import { requireAdmin } from '@/modules/admin/auth';
 import type { AdminCoupon, CouponDiscountType } from '@/modules/admin/types';
+import { requireRequestStoreId } from '@/modules/tenant/resolve-store-id';
 import type { Database } from '@/types/database';
 
 type CouponRow = Database['public']['Tables']['coupons']['Row'];
@@ -108,11 +109,14 @@ export async function createAdminCoupon(
 
   const clean = normalize(input);
   if (!clean.ok) return clean;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('coupons')
     .insert({
+      store_id: storeId.data,
       code: clean.data.code,
       discount_type: clean.data.discountType,
       discount_value: clean.data.discountValue,

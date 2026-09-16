@@ -20,16 +20,20 @@ function notConfigured<T>(): Result<T> {
  * simples basta (mesmo padrão de `listActivePromotions` em
  * `catalog-repository.ts`).
  */
-export async function getPublicBanners(): Promise<Result<CatalogBanner[]>> {
+export async function getPublicBanners(
+  storeId?: string,
+): Promise<Result<CatalogBanner[]>> {
   if (!hasSupabasePublicConfig()) return notConfigured();
 
   try {
     const supabase = createPublicSupabaseClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from('promo_banners')
       .select('id, link_href, storage_path')
       .not('storage_path', 'eq', '')
       .order('sort_order', { ascending: true });
+    if (storeId) query = query.eq('store_id', storeId);
+    const { data, error } = await query;
 
     if (error) {
       logger.error('Falha ao ler banners', { message: error.message });

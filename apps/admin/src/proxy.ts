@@ -12,12 +12,15 @@ import {
   reportingEndpointsHeader,
 } from '@/config/security-headers';
 import { supabaseAuthCookieOptions } from '@/lib/supabase/cookie-options';
+import { resolveStoreIdByHostname } from '@/modules/tenant/resolve-store-id';
 
 /**
  * A cada request:
  * 1. Redireciona HTTP→HTTPS em produção.
  * 2. Emite a `Content-Security-Policy` com um `nonce` único.
- * 3. Checagem otimista da sessão — todo o painel é restrito; sem usuário,
+ * 3. Resolve o tenant pelo hostname e propaga `x-store-id` (ADR-0001, Fase B)
+ *    — ainda sem consumidor (Fase C), zero mudança de comportamento hoje.
+ * 4. Checagem otimista da sessão — todo o painel é restrito; sem usuário,
  *    manda para `/login`. A autorização real (perfil admin ativo) continua
  *    no servidor via `requireAdmin()`.
  */
@@ -34,10 +37,12 @@ export default async function proxy(request: NextRequest) {
   const nonce = crypto.randomUUID().replace(/-/g, '');
   const csp = buildContentSecurityPolicy(nonce);
   const reporting = reportingEndpointsHeader();
+  const storeId = await resolveStoreIdByHostname(request.nextUrl.hostname);
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', csp);
+  if (storeId) requestHeaders.set('x-store-id', storeId);
 
   const nextWithHeaders = () =>
     NextResponse.next({ request: { headers: requestHeaders } });

@@ -23,7 +23,8 @@ insert into public.stores (
   free_delivery_radius_meters,
   max_delivery_radius_meters,
   fixed_delivery_fee_cents,
-  timezone
+  timezone,
+  domain
 ) values (
   'a0000000-0000-4000-8000-000000000001',
   'Zelo Confeitaria',
@@ -39,7 +40,11 @@ insert into public.stores (
   1000,
   3000,
   500,
-  'America/Fortaleza'
+  'America/Fortaleza',
+  -- domínio de teste local (não o real de produção) — exercita o caminho de
+  -- match exato do resolver (Fase B) se você apontar esse host pra 127.0.0.1
+  -- no /etc/hosts; acessar por "localhost" continua caindo no fallback.
+  'zelo.local.test'
 );
 
 -- weekday: 0=domingo … 6=sábado
@@ -390,4 +395,36 @@ values (
   'Admin Zelo',
   true
 );
+
+-- White label (ADR-0001, Fase 0'): backfill de store_id em dev local.
+--
+-- Migrations rodam antes deste seed, então a migration de backfill
+-- (20260916190100) não encontra loja e não faz nada. Aqui a loja já existe
+-- (inserida acima), então fechamos a lacuna: tudo que ficou com store_id
+-- nulo — tanto o que este seed acabou de inserir (categories, products,
+-- add_ons, admin_profiles, pizza_flavor_prices, pizza_addons) quanto o que
+-- já vinha de migrations anteriores sem essa coluna (satellite_locations,
+-- pizza_sizes) — recebe o id da loja Zelo local.
+do $$
+declare
+  v_store_id uuid := 'a0000000-0000-4000-8000-000000000001';
+begin
+  update public.categories set store_id = v_store_id where store_id is null;
+  update public.products set store_id = v_store_id where store_id is null;
+  update public.add_ons set store_id = v_store_id where store_id is null;
+  update public.customers set store_id = v_store_id where store_id is null;
+  update public.orders set store_id = v_store_id where store_id is null;
+  update public.carts set store_id = v_store_id where store_id is null;
+  update public.coupons set store_id = v_store_id where store_id is null;
+  update public.promotions set store_id = v_store_id where store_id is null;
+  update public.satellite_locations set store_id = v_store_id where store_id is null;
+  update public.admin_profiles set store_id = v_store_id where store_id is null;
+  update public.push_templates set store_id = v_store_id where store_id is null;
+  update public.promo_banners set store_id = v_store_id where store_id is null;
+  update public.promo_modal_banners set store_id = v_store_id where store_id is null;
+  update public.faq_items set store_id = v_store_id where store_id is null;
+  update public.pizza_sizes set store_id = v_store_id where store_id is null;
+  update public.pizza_flavor_prices set store_id = v_store_id where store_id is null;
+  update public.pizza_addons set store_id = v_store_id where store_id is null;
+end $$;
 

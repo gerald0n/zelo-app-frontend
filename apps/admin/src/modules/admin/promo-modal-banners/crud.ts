@@ -4,6 +4,7 @@ import { err, ok, type Result } from '@/lib/errors';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { writeAuditLog } from '@/modules/admin/audit';
 import { requireAdmin } from '@/modules/admin/auth';
+import { requireRequestStoreId } from '@/modules/tenant/resolve-store-id';
 import {
   PROMO_MODAL_BANNER_SELECT,
   mapPromoModalBanner,
@@ -39,6 +40,8 @@ export async function createPromoModalBanner(input: {
 }): Promise<Result<AdminPromoModalBanner>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
@@ -46,6 +49,7 @@ export async function createPromoModalBanner(input: {
     // Sem as duas imagens ainda: fica inativo pro público até ter ambas
     // (ver getPublicPromoModalBanners, que exige as duas preenchidas).
     .insert({
+      store_id: storeId.data,
       link_href: input.linkHref ?? null,
       sort_order: input.sortOrder ?? 0,
       storage_path_vertical: '',

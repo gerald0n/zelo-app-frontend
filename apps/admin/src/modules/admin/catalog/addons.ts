@@ -5,6 +5,7 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { writeAuditLog } from '@/modules/admin/audit';
 import { requireAdmin } from '@/modules/admin/auth';
 import type { AdminAddon } from '@/modules/admin/types';
+import { requireRequestStoreId } from '@/modules/tenant/resolve-store-id';
 import type { Database } from '@/types/database';
 
 type AddonUpdate = Database['public']['Tables']['add_ons']['Update'];
@@ -49,11 +50,14 @@ export async function createAdminAddon(input: {
 }): Promise<Result<AdminAddon>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('add_ons')
     .insert({
+      store_id: storeId.data,
       name: input.name.trim(),
       description: input.description?.trim() || null,
       price_cents: input.priceCents,

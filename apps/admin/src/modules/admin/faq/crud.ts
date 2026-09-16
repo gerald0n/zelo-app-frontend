@@ -4,6 +4,7 @@ import { err, ok, type Result } from '@/lib/errors';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { writeAuditLog } from '@/modules/admin/audit';
 import { requireAdmin } from '@/modules/admin/auth';
+import { requireRequestStoreId } from '@/modules/tenant/resolve-store-id';
 import {
   FAQ_ITEM_SELECT,
   mapFaqItem,
@@ -38,11 +39,14 @@ export async function createFaqItem(input: {
 }): Promise<Result<AdminFaqItem>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('faq_items')
     .insert({
+      store_id: storeId.data,
       question: input.question,
       answer: input.answer,
       sort_order: input.sortOrder ?? 0,

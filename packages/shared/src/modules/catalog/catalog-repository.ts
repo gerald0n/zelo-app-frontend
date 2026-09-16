@@ -76,19 +76,21 @@ async function listActivePromotions(
   }));
 }
 
-export async function listPublicCategories(): Promise<
-  Result<CatalogCategory[]>
-> {
+export async function listPublicCategories(
+  storeId?: string,
+): Promise<Result<CatalogCategory[]>> {
   if (!hasSupabasePublicConfig()) return notConfigured();
 
   try {
     const supabase = createPublicSupabaseClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from('categories')
       .select('*')
       .eq('is_active', true)
       .is('archived_at', null)
       .order('sort_order', { ascending: true });
+    if (storeId) query = query.eq('store_id', storeId);
+    const { data, error } = await query;
 
     if (error) {
       logger.error('Falha ao ler categorias', { message: error.message });
@@ -105,19 +107,24 @@ export async function listPublicCategories(): Promise<
   }
 }
 
-export async function listPublicProducts(): Promise<Result<CatalogProduct[]>> {
+export async function listPublicProducts(
+  storeId?: string,
+): Promise<Result<CatalogProduct[]>> {
   if (!hasSupabasePublicConfig()) return notConfigured();
 
   try {
     const supabase = createPublicSupabaseClient();
+    let productsQuery = supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .eq('is_active', true)
+      .is('archived_at', null)
+      .is('fulfillment_location_id', null)
+      .order('sort_order', { ascending: true });
+    if (storeId) productsQuery = productsQuery.eq('store_id', storeId);
+
     const [{ data, error }, promotions, ratings] = await Promise.all([
-      supabase
-        .from('products')
-        .select(PRODUCT_SELECT)
-        .eq('is_active', true)
-        .is('archived_at', null)
-        .is('fulfillment_location_id', null)
-        .order('sort_order', { ascending: true }),
+      productsQuery,
       listActivePromotions(supabase),
       listProductRatings(supabase),
     ]);
@@ -150,12 +157,12 @@ export async function listPublicProducts(): Promise<Result<CatalogProduct[]>> {
  * carrinho salvo no servidor e pela revalidação da tela de carrinho, que não
  * sabem em qual "modo" (encomenda/pronta entrega) o item foi adicionado.
  */
-export async function listOrderableProducts(): Promise<
-  Result<CatalogProduct[]>
-> {
+export async function listOrderableProducts(
+  storeId?: string,
+): Promise<Result<CatalogProduct[]>> {
   const [catalog, satellite] = await Promise.all([
-    listPublicProducts(),
-    listAllSatelliteProducts(),
+    listPublicProducts(storeId),
+    listAllSatelliteProducts(storeId),
   ]);
   if (!catalog.ok) return catalog;
   if (!satellite.ok) return satellite;
@@ -164,20 +171,22 @@ export async function listOrderableProducts(): Promise<
 
 export async function getPublicProductBySlugOrId(
   slugOrId: string,
+  storeId?: string,
 ): Promise<Result<CatalogProduct | null>> {
   if (!hasSupabasePublicConfig()) return notConfigured();
 
   try {
     const supabase = createPublicSupabaseClient();
 
-    const bySlug = await supabase
+    let bySlugQuery = supabase
       .from('products')
       .select(PRODUCT_SELECT)
       .eq('slug', slugOrId)
       .eq('is_active', true)
       .is('archived_at', null)
-      .is('fulfillment_location_id', null)
-      .maybeSingle();
+      .is('fulfillment_location_id', null);
+    if (storeId) bySlugQuery = bySlugQuery.eq('store_id', storeId);
+    const bySlug = await bySlugQuery.maybeSingle();
 
     if (bySlug.error) {
       return err(
@@ -201,14 +210,15 @@ export async function getPublicProductBySlugOrId(
       );
     }
 
-    const byId = await supabase
+    let byIdQuery = supabase
       .from('products')
       .select(PRODUCT_SELECT)
       .eq('id', slugOrId)
       .eq('is_active', true)
       .is('archived_at', null)
-      .is('fulfillment_location_id', null)
-      .maybeSingle();
+      .is('fulfillment_location_id', null);
+    if (storeId) byIdQuery = byIdQuery.eq('store_id', storeId);
+    const byId = await byIdQuery.maybeSingle();
 
     if (byId.error) {
       return err(
@@ -233,11 +243,12 @@ export async function getPublicProductBySlugOrId(
 
 export async function searchPublicProducts(
   query: string,
+  storeId?: string,
 ): Promise<Result<CatalogProduct[]>> {
   const trimmed = query.trim();
   if (trimmed.length < 2) return ok([]);
 
-  const catalog = await listPublicProducts();
+  const catalog = await listPublicProducts(storeId);
   if (!catalog.ok) return catalog;
 
   const needle = trimmed.toLowerCase();
@@ -259,7 +270,7 @@ export function filterVisibleCategories(
   return categories.filter((category) => categoryIds.has(category.id));
 }
 
-export async function getPublicCatalog(): Promise<
+export async function getPublicCatalog(storeId?: string): Promise<
   Result<{
     store: CatalogStore | null;
     categories: CatalogCategory[];
@@ -275,11 +286,11 @@ export async function getPublicCatalog(): Promise<
     pizzaSizesResult,
     pizzaAddonsResult,
   ] = await Promise.all([
-    getPublicStore(),
-    listPublicCategories(),
-    listPublicProducts(),
-    listPublicPizzaSizes(),
-    listPublicPizzaAddons(),
+    getPublicStore(storeId),
+    listPublicCategories(storeId),
+    listPublicProducts(storeId),
+    listPublicPizzaSizes(storeId),
+    listPublicPizzaAddons(storeId),
   ]);
 
   if (!storeResult.ok) return storeResult;

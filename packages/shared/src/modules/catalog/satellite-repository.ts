@@ -33,16 +33,19 @@ function notConfigured<T>(): Result<T> {
  */
 export async function getSatelliteLocation(
   slug = 'sao-miguel',
+  storeId?: string,
 ): Promise<Result<SatelliteLocation | null>> {
   if (!hasSupabasePublicConfig()) return notConfigured();
 
   try {
     const supabase = createPublicSupabaseClient();
-    const { data: location, error: locationError } = await supabase
+    let locationQuery = supabase
       .from('satellite_locations')
       .select('*')
-      .eq('slug', slug)
-      .maybeSingle();
+      .eq('slug', slug);
+    if (storeId) locationQuery = locationQuery.eq('store_id', storeId);
+    const { data: location, error: locationError } =
+      await locationQuery.maybeSingle();
 
     if (locationError) {
       logger.error('Falha ao ler local satélite', {
@@ -111,6 +114,7 @@ export async function getSatelliteLocation(
  */
 export async function listSatelliteProducts(
   locationId: string,
+  storeId?: string,
 ): Promise<Result<CatalogProduct[]>> {
   if (!hasSupabasePublicConfig()) return notConfigured();
 
@@ -119,14 +123,17 @@ export async function listSatelliteProducts(
     // Produtos de pronta entrega são um lote curado e à parte — sem
     // promoções do catálogo normal, que valem por categoria/produto de
     // Pereiro.
+    let productsQuery = supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .eq('is_active', true)
+      .is('archived_at', null)
+      .eq('fulfillment_location_id', locationId)
+      .order('sort_order', { ascending: true });
+    if (storeId) productsQuery = productsQuery.eq('store_id', storeId);
+
     const [{ data, error }, ratings] = await Promise.all([
-      supabase
-        .from('products')
-        .select(PRODUCT_SELECT)
-        .eq('is_active', true)
-        .is('archived_at', null)
-        .eq('fulfillment_location_id', locationId)
-        .order('sort_order', { ascending: true }),
+      productsQuery,
       listProductRatings(supabase),
     ]);
 
@@ -159,21 +166,24 @@ export async function listSatelliteProducts(
  * qual local o cliente estava), que senão trataria esses itens como removidos
  * do catálogo por não aparecerem em `listPublicProducts()`.
  */
-export async function listAllSatelliteProducts(): Promise<
-  Result<CatalogProduct[]>
-> {
+export async function listAllSatelliteProducts(
+  storeId?: string,
+): Promise<Result<CatalogProduct[]>> {
   if (!hasSupabasePublicConfig()) return notConfigured();
 
   try {
     const supabase = createPublicSupabaseClient();
+    let productsQuery = supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .eq('is_active', true)
+      .is('archived_at', null)
+      .not('fulfillment_location_id', 'is', null)
+      .order('sort_order', { ascending: true });
+    if (storeId) productsQuery = productsQuery.eq('store_id', storeId);
+
     const [{ data, error }, ratings] = await Promise.all([
-      supabase
-        .from('products')
-        .select(PRODUCT_SELECT)
-        .eq('is_active', true)
-        .is('archived_at', null)
-        .not('fulfillment_location_id', 'is', null)
-        .order('sort_order', { ascending: true }),
+      productsQuery,
       listProductRatings(supabase),
     ]);
 

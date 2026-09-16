@@ -18,15 +18,19 @@ function notConfigured<T>(): Result<T> {
  * `faq_items_public_read` já filtra `is_active` pra `anon`, então um
  * `select` simples basta (mesmo padrão de `getPublicBanners`).
  */
-export async function getPublicFaqItems(): Promise<Result<CatalogFaqItem[]>> {
+export async function getPublicFaqItems(
+  storeId?: string,
+): Promise<Result<CatalogFaqItem[]>> {
   if (!hasSupabasePublicConfig()) return notConfigured();
 
   try {
     const supabase = createPublicSupabaseClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from('faq_items')
       .select('id, question, answer')
       .order('sort_order', { ascending: true });
+    if (storeId) query = query.eq('store_id', storeId);
+    const { data, error } = await query;
 
     if (error) {
       logger.error('Falha ao ler FAQ', { message: error.message });

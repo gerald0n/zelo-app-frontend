@@ -4,6 +4,7 @@ import { err, ok, type Result } from '@/lib/errors';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { writeAuditLog } from '@/modules/admin/audit';
 import { requireAdmin } from '@/modules/admin/auth';
+import { requireRequestStoreId } from '@/modules/tenant/resolve-store-id';
 import {
   BANNER_SELECT,
   mapBanner,
@@ -37,6 +38,8 @@ export async function createBanner(input: {
 }): Promise<Result<AdminBanner>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
@@ -46,6 +49,7 @@ export async function createBanner(input: {
     // Título/subtítulo não são mais configuráveis: a imagem já traz a
     // informação completa do banner.
     .insert({
+      store_id: storeId.data,
       link_href: input.linkHref ?? null,
       sort_order: input.sortOrder ?? 0,
       storage_path: '',

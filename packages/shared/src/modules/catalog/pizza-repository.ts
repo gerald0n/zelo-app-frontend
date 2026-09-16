@@ -14,18 +14,20 @@ function notConfigured<T>(): Result<T> {
   );
 }
 
-export async function listPublicPizzaSizes(): Promise<
-  Result<CatalogPizzaSize[]>
-> {
+export async function listPublicPizzaSizes(
+  storeId?: string,
+): Promise<Result<CatalogPizzaSize[]>> {
   if (!hasSupabasePublicConfig()) return notConfigured();
 
   try {
     const supabase = createPublicSupabaseClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from('pizza_sizes')
       .select('*')
       .eq('is_active', true)
       .order('sort_order', { ascending: true });
+    if (storeId) query = query.eq('store_id', storeId);
+    const { data, error } = await query;
 
     if (error) {
       logger.error('Falha ao ler tamanhos de pizza', {
@@ -46,19 +48,21 @@ export async function listPublicPizzaSizes(): Promise<
   }
 }
 
-export async function listPublicPizzaAddons(): Promise<
-  Result<CatalogPizzaAddon[]>
-> {
+export async function listPublicPizzaAddons(
+  storeId?: string,
+): Promise<Result<CatalogPizzaAddon[]>> {
   if (!hasSupabasePublicConfig()) return notConfigured();
 
   try {
     const supabase = createPublicSupabaseClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from('pizza_addons')
       .select('*')
       .eq('is_active', true)
       .is('archived_at', null)
       .order('sort_order', { ascending: true });
+    if (storeId) query = query.eq('store_id', storeId);
+    const { data, error } = await query;
 
     if (error) {
       logger.error('Falha ao ler adicionais de pizza', {
