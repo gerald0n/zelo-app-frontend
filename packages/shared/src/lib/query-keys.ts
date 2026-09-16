@@ -31,6 +31,9 @@ export const adminKeys = {
   otpSupportRequests: () =>
     [...adminKeys.all, 'otp-support-requests'] as const,
   banners: () => [...adminKeys.all, 'banners'] as const,
+  pushTemplates: () => [...adminKeys.all, 'push-templates'] as const,
+  pushBroadcastRecipients: () =>
+    [...adminKeys.all, 'push-broadcast-recipients'] as const,
 };
 
 export const catalogKeys = {
