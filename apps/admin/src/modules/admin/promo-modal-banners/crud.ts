@@ -34,7 +34,6 @@ export async function listAdminPromoModalBanners(): Promise<
 }
 
 export async function createPromoModalBanner(input: {
-  title: string;
   linkHref?: string | null;
   sortOrder?: number;
 }): Promise<Result<AdminPromoModalBanner>> {
@@ -47,7 +46,6 @@ export async function createPromoModalBanner(input: {
     // Sem as duas imagens ainda: fica inativo pro público até ter ambas
     // (ver getPublicPromoModalBanners, que exige as duas preenchidas).
     .insert({
-      title: input.title,
       link_href: input.linkHref ?? null,
       sort_order: input.sortOrder ?? 0,
       storage_path_vertical: '',
@@ -74,7 +72,7 @@ export async function createPromoModalBanner(input: {
 export async function updatePromoModalBanner(
   id: string,
   patch: {
-    title?: string;
+    title?: string | null;
     linkHref?: string | null;
     sortOrder?: number;
     isActive?: boolean;

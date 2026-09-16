@@ -105,7 +105,7 @@ export type CatalogFaqItem = {
 
 export type CatalogPromoModalBanner = {
   id: string;
-  title: string;
+  title: string | null;
   linkHref: string | null;
   imageUrlVertical: string;
   imageUrlHorizontal: string;

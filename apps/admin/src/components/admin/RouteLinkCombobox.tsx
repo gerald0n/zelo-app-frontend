@@ -11,10 +11,13 @@ import type { CatalogResponse } from '@/app/catalogo/catalog-forms';
 type LinkOption = {
   href: string;
   label: string;
-  group: 'Páginas' | 'Produtos';
+  group: 'Páginas' | 'Categorias' | 'Produtos';
 };
 
-/** Páginas fixas do client que um banner pode apontar. */
+/** Prefixo do query param que filtra o cardápio por categoria (ver `useCategoryQueryFilter`). */
+const CATEGORY_QUERY_PREFIX = '/?categoria=';
+
+/** Páginas fixas do client que um link pode apontar. */
 const STATIC_PAGES: LinkOption[] = [
   { href: '', label: 'Nenhum (sem link)', group: 'Páginas' },
   { href: '/', label: 'Cardápio (início)', group: 'Páginas' },
@@ -34,17 +37,20 @@ function normalize(value: string): string {
 }
 
 /**
- * Select com busca para o link do banner: em vez de input livre, lista as
- * rotas que o client realmente navega (páginas fixas + produtos do
- * catálogo), pra evitar link quebrado por erro de digitação.
+ * Select com busca pra link ao tocar (banner, push notification, etc.): em
+ * vez de input livre, lista as rotas que o client realmente navega (páginas
+ * fixas + produtos do catálogo), pra evitar link quebrado por erro de
+ * digitação.
  */
-export function BannerLinkCombobox({
+export function RouteLinkCombobox({
   value,
   onChange,
+  placeholder = 'Link ao tocar (opcional) — busque uma página, categoria ou produto',
   className,
 }: {
   value: string;
   onChange: (href: string) => void;
+  placeholder?: string;
   className?: string;
 }) {
   const [query, setQuery] = useState('');
@@ -57,6 +63,15 @@ export function BannerLinkCombobox({
   });
 
   const options = useMemo<LinkOption[]>(() => {
+    // Filtra o cardápio pra essa categoria e rola até o início da lista
+    // (ver useCategoryQueryFilter no client).
+    const categories: LinkOption[] = (catalogQuery.data?.categories ?? []).map(
+      (category) => ({
+        href: `${CATEGORY_QUERY_PREFIX}${category.id}`,
+        label: category.name,
+        group: 'Categorias',
+      }),
+    );
     const products: LinkOption[] = (catalogQuery.data?.products ?? []).map(
       (product) => ({
         href: `/produto/${product.id}`,
@@ -64,7 +79,7 @@ export function BannerLinkCombobox({
         group: 'Produtos',
       }),
     );
-    return [...STATIC_PAGES, ...products];
+    return [...STATIC_PAGES, ...categories, ...products];
   }, [catalogQuery.data]);
 
   const filtered = useMemo(() => {
@@ -103,7 +118,7 @@ export function BannerLinkCombobox({
             // Delay pra deixar o clique numa opção registrar antes do fechamento.
             setTimeout(() => setOpen(false), 150);
           }}
-          placeholder="Link ao tocar (opcional) — busque uma página ou produto"
+          placeholder={placeholder}
           className={className}
           autoComplete="off"
         />

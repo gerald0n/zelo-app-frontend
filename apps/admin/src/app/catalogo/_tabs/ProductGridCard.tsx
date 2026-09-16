@@ -177,7 +177,7 @@ export function ProductGridCard({
         </button>
         <label
           className="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent"
-          title="Enviar foto (proporção recomendada: 1:1, quadrada)"
+          title="Proporção recomendada: 1:1"
         >
           <Upload className="size-3" />
           <input

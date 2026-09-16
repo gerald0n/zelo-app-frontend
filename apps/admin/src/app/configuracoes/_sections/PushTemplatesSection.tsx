@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Megaphone, Plus } from 'lucide-react';
 import { apiJson } from '@/lib/api';
@@ -18,6 +19,7 @@ type Recipients = { customers: number; devices: number };
  */
 export function PushTemplatesSection() {
   const queryClient = useQueryClient();
+  const [justCreatedId, setJustCreatedId] = useState<string | null>(null);
 
   const templatesQuery = useQuery({
     queryKey: adminKeys.pushTemplates(),
@@ -35,7 +37,7 @@ export function PushTemplatesSection() {
 
   const createMutation = useMutation({
     mutationFn: () =>
-      apiJson('/api/v1/admin/push-templates', {
+      apiJson<{ template: AdminPushTemplate }>('/api/v1/admin/push-templates', {
         method: 'POST',
         body: JSON.stringify({
           title: 'Novo modelo',
@@ -43,8 +45,10 @@ export function PushTemplatesSection() {
           mode: 'manual',
         }),
       }),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: adminKeys.pushTemplates() }),
+    onSuccess: (result) => {
+      setJustCreatedId(result.template.id);
+      void queryClient.invalidateQueries({ queryKey: adminKeys.pushTemplates() });
+    },
   });
 
   const templates = templatesQuery.data?.templates ?? [];
@@ -87,6 +91,7 @@ export function PushTemplatesSection() {
               key={template.id}
               template={template}
               recipients={recipients}
+              autoSelect={template.id === justCreatedId}
             />
           ))}
         </div>

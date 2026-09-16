@@ -25,7 +25,7 @@ export function PromoModalBannerSection() {
     mutationFn: () =>
       apiJson('/api/v1/admin/promo-modal-banners', {
         method: 'POST',
-        body: JSON.stringify({ title: 'Nova campanha' }),
+        body: JSON.stringify({}),
       }),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: adminKeys.promoModalBanners() }),

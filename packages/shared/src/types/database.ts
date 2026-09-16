@@ -1659,7 +1659,7 @@ export type Database = {
           starts_at: string | null
           storage_path_horizontal: string
           storage_path_vertical: string
-          title: string
+          title: string | null
           updated_at: string
         }
         Insert: {
@@ -1672,7 +1672,7 @@ export type Database = {
           starts_at?: string | null
           storage_path_horizontal?: string
           storage_path_vertical?: string
-          title: string
+          title?: string | null
           updated_at?: string
         }
         Update: {
@@ -1685,7 +1685,7 @@ export type Database = {
           starts_at?: string | null
           storage_path_horizontal?: string
           storage_path_vertical?: string
-          title?: string
+          title?: string | null
           updated_at?: string
         }
         Relationships: []

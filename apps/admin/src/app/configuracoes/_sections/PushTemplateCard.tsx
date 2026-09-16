@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { Loader2, Send, Trash2, X } from 'lucide-react';
+import { RouteLinkCombobox } from '@/components/admin/RouteLinkCombobox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,12 +18,22 @@ const BODY_MAX = 180;
 export function PushTemplateCard({
   template,
   recipients,
+  autoSelect,
 }: {
   template: AdminPushTemplate;
   recipients: { customers: number; devices: number } | null;
+  autoSelect?: boolean;
 }) {
   const card = usePushTemplateCard(template, recipients);
   const { draft } = card;
+  const titleRef = useRef<HTMLInputElement>(null);
+
+  // Modelo recém-criado vem com texto de exemplo pronto pra digitar por cima
+  // (sem precisar selecionar/apagar antes) — a API exige título/mensagem
+  // não vazios, então não dá pra criar em branco.
+  useEffect(() => {
+    if (autoSelect) titleRef.current?.select();
+  }, [autoSelect]);
 
   return (
     <div className="space-y-3 rounded-lg border border-border bg-background p-3">
@@ -72,6 +84,7 @@ export function PushTemplateCard({
           Título ({draft.title.length}/{TITLE_MAX})
         </Label>
         <Input
+          ref={titleRef}
           value={draft.title}
           maxLength={TITLE_MAX}
           onChange={(e) => card.setField('title', e.target.value)}
@@ -94,10 +107,9 @@ export function PushTemplateCard({
         />
       </div>
 
-      <Input
+      <RouteLinkCombobox
         value={draft.url}
-        onChange={(e) => card.setField('url', e.target.value)}
-        placeholder="Link ao tocar (opcional, ex.: /cardapio)"
+        onChange={(href) => card.setField('url', href)}
         className="h-8 text-xs"
       />
 

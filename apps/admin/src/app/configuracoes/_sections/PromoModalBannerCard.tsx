@@ -17,7 +17,7 @@ const HORIZONTAL_ASPECT = 1672 / 941;
 
 export type AdminPromoModalBanner = {
   id: string;
-  title: string;
+  title: string | null;
   linkHref: string | null;
   sortOrder: number;
   isActive: boolean;
@@ -48,7 +48,7 @@ function fromDatetimeLocal(value: string): string | null {
 
 function draftFrom(banner: AdminPromoModalBanner): BannerDraft {
   return {
-    title: banner.title,
+    title: banner.title ?? '',
     linkHref: banner.linkHref ?? '',
     sortOrder: String(banner.sortOrder),
     startsAt: toDatetimeLocal(banner.startsAt),
@@ -59,12 +59,14 @@ function draftFrom(banner: AdminPromoModalBanner): BannerDraft {
 function ImageSlot({
   label,
   aspect,
+  ratioLabel,
   imageUrl,
   pending,
   onFileSelected,
 }: {
   label: string;
   aspect: number;
+  ratioLabel: string;
   imageUrl: string | null;
   pending: boolean;
   onFileSelected: (file: File) => void;
@@ -76,6 +78,7 @@ function ImageSlot({
         pending && 'opacity-60',
       )}
       style={{ aspectRatio: aspect }}
+      title={`Proporção recomendada: ${ratioLabel}`}
     >
       {imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -164,7 +167,7 @@ export function PromoModalBannerCard({
 
   const saveDraft = () => {
     patchMutation.mutate({
-      title: draft.title.trim(),
+      title: draft.title.trim() || null,
       linkHref: draft.linkHref.trim() || null,
       sortOrder: Number(draft.sortOrder) || 0,
       startsAt: fromDatetimeLocal(draft.startsAt),
@@ -176,7 +179,9 @@ export function PromoModalBannerCard({
   const handleDelete = async () => {
     const ok = await confirm({
       title: 'Remover campanha',
-      description: `Remover "${banner.title}" do banner modal?`,
+      description: banner.title
+        ? `Remover "${banner.title}" do banner modal?`
+        : 'Remover este banner modal?',
       confirmLabel: 'Remover',
       tone: 'destructive',
     });
@@ -201,6 +206,7 @@ export function PromoModalBannerCard({
         <ImageSlot
           label="Vertical (mobile)"
           aspect={VERTICAL_ASPECT}
+          ratioLabel="9:16"
           imageUrl={banner.imageUrlVertical}
           pending={uploadMutation.isPending && cropFile?.variant === 'vertical'}
           onFileSelected={(file) => setCropFile({ file, variant: 'vertical' })}
@@ -208,6 +214,7 @@ export function PromoModalBannerCard({
         <ImageSlot
           label="Horizontal (desktop)"
           aspect={HORIZONTAL_ASPECT}
+          ratioLabel="16:9"
           imageUrl={banner.imageUrlHorizontal}
           pending={uploadMutation.isPending && cropFile?.variant === 'horizontal'}
           onFileSelected={(file) => setCropFile({ file, variant: 'horizontal' })}
