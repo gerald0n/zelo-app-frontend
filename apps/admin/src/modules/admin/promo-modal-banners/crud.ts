@@ -19,11 +19,14 @@ export async function listAdminPromoModalBanners(): Promise<
 > {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('promo_modal_banners')
     .select(PROMO_MODAL_BANNER_SELECT)
+    .eq('store_id', storeId.data)
     .order('sort_order', { ascending: true });
 
   if (error) {
@@ -86,6 +89,8 @@ export async function updatePromoModalBanner(
 ): Promise<Result<AdminPromoModalBanner>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const update: PromoModalBannerUpdate = {
@@ -102,6 +107,7 @@ export async function updatePromoModalBanner(
     .from('promo_modal_banners')
     .update(update)
     .eq('id', id)
+    .eq('store_id', storeId.data)
     .select(PROMO_MODAL_BANNER_SELECT)
     .single();
 
@@ -122,12 +128,15 @@ export async function updatePromoModalBanner(
 export async function deletePromoModalBanner(id: string): Promise<Result<true>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data: banner } = await admin
     .from('promo_modal_banners')
     .select('storage_path_vertical, storage_path_horizontal')
     .eq('id', id)
+    .eq('store_id', storeId.data)
     .maybeSingle();
 
   const paths = [
@@ -138,7 +147,11 @@ export async function deletePromoModalBanner(id: string): Promise<Result<true>> 
     await admin.storage.from('banner-images').remove(paths);
   }
 
-  const { error } = await admin.from('promo_modal_banners').delete().eq('id', id);
+  const { error } = await admin
+    .from('promo_modal_banners')
+    .delete()
+    .eq('id', id)
+    .eq('store_id', storeId.data);
   if (error) {
     return err('INTERNAL_ERROR', 'Não foi possível remover o banner.', {
       cause: error,

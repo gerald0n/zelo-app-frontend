@@ -260,14 +260,40 @@ já que RLS ainda não existe:
   inofensivo (não há como um admin de outro tenant ter o id de um produto da
   Zelo pra explorar isso), mas é exatamente o tipo de lacuna que RLS
   resolveria de raiz. Registrado aqui pra não esquecer.
-- **Ainda sem essa mesma passada**: `banners/crud.ts`, `faq/crud.ts`,
-  `promo-modal-banners/crud.ts`, `coupons.ts`, `promotions.ts`,
-  `push-templates/crud.ts` — os `insert` já estão corrigidos (terceira
-  fatia), mas `list`/`update`/`archive` desses módulos ainda não.
+**Sexta fatia, feita e validada — mesma passada nos módulos restantes.**
+Fechando a lista que tinha ficado pendente:
+- `banners/crud.ts` (`listAdminBanners`, `updateBanner`, `deleteBanner`) e
+  `banners/upload.ts` (`uploadBannerImage`) — inclusive o lookup por
+  `bannerId` antes do upload, pra não deixar um admin de outro tenant subir
+  imagem em cima de um banner que não é dele.
+- Mesmo padrão em `promo-modal-banners/crud.ts` e `promo-modal-banners/upload.ts`
+  (as duas variantes de imagem, vertical/horizontal).
+- `faq/crud.ts` (`listAdminFaqItems`, `updateFaqItem`, `deleteFaqItem`).
+- `push-templates/crud.ts` (`listPushTemplates`, `updatePushTemplate`,
+  `cancelScheduledPushTemplate`, `deletePushTemplate`).
+- `coupons.ts` (`listAdminCoupons`, `updateAdminCoupon`, `deleteAdminCoupon`).
+- `promotions.ts` (`listAdminPromotions`, `getAdminPromotion`,
+  `updateAdminPromotion`, `deleteAdminPromotion`) — incluindo
+  `findOverlapConflict`, que antes checava sobreposição de promoções
+  **entre tenants** (uma promoção da Zelo podia bloquear a de outro tenant
+  por "sobreposição" indevida); agora recebe `storeId` e só compara dentro
+  do mesmo tenant.
+- Validado: typecheck de `apps/admin`/`apps/client`/`packages/shared`
+  limpo, `db:reset` local ok.
+- **Gap conhecido, não corrigido**: o código de cupom (`coupons.code`) tem
+  unicidade **global** no banco (`unique constraint`), não por tenant — dois
+  tenants não conseguiriam usar o mesmo código de cupom (ex.: "BEMVINDO10")
+  ao mesmo tempo. Diferente do slug de produto (que era só uma checagem em
+  JS, corrigida nesta fatia), esse é um constraint de banco — mudar exige
+  migration (`unique (store_id, code)` em vez de `unique (code)`), fica pra
+  quando o RLS/Fase C entrar de fato em produção com 2 tenants reais.
+- Mesmo gap da fatia anterior (`product_add_ons`/pizza prices sem verificar
+  posse do produto) também existe aqui em menor grau: `replacePromotionTargets`
+  não verifica se `categoryIds`/`productIds` pertencem ao tenant da
+  promoção — mesma categoria de lacuna, mesma decisão de esperar o RLS.
 
 **Não feito ainda:**
-- A lista de `list`/`update`/`archive` do parágrafo acima
-  (banners/FAQ/cupons/promoções/push).
+- Constraint de unicidade de `coupons.code` por tenant (migration).
 - RLS do Supabase por `store_id` em todas as tabelas de negócio: **ainda não
   desenhado**. Investigado e descartado por ora: usar `x-store-id` (header
   arbitrário) dentro de policy do Postgres exigiria expor `request.headers`

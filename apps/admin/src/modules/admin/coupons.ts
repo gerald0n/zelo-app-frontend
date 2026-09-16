@@ -86,11 +86,14 @@ function normalize(input: CouponInput): Result<CouponInput> {
 export async function listAdminCoupons(): Promise<Result<AdminCoupon[]>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('coupons')
     .select(SELECT)
+    .eq('store_id', storeId.data)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -154,12 +157,15 @@ export async function updateAdminCoupon(options: {
 }): Promise<Result<AdminCoupon>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data: current, error: findError } = await admin
     .from('coupons')
     .select(SELECT)
     .eq('id', options.couponId)
+    .eq('store_id', storeId.data)
     .maybeSingle();
   if (findError) {
     return err('INTERNAL_ERROR', 'Não foi possível carregar o cupom.', {
@@ -208,6 +214,7 @@ export async function updateAdminCoupon(options: {
     .from('coupons')
     .update(patch)
     .eq('id', options.couponId)
+    .eq('store_id', storeId.data)
     .select(SELECT)
     .single();
 
@@ -236,6 +243,8 @@ export async function deleteAdminCoupon(
 ): Promise<Result<true>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   // `orders.coupon_id` é `on delete set null` — o histórico do pedido guarda
@@ -244,6 +253,7 @@ export async function deleteAdminCoupon(
     .from('coupons')
     .delete()
     .eq('id', couponId)
+    .eq('store_id', storeId.data)
     .select('id')
     .maybeSingle();
 

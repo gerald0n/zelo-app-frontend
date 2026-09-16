@@ -20,11 +20,14 @@ export async function listPushTemplates(): Promise<
 > {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('push_templates')
     .select(PUSH_TEMPLATE_SELECT)
+    .eq('store_id', storeId.data)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -112,12 +115,15 @@ export async function updatePushTemplate(
 ): Promise<Result<AdminPushTemplate>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data: existing, error: findError } = await admin
     .from('push_templates')
     .select('mode, status')
     .eq('id', id)
+    .eq('store_id', storeId.data)
     .maybeSingle();
   if (findError) {
     return err('INTERNAL_ERROR', 'Não foi possível localizar o modelo.', {
@@ -155,6 +161,7 @@ export async function updatePushTemplate(
     .from('push_templates')
     .update(update)
     .eq('id', id)
+    .eq('store_id', storeId.data)
     .select(PUSH_TEMPLATE_SELECT)
     .single();
 
@@ -177,6 +184,8 @@ export async function cancelScheduledPushTemplate(
 ): Promise<Result<AdminPushTemplate>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
@@ -187,6 +196,7 @@ export async function cancelScheduledPushTemplate(
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
+    .eq('store_id', storeId.data)
     .eq('status', 'scheduled')
     .select(PUSH_TEMPLATE_SELECT)
     .single();
@@ -210,9 +220,15 @@ export async function cancelScheduledPushTemplate(
 export async function deletePushTemplate(id: string): Promise<Result<true>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
-  const { error } = await admin.from('push_templates').delete().eq('id', id);
+  const { error } = await admin
+    .from('push_templates')
+    .delete()
+    .eq('id', id)
+    .eq('store_id', storeId.data);
   if (error) {
     return err('INTERNAL_ERROR', 'Não foi possível remover o modelo.', {
       cause: error,

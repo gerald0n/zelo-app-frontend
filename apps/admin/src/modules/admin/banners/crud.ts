@@ -17,11 +17,14 @@ export type { AdminBanner };
 export async function listAdminBanners(): Promise<Result<AdminBanner[]>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('promo_banners')
     .select(BANNER_SELECT)
+    .eq('store_id', storeId.data)
     .order('sort_order', { ascending: true });
 
   if (error) {
@@ -84,6 +87,8 @@ export async function updateBanner(
 ): Promise<Result<AdminBanner>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const update: BannerUpdate = { updated_at: new Date().toISOString() };
@@ -97,6 +102,7 @@ export async function updateBanner(
     .from('promo_banners')
     .update(update)
     .eq('id', id)
+    .eq('store_id', storeId.data)
     .select(BANNER_SELECT)
     .single();
 
@@ -117,19 +123,26 @@ export async function updateBanner(
 export async function deleteBanner(id: string): Promise<Result<true>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data: banner } = await admin
     .from('promo_banners')
     .select('storage_path')
     .eq('id', id)
+    .eq('store_id', storeId.data)
     .maybeSingle();
 
   if (banner?.storage_path) {
     await admin.storage.from('banner-images').remove([banner.storage_path]);
   }
 
-  const { error } = await admin.from('promo_banners').delete().eq('id', id);
+  const { error } = await admin
+    .from('promo_banners')
+    .delete()
+    .eq('id', id)
+    .eq('store_id', storeId.data);
   if (error) {
     return err('INTERNAL_ERROR', 'Não foi possível remover o banner.', {
       cause: error,

@@ -5,6 +5,7 @@ import { err, ok, type Result } from '@/lib/errors';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { writeAuditLog } from '@/modules/admin/audit';
 import { requireAdmin } from '@/modules/admin/auth';
+import { requireRequestStoreId } from '@/modules/tenant/resolve-store-id';
 import {
   PROMO_MODAL_BANNER_SELECT,
   mapPromoModalBanner,
@@ -31,6 +32,8 @@ export async function uploadPromoModalBannerImage(options: {
 }): Promise<Result<AdminPromoModalBanner>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const allowed = new Set(['image/jpeg', 'image/png', 'image/webp']);
   if (!allowed.has(options.file.type)) {
@@ -46,6 +49,7 @@ export async function uploadPromoModalBannerImage(options: {
     .from('promo_modal_banners')
     .select(column)
     .eq('id', options.bannerId)
+    .eq('store_id', storeId.data)
     .maybeSingle<Record<string, string>>();
   if (findError) {
     return err('INTERNAL_ERROR', 'Não foi possível localizar o banner.', {
@@ -94,6 +98,7 @@ export async function uploadPromoModalBannerImage(options: {
     .from('promo_modal_banners')
     .update(update)
     .eq('id', options.bannerId)
+    .eq('store_id', storeId.data)
     .select(PROMO_MODAL_BANNER_SELECT)
     .single();
 

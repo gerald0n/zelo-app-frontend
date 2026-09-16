@@ -21,11 +21,14 @@ type PromotionUpdate = Database['public']['Tables']['promotions']['Update'];
 export async function listAdminPromotions(): Promise<Result<AdminPromotion[]>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('promotions')
     .select(PROMOTION_SELECT)
+    .eq('store_id', storeId.data)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -44,6 +47,7 @@ export async function listAdminPromotions(): Promise<Result<AdminPromotion[]>> {
  */
 async function findOverlapConflict(
   admin: ReturnType<typeof createAdminSupabaseClient>,
+  storeId: string,
   input: PromotionInput,
   excludePromotionId?: string,
 ): Promise<Result<true>> {
@@ -52,6 +56,7 @@ async function findOverlapConflict(
   let query = admin
     .from('promotions')
     .select(PROMOTION_SELECT)
+    .eq('store_id', storeId)
     .eq('scope', input.scope)
     .eq('is_active', true);
   if (excludePromotionId) query = query.neq('id', excludePromotionId);
@@ -125,7 +130,7 @@ export async function createAdminPromotion(
 
   const admin = createAdminSupabaseClient();
 
-  const overlap = await findOverlapConflict(admin, input);
+  const overlap = await findOverlapConflict(admin, storeId.data, input);
   if (!overlap.ok) return overlap;
 
   const { data, error } = await admin
@@ -167,12 +172,15 @@ export async function getAdminPromotion(
 ): Promise<Result<AdminPromotion>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('promotions')
     .select(PROMOTION_SELECT)
     .eq('id', promotionId)
+    .eq('store_id', storeId.data)
     .maybeSingle();
 
   if (error) {
@@ -190,6 +198,8 @@ export async function updateAdminPromotion(
 ): Promise<Result<AdminPromotion>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const current = await getAdminPromotion(promotionId);
   if (!current.ok) return current;
@@ -210,7 +220,12 @@ export async function updateAdminPromotion(
 
   const admin = createAdminSupabaseClient();
 
-  const overlap = await findOverlapConflict(admin, merged, promotionId);
+  const overlap = await findOverlapConflict(
+    admin,
+    storeId.data,
+    merged,
+    promotionId,
+  );
   if (!overlap.ok) return overlap;
 
   const patch: PromotionUpdate = {
@@ -225,7 +240,8 @@ export async function updateAdminPromotion(
   const { error } = await admin
     .from('promotions')
     .update(patch)
-    .eq('id', promotionId);
+    .eq('id', promotionId)
+    .eq('store_id', storeId.data);
 
   if (error) {
     return err('INTERNAL_ERROR', 'Não foi possível atualizar a promoção.', {
@@ -252,12 +268,15 @@ export async function deleteAdminPromotion(
 ): Promise<Result<true>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('promotions')
     .delete()
     .eq('id', promotionId)
+    .eq('store_id', storeId.data)
     .select('id')
     .maybeSingle();
 

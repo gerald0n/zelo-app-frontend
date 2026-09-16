@@ -17,11 +17,14 @@ export type { AdminFaqItem };
 export async function listAdminFaqItems(): Promise<Result<AdminFaqItem[]>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin
     .from('faq_items')
     .select(FAQ_ITEM_SELECT)
+    .eq('store_id', storeId.data)
     .order('sort_order', { ascending: true });
 
   if (error) {
@@ -79,6 +82,8 @@ export async function updateFaqItem(
 ): Promise<Result<AdminFaqItem>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
   const update: FaqItemUpdate = { updated_at: new Date().toISOString() };
@@ -91,6 +96,7 @@ export async function updateFaqItem(
     .from('faq_items')
     .update(update)
     .eq('id', id)
+    .eq('store_id', storeId.data)
     .select(FAQ_ITEM_SELECT)
     .single();
 
@@ -111,9 +117,15 @@ export async function updateFaqItem(
 export async function deleteFaqItem(id: string): Promise<Result<true>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
 
   const admin = createAdminSupabaseClient();
-  const { error } = await admin.from('faq_items').delete().eq('id', id);
+  const { error } = await admin
+    .from('faq_items')
+    .delete()
+    .eq('id', id)
+    .eq('store_id', storeId.data);
   if (error) {
     return err('INTERNAL_ERROR', 'Não foi possível remover a pergunta.', {
       cause: error,
