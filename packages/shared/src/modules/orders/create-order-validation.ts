@@ -30,8 +30,9 @@ const MIXED_CART_MESSAGE =
 
 async function validateSatelliteScheduling(
   body: CreateOrderBody,
+  storeId?: string,
 ): Promise<Result<{ scheduledFor: string | null }>> {
-  const locationResult = await getSatelliteLocation();
+  const locationResult = await getSatelliteLocation(undefined, storeId);
   if (!locationResult.ok) return locationResult;
   const location = locationResult.data;
   if (!location || location.id !== body.fulfillmentLocationId) {
@@ -45,8 +46,8 @@ async function validateSatelliteScheduling(
   // São Miguel): cardápio normal — vale o mesmo catálogo de Pereiro, já que
   // dá tempo de preparar qualquer sabor.
   const productsResult = body.prontaEntrega
-    ? await listSatelliteProducts(location.id)
-    : await listPublicProducts();
+    ? await listSatelliteProducts(location.id, storeId)
+    : await listPublicProducts(storeId);
   if (!productsResult.ok) return productsResult;
   const validIds = new Set(productsResult.data.map((product) => product.id));
   const hasInvalidItem = body.items.some(
@@ -99,12 +100,13 @@ async function validateSatelliteScheduling(
 
 export async function validateScheduling(
   body: CreateOrderBody,
+  storeId?: string,
 ): Promise<Result<{ scheduledFor: string | null }>> {
   if (body.fulfillmentLocationId) {
-    return validateSatelliteScheduling(body);
+    return validateSatelliteScheduling(body, storeId);
   }
 
-  const catalogResult = await getPublicCatalog();
+  const catalogResult = await getPublicCatalog(storeId);
   if (!catalogResult.ok) return catalogResult;
   const { store, categories, products } = catalogResult.data;
   if (!store) {
@@ -177,8 +179,9 @@ function isPaymentAccepted(
 
 export async function validatePaymentMethod(
   body: CreateOrderBody,
+  storeId?: string,
 ): Promise<Result<true>> {
-  const storeResult = await getPublicStore();
+  const storeResult = await getPublicStore(storeId);
   if (!storeResult.ok) return storeResult;
   if (!storeResult.data) {
     return err('NOT_FOUND', 'Loja não encontrada.');
@@ -192,7 +195,10 @@ export async function validatePaymentMethod(
   return ok(true);
 }
 
-export async function resolveDeliveryFee(body: CreateOrderBody): Promise<
+export async function resolveDeliveryFee(
+  body: CreateOrderBody,
+  storeId?: string,
+): Promise<
   Result<{
     deliveryFeeCents: number;
     routeDistanceMeters: number | null;
@@ -213,7 +219,7 @@ export async function resolveDeliveryFee(body: CreateOrderBody): Promise<
 
   let origin: CatalogStore | SatelliteLocation;
   if (body.fulfillmentLocationId) {
-    const locationResult = await getSatelliteLocation();
+    const locationResult = await getSatelliteLocation(undefined, storeId);
     if (!locationResult.ok) return locationResult;
     if (
       !locationResult.data ||
@@ -223,7 +229,7 @@ export async function resolveDeliveryFee(body: CreateOrderBody): Promise<
     }
     origin = locationResult.data;
   } else {
-    const storeResult = await getPublicStore();
+    const storeResult = await getPublicStore(storeId);
     if (!storeResult.ok) return storeResult;
     if (!storeResult.data) {
       return err('NOT_FOUND', 'Loja não encontrada.');

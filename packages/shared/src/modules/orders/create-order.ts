@@ -37,6 +37,7 @@ import {
   invokeCreateOrder,
   toRpcPayload,
 } from '@/modules/orders/create-order-rpc';
+import { getRequestStoreId } from '@/modules/tenant/resolve-store-id';
 
 export {
   createOrderBodySchema,
@@ -66,13 +67,15 @@ export async function createOrderFromCheckout(options: {
     return err('VALIDATION_ERROR', 'Informe seu nome para concluir o pedido.');
   }
 
-  const schedule = await validateScheduling(options.body);
+  const storeId = await getRequestStoreId();
+
+  const schedule = await validateScheduling(options.body, storeId);
   if (!schedule.ok) return schedule;
 
-  const payment = await validatePaymentMethod(options.body);
+  const payment = await validatePaymentMethod(options.body, storeId);
   if (!payment.ok) return payment;
 
-  const delivery = await resolveDeliveryFee(options.body);
+  const delivery = await resolveDeliveryFee(options.body, storeId);
   if (!delivery.ok) return delivery;
 
   if (
@@ -193,20 +196,22 @@ export async function previewCheckout(body: CreateOrderBody): Promise<
     storeOpen: boolean;
   }>
 > {
-  const schedule = await validateScheduling(body);
+  const storeId = await getRequestStoreId();
+
+  const schedule = await validateScheduling(body, storeId);
   if (!schedule.ok) return schedule;
 
-  const delivery = await resolveDeliveryFee(body);
+  const delivery = await resolveDeliveryFee(body, storeId);
   if (!delivery.ok) return delivery;
 
   let storeOpen: boolean;
   if (body.fulfillmentLocationId) {
-    const locationResult = await getSatelliteLocation();
+    const locationResult = await getSatelliteLocation(undefined, storeId);
     if (!locationResult.ok) return locationResult;
     if (!locationResult.data) return err('NOT_FOUND', 'Unidade não encontrada.');
     storeOpen = canPlaceImmediateSatelliteOrder(locationResult.data);
   } else {
-    const storeResult = await getPublicStore();
+    const storeResult = await getPublicStore(storeId);
     if (!storeResult.ok) return storeResult;
     if (!storeResult.data) return err('NOT_FOUND', 'Loja não encontrada.');
     storeOpen = canPlaceImmediateOrder(storeResult.data);

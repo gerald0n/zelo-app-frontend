@@ -207,15 +207,42 @@ ser um bug real:
 - Validado: typecheck de `apps/admin`, `apps/client` e `packages/shared`
   limpo.
 
+**Quarta fatia, feita e validada — `create-order`/checkout.** Tratado como
+passada própria, exatamente como o ADR previa: leitura primeiro
+(`create-order.ts`/`create-order-validation.ts` passaram a resolver `storeId`
+do request e propagá-lo pra `validateScheduling`, `validatePaymentMethod`,
+`resolveDeliveryFee`, `getSatelliteLocation`, `getPublicStore`,
+`listPublicProducts`/`listSatelliteProducts` — todas já retrocompatíveis),
+e a função SQL `private.create_order` só por último, com a menor mudança
+possível:
+- Migration nova (`20260916200000_create_order_store_id.sql`, não editei a
+  migration anterior) — cópia exata da versão em produção
+  (`20260916170000_fix_create_order_empty_pizza_addons.sql`) com só 3 linhas
+  novas: declara `v_store_id uuid`, preenche a partir de `v_product.store_id`
+  (já disponível de graça — `v_product` é `%rowtype`, então já reflete a
+  coluna nova sem mudar nenhum `select`) durante o loop de validação que já
+  existia, e adiciona `store_id` no `insert into public.orders`. Nenhuma linha
+  de validação, preço, estoque ou cupom foi alterada.
+- **Não precisou mudar a assinatura da RPC** (`create_order(payload jsonb)`
+  continua igual) — `toRpcPayload`/`invokeCreateOrder` em `create-order-rpc.ts`
+  não foram tocados. O tenant é derivado no banco a partir do produto, não
+  precisa vir no payload da Fase C ainda.
+- **Validado direto no Postgres local**, simulando um cliente autenticado via
+  `set_config('request.jwt.claim.sub', ...)` (mesmo mecanismo que
+  `transition_order_as_customer` já usa pra impersonação): criei um pedido
+  padrão (pickup/cash) e um pedido de pizza com sabor + tamanho — **o mesmo
+  caminho que causou a saída de produção em setembro** — e os dois criaram a
+  ordem normalmente, com `orders.store_id` igual ao `store_id` do produto
+  comprado.
+- Não tocado: os lookups de preço em `previewCheckout` (`admin.from('products')`/
+  `admin.from('add_ons')` por id direto) — ficam sem filtro de `store_id` por
+  ora, risco baixo (só afeta preview, não a ordem real) e fica pra uma
+  passada futura se necessário.
+
 **Não feito ainda:**
-- **`create-order.ts` / `create-order-validation.ts` (fluxo de checkout) —
-  deliberadamente não tocados nesta fatia.** É o mesmo código que já causou uma
-  saída de produção real (14-16/09, bug em `create_order` no construtor de
-  pizza — ver histórico do projeto). Mexer nisso exige uma passada dedicada,
-  com teste de regressão específico, não uma reescrita no mesmo lote de outras
-  mudanças.
-- Admin (`apps/admin/src/modules/admin/catalog/*`) continua sem scoping —
-  painel hoje só existe pra Zelo, então não é urgente, mas fica pendente.
+- Admin (`apps/admin/src/modules/admin/catalog/*`) continua sem scoping nos
+  lookups de leitura por id — painel hoje só existe pra Zelo, então não é
+  urgente, mas fica pendente.
 - RLS do Supabase por `store_id` em todas as tabelas de negócio: **ainda não
   desenhado**. Investigado e descartado por ora: usar `x-store-id` (header
   arbitrário) dentro de policy do Postgres exigiria expor `request.headers`
