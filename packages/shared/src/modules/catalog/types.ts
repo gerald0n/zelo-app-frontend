@@ -98,6 +98,20 @@ export type CatalogBanner = {
   imageUrl: string;
 };
 
+export type CatalogFaqItem = {
+  id: string;
+  question: string;
+  answer: string;
+};
+
+export type CatalogPromoModalBanner = {
+  id: string;
+  title: string;
+  linkHref: string | null;
+  imageUrlVertical: string;
+  imageUrlHorizontal: string;
+};
+
 export type CatalogPaymentMethods = {
   pix: boolean;
   cash: boolean;

@@ -13,12 +13,16 @@ export const CATALOG_CACHE_TAG = 'catalog';
 export const STORE_CACHE_TAG = 'store';
 export const TESTIMONIALS_CACHE_TAG = 'testimonials';
 export const BANNERS_CACHE_TAG = 'banners';
+export const FAQ_CACHE_TAG = 'faq';
+export const PROMO_MODAL_BANNERS_CACHE_TAG = 'promo-modal-banners';
 
 export type CatalogRevalidateTag =
   | typeof CATALOG_CACHE_TAG
   | typeof STORE_CACHE_TAG
   | typeof TESTIMONIALS_CACHE_TAG
-  | typeof BANNERS_CACHE_TAG;
+  | typeof BANNERS_CACHE_TAG
+  | typeof FAQ_CACHE_TAG
+  | typeof PROMO_MODAL_BANNERS_CACHE_TAG;
 
 /** Tags que a rota de revalidação do `apps/client` aceita. */
 export const REVALIDATABLE_CACHE_TAGS: readonly CatalogRevalidateTag[] = [
@@ -26,6 +30,8 @@ export const REVALIDATABLE_CACHE_TAGS: readonly CatalogRevalidateTag[] = [
   STORE_CACHE_TAG,
   TESTIMONIALS_CACHE_TAG,
   BANNERS_CACHE_TAG,
+  FAQ_CACHE_TAG,
+  PROMO_MODAL_BANNERS_CACHE_TAG,
 ];
 
 /** Catálogo/loja mudam pouco; 60 s de defasagem máxima é aceitável. */

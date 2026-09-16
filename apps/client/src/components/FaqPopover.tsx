@@ -2,21 +2,32 @@
 
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { Popover as PopoverPrimitive } from 'radix-ui';
 import { ChevronDown, CircleHelp, MessageCircle, X } from 'lucide-react';
-import { FAQ_ITEMS } from '@/lib/faq-content';
+import { apiJson } from '@/lib/api';
+import { catalogKeys } from '@/lib/query-keys';
+import { FAQ_FALLBACK_ITEMS, type FaqItem } from '@/lib/faq-content';
 import { buildSupportWhatsappLink } from '@/lib/support-whatsapp';
 import { shouldHideCustomerNav } from '@/lib/layout';
 import { cn } from '@/lib/utils';
 
-function FaqAccordionItem({ question, answer }: { question: string; answer: string }) {
-  const [open, setOpen] = useState(false);
-
+function FaqAccordionItem({
+  question,
+  answer,
+  open,
+  onToggle,
+}: {
+  question: string;
+  answer: string;
+  open: boolean;
+  onToggle: () => void;
+}) {
   return (
     <div className="border-b border-border last:border-none">
       <button
         type="button"
-        onClick={() => setOpen((current) => !current)}
+        onClick={onToggle}
         aria-expanded={open}
         className="flex w-full items-center justify-between gap-3 py-3 text-left text-sm font-medium text-foreground"
       >
@@ -40,6 +51,16 @@ export function FaqPopover() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [sendingReport, setSendingReport] = useState(false);
+  // Só uma pergunta aberta por vez — abrir outra fecha a anterior.
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const faqQuery = useQuery({
+    queryKey: catalogKeys.faq(),
+    queryFn: () => apiJson<{ items: FaqItem[] }>('/api/v1/catalog/faq'),
+  });
+  const items = faqQuery.data?.items.length
+    ? faqQuery.data.items
+    : FAQ_FALLBACK_ITEMS;
 
   if (shouldHideCustomerNav(pathname)) {
     return null;
@@ -92,8 +113,16 @@ export function FaqPopover() {
             Perguntas frequentes
           </p>
           <div className="mt-1">
-            {FAQ_ITEMS.map((item) => (
-              <FaqAccordionItem key={item.question} question={item.question} answer={item.answer} />
+            {items.map((item, index) => (
+              <FaqAccordionItem
+                key={item.question}
+                question={item.question}
+                answer={item.answer}
+                open={openIndex === index}
+                onToggle={() =>
+                  setOpenIndex((current) => (current === index ? null : index))
+                }
+              />
             ))}
           </div>
           <button

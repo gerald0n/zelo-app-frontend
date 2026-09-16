@@ -9,7 +9,9 @@ import { BannersSection } from '@/app/configuracoes/_sections/BannersSection';
 import { BlackoutsSection } from '@/app/configuracoes/_sections/BlackoutsSection';
 import { LogoutButton } from '@/app/configuracoes/_sections/LogoutButton';
 import { BusinessHoursForm } from '@/app/configuracoes/_sections/BusinessHoursForm';
+import { FaqSection } from '@/app/configuracoes/_sections/FaqSection';
 import { PrinterSection } from '@/app/configuracoes/_sections/PrinterSection';
+import { PromoModalBannerSection } from '@/app/configuracoes/_sections/PromoModalBannerSection';
 import { PushBroadcastSection } from '@/app/configuracoes/_sections/PushBroadcastSection';
 import { PushSection } from '@/app/configuracoes/_sections/PushSection';
 import { SatelliteLocationSection } from '@/app/configuracoes/_sections/SatelliteLocationSection';
@@ -118,6 +120,8 @@ export default function AdminConfiguracoesPage() {
       {tab === 'marketing' ? (
         <div className="space-y-4">
           <BannersSection />
+          <PromoModalBannerSection />
+          <FaqSection />
           <PushBroadcastSection />
         </div>
       ) : null}

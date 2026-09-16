@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import Image from 'next/image';
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { X } from 'lucide-react';
+import { apiJson } from '@/lib/api';
+import { catalogKeys } from '@/lib/query-keys';
 import {
   isPromoBannerBlockedPath,
   markPromoBannerShown,
@@ -12,29 +14,72 @@ import {
   wasPromoBannerShownThisSession,
 } from '@/lib/promo-banner';
 
-const BANNER_ALT = 'Esfirras disponíveis no nosso cardápio';
+const FALLBACK_ALT = 'Esfirras disponíveis no nosso cardápio';
+/**
+ * Campanha padrão (fallback) — mesma arte de antes de virar configurável em
+ * Configurações → Marketing, usada só quando não há campanha ativa dentro
+ * da vigência (mesmo padrão de `FALLBACK_SLIDES` em `MenuHeroCarousel.tsx`).
+ */
+const FALLBACK_BANNER = {
+  alt: FALLBACK_ALT,
+  linkHref: PROMO_BANNER_CATEGORY_HREF,
+  imageUrlVertical: '/promo/banner-vertical.png',
+  imageUrlHorizontal: '/promo/banner-horizontal.png',
+};
+
+type PromoModalBanner = {
+  id: string;
+  title: string;
+  linkHref: string | null;
+  imageUrlVertical: string;
+  imageUrlHorizontal: string;
+};
 
 /**
- * Banner promocional fixo (hardcoded), exibido uma vez por sessão ao abrir
- * o app — arte horizontal no desktop, vertical no mobile via CSS.
+ * Banner modal de campanha, exibido uma vez por sessão ao abrir o app —
+ * arte horizontal no desktop, vertical no mobile via CSS. Conteúdo vem de
+ * Configurações → Marketing; sem campanha ativa, cai no banner padrão.
  */
 export function PromoBannerModal() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
+  const bannerQuery = useQuery({
+    queryKey: catalogKeys.promoModalBanners(),
+    queryFn: () =>
+      apiJson<{ banners: PromoModalBanner[] }>(
+        '/api/v1/catalog/promo-modal-banners',
+      ),
+  });
+  const active = bannerQuery.data?.banners[0];
+  const banner = active
+    ? {
+        alt: active.title,
+        linkHref: active.linkHref,
+        imageUrlVertical: active.imageUrlVertical,
+        imageUrlHorizontal: active.imageUrlHorizontal,
+      }
+    : FALLBACK_BANNER;
+
   useEffect(() => {
     if (isPromoBannerBlockedPath(pathname)) return;
     if (wasPromoBannerShownThisSession()) return;
+    // Espera a query resolver (sucesso ou erro) pra decidir entre a
+    // campanha configurada e o fallback, evitando abrir com o fallback e
+    // trocar de imagem no meio da exibição.
+    if (bannerQuery.isLoading) return;
 
     markPromoBannerShown();
     // Abre ao montar (1x por sessão) — não sincroniza com nada externo.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpen(true);
-  }, [pathname]);
+  }, [pathname, bannerQuery.isLoading]);
 
   if (!open) return null;
 
   const close = () => setOpen(false);
+
+  const bannerLink = banner.linkHref;
 
   return (
     <div
@@ -50,7 +95,7 @@ export function PromoBannerModal() {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={BANNER_ALT}
+        aria-label={banner.alt}
         className="relative z-10 w-full max-w-[280px] overflow-hidden rounded-2xl bg-card shadow-2xl sm:max-w-2xl"
       >
         <button
@@ -62,24 +107,31 @@ export function PromoBannerModal() {
           <X className="size-[18px]" />
         </button>
 
-        <Link href={PROMO_BANNER_CATEGORY_HREF} onClick={close} className="block">
-          <Image
-            src="/promo/banner-vertical.png"
-            alt={BANNER_ALT}
-            width={941}
-            height={1672}
-            className="block w-full sm:hidden"
-            priority
-          />
-          <Image
-            src="/promo/banner-horizontal.png"
-            alt={BANNER_ALT}
-            width={1672}
-            height={941}
-            className="hidden w-full sm:block"
-            priority
-          />
-        </Link>
+        {(() => {
+          const images = (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={banner.imageUrlVertical}
+                alt={banner.alt}
+                className="block w-full sm:hidden"
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={banner.imageUrlHorizontal}
+                alt={banner.alt}
+                className="hidden w-full sm:block"
+              />
+            </>
+          );
+          return bannerLink ? (
+            <Link href={bannerLink} onClick={close} className="block">
+              {images}
+            </Link>
+          ) : (
+            <div className="block">{images}</div>
+          );
+        })()}
       </div>
     </div>
   );

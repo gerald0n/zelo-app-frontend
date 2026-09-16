@@ -3,8 +3,12 @@ export type FaqItem = {
   answer: string;
 };
 
-/** Conteúdo do popover de ajuda — editável sem tocar no componente. */
-export const FAQ_ITEMS: FaqItem[] = [
+/**
+ * Fallback estático do popover de ajuda — usado só quando não há pergunta
+ * ativa cadastrada em Configurações → Marketing (mesmo padrão de
+ * `FALLBACK_SLIDES` em `MenuHeroCarousel.tsx`).
+ */
+export const FAQ_FALLBACK_ITEMS: FaqItem[] = [
   {
     question: 'Quais formas de pagamento vocês aceitam?',
     answer:
