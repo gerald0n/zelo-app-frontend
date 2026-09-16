@@ -9,7 +9,6 @@ import {
 export const dynamic = 'force-dynamic';
 
 const createSchema = z.object({
-  title: z.string().trim().min(1).max(120),
   linkHref: z.string().trim().max(500).nullable().optional(),
   sortOrder: z.number().int().min(0).optional(),
 });

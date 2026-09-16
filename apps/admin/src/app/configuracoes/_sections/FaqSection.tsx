@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { HelpCircle, Loader2, Plus, Trash2 } from 'lucide-react';
 import { useAppDialog } from '@/contexts/AppDialogContext';
@@ -31,11 +31,25 @@ function draftFrom(item: AdminFaqItem): FaqDraft {
   };
 }
 
-function FaqItemCard({ item }: { item: AdminFaqItem }) {
+function FaqItemCard({
+  item,
+  autoSelect,
+}: {
+  item: AdminFaqItem;
+  autoSelect?: boolean;
+}) {
   const queryClient = useQueryClient();
   const { confirm } = useAppDialog();
   const [draft, setDraft] = useState<FaqDraft>(() => draftFrom(item));
   const [dirty, setDirty] = useState(false);
+  const questionRef = useRef<HTMLInputElement>(null);
+
+  // Item recém-criado vem com texto de exemplo pronto pra digitar por cima
+  // (sem precisar selecionar/apagar antes) — a API exige pergunta/resposta
+  // não vazias, então não dá pra criar em branco.
+  useEffect(() => {
+    if (autoSelect) questionRef.current?.select();
+  }, [autoSelect]);
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: adminKeys.faq() });
@@ -81,6 +95,7 @@ function FaqItemCard({ item }: { item: AdminFaqItem }) {
     <div className="space-y-2.5 rounded-lg border border-border bg-background p-3">
       <div className="space-y-2">
         <Input
+          ref={questionRef}
           value={draft.question}
           onChange={(e) => {
             setDraft((d) => ({ ...d, question: e.target.value }));
@@ -156,6 +171,7 @@ function FaqItemCard({ item }: { item: AdminFaqItem }) {
 /** Perguntas frequentes do popover de ajuda do client. */
 export function FaqSection() {
   const queryClient = useQueryClient();
+  const [justCreatedId, setJustCreatedId] = useState<string | null>(null);
 
   const query = useQuery({
     queryKey: adminKeys.faq(),
@@ -164,15 +180,17 @@ export function FaqSection() {
 
   const createMutation = useMutation({
     mutationFn: () =>
-      apiJson('/api/v1/admin/faq', {
+      apiJson<{ item: AdminFaqItem }>('/api/v1/admin/faq', {
         method: 'POST',
         body: JSON.stringify({
           question: 'Nova pergunta',
           answer: 'Resposta...',
         }),
       }),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: adminKeys.faq() }),
+    onSuccess: (result) => {
+      setJustCreatedId(result.item.id);
+      void queryClient.invalidateQueries({ queryKey: adminKeys.faq() });
+    },
   });
 
   const items = query.data?.items ?? [];
@@ -197,7 +215,11 @@ export function FaqSection() {
       ) : (
         <div className="space-y-2.5">
           {items.map((item) => (
-            <FaqItemCard key={item.id} item={item} />
+            <FaqItemCard
+              key={item.id}
+              item={item}
+              autoSelect={item.id === justCreatedId}
+            />
           ))}
         </div>
       )}

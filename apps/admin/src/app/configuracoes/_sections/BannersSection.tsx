@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { GalleryHorizontal, Loader2, Plus, Trash2, Upload } from 'lucide-react';
 import { useAppDialog } from '@/contexts/AppDialogContext';
-import { BannerLinkCombobox } from '@/components/admin/BannerLinkCombobox';
+import { RouteLinkCombobox } from '@/components/admin/RouteLinkCombobox';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -108,7 +108,7 @@ function BannerCard({ banner }: { banner: AdminBanner }) {
             'relative flex h-20 w-32 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md border border-dashed border-border bg-muted/40 text-muted-foreground',
             uploadMutation.isPending && 'opacity-60',
           )}
-          title="Enviar imagem (16:9 — aparece recortada para 9:16 no celular)"
+          title="Proporção recomendada: 16:9"
         >
           {banner.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -147,7 +147,7 @@ function BannerCard({ banner }: { banner: AdminBanner }) {
         />
 
         <div className="min-w-0 flex-1 space-y-2">
-          <BannerLinkCombobox
+          <RouteLinkCombobox
             value={draft.linkHref}
             onChange={(href) => {
               setDraft((d) => ({ ...d, linkHref: href }));
@@ -156,10 +156,7 @@ function BannerCard({ banner }: { banner: AdminBanner }) {
             className="h-8 text-xs"
           />
           <p className="text-2xs text-muted-foreground">
-            A imagem já deve trazer o texto do banner — aqui só configura
-            para onde ele leva ao ser tocado. Envie em 16:9: no celular ela
-            aparece recortada para 9:16 (mantenha o conteúdo importante
-            centralizado).
+            Proporção recomendada: 16:9.
           </p>
         </div>
       </div>

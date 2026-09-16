@@ -23,7 +23,7 @@ import type { PublicTestimonial } from '@/modules/reviews/types';
 import { useCart } from '@/contexts/CartContext';
 import { useShopExperience } from '@/contexts/ShopExperienceContext';
 import { cn } from '@/lib/utils';
-import { usePromoBannerCategoryFilter } from '@/hooks/usePromoBannerCategoryFilter';
+import { useCategoryQueryFilter } from '@/hooks/useCategoryQueryFilter';
 
 type Filter = 'Todos' | string;
 
@@ -76,7 +76,7 @@ export default function HomeCatalog({
     [products],
   );
   const { addItem, items } = useCart();
-  usePromoBannerCategoryFilter(categories, setActive);
+  useCategoryQueryFilter(categories, setActive);
   const { notify } = useShopExperience();
   const quantityByProduct = useMemo(() => {
     const quantities = new Map<string, number>();
@@ -216,7 +216,7 @@ export default function HomeCatalog({
         <section className="px-4 pt-2 pb-6" aria-labelledby="menu-heading">
           <h3
             id="menu-heading"
-            className="font-serif text-lg font-semibold text-foreground"
+            className="scroll-mt-24 font-serif text-lg font-semibold text-foreground lg:scroll-mt-6"
           >
             {active === 'Todos'
               ? 'Cardápio'

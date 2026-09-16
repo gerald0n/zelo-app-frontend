@@ -6,7 +6,7 @@ export type PromoModalBannerUpdate =
 
 export type AdminPromoModalBanner = {
   id: string;
-  title: string;
+  title: string | null;
   linkHref: string | null;
   sortOrder: number;
   isActive: boolean;
@@ -20,7 +20,7 @@ export type AdminPromoModalBanner = {
 
 export type PromoModalBannerRow = {
   id: string;
-  title: string;
+  title: string | null;
   link_href: string | null;
   sort_order: number;
   is_active: boolean;

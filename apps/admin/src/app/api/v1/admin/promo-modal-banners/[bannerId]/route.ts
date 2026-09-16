@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 type RouteContext = { params: Promise<{ bannerId: string }> };
 
 const patchSchema = z.object({
-  title: z.string().trim().min(1).max(120).optional(),
+  title: z.string().trim().max(120).nullable().optional(),
   linkHref: z.string().trim().max(500).nullable().optional(),
   sortOrder: z.number().int().min(0).optional(),
   isActive: z.boolean().optional(),

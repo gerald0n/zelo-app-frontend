@@ -29,7 +29,7 @@ const FALLBACK_BANNER = {
 
 type PromoModalBanner = {
   id: string;
-  title: string;
+  title: string | null;
   linkHref: string | null;
   imageUrlVertical: string;
   imageUrlHorizontal: string;
@@ -54,7 +54,7 @@ export function PromoBannerModal() {
   const active = bannerQuery.data?.banners[0];
   const banner = active
     ? {
-        alt: active.title,
+        alt: active.title ?? FALLBACK_ALT,
         linkHref: active.linkHref,
         imageUrlVertical: active.imageUrlVertical,
         imageUrlHorizontal: active.imageUrlHorizontal,
@@ -74,6 +74,16 @@ export function PromoBannerModal() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpen(true);
   }, [pathname, bannerQuery.isLoading]);
+
+  // Trava o scroll da página por trás enquanto o modal estiver aberto.
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
 
   if (!open) return null;
 
@@ -96,7 +106,7 @@ export function PromoBannerModal() {
         role="dialog"
         aria-modal="true"
         aria-label={banner.alt}
-        className="relative z-10 w-full max-w-[280px] overflow-hidden rounded-2xl bg-card shadow-2xl sm:max-w-2xl"
+        className="relative z-10 w-[88vw] max-w-[380px] overflow-hidden rounded-2xl bg-card shadow-2xl sm:w-full sm:max-w-2xl"
       >
         <button
           type="button"
