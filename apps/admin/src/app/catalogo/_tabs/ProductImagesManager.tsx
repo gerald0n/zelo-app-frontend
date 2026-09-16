@@ -72,6 +72,11 @@ export function ProductImagesManager({
         </label>
       </div>
 
+      <p className="text-2xs text-muted-foreground">
+        Proporção recomendada: 1:1 (quadrada) — evita cortes na hora do
+        recorte.
+      </p>
+
       {images.length === 0 ? (
         <p className="rounded-md border border-dashed border-border py-6 text-center text-2xs text-muted-foreground">
           Nenhuma foto ainda.

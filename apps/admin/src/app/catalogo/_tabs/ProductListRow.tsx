@@ -102,7 +102,10 @@ export function ProductListRow({
           ) : null}
         </p>
       </div>
-      <label className="cursor-pointer rounded-md border border-border p-1.5 text-muted-foreground">
+      <label
+        className="cursor-pointer rounded-md border border-border p-1.5 text-muted-foreground"
+        title="Enviar foto (proporção recomendada: 1:1, quadrada)"
+      >
         <Upload className="size-3.5" />
         <input
           type="file"

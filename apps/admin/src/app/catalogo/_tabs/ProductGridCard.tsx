@@ -175,7 +175,10 @@ export function ProductGridCard({
           <Pencil className="size-3" />
           Editar
         </button>
-        <label className="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent">
+        <label
+          className="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent"
+          title="Enviar foto (proporção recomendada: 1:1, quadrada)"
+        >
           <Upload className="size-3" />
           <input
             type="file"
