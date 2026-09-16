@@ -32,8 +32,6 @@ export async function listAdminBanners(): Promise<Result<AdminBanner[]>> {
 }
 
 export async function createBanner(input: {
-  title: string;
-  subtitle?: string | null;
   linkHref?: string | null;
   sortOrder?: number;
 }): Promise<Result<AdminBanner>> {
@@ -45,9 +43,9 @@ export async function createBanner(input: {
     .from('promo_banners')
     // Sem imagem ainda: `storage_path` vazio até o primeiro upload; banner
     // fica inativo pro público até ter imagem (ver createBanner + is_active).
+    // Título/subtítulo não são mais configuráveis: a imagem já traz a
+    // informação completa do banner.
     .insert({
-      title: input.title,
-      subtitle: input.subtitle ?? null,
       link_href: input.linkHref ?? null,
       sort_order: input.sortOrder ?? 0,
       storage_path: '',
@@ -73,8 +71,6 @@ export async function createBanner(input: {
 export async function updateBanner(
   id: string,
   patch: {
-    title?: string;
-    subtitle?: string | null;
     linkHref?: string | null;
     sortOrder?: number;
     isActive?: boolean;
@@ -87,8 +83,6 @@ export async function updateBanner(
 
   const admin = createAdminSupabaseClient();
   const update: BannerUpdate = { updated_at: new Date().toISOString() };
-  if (patch.title !== undefined) update.title = patch.title;
-  if (patch.subtitle !== undefined) update.subtitle = patch.subtitle;
   if (patch.linkHref !== undefined) update.link_href = patch.linkHref;
   if (patch.sortOrder !== undefined) update.sort_order = patch.sortOrder;
   if (patch.isActive !== undefined) update.is_active = patch.isActive;

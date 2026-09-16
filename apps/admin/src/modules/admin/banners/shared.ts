@@ -5,7 +5,7 @@ export type BannerUpdate = Database['public']['Tables']['promo_banners']['Update
 
 export type AdminBanner = {
   id: string;
-  title: string;
+  title: string | null;
   subtitle: string | null;
   linkHref: string | null;
   sortOrder: number;
@@ -18,7 +18,7 @@ export type AdminBanner = {
 
 export type BannerRow = {
   id: string;
-  title: string;
+  title: string | null;
   subtitle: string | null;
   link_href: string | null;
   sort_order: number;

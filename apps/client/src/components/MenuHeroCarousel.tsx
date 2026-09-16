@@ -10,7 +10,7 @@ const AUTO_MS = 4000;
 type Slide = {
   id: string;
   eyebrow?: string;
-  title: string;
+  title?: string;
   subtitle?: string;
   imageUrl?: string;
   linkHref?: string | null;
@@ -35,11 +35,11 @@ const FALLBACK_SLIDES: Slide[] = [
   },
 ];
 
+/** Banner cadastrado no admin: só imagem + link, sem texto sobreposto — a
+ * imagem já deve trazer toda a informação. */
 function bannersToSlides(banners: CatalogBanner[]): Slide[] {
   return banners.map((banner) => ({
     id: banner.id,
-    title: banner.title,
-    subtitle: banner.subtitle ?? undefined,
     imageUrl: banner.imageUrl,
     linkHref: banner.linkHref,
   }));
@@ -148,20 +148,16 @@ export default function MenuHeroCarousel({
                     />
                   </>
                 )}
-                {slide.imageUrl ? (
-                  <div
-                    aria-hidden="true"
-                    className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent"
-                  />
-                ) : null}
                 {slide.eyebrow ? (
                   <p className="relative text-2xs font-semibold uppercase tracking-[0.18em] text-primary-foreground/70">
                     {slide.eyebrow}
                   </p>
                 ) : null}
-                <h2 className="relative mt-2 max-w-[16ch] text-balance font-serif text-2xl font-semibold leading-tight text-primary-foreground">
-                  {slide.title}
-                </h2>
+                {slide.title ? (
+                  <h2 className="relative mt-2 max-w-[16ch] text-balance font-serif text-2xl font-semibold leading-tight text-primary-foreground">
+                    {slide.title}
+                  </h2>
+                ) : null}
                 {slide.subtitle ? (
                   <p className="relative mt-1 max-w-[28ch] text-sm text-primary-foreground/85">
                     {slide.subtitle}
@@ -171,8 +167,14 @@ export default function MenuHeroCarousel({
             );
 
             const className = cn(
-              'relative min-w-full shrink-0 snap-center overflow-hidden bg-primary px-4 pb-10 pt-5 lg:min-h-[420px] lg:px-8 lg:pb-14 lg:pt-8',
-              !slide.imageUrl && 'text-primary-foreground',
+              'relative min-w-full shrink-0 snap-center overflow-hidden bg-primary',
+              slide.imageUrl
+                ? // Banner cadastrado: imagem já traz a informação, sem texto
+                  // por cima — cada tela mostra um recorte central diferente
+                  // da mesma imagem via object-cover (9:16 no mobile, 16:9
+                  // no desktop, sem precisar de dois uploads).
+                  'aspect-[9/16] lg:aspect-[16/9]'
+                : 'px-4 pb-10 pt-5 text-primary-foreground lg:min-h-[420px] lg:px-8 lg:pb-14 lg:pt-8',
             );
 
             return slide.linkHref ? (

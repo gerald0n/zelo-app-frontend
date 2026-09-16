@@ -1617,7 +1617,7 @@ export type Database = {
           starts_at: string | null
           storage_path: string
           subtitle: string | null
-          title: string
+          title: string | null
           updated_at: string
         }
         Insert: {
@@ -1630,7 +1630,7 @@ export type Database = {
           starts_at?: string | null
           storage_path: string
           subtitle?: string | null
-          title: string
+          title?: string | null
           updated_at?: string
         }
         Update: {
