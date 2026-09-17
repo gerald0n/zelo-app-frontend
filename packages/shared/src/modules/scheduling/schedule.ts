@@ -181,11 +181,19 @@ export function canPlaceImmediateOrder(
   return true;
 }
 
+/** Um "grupo de agendamento" do carrinho — categorias que compartilham a mesma regra. */
+export type CartSchedulingGroup = {
+  rule: CategorySchedulingRule;
+  categoryNames: string[];
+};
+
 export type CartSchedulingResolution = {
   /** Regra efetiva do pedido (quando não está bloqueado). */
   rule: CategorySchedulingRule;
   /** `true` quando o carrinho mistura categorias com regras diferentes. */
   mixed: boolean;
+  /** Um grupo por regra distinta presente no carrinho. */
+  groups: CartSchedulingGroup[];
 };
 
 /**
@@ -193,31 +201,60 @@ export type CartSchedulingResolution = {
  * produtos. Carrinho com mais de um "grupo de agendamento" → `mixed`.
  */
 export function resolveCartSchedulingRule(
-  categories: Array<{ id: string; scheduling: CategorySchedulingRule }>,
+  categories: Array<{ id: string; name: string; scheduling: CategorySchedulingRule }>,
   products: Array<{ id: string; categoryId: string }>,
   productIds: string[],
 ): CartSchedulingResolution {
-  const ruleByCategory = new Map(
-    categories.map((category) => [category.id, category.scheduling]),
+  const categoryById = new Map(
+    categories.map((category) => [category.id, category]),
   );
   const categoryByProduct = new Map(
     products.map((product) => [product.id, product.categoryId]),
   );
 
-  const bySignature = new Map<string, CategorySchedulingRule>();
+  const bySignature = new Map<
+    string,
+    { rule: CategorySchedulingRule; categoryNames: Set<string> }
+  >();
   for (const productId of productIds) {
     const categoryId = categoryByProduct.get(productId);
-    const rule =
-      (categoryId ? ruleByCategory.get(categoryId) : undefined) ??
-      DEFAULT_CATEGORY_SCHEDULING_RULE;
-    bySignature.set(schedulingRuleSignature(rule), rule);
+    const category = categoryId ? categoryById.get(categoryId) : undefined;
+    const rule = category?.scheduling ?? DEFAULT_CATEGORY_SCHEDULING_RULE;
+    const signature = schedulingRuleSignature(rule);
+    const entry = bySignature.get(signature) ?? {
+      rule,
+      categoryNames: new Set<string>(),
+    };
+    if (category) entry.categoryNames.add(category.name);
+    bySignature.set(signature, entry);
   }
 
-  const rules = [...bySignature.values()];
-  if (rules.length === 0) {
-    return { rule: DEFAULT_CATEGORY_SCHEDULING_RULE, mixed: false };
+  const groups: CartSchedulingGroup[] = [...bySignature.values()].map(
+    (entry) => ({ rule: entry.rule, categoryNames: [...entry.categoryNames] }),
+  );
+
+  if (groups.length === 0) {
+    return { rule: DEFAULT_CATEGORY_SCHEDULING_RULE, mixed: false, groups: [] };
   }
-  return { rule: rules[0], mixed: rules.length > 1 };
+  return { rule: groups[0].rule, mixed: groups.length > 1, groups };
+}
+
+/**
+ * Primeira data com horário disponível para um grupo de agendamento — usada
+ * para explicar ao cliente, categoria a categoria, por que o carrinho misto
+ * não pode seguir (ex.: "cookies" hoje, "esfirras" só amanhã).
+ */
+export function firstAvailableDateForGroup(
+  store: CatalogStore,
+  group: CartSchedulingGroup,
+  now: Date = new Date(),
+): string | null {
+  const [firstDate] = listAvailableScheduleDates(store, {
+    count: 1,
+    rule: group.rule,
+    now,
+  });
+  return firstDate ?? null;
 }
 
 export function buildSchedulingSnapshot(

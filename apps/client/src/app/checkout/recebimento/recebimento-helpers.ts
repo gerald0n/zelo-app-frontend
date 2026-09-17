@@ -22,11 +22,19 @@ export type CheckoutOptions = {
     allowSameDay: boolean;
     /** Carrinho mistura categorias com regras de agendamento diferentes. */
     mixedCart: boolean;
+    /** Um grupo por regra distinta no carrinho — só preenchido quando `mixedCart`. */
+    mixedGroups: MixedCartGroup[];
     /** Rótulo curto de funcionamento (ex.: "Hoje 19:00", "Amanhã 08:00"). */
     hoursLabel: string;
     availableDates: string[];
     timesByDate: Record<string, { delivery: string[]; pickup: string[] }>;
   };
+};
+
+/** Categorias que compartilham a mesma regra de agendamento + sua primeira data livre. */
+export type MixedCartGroup = {
+  categoryNames: string[];
+  firstAvailableDate: string | null;
 };
 
 /**
@@ -61,6 +69,7 @@ export type SatelliteCheckoutOptions = {
     storeOpen: boolean;
     allowSameDay: boolean;
     mixedCart: boolean;
+    mixedGroups: MixedCartGroup[];
     availableDates: string[];
     pickupWindowByDate: Record<string, { opensAt: string; closesAt: string }>;
     deliverySlotsByDate: Record<string, SatelliteDeliverySlotOption[]>;
@@ -101,6 +110,42 @@ export function relativeDayLabel(iso: string): string | null {
   if (diffDays === 0) return 'Hoje';
   if (diffDays === 1) return 'Amanhã';
   return null;
+}
+
+function joinCategoryNames(names: string[]): string {
+  if (names.length === 0) return 'alguns itens';
+  const lower = names.map((name) => name.toLowerCase());
+  if (lower.length === 1) return lower[0];
+  return `${lower.slice(0, -1).join(', ')} e ${lower[lower.length - 1]}`;
+}
+
+/**
+ * Explica, categoria a categoria, por que um carrinho misto não pode seguir
+ * (ex.: "Há disponibilidade de cookies para hoje; porém, esfirras só tem
+ * agendamento a partir de amanhã.").
+ */
+export function describeMixedCartAvailability(
+  groups: Array<{ categoryNames: string[]; firstAvailableDate: string | null }>,
+): string {
+  const parts = groups.map((group) => {
+    const label = joinCategoryNames(group.categoryNames);
+    if (!group.firstAvailableDate) {
+      return `não há horários disponíveis para ${label} no momento`;
+    }
+    const relative = relativeDayLabel(group.firstAvailableDate);
+    if (relative === 'Hoje') return `há disponibilidade de ${label} para hoje`;
+    if (relative === 'Amanhã') {
+      return `${label} só tem agendamento a partir de amanhã`;
+    }
+    const date = new Date(`${group.firstAvailableDate}T12:00:00`);
+    const formatted = date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'long',
+    });
+    return `${label} só tem agendamento a partir de ${formatted}`;
+  });
+  const sentence = parts.join('; porém, ');
+  return `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.`;
 }
 
 export function scheduleDateParts(iso: string): {

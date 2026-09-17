@@ -18,7 +18,10 @@ import {
   pageBodyPadClass,
   pageCtaBaseClass,
 } from '@/lib/layout';
-import { type AnyCheckoutOptions } from '@/app/checkout/recebimento/recebimento-helpers';
+import {
+  describeMixedCartAvailability,
+  type AnyCheckoutOptions,
+} from '@/app/checkout/recebimento/recebimento-helpers';
 import { useDeliveryQuote } from '@/app/checkout/recebimento/useDeliveryQuote';
 import { ScheduleSection } from '@/app/checkout/recebimento/_sections/ScheduleSection';
 import { SatelliteScheduleSection } from '@/app/checkout/recebimento/_sections/SatelliteScheduleSection';
@@ -64,6 +67,7 @@ export default function RecebimentoPage() {
       ? true
       : options.satelliteAvailable;
   const mixedCart = options?.scheduling.mixedCart ?? false;
+  const mixedGroups = options?.scheduling.mixedGroups ?? [];
   const storeOpen = options?.scheduling.storeOpen ?? false;
   const allowSameDay = options?.scheduling.allowSameDay ?? true;
   // Em São Miguel, "Agora" só existe pra retirada — entrega sempre exige um
@@ -257,9 +261,12 @@ export default function RecebimentoPage() {
             <div className="flex items-start gap-2 rounded-md border border-transparent bg-tone-warning p-3 text-sm text-tone-warning-foreground">
               <AlertCircle className="mt-0.5 size-4 shrink-0" />
               <p>
-                Seu carrinho tem itens de categorias com regras de agendamento
-                diferentes (ex.: cookies e pudins). Finalize uma categoria por
-                vez —{' '}
+                Não é possível prosseguir: seu carrinho tem produtos com
+                regras de agendamento diferentes.{' '}
+                {mixedGroups.length > 0
+                  ? describeMixedCartAvailability(mixedGroups)
+                  : null}{' '}
+                Finalize um grupo por vez —{' '}
                 <Link href="/carrinho" className="font-semibold underline">
                   voltar ao carrinho
                 </Link>
@@ -297,9 +304,7 @@ export default function RecebimentoPage() {
           )}
 
           <p className="mt-2 text-base font-semibold">Como?</p>
-          <DeliveryMethodToggle
-            freeDeliveryRadiusMeters={options?.store.freeDeliveryRadiusMeters ?? null}
-          />
+          <DeliveryMethodToggle freeDeliveryRadiusMeters={options?.store.freeDeliveryRadiusMeters ?? null} />
 
           {checkout.deliveryType === 'pickup' && options ? (
             <div className="rounded-md bg-muted p-3 text-sm leading-5 text-muted-foreground">
