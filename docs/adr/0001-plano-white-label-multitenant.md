@@ -544,9 +544,40 @@ funcionam juntas no app de verdade:
   `.claude/launch.json`, reutilizáveis pra validações futuras com dois
   tenants.
 
+**Décima segunda fatia, feita e validada — cupom em `create_manual_order`,
+reconciliado com a versão que chegou em paralelo pela `develop`.** A tarefa
+separada sinalizada na fatia 9 (`task_beae3042`) já tinha virado
+[PR #142](https://github.com/gerald0n/zelo-app-frontend/pull/142),
+**merged em `develop`** (`20260917150000_manual_order_coupon_support.sql`)
+antes desta fatia começar — reintroduzindo o mesmo bloco de cupom que
+`private.create_order` já tinha, perdido sem explicação em
+`20260915140000_manual_order_allow_pix_manual.sql`.
+
+Duas migrations com o **mesmo timestamp** (`20260917150000`) mexendo na
+**mesma função** por branches diferentes: a de `develop` (cupom, mas
+`claim_coupon` de 5 parâmetros — sem `p_store_id`, porque `develop` não tem
+nenhuma migration desta branch) e a desta branch (fatia 10, `store_id`/
+identidade de cliente, mas sem cupom — regressão pré-existente). Se as duas
+convivessem sem ajuste, uma delas apagaria a mudança da outra na hora de
+aplicar em sequência.
+
+Resolvido com `20260917160000_manual_order_coupon_support_store_scoped.sql`
+— timestamp deliberadamente depois das duas, corpo é a junção: todo o bloco
+de cupom do PR #142 (variáveis, leitura de `coupon_code`, gravação de
+`coupon_id`/`coupon_code`/`coupon_discount_cents`), com a chamada a
+`claim_coupon` já na assinatura de 6 parâmetros (`p_store_id` incluído,
+exigida desde a fatia 9), mais `v_store_id`/busca de cliente por telefone
+escopada por loja da fatia 10. Não precisou de merge de branch — a migration
+nova é autocontida nesta branch e, quando `develop` entrar aqui (ou
+vice-versa), a de timestamp maior simplesmente vence com o resultado
+completo, sem perder nenhuma das duas mudanças.
+
+Validado via `psql`: comanda manual com `coupon_code` válido aplicou 10% de
+desconto, incrementou `coupons.uses_count` e gravou `orders.store_id`
+corretamente. Typecheck de `apps/admin`, `apps/client` e `packages/shared`
+limpo (com `database.ts` regenerado).
+
 **Não feito ainda:**
-- Reintroduzir suporte a cupom em `create_manual_order` (achado da fatia
-  anterior — sinalizado como tarefa separada).
 - RLS tenant-aware na leitura pública anônima (hoje deliberadamente fora de
   escopo, ver acima).
 - Testar os demais fluxos já em produção (checkout completo com pedido de
