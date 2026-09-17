@@ -3,6 +3,7 @@ import 'server-only';
 import { z } from 'zod';
 import { err, ok, type Result } from '@/lib/errors';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { requireRequestStoreId } from '@/modules/tenant/resolve-store-id';
 
 export const couponPreviewSchema = z.object({
   code: z.string().trim().min(1).max(32),
@@ -34,12 +35,16 @@ export type CouponPreview =
 export async function previewOrderCoupon(
   input: CouponPreviewInput,
 ): Promise<Result<CouponPreview>> {
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
+
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase.rpc('preview_coupon', {
     p_code: input.code,
     p_subtotal_cents: input.subtotalCents,
     p_delivery_fee_cents: input.deliveryFeeCents,
     p_product_ids: input.productIds,
+    p_store_id: storeId.data,
   });
 
   if (error) {

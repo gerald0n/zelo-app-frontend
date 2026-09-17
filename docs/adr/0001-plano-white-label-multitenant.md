@@ -384,10 +384,44 @@ global.
   restrição, confirmando zero regressão no caminho público. Typecheck de
   `apps/admin`, `apps/client` e `packages/shared` limpo.
 
+**Nona fatia, feita e validada — unicidade de `coupons.code` por tenant.**
+`coupons_code_unique` era `unique (code)` global; virou `unique (store_id,
+code)`. Só trocar a constraint não bastaria: `public.preview_coupon` e
+`private.claim_coupon` buscavam o cupom só por `code`, então o código de um
+tenant continuaria resolvendo pra qualquer outro via RPC. As duas ganharam
+`p_store_id` e passaram a filtrar por ele.
+- Migration `20260917140000_tenant_coupons_unique_and_scoped.sql`.
+- `previewOrderCoupon` (`packages/shared/src/modules/orders/coupon-preview.ts`)
+  resolve o `store_id` internamente via `requireRequestStoreId()` — não
+  precisou mudar a API pros dois callers (checkout do cliente e preview de
+  comanda manual do admin), os dois já rodam server-side atrás do proxy que
+  resolve o header (Fase B).
+- `private.create_order`: cópia exata da versão anterior
+  (`20260916200000_create_order_store_id.sql`), só passando `v_store_id` (já
+  resolvido do produto) pro `claim_coupon`.
+- **Achado que precisou ser corrigido pra isso funcionar**:
+  `private.create_manual_order` (comanda do admin) nunca gravava `store_id`
+  em `orders` — sem isso não haveria `store_id` nenhum pra passar ao
+  `claim_coupon` store-scoped. Resolvido com `private.current_admin_store_id()`
+  (mesma função da fatia de RLS), já que quem cria comanda manual é sempre
+  admin autenticado.
+- **Achado à parte, não corrigido**: `private.create_manual_order` perdeu o
+  suporte a cupom numa migration anterior (`20260915130000`, sem nenhum
+  registro do motivo) — hoje comanda manual simplesmente não aceita cupom.
+  Fora do escopo desta fatia reintroduzir isso.
+- Validado via `psql`: cadastrado o mesmo código (`BEMVINDO10`) em duas lojas
+  diferentes sem violar a constraint; `preview_coupon` com o `store_id` de
+  cada loja resolveu o cupom certo (tipos de desconto diferentes por loja);
+  `preview_coupon` com `store_id` errado ou nulo voltou `not_found`; fluxo
+  completo de `public.create_order` com cupom aplicou o desconto certo e
+  gravou `orders.store_id`; `public.create_manual_order` passou a gravar
+  `orders.store_id` corretamente. Typecheck de `apps/admin`, `apps/client` e
+  `packages/shared` limpo (com `database.ts` regenerado).
+
 **Não feito ainda:**
-- Constraint de unicidade de `coupons.code` por tenant (migration).
 - Decisão de identidade de cliente por tenant (`upsertCustomerFromPhone`, ver
   "achado novo" acima).
+- Reintroduzir suporte a cupom em `create_manual_order` (achado acima).
 - RLS tenant-aware na leitura pública anônima (hoje deliberadamente fora de
   escopo, ver acima).
 - Testar cada fluxo já em produção (checkout, pix automático, impressão
