@@ -180,7 +180,9 @@ export async function notifyAdminOtpSupportRequest(options: {
             title: 'Cliente pediu ajuda pra acessar',
             body: formatPhoneDisplay(options.phoneE164),
             url: `/suporte-acesso?requestId=${options.requestId}`,
+            requestId: options.requestId,
             tag: `otp-support-${options.requestId}`,
+            actions: [{ action: 'approve-otp', title: 'Aprovar acesso' }],
           },
         });
         if (!result.ok && result.gone) {
