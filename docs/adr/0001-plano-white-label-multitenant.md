@@ -118,10 +118,35 @@ Status: **implementado na branch `feat/tenant-store-id`, validado em local.**
   desconhecido não quebram o request.
 - Estratégia de domínio (subdomínio vs. domínio próprio do cliente) ainda **não
   decidida** — decisão de produto que continua pendente antes da Fase E.
+
+> ⚠️ **Correção à validação acima.** O parágrafo "Validado localmente: curl
+> com Host: localhost, Host: zelo.local.test..." não provava o que dizia
+> provar — só existia 1 `store` na época, então qualquer hostname (match,
+> sem match, desconhecido) caía no mesmo resultado por coincidência
+> (fallback = única loja existente). Ver validação de verdade, com dois
+> tenants reais, na Fase C abaixo.
+>
+> **Achado ao tentar validar isso de verdade em navegador**: `next dev`
+> (Turbopack) **ignora o header `Host`/`X-Forwarded-Host` do request** pra
+> construir `request.nextUrl` — usa sempre o hostname com que o próprio
+> processo foi iniciado (`localhost` por padrão), não o que o client
+> mandou. É comportamento do dev server (`next-server.js`, variável interna
+> `fetchHostname`, só existe nesse code path — nada a ver com o código deste
+> repo). Ou seja: **testar resolução de tenant por hostname via `curl -H
+> "Host: ..."` ou navegando pro domínio no navegador nunca funcionou de
+> verdade em `next dev`** — sempre resolvia pro fallback, mascarado pelo
+> fato de só existir 1 tenant. Em produção (Vercel) isso não se aplica (é
+> outro runtime, não um processo `next dev`/`next start` com hostname fixo).
+> Contorno usado pra testar localmente: subir `next dev --hostname
+> <domínio-do-tenant>` (aceita qualquer hostname que resolva pro loopback,
+> ex. `*.127.0.0.1.nip.io` — sem precisar editar `/etc/hosts`) — um processo
+> por tenant, já que o Next só permite 1 `next dev` por diretório de projeto
+> ao mesmo tempo (lock por diretório, testado sequencialmente). Configs
+> temporárias ficaram em `.claude/launch.json` (`zelo-tenant-a`/
+> `zelo-tenant-b`) pra reuso em validações futuras.
 - Critério de saída original ("dois `stores` de teste respondendo em hosts
-  diferentes") ainda não cumprido por completo — falta um segundo tenant real
-  com domínio próprio para provar a resolução ponta a ponta; hoje só a Zelo
-  tem `domain` preenchido.
+  diferentes") **cumprido nesta correção** — ver validação ponta a ponta na
+  Fase C abaixo (login com dois tenants reais, via navegador).
 
 ### Fase C — Tenant-scoping das queries (o grosso do esforço)
 
@@ -490,17 +515,48 @@ que passou a ser por tenant é o PERFIL de negócio.
   extra. Typecheck de `apps/admin`, `apps/client` e `packages/shared` limpo
   (com `database.ts` regenerado).
 
+**Décima primeira fatia — validação ponta a ponta do login com dois tenants
+reais, via navegador.** Primeira prova de verdade (não só `psql`/`curl`) de
+que a Fase B (resolução por hostname) + Fase C (RLS e identidade por tenant)
+funcionam juntas no app de verdade:
+- Criada uma segunda loja de teste local (`Confeitaria B`) com domínio
+  próprio. Contornado o achado registrado na Fase B acima (`next dev`
+  ignora o `Host` do request) subindo dois processos `next dev` com
+  `--hostname` fixo por tenant (`*.127.0.0.1.nip.io`, resolve pro loopback
+  sem precisar editar `/etc/hosts`), um de cada vez (lock de diretório do
+  Next não permite dois `next dev` simultâneos no mesmo projeto).
+- **Tenant A** (Zelo): login por OTP com o telefone `+5511977776666` — código
+  de debug exibido na tela (ambiente local), sessão aberta, perfil novo
+  criado como "Cliente Tenant A" vinculado à loja A.
+- **Tenant B** (Confeitaria B): login com o **mesmo telefone**, servidor
+  trocado — o app tratou como conta nova (pediu nome de novo, não reconheceu
+  o cadastro da loja A), perfil criado como "Cliente Tenant B" vinculado à
+  loja B.
+- Confirmado direto no banco depois dos dois logins:
+  `customers.user_id` **igual** nos dois perfis (mesma identidade de login,
+  `auth.users`, como esperado — telefone é global no GoTrue), mas
+  `customers.id`/`store_id`/`name` **diferentes** — exatamente o
+  comportamento desenhado na décima fatia, agora provado pelo fluxo real do
+  usuário, não só por simulação de `request.jwt.claims`/`request.headers`.
+- Ambiente de teste limpo depois (loja B, perfis e `auth.users` de teste
+  removidos do banco local; domínio da Zelo revertido pro valor do seed).
+  Ficaram só as duas configs `zelo-tenant-a`/`zelo-tenant-b` em
+  `.claude/launch.json`, reutilizáveis pra validações futuras com dois
+  tenants.
+
 **Não feito ainda:**
 - Reintroduzir suporte a cupom em `create_manual_order` (achado da fatia
   anterior — sinalizado como tarefa separada).
 - RLS tenant-aware na leitura pública anônima (hoje deliberadamente fora de
   escopo, ver acima).
-- Testar cada fluxo já em produção (checkout, pix automático, impressão
-  térmica, push, agendamento) sob dois tenants simultâneos — só é possível
-  depois que existir um segundo tenant de teste com dado próprio.
+- Testar os demais fluxos já em produção (checkout completo com pedido de
+  verdade, pix automático, impressão térmica, push, agendamento) sob dois
+  tenants simultâneos — login já validado ponta a ponta (fatia 11), falta o
+  resto da lista.
 - Critério de saída original ("dois tenants operando em paralelo sem
-  cross-talk de dados") continua não cumprido — falta cobrir toda a lista
-  acima.
+  cross-talk de dados") **parcialmente cumprido**: login e identidade de
+  cliente provados via navegador com dois tenants reais (fatia 11); falta
+  ainda o restante dos fluxos acima.
 
 ### Fase D — Branding dinâmico
 - `ZeloSeal.tsx` e `opengraph-image.tsx` passam a ler `logo_url` do tenant (fallback
