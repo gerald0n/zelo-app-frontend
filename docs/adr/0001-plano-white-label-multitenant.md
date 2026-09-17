@@ -292,18 +292,78 @@ Fechando a lista que tinha ficado pendente:
   não verifica se `categoryIds`/`productIds` pertencem ao tenant da
   promoção — mesma categoria de lacuna, mesma decisão de esperar o RLS.
 
+**Sétima fatia, feita e validada — RLS de verdade por `store_id` (admin).**
+Correção a uma afirmação anterior deste documento: RLS **já existia** em
+praticamente todas as tabelas de negócio desde o schema inicial (`enable row
+level security` + `create policy` — ~120 ocorrências em
+`supabase/migrations/*.sql`); o problema real, que esta fatia corrige, é que
+nenhuma policy era *tenant-aware* — todas usavam `private.is_admin()`
+(booleano global: "é admin de alguma loja") ou `private.current_customer_id()`
+(dono da linha), nunca `store_id`.
+
+Decisão de arquitetura (substitui o "investigado e descartado" da versão
+anterior deste documento): **não foi preciso expor `request.headers`/
+`x-store-id` via PostgREST**. Para todo contexto autenticado (admin, cliente)
+já existe um mecanismo real e assinado — o JWT do Supabase Auth — e
+`private.is_admin()`/`private.current_customer_id()` já faziam esse lookup via
+`security definer`. Bastou estender o mesmo padrão:
+- `private.current_admin_store_id()` — `store_id` do admin autenticado (lookup
+  em `admin_profiles` por `auth.uid()`).
+- `private.current_customer_store_id()` — idem para `customers`.
+- `private.is_admin_of_store(store_id)` — `is_admin() and (current_admin_store_id()
+  is null or current_admin_store_id() = store_id)`. `store_id` nulo no admin é
+  tratado como "sem loja fixada" (reservado pro futuro `apps/gestor`
+  multi-loja), não como "vê tudo por engano" — hoje todo admin real já tem
+  `store_id` preenchido (backfill da Fase 0').
+- Migration `20260917120000_tenant_rls_admin_scoping.sql`: todas as policies
+  `*_admin_manage`/`*_admin_select`/`*_admin_update` das tabelas raiz com
+  `store_id` direto (`stores`, `store_business_hours`,
+  `store_blackout_periods`, `admin_profiles`, `customers`, `carts`, `orders`,
+  `categories`, `products`, `add_ons`, `coupons`, `promotions`,
+  `satellite_locations`, `push_templates`, `promo_banners`,
+  `promo_modal_banners`, `faq_items`, `pizza_sizes`, `pizza_flavor_prices`,
+  `pizza_addons`) passaram a exigir `private.is_admin_of_store(store_id)` em
+  vez de só `private.is_admin()` — inclusive o bypass de admin dentro das
+  policies de leitura pública (`*_public_read`), pra um admin não enxergar
+  rascunho/arquivado de outro tenant.
+- **Leitura pública anônima (sem JWT) continua sem predicado de `store_id`
+  nesta fatia** — decisão deliberada, não esquecimento: é dado público por
+  natureza (cada tenant expõe o próprio catálogo pra qualquer visitante do seu
+  domínio) e o filtro já é feito em JS (fatias 1-2). Isolar isso em RLS também
+  fica pra uma fatia própria se algum dia deixar de ser aceitável.
+- **Gap conhecido, não corrigido nesta fatia**: tabelas filhas sem `store_id`
+  direto (`product_images`, `product_add_ons`, `promotion_categories`,
+  `promotion_products`, `satellite_location_hours`,
+  `satellite_location_delivery_slots`, `push_template_sends`,
+  `cart_item_*`, `order_item_*`) continuam só com `private.is_admin()` global
+  — a mesma lacuna de cascata já registrada nas fatias 5/6 (child não verifica
+  posse do tenant da linha pai). Corrigir exige join até a tabela raiz em cada
+  policy; fica pra uma fatia própria.
+- **Achado novo, fora do escopo de RLS**: `upsertCustomerFromPhone`
+  (`packages/shared/src/modules/auth/otp.ts`) busca cliente existente só por
+  `phone_e164`, sem filtrar por `store_id`, e o e-mail sintético do
+  `auth.users` (`c<telefone>@customers.zelo.internal`) também não varia por
+  tenant — ou seja, hoje o mesmo telefone vira o mesmo `customers`/`auth.users`
+  em qualquer loja. Isso não é um bug de RLS (a policy `customers_select_own`
+  já restringe cada admin à própria loja), é uma decisão de identidade ainda
+  não tomada: conta de cliente é por tenant (precisa de
+  `unique (store_id, phone_e164)` + e-mail sintético incluindo o tenant) ou
+  compartilhada entre tenants por design? Registrado aqui pra decidir antes do
+  segundo tenant real, não corrigido nesta fatia.
+- Validado localmente via `psql` simulando `request.jwt.claims` (mesmo
+  mecanismo das RPCs de impersonação): criada uma segunda loja de teste com
+  categoria inativa; como admin da Zelo (`role authenticated`, `sub` do admin
+  real), `select`/`update` nessa categoria retornaram 0 linhas (bloqueado),
+  enquanto categorias da própria loja continuaram 100% visíveis/editáveis;
+  leitura anônima (`role anon`) de categoria ativa continuou funcionando sem
+  restrição, confirmando zero regressão no caminho público. Typecheck de
+  `apps/admin`, `apps/client` e `packages/shared` limpo.
+
 **Não feito ainda:**
 - Constraint de unicidade de `coupons.code` por tenant (migration).
-- RLS do Supabase por `store_id` em todas as tabelas de negócio: **ainda não
-  desenhado**. Investigado e descartado por ora: usar `x-store-id` (header
-  arbitrário) dentro de policy do Postgres exigiria expor `request.headers`
-  via PostgREST — o projeto hoje só usa esse tipo de contexto para JWT
-  (`request.jwt.claim.*`, via RPC `security definer` para impersonar cliente).
-  Extender esse mecanismo pra tenant merece uma decisão própria, não uma
-  extensão apressada. Por ora, o isolamento é só a nível de aplicação
-  (`.eq('store_id', ...)` explícito em cada query) — funciona porque só existe
-  1 tenant real hoje, mas não é defesa em profundidade; precisa ser resolvido
-  antes de um segundo tenant real entrar.
+- RLS tenant-aware nas tabelas filhas listadas no "gap conhecido" acima.
+- RLS tenant-aware na leitura pública anônima (hoje deliberadamente fora de
+  escopo, ver acima).
 - Testar cada fluxo já em produção (checkout, pix automático, impressão
   térmica, push, agendamento) sob dois tenants simultâneos — só é possível
   depois que existir um segundo tenant de teste com dado próprio.
