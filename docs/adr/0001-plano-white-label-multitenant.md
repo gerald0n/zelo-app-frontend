@@ -331,14 +331,39 @@ já existe um mecanismo real e assinado — o JWT do Supabase Auth — e
   natureza (cada tenant expõe o próprio catálogo pra qualquer visitante do seu
   domínio) e o filtro já é feito em JS (fatias 1-2). Isolar isso em RLS também
   fica pra uma fatia própria se algum dia deixar de ser aceitável.
-- **Gap conhecido, não corrigido nesta fatia**: tabelas filhas sem `store_id`
-  direto (`product_images`, `product_add_ons`, `promotion_categories`,
-  `promotion_products`, `satellite_location_hours`,
-  `satellite_location_delivery_slots`, `push_template_sends`,
-  `cart_item_*`, `order_item_*`) continuam só com `private.is_admin()` global
-  — a mesma lacuna de cascata já registrada nas fatias 5/6 (child não verifica
-  posse do tenant da linha pai). Corrigir exige join até a tabela raiz em cada
-  policy; fica pra uma fatia própria.
+**Oitava fatia, feita e validada — RLS de verdade nas tabelas filhas.**
+Fechou o gap que a sétima fatia tinha deixado registrado: `product_images`,
+`product_add_ons`, `promotion_categories`, `promotion_products`,
+`satellite_location_hours`, `satellite_location_delivery_slots`,
+`push_template_sends`, `cart_items`, `cart_item_add_ons`,
+`cart_item_pizza_addons`, `order_addresses`, `order_items`,
+`order_item_add_ons`, `order_item_pizza_addons`, `order_status_history` — sem
+`store_id` próprio — agora checam a posse do tenant via `exists (...)` até a
+tabela raiz (`products`, `promotions`, `satellite_locations`, `push_templates`,
+`carts`, `orders`) dentro da própria policy, em vez de só `private.is_admin()`
+global.
+- Migration `20260917130000_tenant_rls_child_tables.sql`. Mesmo padrão de
+  `private.is_admin_of_store(<raiz>.store_id)` da fatia anterior, só que
+  dentro do `exists` que já existia pra checar dono da linha (cliente) — o
+  bypass de admin passou a fazer parte da mesma sub-query em vez de ser um
+  `OR` solto no topo, porque só assim dá pra referenciar `store_id` da tabela
+  raiz.
+- **Decisão deliberada preservada**: a leitura pública (`*_public_read` de
+  `product_images`/`product_add_ons`/`promotion_categories`/
+  `promotion_products`) continua liberada pra item ativo de qualquer loja,
+  igual antes — só o bypass de admin (ver rascunho/arquivado) passou a exigir
+  o tenant certo. Não há isolamento de tenant na leitura pública nesta fatia,
+  mesma decisão já registrada acima.
+- Validado via `psql` simulando `request.jwt.claims`: criada uma segunda loja
+  com produto rascunho (`is_active = false`) e um pedido próprio; como admin
+  da Zelo, leitura da imagem/pedido rascunho da loja B retornou 0 linhas,
+  `update`/`delete` afetaram 0 linhas; leitura de imagem de produto **ativo**
+  da loja B continuou visível (esperado — decisão de leitura pública acima);
+  controle: pedido da loja B manteve status `received` intacto após a
+  tentativa de update. Typecheck de `apps/admin`, `apps/client` e
+  `packages/shared` limpo.
+
+**Gap conhecido, não corrigido ainda:**
 - **Achado novo, fora do escopo de RLS**: `upsertCustomerFromPhone`
   (`packages/shared/src/modules/auth/otp.ts`) busca cliente existente só por
   `phone_e164`, sem filtrar por `store_id`, e o e-mail sintético do
@@ -361,7 +386,8 @@ já existe um mecanismo real e assinado — o JWT do Supabase Auth — e
 
 **Não feito ainda:**
 - Constraint de unicidade de `coupons.code` por tenant (migration).
-- RLS tenant-aware nas tabelas filhas listadas no "gap conhecido" acima.
+- Decisão de identidade de cliente por tenant (`upsertCustomerFromPhone`, ver
+  "achado novo" acima).
 - RLS tenant-aware na leitura pública anônima (hoje deliberadamente fora de
   escopo, ver acima).
 - Testar cada fluxo já em produção (checkout, pix automático, impressão
