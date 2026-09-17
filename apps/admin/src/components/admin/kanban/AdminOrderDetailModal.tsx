@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Loader2 } from 'lucide-react';
 import { useAdminOrderDetail } from '@/app/pedido/[id]/useAdminOrderDetail';
+import { RescheduleOrderDialog } from '@/app/pedido/[id]/_components/RescheduleOrderDialog';
 import OrderDetailModalBody from '@/components/admin/kanban/OrderDetailModalBody';
 
 type Props = { orderId: string | null; onClose: () => void };
@@ -29,46 +30,59 @@ export default function AdminOrderDetailModal({ orderId, onClose }: Props) {
   if (orderId === null) return null;
 
   return createPortal(
-    <div
-      className="fixed inset-0 z-[1100] flex items-end justify-center bg-black/40 sm:items-center sm:p-6"
-      role="presentation"
-      onClick={onClose}
-    >
+    <>
       <div
-        role="dialog"
-        aria-modal="true"
-        className="flex max-h-[calc(100dvh-max(1rem,env(safe-area-inset-top)))] w-full max-w-2xl flex-col overflow-y-auto overscroll-contain rounded-t-xl border border-border bg-card pb-[env(safe-area-inset-bottom)] shadow-xl sm:max-h-[92dvh] sm:rounded-xl sm:pb-0"
-        onClick={(event) => event.stopPropagation()}
+        className="fixed inset-0 z-[1100] flex items-end justify-center bg-black/40 sm:items-center sm:p-6"
+        role="presentation"
+        onClick={onClose}
       >
-        {loading || (!order && !error) ? (
-          <div className="flex h-48 items-center justify-center">
-            <Loader2 className="size-5 animate-spin text-muted-foreground" />
-          </div>
-        ) : error && !order ? (
-          <div className="space-y-3 p-6 text-center">
-            <p className="text-sm">{error}</p>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-border px-3 py-2 text-xs font-semibold"
-            >
-              Fechar
-            </button>
-          </div>
-        ) : order ? (
-          <OrderDetailModalBody
-            order={order}
-            busy={busy}
-            error={error}
-            printerReady={printerReady}
-            onAdvance={() => void detail.advance()}
-            onCancel={() => void detail.cancel()}
-            onReprintTicket={() => void detail.reprintTicket()}
-            onClose={onClose}
-          />
-        ) : null}
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="flex max-h-[calc(100dvh-max(1rem,env(safe-area-inset-top)))] w-full max-w-2xl flex-col overflow-y-auto overscroll-contain rounded-t-xl border border-border bg-card pb-[env(safe-area-inset-bottom)] shadow-xl sm:max-h-[92dvh] sm:rounded-xl sm:pb-0"
+          onClick={(event) => event.stopPropagation()}
+        >
+          {loading || (!order && !error) ? (
+            <div className="flex h-48 items-center justify-center">
+              <Loader2 className="size-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : error && !order ? (
+            <div className="space-y-3 p-6 text-center">
+              <p className="text-sm">{error}</p>
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-lg border border-border px-3 py-2 text-xs font-semibold"
+              >
+                Fechar
+              </button>
+            </div>
+          ) : order ? (
+            <OrderDetailModalBody
+              order={order}
+              busy={busy}
+              error={error}
+              printerReady={printerReady}
+              onAdvance={() => void detail.advance()}
+              onCancel={() => void detail.cancel()}
+              onReprintTicket={() => void detail.reprintTicket()}
+              onReschedule={() => void detail.openReschedule()}
+              onClose={onClose}
+            />
+          ) : null}
+        </div>
       </div>
-    </div>,
+      {detail.rescheduleOpen && order ? (
+        <RescheduleOrderDialog
+          orderNumber={order.number}
+          options={detail.rescheduleOptions}
+          loading={detail.rescheduleLoading}
+          error={detail.rescheduleError}
+          onClose={detail.closeReschedule}
+          onConfirm={(date, time) => void detail.confirmReschedule(date, time)}
+        />
+      ) : null}
+    </>,
     document.body,
   );
 }

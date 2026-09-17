@@ -1,14 +1,14 @@
-import { type ReactNode, useState } from 'react';
-import { ArrowRight, Check, Copy, Loader2, Printer, X } from 'lucide-react';
+import { type ReactNode } from 'react';
+import { X } from 'lucide-react';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import { statusLabel } from '@/modules/orders/types';
-import { nextAdminStatus, type AdminOrderDetail } from '@/modules/admin/types';
+import { type AdminOrderDetail } from '@/modules/admin/types';
 import OrderTimeline, { clock } from '@/components/admin/kanban/OrderTimeline';
 import WhatsappNotifyButton from '@/components/admin/WhatsappNotifyButton';
-import { buildOrderSummaryText } from '@/lib/admin/order-summary';
 import { deliveryLocationLabel } from '@/lib/admin/order-address';
 import { paymentMethodLabel } from '@/lib/admin/payment-method-label';
 import { DeliveryLocationMeta } from '@/components/admin/DeliveryLocationMeta';
+import { OrderDetailModalFooter } from '@/components/admin/kanban/OrderDetailModalFooter';
 import { cn } from '@/lib/cn';
 
 type Props = {
@@ -19,6 +19,7 @@ type Props = {
   onAdvance: () => void;
   onCancel: () => void;
   onReprintTicket: () => void;
+  onReschedule: () => void;
   onClose: () => void;
 };
 
@@ -51,12 +52,10 @@ export default function OrderDetailModalBody({
   onAdvance,
   onCancel,
   onReprintTicket,
+  onReschedule,
   onClose,
 }: Props) {
-  const [copied, setCopied] = useState(false);
-  const next = nextAdminStatus(order.status, order.deliveryMethod);
   const customer = order.customer ?? order.guest;
-  const terminal = order.status === 'delivered' || order.status === 'cancelled';
   const scheduledAt =
     order.timing === 'scheduled' && order.scheduledFor
       ? new Date(order.scheduledFor).toLocaleString('pt-BR', {
@@ -77,16 +76,6 @@ export default function OrderDetailModalBody({
     order.deliveryMethod === 'delivery'
       ? 'Entrega'
       : 'Taxa de conveniência / embalagem';
-
-  const copySummary = async () => {
-    try {
-      await navigator.clipboard.writeText(buildOrderSummaryText(order));
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Sem permissão de clipboard — nada a fazer além de deixar o botão mudo.
-    }
-  };
 
   return (
     <>
@@ -276,70 +265,16 @@ export default function OrderDetailModalBody({
         {error ? <p className="text-xs text-destructive">{error}</p> : null}
       </div>
 
-      <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-2 border-t border-border bg-card p-4">
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onReprintTicket}
-            disabled={!printerReady}
-            title={
-              printerReady
-                ? undefined
-                : 'Impressora não pareada — pareie em Configurações'
-            }
-            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-semibold transition-colors hover:bg-accent disabled:opacity-50"
-          >
-            <Printer className="size-3.5" />
-            Imprimir comanda
-          </button>
-          <button
-            type="button"
-            onClick={copySummary}
-            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-semibold transition-colors hover:bg-accent"
-          >
-            {copied ? (
-              <Check className="size-3.5" />
-            ) : (
-              <Copy className="size-3.5" />
-            )}
-            {copied ? 'Copiado!' : 'Copiar resumo'}
-          </button>
-          {!terminal ? (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={onCancel}
-              className="rounded-lg border border-destructive/40 px-3 py-2 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
-            >
-              {order.status === 'received' ? 'Recusar' : 'Cancelar'}
-            </button>
-          ) : null}
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-border px-3 py-2 text-xs font-semibold transition-colors hover:bg-accent"
-          >
-            Fechar
-          </button>
-          {next ? (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={onAdvance}
-              className="flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
-            >
-              {busy ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <ArrowRight className="size-3.5" />
-              )}
-              Avançar para {statusLabel(next)}
-            </button>
-          ) : null}
-        </div>
-      </div>
+      <OrderDetailModalFooter
+        order={order}
+        busy={busy}
+        printerReady={printerReady}
+        onAdvance={onAdvance}
+        onCancel={onCancel}
+        onReprintTicket={onReprintTicket}
+        onReschedule={onReschedule}
+        onClose={onClose}
+      />
     </>
   );
 }
