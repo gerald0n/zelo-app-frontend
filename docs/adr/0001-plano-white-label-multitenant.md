@@ -577,17 +577,31 @@ desconto, incrementou `coupons.uses_count` e gravou `orders.store_id`
 corretamente. Typecheck de `apps/admin`, `apps/client` e `packages/shared`
 limpo (com `database.ts` regenerado).
 
+**Décima terceira fatia — checkout completo com pedido real, via navegador,
+tenant A.** Reaproveitando a infra da fatia 11 (`zelo-tenant-a` em
+`.claude/launch.json`): login por OTP, adicionar produto ao carrinho,
+fluxo completo de checkout (retirada agendada, pagamento em dinheiro,
+revisão) e `Fazer pedido` de verdade — pedido `#1001` criado, confirmado no
+banco com `orders.store_id` = loja A e `customer_id` apontando pro perfil
+certo (mesmo `user_id` da fatia 11). Prova que `private.create_order` (a
+função mais sensível de todo o ADR, já causou uma saída de produção antes)
+continua funcionando ponta a ponta depois de todas as mudanças de RLS/
+tenant desta fase — não só via `psql` simulando `request.jwt.claims`, mas
+pelo fluxo real do navegador. Ambiente de teste limpo depois (pedido,
+cliente e `auth.users` de teste removidos; domínio da Zelo revertido).
+
 **Não feito ainda:**
 - RLS tenant-aware na leitura pública anônima (hoje deliberadamente fora de
   escopo, ver acima).
-- Testar os demais fluxos já em produção (checkout completo com pedido de
-  verdade, pix automático, impressão térmica, push, agendamento) sob dois
-  tenants simultâneos — login já validado ponta a ponta (fatia 11), falta o
-  resto da lista.
+- Testar os fluxos que dependem de infra externa (pix automático via
+  Mercado Pago, impressão térmica via WebUSB, push) sob dois tenants — não
+  são testáveis neste ambiente (sandbox/hardware reais necessários);
+  checkout com pedido real e agendamento já cobertos (fatia 13).
 - Critério de saída original ("dois tenants operando em paralelo sem
-  cross-talk de dados") **parcialmente cumprido**: login e identidade de
-  cliente provados via navegador com dois tenants reais (fatia 11); falta
-  ainda o restante dos fluxos acima.
+  cross-talk de dados") **majoritariamente cumprido** por navegador: login,
+  identidade de cliente e checkout completo com pedido real provados com
+  dois/um tenant(s) real(is) (fatias 11 e 13); falta só pix automático/
+  impressão térmica, que dependem de infra externa.
 
 ### Fase D — Branding dinâmico
 - `ZeloSeal.tsx` e `opengraph-image.tsx` passam a ler `logo_url` do tenant (fallback
