@@ -604,6 +604,10 @@ cliente e `auth.users` de teste removidos; domínio da Zelo revertido).
   impressão térmica, que dependem de infra externa.
 
 ### Fase D — Branding dinâmico
+
+Status: **iniciada na branch `feat/tenant-store-id` — primeira fatia feita e
+validada.**
+
 - `ZeloSeal.tsx` e `opengraph-image.tsx` passam a ler `logo_url` do tenant (fallback
   genérico, não "Z" da Zelo).
 - Tema: buscar `theme` do tenant no load e injetar como CSS variables (sem rebuild).
@@ -612,6 +616,79 @@ cliente e `auth.users` de teste removidos; domínio da Zelo revertido).
 - As ~24 strings "Zelo" em UI passam a usar `store.name`/`store.displayName`.
 - Critério de saída: um tenant fictício com marca diferente, sem nenhuma referência
   a "Zelo" sobrevivendo.
+
+**Levantamento inicial (agente de exploração, antes de codar)**: as colunas
+`theme`/`logo_url`/`font_config` já existem em `stores` desde a Fase A, mas
+nada lê elas ainda. Achados relevantes:
+- `packages/shared/src/styles/globals.css` tem ~20 CSS variables de cor
+  (`--primary`, `--caramel`, etc., claro + `.dark`) — 100% estático, sem
+  nenhum mecanismo de override em runtime hoje.
+- `next/font/google` exige import estático resolvido em build-time —
+  "fonte por tenant" só pode ser um seletor entre um conjunto pré-importado,
+  nunca uma fonte arbitrária vinda do banco. Fica pra uma fatia própria.
+- Contagem real de strings "Zelo" visíveis ao usuário: **~39 ocorrências em
+  26 arquivos** (acima da estimativa de ~24) — título/metadata, JSX,
+  notificações push, mensagens de WhatsApp, descrição do Pix. Fica pra
+  fatias próprias, uma por área (metadata, UI, notificações).
+- `opengraph-image.tsx` é `force-static` com `readFile` em top-level await
+  (roda uma vez no build) — virar dinâmico por tenant tem custo de perf
+  (perde geração estática) e precisa ser replicado em `twitter-image.tsx`
+  (reexporta o mesmo componente mas repete os campos literais, exigência do
+  Next). Decisão de fazer isso ou não fica pra quando o critério de saída
+  (branding de um tenant fictício) for revisitado — por ora só o `<title>`/
+  `og:site_name` ficaram dinâmicos (via `generateMetadata`), a imagem OG
+  continua com a arte fixa da Zelo.
+
+**Primeira fatia, feita e validada — tema de cor + `<title>`/metadata
+dinâmicos.**
+- `CatalogStore` (`packages/shared/src/modules/catalog/types.ts`) ganhou
+  `theme: CatalogStoreTheme` (8 chaves opcionais: `primary`,
+  `primaryForeground`, `secondary`, `secondaryForeground`, `accent`,
+  `accentForeground`, `caramel`, `caramelForeground` — os tokens de marca,
+  não a paleta inteira de UI) e `logoUrl: string | null`. `mapStore`
+  atualizado; o SELECT já trazia as colunas (`select('*')`), só faltava o
+  tipo/mapper.
+- `packages/shared/src/modules/catalog/theme-style.ts` (novo) —
+  `buildThemeStyle(theme)` gera um `:root{--primary:...}` só com as chaves
+  presentes; `null` quando não há nenhuma override (evita `<style>` vazio).
+  Compartilhado pelos dois apps (mesmo formato de tema).
+- `apps/client/src/app/layout.tsx` e `apps/admin/src/app/layout.tsx`:
+  `RootLayout` virou `async`, busca a loja via `getCachedPublicStore()`
+  (já existia, cache de 60s por tenant, Fase C) e renderiza
+  `{themeStyle && <style>{themeStyle}</style>}` — no client, como primeiro
+  filho do `<body>`; no admin, dentro do `<head>` já existente (que só
+  tinha o script anti-flash do tema claro/escuro). `export const metadata`
+  virou `export async function generateMetadata()` nos dois apps: título,
+  `applicationName`, `appleWebApp.title`, `openGraph.siteName` (client) e
+  `title`/`description`/`applicationName` (admin) passam a usar
+  `store.name`, com fallback pro texto fixo da Zelo quando a loja não
+  resolve.
+- Validado via `psql` + navegador: com `theme = '{}'` (padrão hoje), zero
+  mudança visual — confirmado por screenshot idêntico ao anterior. Com
+  `theme = {"primary": "oklch(0.5 0.2 250)", "primaryForeground": "..."}`
+  gravado direto no banco, a cor primária mudou de bordô pra azul em todo o
+  app (header, carrossel, botões, badge do carrinho) depois de um hard
+  reload — o `<style>` já vinha correto no HTML puro (`curl` confirmou
+  antes mesmo de testar no navegador); o primeiro teste no navegador
+  "não mudou nada" foi o **service worker do PWA servindo HTML antigo em
+  cache**, não um bug do código — resolvido limpando `caches`/registration
+  do SW no console antes do reload (achado de ambiente de teste, não do
+  app: cache de PWA precisa ser considerado em qualquer validação visual
+  futura neste projeto). Typecheck de `apps/admin`, `apps/client` e
+  `packages/shared` limpo.
+
+**Não feito ainda:**
+- Logo dinâmico (`ZeloSeal.tsx` ler `logo_url`, fallback genérico em vez de
+  "Z").
+- As ~39 strings "Zelo" visíveis (metadata restante, JSX, notificações,
+  WhatsApp, Pix).
+- Seleção de fonte por tenant (`font_config`, fica pra fatia própria dado o
+  import estático do `next/font`).
+- `opengraph-image.tsx`/`twitter-image.tsx` dinâmicos por tenant (decisão
+  de custo/benefício em aberto, ver levantamento acima).
+- Critério de saída original ("um tenant fictício com marca diferente, sem
+  nenhuma referência a 'Zelo' sobrevivendo") continua não cumprido — só o
+  tema de cor e o `<title>`/metadata estão dinâmicos.
 
 ### Fase E — App gestor
 - `apps/gestor`: CRUD de tenants, ativação de features, visão de uso/armazenamento.

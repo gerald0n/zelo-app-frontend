@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
 import { Fraunces, Geist, Geist_Mono } from 'next/font/google';
 import AdminProviders from '@/components/AdminProviders';
+import { getCachedPublicStore } from '@/modules/catalog/cached-catalog';
+import { buildThemeStyle } from '@/modules/catalog/theme-style';
 import './globals.css';
 
 /**
@@ -40,12 +42,22 @@ const geistMono = Geist_Mono({
  */
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = {
-  title: 'Painel · Zelo Confeitaria',
-  description: 'Painel administrativo da Zelo Confeitaria.',
-  applicationName: 'Zelo Admin',
-  robots: { index: false, follow: false },
-};
+/**
+ * White label (ADR-0001, Fase D) — título passa a vir de `stores.name`
+ * quando a loja resolve; sem loja (erro/loja não encontrada), mantém o
+ * fallback da Zelo — zero mudança de comportamento nesse caso.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const store = await getCachedPublicStore();
+  const storeName = store.ok ? store.data?.name : undefined;
+
+  return {
+    title: `Painel · ${storeName ?? 'Zelo Confeitaria'}`,
+    description: `Painel administrativo da ${storeName ?? 'Zelo Confeitaria'}.`,
+    applicationName: storeName ? `${storeName} Admin` : 'Zelo Admin',
+    robots: { index: false, follow: false },
+  };
+}
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -63,6 +75,8 @@ export default async function RootLayout({
 }>) {
   // O `nonce` da CSP (ver `src/proxy.ts`) — sem ele o script inline é barrado.
   const nonce = (await headers()).get('x-nonce') ?? undefined;
+  const store = await getCachedPublicStore();
+  const themeStyle = buildThemeStyle(store.ok ? store.data?.theme : undefined);
 
   return (
     <html
@@ -80,6 +94,7 @@ export default async function RootLayout({
           nonce={nonce}
           dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }}
         />
+        {themeStyle && <style>{themeStyle}</style>}
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
         <AdminProviders>{children}</AdminProviders>

@@ -117,11 +117,32 @@ export type CatalogPaymentMethods = {
   card: boolean;
 };
 
+/**
+ * White label (ADR-0001, Fase D) — chaves de cor opcionais que sobrescrevem
+ * as CSS variables padrão (`packages/shared/src/styles/globals.css`) via
+ * `<style>` inline no layout, sem rebuild. Cada chave aceita qualquer valor
+ * de cor CSS válido (o padrão do projeto é `oklch(...)`, mas não é
+ * obrigatório). Chave ausente = mantém o valor estático do CSS.
+ */
+export type CatalogStoreTheme = {
+  primary?: string;
+  primaryForeground?: string;
+  secondary?: string;
+  secondaryForeground?: string;
+  accent?: string;
+  accentForeground?: string;
+  caramel?: string;
+  caramelForeground?: string;
+};
+
 export type CatalogStore = {
   id: string;
   name: string;
   /** CNPJ do MEI, exibido no cabeçalho do comprovante impresso. */
   cnpj: string | null;
+  /** `null`/`{}` = branding padrão (fallback estático da Zelo). */
+  theme: CatalogStoreTheme;
+  logoUrl: string | null;
   phoneE164: string;
   whatsappE164: string;
   addressLine: string;
