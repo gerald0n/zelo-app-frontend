@@ -3,6 +3,7 @@ import 'server-only';
 import { err, ok, type Result } from '@/lib/errors';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/modules/admin/auth';
+import { requireRequestStoreId } from '@/modules/tenant/resolve-store-id';
 
 const SEARCH_LIMIT = 20;
 const LIST_PAGE_SIZE = 30;
@@ -40,6 +41,9 @@ export async function searchAdminCustomers(
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
 
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
+
   // `,`/`()` quebram a sintaxe do filtro `or()` do PostgREST.
   const term = q.trim().replace(/[,()]/g, ' ').trim();
   if (!term) return ok([]);
@@ -48,6 +52,7 @@ export async function searchAdminCustomers(
   const { data, error } = await admin
     .from('customers')
     .select('id, name, phone_e164, email, created_at')
+    .eq('store_id', storeId.data)
     .or(`name.ilike.%${term}%,phone_e164.ilike.%${term}%`)
     .order('created_at', { ascending: false })
     .limit(SEARCH_LIMIT);
@@ -74,6 +79,9 @@ export async function listAdminCustomers(options: {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
 
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
+
   const admin = createAdminSupabaseClient();
   const page = Math.max(1, options.page ?? 1);
   const from = (page - 1) * LIST_PAGE_SIZE;
@@ -82,6 +90,7 @@ export async function listAdminCustomers(options: {
   const { data, error, count } = await admin
     .from('customers')
     .select('id, name, phone_e164, email, created_at', { count: 'exact' })
+    .eq('store_id', storeId.data)
     .order('created_at', { ascending: false })
     .range(from, to);
 

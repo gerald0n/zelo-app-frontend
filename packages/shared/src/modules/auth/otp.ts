@@ -9,6 +9,7 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { deliverCustomerOtp } from '@/modules/auth/otp-delivery';
 import { establishCustomerSession } from '@/modules/auth/establish-session';
 import type { CustomerIdentity } from '@/modules/auth/customer-identity';
+import { requireRequestStoreId } from '@/modules/tenant/resolve-store-id';
 import {
   TWILIO_VERIFY_SENTINEL,
   checkTwilioVerification,
@@ -212,43 +213,61 @@ export async function verifyCustomerOtp(options: {
     .update({ consumed_at: new Date().toISOString() })
     .eq('id', challenge.id);
 
-  const customer = await upsertCustomerFromPhone(phoneE164);
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
+
+  const customer = await upsertCustomerFromPhone(phoneE164, storeId.data);
   if (!customer.ok) return customer;
 
-  const session = await establishCustomerSession(customer.data.id);
+  const session = await establishCustomerSession(customer.data.userId);
   if (!session.ok) return session;
 
   return ok({
-    customer: customer.data,
+    customer: customer.data.identity,
     accessToken: session.data.accessToken,
     refreshToken: session.data.refreshToken,
   });
 }
 
+/**
+ * Resolve (ou cria) o perfil de cliente da loja atual pra este telefone.
+ *
+ * Identidade de login (telefone -> `auth.users`) é compartilhada entre
+ * tenants — `auth.users.phone`/`email` têm unique constraint global no
+ * schema do GoTrue, não dá pra tornar isso por tenant sem mexer em schema
+ * que não é nosso. O que é por tenant é o PERFIL (`customers`): mesmo
+ * telefone pode ter um perfil por loja, cada um com seu próprio `id`
+ * (dono de carrinho/pedidos daquela loja) — ver ADR-0001, Fase C.
+ */
 export async function upsertCustomerFromPhone(
   phoneE164: string,
-): Promise<Result<CustomerIdentity>> {
+  storeId: string,
+): Promise<Result<{ identity: CustomerIdentity; userId: string }>> {
   const admin = createAdminSupabaseClient();
-  const existing = await admin
+  const existingProfile = await admin
     .from('customers')
-    .select('id, name, phone_e164')
+    .select('id, user_id, name, phone_e164')
     .eq('phone_e164', phoneE164)
+    .eq('store_id', storeId)
     .maybeSingle();
 
-  if (existing.error) {
+  if (existingProfile.error) {
     logger.error('Falha ao buscar cliente por telefone', {
-      message: existing.error.message,
+      message: existingProfile.error.message,
     });
     return err('INTERNAL_ERROR', 'Não foi possível concluir o login.', {
-      cause: existing.error,
+      cause: existingProfile.error,
     });
   }
 
-  if (existing.data) {
+  if (existingProfile.data) {
     return ok({
-      id: existing.data.id,
-      phoneE164: existing.data.phone_e164,
-      name: existing.data.name,
+      identity: {
+        id: existingProfile.data.id,
+        phoneE164: existingProfile.data.phone_e164,
+        name: existingProfile.data.name,
+      },
+      userId: existingProfile.data.user_id,
     });
   }
 
@@ -275,6 +294,9 @@ export async function upsertCustomerFromPhone(
       });
     }
 
+    // Já existe um `auth.users` pra esse telefone (login em outro tenant) —
+    // reaproveita a mesma identidade, só cria o perfil (`customers`) novo
+    // pra esta loja.
     const listed = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
     const match = listed.data.users.find(
       (user) => user.phone === phoneE164 || user.email === email,
@@ -285,24 +307,53 @@ export async function upsertCustomerFromPhone(
     userId = match.id;
   }
 
-  const inserted = await admin.from('customers').upsert(
-    {
-      id: userId,
+  const inserted = await admin
+    .from('customers')
+    .insert({
+      user_id: userId,
+      store_id: storeId,
       name: '',
       phone_e164: phoneE164,
       email,
-    },
-    { onConflict: 'id' },
-  );
+    })
+    .select('id, name, phone_e164')
+    .single();
 
-  if (inserted.error) {
+  if (inserted.error || !inserted.data) {
+    if (inserted.error?.code === '23505') {
+      // Corrida: outra verificação concorrente já criou o perfil desta loja
+      // pro mesmo telefone entre o select acima e este insert.
+      const retry = await admin
+        .from('customers')
+        .select('id, name, phone_e164')
+        .eq('user_id', userId)
+        .eq('store_id', storeId)
+        .maybeSingle();
+      if (retry.data) {
+        return ok({
+          identity: {
+            id: retry.data.id,
+            phoneE164: retry.data.phone_e164,
+            name: retry.data.name,
+          },
+          userId,
+        });
+      }
+    }
     logger.error('Falha ao gravar perfil do cliente', {
-      message: inserted.error.message,
+      message: inserted.error?.message,
     });
     return err('INTERNAL_ERROR', 'Não foi possível criar a conta.', {
       cause: inserted.error,
     });
   }
 
-  return ok({ id: userId, phoneE164, name: '' });
+  return ok({
+    identity: {
+      id: inserted.data.id,
+      phoneE164: inserted.data.phone_e164,
+      name: inserted.data.name,
+    },
+    userId,
+  });
 }

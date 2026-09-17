@@ -1,5 +1,6 @@
 import { err, ok, type Result } from '@/lib/errors';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { getRequestStoreId } from '@/modules/tenant/resolve-store-id';
 
 export type CustomerIdentity = {
   id: string;
@@ -34,10 +35,16 @@ export class SupabaseCustomerIdentityProvider implements CustomerIdentityProvide
         return ok(null);
       }
 
+      const storeId = await getRequestStoreId();
+      if (!storeId) {
+        return ok(null);
+      }
+
       const { data: customer } = await supabase
         .from('customers')
         .select('id, name, phone_e164')
-        .eq('id', userId)
+        .eq('user_id', userId)
+        .eq('store_id', storeId)
         .maybeSingle();
 
       if (!customer) {

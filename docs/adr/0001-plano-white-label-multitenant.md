@@ -418,10 +418,81 @@ tenant continuaria resolvendo pra qualquer outro via RPC. As duas ganharam
   `orders.store_id` corretamente. Typecheck de `apps/admin`, `apps/client` e
   `packages/shared` limpo (com `database.ts` regenerado).
 
+**Décima fatia, feita e validada — identidade de cliente por tenant.**
+Decisão tomada (pergunta em aberto desde a nona fatia): desacoplar
+`customers` de `auth.users`, permitindo N perfis de cliente por telefone —
+um por loja.
+
+**Bloqueio de plataforma descoberto ao investigar**: `auth.users.phone` e
+`auth.users.email` têm `unique constraint` **global** no schema do GoTrue
+(gerenciado pelo Supabase Auth, não por nós) — fisicamente não existe criar
+dois `auth.users` com o mesmo telefone, por tenant ou não. Isso descarta de
+saída a ideia de "login por tenant"; a identidade de LOGIN (telefone →
+`auth.users`) continua sendo necessariamente compartilhada entre lojas. O
+que passou a ser por tenant é o PERFIL de negócio.
+
+- Migration `20260917150000_tenant_customer_identity_decouple.sql`:
+  `customers` ganhou `user_id` (FK pra `auth.users`, a identidade
+  compartilhada) separado de `id` (o perfil — dono de carrinho/pedidos/
+  endereços daquela loja, `unique (user_id, store_id)`). A constraint antiga
+  `customers_phone_e164_unique` (global) virou
+  `unique (store_id, phone_e164)`.
+- `private.current_customer_id()` (usada em ~15 policies de RLS sem precisar
+  tocar em nenhuma delas) passou a resolver por dois caminhos: (1)
+  impersonação de servidor — as RPCs `create_order_as_customer`/
+  `transition_order_status_as_customer` continuam forçando
+  `request.jwt.claim.sub` pro `customers.id` alvo diretamente, sem precisar
+  editar essas funções sensíveis; (2) sessão real de cliente — JWT `sub` é
+  `user_id`, resolve o perfil da loja atual via novo
+  `private.request_store_id()`, que lê `x-store-id` do GUC
+  `request.headers` que o PostgREST já expõe por request (confirmado via
+  `curl` direto no REST local — não precisou de nenhuma config nova, ao
+  contrário do que a primeira versão deste ADR cogitava).
+- `createServerSupabaseClient()` (`packages/shared/src/lib/supabase/
+  server.ts`) passou a propagar o header `x-store-id` do request atual pro
+  client Supabase, pra esse GUC chegar populado em toda query de sessão de
+  cliente real. Só esse client precisou mudar — o client de catálogo público
+  (`createPublicSupabaseClient`) e o browser (auth/Realtime, nunca dados
+  protegidos por RLS de cliente) ficaram de fora.
+- `upsertCustomerFromPhone` (`otp.ts`) ganhou `storeId`: primeiro busca o
+  perfil da loja atual por telefone; se não existir, busca/cria o
+  `auth.users` (identidade compartilhada, como já fazia) e cria um perfil
+  novo pra esta loja. Retorna `{ identity, userId }` — `userId` (a
+  identidade real) vai pro `establishCustomerSession`, `identity.id` (o
+  perfil da loja) é o que o resto do app usa. Mesmo ajuste em
+  `otp-manual-approval.ts` (segundo caller).
+- `SupabaseCustomerIdentityProvider.getCurrent()` (`customer-identity.ts`)
+  passou a buscar por `user_id` + `store_id` em vez de `id`.
+- `private.create_manual_order`: a busca de cliente existente por telefone
+  (pra vincular a comanda a um cadastro) ganhou `and c.store_id = v_store_id`
+  — sem isso, com dois tenants, o mesmo telefone podia casar com o perfil de
+  outra loja (`select` sem `limit`/`order`, resultado indeterminado).
+- `searchAdminCustomers`/`listAdminCustomers` (`apps/admin/.../customers.ts`)
+  ganharam `.eq('store_id', ...)` — gap à parte encontrado nesta fatia: a
+  tela "Clientes" do admin nunca tinha sido escopada por loja (RLS de
+  `customers` já protegia contra acesso direto via PostgREST desde a fatia
+  7, mas essas duas funções usam service role, que bypassa RLS).
+- `ensureCustomerRecord` (`orders/customer.ts`): o branch de "criar perfil se
+  não existir" já era código morto antes desta fatia — todo caller resolve a
+  identidade via `resolveCustomerForCheckout()`, que só retorna perfil
+  quando ele já existe (login por OTP já cria o perfil antes da sessão
+  existir). Virou um simples "confirma que existe, falha alto se sumiu" —
+  criar aqui exigiria `user_id`/`store_id` que a função não recebe, e não
+  fazia sentido inventar isso pra um caminho inalcançável.
+- Validado via `psql`, simulando `request.headers`/`request.jwt.claims`:
+  mesmo `user_id` com perfil em duas lojas — `current_customer_id()` resolve
+  o perfil certo conforme o `x-store-id`, e `null` sem header nenhum; RLS de
+  `customers` só mostra o perfil da loja atual; caminho de impersonação
+  (JWT `sub` forçado pro `customers.id`) continua funcionando sem tocar nas
+  RPCs; `create_manual_order` com o mesmo telefone cadastrado em duas lojas
+  vinculou a comanda ao perfil da loja certa. Confirmado via `curl` direto
+  no REST local que PostgREST expõe `request.headers` como GUC sem config
+  extra. Typecheck de `apps/admin`, `apps/client` e `packages/shared` limpo
+  (com `database.ts` regenerado).
+
 **Não feito ainda:**
-- Decisão de identidade de cliente por tenant (`upsertCustomerFromPhone`, ver
-  "achado novo" acima).
-- Reintroduzir suporte a cupom em `create_manual_order` (achado acima).
+- Reintroduzir suporte a cupom em `create_manual_order` (achado da fatia
+  anterior — sinalizado como tarefa separada).
 - RLS tenant-aware na leitura pública anônima (hoje deliberadamente fora de
   escopo, ver acima).
 - Testar cada fluxo já em produção (checkout, pix automático, impressão

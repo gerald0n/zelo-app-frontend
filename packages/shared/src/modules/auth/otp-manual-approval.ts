@@ -7,6 +7,7 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { establishCustomerSession } from '@/modules/auth/establish-session';
 import { upsertCustomerFromPhone } from '@/modules/auth/otp';
 import type { CustomerIdentity } from '@/modules/auth/customer-identity';
+import { requireRequestStoreId } from '@/modules/tenant/resolve-store-id';
 
 /** Janela de validade de uma aprovação manual após o admin confirmar. */
 const APPROVAL_TTL_MS = 15 * 60 * 1000;
@@ -191,14 +192,17 @@ export async function checkAndConsumeApproval(
     });
   }
 
-  const customer = await upsertCustomerFromPhone(phoneE164);
+  const storeId = await requireRequestStoreId();
+  if (!storeId.ok) return storeId;
+
+  const customer = await upsertCustomerFromPhone(phoneE164, storeId.data);
   if (!customer.ok) return customer;
 
-  const session = await establishCustomerSession(customer.data.id);
+  const session = await establishCustomerSession(customer.data.userId);
   if (!session.ok) return session;
 
   return ok({
-    customer: customer.data,
+    customer: customer.data.identity,
     accessToken: session.data.accessToken,
     refreshToken: session.data.refreshToken,
   });

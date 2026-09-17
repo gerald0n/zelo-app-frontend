@@ -7,7 +7,6 @@ import {
 } from '@/modules/auth/customer-identity';
 import { err, ok, type Result } from '@/lib/errors';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 
 export async function resolveCustomerForCheckout(): Promise<
@@ -23,7 +22,18 @@ export async function resolveCustomerForCheckout(): Promise<
 }
 
 /**
- * Garante o perfil em `customers` para a sessão Auth já existente.
+ * Confirma que o perfil em `customers` (dono de `identity.id`) ainda existe.
+ *
+ * `identity` sempre vem de `resolveCustomerForCheckout()`
+ * (`SupabaseCustomerIdentityProvider.getCurrent()`), que só retorna
+ * não-nulo quando esse perfil já existe pra esta sessão + loja — criar o
+ * registro aqui nunca chegou a ser exercitado (o login por OTP já cria o
+ * perfil via `upsertCustomerFromPhone` antes da sessão existir). Depois da
+ * Fase C (identidade de cliente por tenant, `customers.user_id` separado de
+ * `customers.id`), criar o registro exigiria `user_id`/`store_id` que esta
+ * função não recebe — como o caminho é inalcançável, só confirma e falha
+ * alto se o perfil sumiu (ex.: apagado manualmente) em vez de tentar recriar
+ * com dado incompleto.
  */
 export async function ensureCustomerRecord(
   identity: CustomerIdentity,
@@ -46,28 +56,11 @@ export async function ensureCustomerRecord(
     });
   }
 
-  if (existing.data) return ok(identity);
-
-  const supabase = await createServerSupabaseClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  if (claims?.claims.sub !== identity.id) {
-    return err('UNAUTHENTICATED', 'Sessão inválida para criar o perfil.');
-  }
-
-  const inserted = await admin.from('customers').upsert(
-    {
-      id: identity.id,
-      name: identity.name,
-      phone_e164: identity.phoneE164,
-    },
-    { onConflict: 'id' },
-  );
-
-  if (inserted.error) {
-    logger.error('Falha ao upsert customer', { message: inserted.error.message });
-    return err('INTERNAL_ERROR', 'Não foi possível registrar o cliente.', {
-      cause: inserted.error,
+  if (!existing.data) {
+    logger.error('Perfil de cliente não encontrado para sessão ativa', {
+      customerId: identity.id,
     });
+    return err('UNAUTHENTICATED', 'Sessão inválida. Faça login novamente.');
   }
 
   return ok(identity);
