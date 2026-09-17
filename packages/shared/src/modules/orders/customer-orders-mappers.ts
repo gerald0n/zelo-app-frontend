@@ -1,5 +1,6 @@
 import {
   canCustomerCancel,
+  canRescheduleOrder,
   type CustomerOrder,
   type CustomerOrderListItem,
   type OrderStatus,
@@ -330,6 +331,10 @@ export function mapDetail(row: {
       createdAt: entry.created_at,
     })),
     canCancel: canCustomerCancel(row.status),
+    canReschedule: canRescheduleOrder({
+      status: row.status,
+      timing: row.timing,
+    }),
     review,
     canReview: row.status === 'delivered' && review === null,
   };

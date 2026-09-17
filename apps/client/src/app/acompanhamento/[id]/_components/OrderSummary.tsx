@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import {
+  CalendarClock,
   ChevronRight,
   Loader2,
   MapPin,
@@ -112,6 +113,15 @@ export function OrderSummary({ order, reordering, onReorder }: Props) {
             Pedir novamente
           </button>
         )}
+        {order.canReschedule ? (
+          <Link
+            href={`/reagendar-pedido?orderId=${order.id}&orderNumber=${encodeURIComponent(order.number)}`}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3.5 text-sm font-semibold text-foreground transition-[background-color,transform] duration-100 hover:bg-accent active:scale-[0.99]"
+          >
+            <CalendarClock className="size-[18px]" aria-hidden="true" />
+            Reagendar pedido
+          </Link>
+        ) : null}
         {order.canCancel ? (
           <Link
             href={`/cancelar-pedido?orderId=${order.id}&orderNumber=${encodeURIComponent(order.number)}`}
