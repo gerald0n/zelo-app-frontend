@@ -677,11 +677,43 @@ dinâmicos.**
   futura neste projeto). Typecheck de `apps/admin`, `apps/client` e
   `packages/shared` limpo.
 
+**Segunda fatia, feita e validada — logo dinâmico e nome da loja no
+header/nav.**
+- `ZeloSeal.tsx` ganhou `logoUrl`/`alt`/`fallbackLetter` — usa
+  `stores.logo_url` quando presente, mantém o selo estático da Zelo como
+  fallback (não trocou pra um genérico ainda, ver "não feito" abaixo), e a
+  letra de fallback do `onError` agora é a inicial do nome da loja, não
+  sempre "Z".
+- `apps/client/src/app/loja/page.tsx` (Server Component, já buscava a loja)
+  passa `store.logoUrl`/`store.name` pro `ZeloSeal`.
+- `HeroContent.tsx` (cabeçalho mobile) e `DesktopNavigation.tsx` (nav
+  desktop), ambos Client Components sem acesso a dado de servidor, passaram
+  a usar o hook já existente `useCatalogStore()` (`hooks/useStoreOpen.ts`,
+  react-query, já usado por `useStoreOpen`/`useStoreHoursLabel`) — sem
+  precisar inventar um novo mecanismo de fetch. "Zelo"/"Zelo Confeitaria"
+  hardcoded viraram `storeName?.split(' ')` (primeira palavra vs. nome
+  completo, mesmo padrão visual de antes — nome grande + resto em
+  caixa-alta pequena).
+- `StoreHeader.tsx` passa `storeName`/`logoUrl` pros dois pontos onde
+  renderiza `HeroContent` (hero expandido e barra compacta).
+- Validado via navegador (`docker exec` pra trocar `stores.name`/`logo_url`,
+  esperando o cache de 60s expirar via `curl` em loop + limpando o cache do
+  service worker do PWA de novo — mesmo cuidado de ambiente da fatia
+  anterior): nome padrão da Zelo sem mudança nenhuma; com `name = 'Doce
+  Aroma Confeitaria'`, o header mobile, o nav desktop (split "Doce" /
+  "AROMA CONFEITARIA") e o `<title>` da aba mudaram juntos; com `logo_url`
+  de teste (imagem externa), o selo mobile trocou pra essa imagem.
+  Typecheck de `apps/client` limpo (não mexeu em `apps/admin`/`packages/
+  shared` nesta fatia).
+
 **Não feito ainda:**
-- Logo dinâmico (`ZeloSeal.tsx` ler `logo_url`, fallback genérico em vez de
-  "Z").
-- As ~39 strings "Zelo" visíveis (metadata restante, JSX, notificações,
-  WhatsApp, Pix).
+- Fallback do logo quando `logo_url` é nulo continua sendo o arquivo real
+  da Zelo (`zelo-selo.png`), não um selo genérico — pra um tenant sem logo
+  próprio ainda apareceria a marca da Zelo. Fica pra quando o critério de
+  saída (tenant fictício sem nenhuma referência à Zelo) for revisitado.
+- As ~35 strings "Zelo" visíveis restantes (metadata do admin além do
+  título, JSX de outras telas, notificações, WhatsApp, Pix — a lista
+  completa está no levantamento inicial acima).
 - Seleção de fonte por tenant (`font_config`, fica pra fatia própria dado o
   import estático do `next/font`).
 - `opengraph-image.tsx`/`twitter-image.tsx` dinâmicos por tenant (decisão

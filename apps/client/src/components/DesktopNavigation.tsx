@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ShoppingBag } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { useCatalogStore } from '@/hooks/useStoreOpen';
 import { shouldHideCustomerNav } from '@/lib/layout';
 import { cn } from '@/lib/cn';
 
@@ -17,6 +18,9 @@ const PRIMARY_ROUTES = [
 export default function DesktopNavigation() {
   const { totalItems } = useCart();
   const pathname = usePathname();
+  const { data: storeData } = useCatalogStore();
+  const storeName = storeData?.store?.name ?? 'Zelo Confeitaria';
+  const [firstWord, ...rest] = storeName.split(' ');
 
   // Visibilidade só por CSS (`lg:flex`): renderizar/ocultar via JS fazia o
   // primeiro paint sair sem a barra e "pular" depois de montar.
@@ -28,11 +32,13 @@ export default function DesktopNavigation() {
     <header className="sticky top-0 z-[100] hidden h-14 items-center justify-between border-b border-border bg-background px-6 lg:flex">
       <Link href="/" className="flex items-baseline gap-[7px]">
         <span className="font-serif text-2xl font-semibold tracking-tight">
-          Zelo
+          {firstWord}
         </span>
-        <span className="text-2xs font-medium uppercase tracking-widest text-muted-foreground">
-          Confeitaria
-        </span>
+        {rest.length > 0 && (
+          <span className="text-2xs font-medium uppercase tracking-widest text-muted-foreground">
+            {rest.join(' ')}
+          </span>
+        )}
       </Link>
       <nav className="flex items-center gap-[5px]">
         {PRIMARY_ROUTES.map((item) => {

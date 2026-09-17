@@ -3,7 +3,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useCart } from '@/contexts/CartContext';
-import { useStoreHoursLabel, useStoreOpen } from '@/hooks/useStoreOpen';
+import {
+  useCatalogStore,
+  useStoreHoursLabel,
+  useStoreOpen,
+} from '@/hooks/useStoreOpen';
 import { HeroContent } from '@/components/store-header/HeroContent';
 import { cn } from '@/lib/utils';
 
@@ -45,6 +49,8 @@ export default function StoreHeader({ onHeightChange }: Props) {
 
   const storeOpen = useStoreOpen();
   const hoursLabel = useStoreHoursLabel();
+  const { data: storeData } = useCatalogStore();
+  const store = storeData?.store;
   const { totalItems } = useCart();
 
   useEffect(() => {
@@ -210,6 +216,8 @@ export default function StoreHeader({ onHeightChange }: Props) {
               storeOpen={storeOpen}
               hoursLabel={hoursLabel}
               totalItems={totalItems}
+              storeName={store?.name}
+              logoUrl={store?.logoUrl}
               expanded={false}
             />
           </div>
@@ -227,6 +235,8 @@ export default function StoreHeader({ onHeightChange }: Props) {
           storeOpen={storeOpen}
           hoursLabel={hoursLabel}
           totalItems={totalItems}
+          storeName={store?.name}
+          logoUrl={store?.logoUrl}
           expanded
         />
       </div>

@@ -10,12 +10,20 @@ export function HeroContent({
   storeOpen,
   hoursLabel,
   totalItems,
+  storeName,
+  logoUrl,
 }: {
   expanded: boolean;
   storeOpen: boolean;
   hoursLabel: string;
   totalItems: number;
+  /** `undefined` enquanto a query da loja não resolveu — cai no fallback da Zelo. */
+  storeName?: string;
+  logoUrl?: string | null;
 }) {
+  const fullName = storeName ?? 'Zelo Confeitaria';
+  const shortName = storeName ? storeName.split(' ')[0] : 'Zelo';
+
   return (
     <div className="flex items-start justify-between gap-2.5">
       <div className="flex min-w-0 items-start gap-2.5">
@@ -25,6 +33,9 @@ export function HeroContent({
             expanded ? 'size-11 rounded-xl' : 'size-8 rounded-lg',
           )}
           letterClassName={expanded ? 'text-xl' : 'text-base'}
+          logoUrl={logoUrl}
+          alt={fullName}
+          fallbackLetter={fullName.charAt(0).toUpperCase()}
         />
 
         <div className="min-w-0 pt-0.5">
@@ -35,7 +46,7 @@ export function HeroContent({
                 expanded ? 'text-lg' : 'text-sm',
               )}
             >
-              {expanded ? 'Zelo Confeitaria' : 'Zelo'}
+              {expanded ? fullName : shortName}
             </h1>
             <StatusBadge storeOpen={storeOpen} compact={!expanded} />
           </div>

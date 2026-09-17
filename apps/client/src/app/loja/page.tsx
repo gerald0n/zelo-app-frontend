@@ -54,6 +54,9 @@ export default async function LojaPage() {
             className="size-16"
             fallbackClassName="size-16 rounded-full"
             letterClassName="text-2xl"
+            logoUrl={store.logoUrl}
+            alt={store.name}
+            fallbackLetter={store.name.charAt(0).toUpperCase()}
           />
           <h2 className="font-serif text-xl font-semibold tracking-tight">
             {store.name}
