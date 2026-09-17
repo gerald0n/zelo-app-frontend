@@ -2453,6 +2453,63 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      reschedule_order: {
+        Args: {
+          p_actor_type: Database["public"]["Enums"]["status_change_actor_type"]
+          p_new_scheduled_for: string
+          p_order_id: string
+        }
+        Returns: {
+          add_ons_total_cents: number
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          change_for_amount_cents: number | null
+          coupon_code: string | null
+          coupon_discount_cents: number
+          coupon_id: string | null
+          created_at: string
+          customer_id: string | null
+          customer_note: string | null
+          delivery_fee_cents: number
+          delivery_method: Database["public"]["Enums"]["delivery_method"]
+          fulfillment_location_id: string | null
+          guest_name: string | null
+          guest_phone_e164: string | null
+          id: string
+          internal_note: string | null
+          kitchen_printed_at: string | null
+          mp_order_id: string | null
+          mp_payment_id: string | null
+          mp_refund_id: string | null
+          needs_change: boolean | null
+          order_number: number
+          paid_at: string | null
+          payment_fee_cents: number | null
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_net_cents: number | null
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          pix_attempt: number
+          pix_expires_at: string | null
+          pix_qr_code: string | null
+          pix_qr_code_base64: string | null
+          pix_ticket_url: string | null
+          refunded_at: string | null
+          scheduled_for: string | null
+          source_order_id: string | null
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal_cents: number
+          timing: Database["public"]["Enums"]["order_timing"]
+          total_cents: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       transition_order_status: {
         Args: {
           p_actor_type: Database["public"]["Enums"]["status_change_actor_type"]

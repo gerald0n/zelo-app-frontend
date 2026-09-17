@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, Loader2, Printer } from 'lucide-react';
+import { ArrowRight, CalendarClock, Loader2, Printer } from 'lucide-react';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import { statusLabel, type OrderStatus } from '@/modules/orders/types';
 import { nextAdminStatus, type AdminOrderDetail } from '@/modules/admin/types';
@@ -17,6 +17,7 @@ type Props = {
   onRetryRefund: () => void;
   onReprintTicket: () => void;
   onReprintSlip: () => void;
+  onReschedule: () => void;
 };
 
 export function OrderDetailActions({
@@ -30,6 +31,7 @@ export function OrderDetailActions({
   onRetryRefund,
   onReprintTicket,
   onReprintSlip,
+  onReschedule,
 }: Props) {
   const next = nextAdminStatus(order.status, order.deliveryMethod);
 
@@ -66,6 +68,18 @@ export function OrderDetailActions({
           {busy ? <Loader2 className="size-4 animate-spin" /> : null}
           Avançar para &quot;{statusLabel(next as OrderStatus)}&quot;
           <ArrowRight className="size-4" />
+        </button>
+      ) : null}
+
+      {order.canReschedule ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onReschedule}
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-border py-3 text-sm font-semibold disabled:opacity-60"
+        >
+          <CalendarClock className="size-4" />
+          Reagendar pedido
         </button>
       ) : null}
 
