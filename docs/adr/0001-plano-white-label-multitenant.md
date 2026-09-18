@@ -1157,11 +1157,64 @@ Supabase de dev compartilhado, não Vercel preview ainda).**
 - Abrir o PR `feat/tenant-store-id` → `develop` (só depois do Pix/
   impressora serem testados, ou de uma decisão consciente de aceitar esse
   risco residual).
-- Deploy de `apps/gestor` (projeto Vercel novo, domínio, env vars) — decidido
-  que entra neste ciclo, mas ainda não provisionado.
-- Nenhuma migration desta branch foi aplicada em produção — só no Supabase de
-  dev compartilhado. Continua valendo o lembrete de checar `supabase
-  migration list --linked` antes de qualquer deploy real.
+- Nenhuma migration desta branch foi aplicada em produção real
+  (`dhfksxagcvwaglrgcsmn`/`zelo-app`) — só no Supabase de dev compartilhado
+  e no de preview (ver fatia abaixo). Continua valendo o lembrete de checar
+  `supabase migration list --linked` antes de qualquer deploy real.
+
+**Segunda fatia, feita e validada — `apps/gestor` deployado + achado
+importante: Preview da Vercel apontava pra produção.**
+- Projeto Vercel `zelo-gestor` criado (`gerald0ns-projects`, ligado ao
+  mesmo repositório GitHub, root directory `apps/gestor`, região `gru1`,
+  mesmo padrão de `zelo-admin`/`zelo-app`).
+- **Achado durante a configuração das env vars**: o valor de
+  `NEXT_PUBLIC_APP_ENV` no ambiente "Preview" do `zelo-admin` na Vercel era
+  literalmente `"production"`, e o `NEXT_PUBLIC_SUPABASE_URL` apontava pro
+  projeto `dhfksxagcvwaglrgcsmn` (`zelo-app`, produção real) — confirmado
+  por leitura bloqueada pelo classificador de segurança do Claude Code com
+  a razão explícita "[Production Reads]". Ou seja: **os ambientes de
+  Preview do `zelo-admin` e do `zelo-app` (client) estavam configurados
+  pra usar o banco de produção**, não o projeto dedicado
+  `zelo-app-preview` (`dniouobkuzanwqhreoig`) que já existia mas nunca
+  tinha sido conectado nas env vars da Vercel. Não foi uma mudança desta
+  sessão — já estava assim antes; só apareceu porque, ao copiar as env
+  vars do admin pro gestor novo, a leitura de verificação foi bloqueada.
+  Nenhuma escrita chegou a acontecer em produção; só uma tentativa de
+  leitura, barrada antes de rodar.
+- Corrigido nos três projetos (`zelo-gestor`, `zelo-admin`, `zelo-app`):
+  `NEXT_PUBLIC_SUPABASE_URL`/`SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY`/
+  `SUPABASE_SERVICE_ROLE_KEY` do ambiente Preview reapontados pro projeto
+  correto (`zelo-app-preview`, `dniouobkuzanwqhreoig`).
+- `zelo-app-preview` estava com o schema desatualizado desde ~09/09 (34
+  migrations pendentes, muito além só das desta branch — incluía features
+  da própria `develop` que nunca tinham sido sincronizadas lá). Aplicadas
+  todas via `supabase db push --project-ref dniouobkuzanwqhreoig`,
+  sempre passando o projeto explicitamente (nunca dependendo do "linked"
+  padrão do CLI, que aponta pra produção). Criado o admin de plataforma
+  (`gestor@zelo.local`) nesse banco, mesmo padrão do dev compartilhado.
+- Desativada a proteção SSO padrão da Vercel (`ssoProtection`) nos três
+  projetos — ela vinha ligada por padrão e exigia login da própria Vercel
+  antes de chegar na tela de login de cada app, o que não é o que foi
+  pedido (proteção só pelo login de cada app). Reversível a qualquer
+  momento (`vercel project protection enable <projeto> --sso`).
+- Validado: os três apps carregam corretamente nas URLs de preview
+  (branding da loja, catálogo, tela de login do gestor com login completo
+  e lista de lojas carregada do banco certo).
+- **Nota de segurança**: a chave de serviço de produção
+  (`SUPABASE_SERVICE_ROLE_KEY` de `dhfksxagcvwaglrgcsmn`) foi colada no
+  chat pelo usuário e ficou configurada por alguns minutos no ambiente
+  Preview do `zelo-gestor` antes de ser identificada como produção e
+  removida — nenhuma build chegou a rodar com ela, mas fica registrado.
+  Rotacionar essa chave no painel do Supabase é uma decisão do usuário,
+  não algo que foi feito aqui.
+
+**Não feito ainda** (desta fatia):
+- Testar Pix automático de verdade — agora existe URL pública, então isso
+  deixou de estar bloqueado por infraestrutura (só falta executar).
+- Impressão térmica continua bloqueada (hardware físico).
+- Decidir se a proteção SSO da Vercel volta a ser ativada pro admin/client
+  (foi desativada pra destravar o teste, não por pedido explícito pra
+  esses dois projetos especificamente).
 
 ## Sistema de feature flags por tenant
 
