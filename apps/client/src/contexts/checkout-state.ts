@@ -2,7 +2,6 @@ import type { DeliveryQuoteSource } from '@/modules/delivery';
 import type { LocationSource } from '@/modules/delivery/geo';
 
 export type DeliveryType = 'delivery' | 'pickup';
-export type ScheduleType = 'now' | 'scheduled';
 export type PaymentMethod = 'pix' | 'cash' | 'card';
 /** Origem do pedido: cardápio normal (Pereiro) ou o local satélite de São Miguel/RN. */
 export type FulfillmentLocation = 'pereiro' | 'sao_miguel';
@@ -49,7 +48,6 @@ export type CheckoutState = {
   /** `true` só no carrinho de pronta entrega (São Miguel) — nunca mistura com encomenda. */
   prontaEntrega: boolean;
   deliveryType: DeliveryType;
-  scheduleType: ScheduleType;
   scheduledDate?: string;
   scheduledTime?: string;
   /** Texto legado / resumo do endereço. */
@@ -87,7 +85,6 @@ export const initialCheckoutState: CheckoutState = {
   satelliteLocationId: null,
   prontaEntrega: false,
   deliveryType: 'delivery',
-  scheduleType: 'now',
   address: '',
   addressDetails: emptyAddressFor('pereiro'),
   deliveryFeeCents: 0,
