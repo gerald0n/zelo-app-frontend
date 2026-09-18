@@ -2702,6 +2702,7 @@ export type Database = {
           scheduled_for: string | null
           source_order_id: string | null
           status: Database["public"]["Enums"]["order_status"]
+          store_id: string | null
           subtotal_cents: number
           timing: Database["public"]["Enums"]["order_timing"]
           total_cents: number
