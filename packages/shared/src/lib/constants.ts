@@ -84,3 +84,11 @@ export function bannerImagePublicUrl(
 ): string {
   return publicStorageUrl('banner-images', storagePath, transform);
 }
+
+/** URL pública de um logo de loja (bucket `store-logos`, ADR-0001 Fase E). */
+export function storeLogoPublicUrl(
+  storagePath: string,
+  transform?: ImageTransform,
+): string {
+  return publicStorageUrl('store-logos', storagePath, transform);
+}

@@ -792,6 +792,54 @@ da Zelo.**
   a imagem fixa; restaurado o valor original depois do teste. Typecheck de
   `apps/client` limpo.
 
+**Quinta fatia, feita e validada — fonte por tenant.**
+- `font-presets.ts` (novo, `packages/shared/src/modules/catalog/`) define 3
+  combinações fixas de fonte (`FontPresetId`): `'zelo'` (padrão, Fraunces +
+  Geist), `'classico'` (Playfair Display + Inter) e `'artesanal'` (Caveat
+  manuscrita + Nunito). `next/font/google` exige import estático — não dá
+  pra aceitar fonte arbitrária vinda do banco —, então os dois apps de
+  tenant (`apps/client`, `apps/admin`) passaram a importar as 4 fontes
+  extras (3 presets × 2 papéis, menos o padrão que já existia) sempre,
+  mesmo quando o tenant não usa aquele preset; o download do arquivo de
+  fonte só acontece se aquele `@font-face` for realmente referenciado por
+  texto visível (comportamento padrão do navegador), então o custo de ter
+  as 3 opções pré-carregadas é baixo.
+- `stores.font_config jsonb` (coluna já existia desde a Fase A, sem leitor
+  até agora) ganhou o tipo `CatalogStoreFontConfig = { preset?: string }`
+  em `types.ts`, mapeado em `mappers.ts`.
+- `font-style.ts` (novo) — `buildFontStyle(fontConfig)`, mesmo padrão de
+  `theme-style.ts` (gera um `<style>:root{...}</style>` inline). **Detalhe
+  que custou um bug real**: o `@theme inline` do Tailwind
+  (`globals.css`) declara `--font-serif: var(--font-fraunces)`, e o
+  `@theme inline` resolve essa referência em build-time — a utilidade
+  `.font-serif` gerada aponta direto pra `--font-fraunces`, não pra
+  `--font-serif`. Sobrescrever `--font-serif` em runtime (primeira versão
+  do código) não tinha efeito nenhum, porque nenhuma classe lê essa
+  variable de novo depois do build. O fix foi sobrescrever
+  `--font-fraunces`/`--font-geist` diretamente — as variables "de origem"
+  que o `@theme inline` referenciou —, exatamente como `buildThemeStyle()`
+  já fazia com `--primary` (não com `--color-primary`, que é o nome
+  "inline" gerado). Fica registrado aqui porque é uma pegadinha que vai se
+  repetir em qualquer override futuro de token do `@theme inline`.
+- Validado: gravado `font_config = {"preset": "artesanal"}` direto no
+  banco, `/loja` renderizou "Zelo Confeitaria" em Caveat (manuscrita) —
+  confirmado por `getComputedStyle` e visualmente por screenshot; testado
+  também `"classico"` (Playfair Display); revertido pro padrão depois.
+  Typecheck de `packages/shared`/`apps/client`/`apps/admin` limpo.
+- **De propósito fora desta fatia**: imagem Open Graph dinâmica por tenant
+  (custo de perder geração estática, decisão em aberto — não escolhida
+  desta vez) e UI no `apps/gestor` pra escolher o preset (feita junto com a
+  fatia de upload de logo, ver Fase E abaixo).
+- **Bug encontrado e corrigido nesta fatia, sem relação com fonte**: o
+  `HomeCatalog.tsx` (client) tinha um import de
+  `@/hooks/useMenuFilterPersistence` que nunca foi commitado em nenhuma
+  branch — vazou de uma edição anterior (fatia 3 desta Fase D) que rodou
+  no mesmo diretório de trabalho compartilhado enquanto outra sessão tinha
+  esse hook como arquivo não rastreado. Quando aquela sessão deu stash e
+  trocou de branch, o arquivo sumiu e o typecheck quebrou. Revertido pro
+  `useState<Filter>` original — sem esse hook, `HomeCatalog.tsx` nunca
+  dependeu dele de verdade.
+
 **Não feito ainda:**
 - `apps/admin/src/app/configuracoes/_sections/PushNotificationPreview.tsx`
   ainda tem "Zelo" fixo (ver acima — pertence a WIP de outra sessão, fica
@@ -800,15 +848,14 @@ da Zelo.**
   Pix quando o cliente não tem e-mail real (`order-pix-charge.ts`) — deixado
   como está: é um placeholder técnico interno pro Mercado Pago, não
   branding visível, e mudar pode ter implicação na conta MP.
-- Seleção de fonte por tenant (`font_config`, fica pra fatia própria dado o
-  import estático do `next/font`).
 - `opengraph-image.tsx`/`twitter-image.tsx` dinâmicos por tenant (decisão
   de custo/benefício em aberto, ver levantamento acima).
 - Critério de saída original ("um tenant fictício com marca diferente, sem
   nenhuma referência a 'Zelo' sobrevivendo") **quase cumprido**: tema,
-  metadata, logo (com fallback genérico), header/nav, UI de conta/
-  notificações/pedidos, push, WhatsApp e Pix já são dinâmicos; restam só a
-  imagem OG estática, fonte por tenant e o preview de push da outra sessão.
+  fonte, metadata, logo (com fallback genérico e upload real, ver Fase E),
+  header/nav, UI de conta/notificações/pedidos, push, WhatsApp e Pix já são
+  dinâmicos; resta só a imagem OG estática e o preview de push da outra
+  sessão.
 
 ### Fase E — App gestor
 - `apps/gestor`: CRUD de tenants, ativação de features, visão de uso/armazenamento.
@@ -904,10 +951,40 @@ mente sobre ter efeito. Isso só faz sentido depois que pelo menos um flag
 real (ex.: `carousel_home`, que já tem UI de config no admin) for
 efetivamente lido em algum caminho de código condicionado por tenant.
 
+**Terceira fatia, feita e validada — upload de logo pro Storage + seletor
+de fonte na UI do gestor.**
+- Migration `20260918130000_store_logos_bucket.sql` — bucket
+  `store-logos` (público, 5 MB, JPEG/PNG/WebP), mesmo padrão de
+  `product-images`/`banner-images` (policy de leitura pública +
+  insert/update/delete restrito a `private.is_admin()`).
+- `uploadStoreLogo(id, file)` (`modules/gestor/stores.ts`) — mesmo padrão
+  de `uploadBannerImage` do admin: não confia no `Content-Type` do
+  cliente, reencoda com `sharp` (`resize(512,512,{fit:'cover'})` — recorta
+  quadrado, já que o selo é circular/quadrado em `ZeloSeal.tsx`), converte
+  pra WebP, envia, grava a URL pública em `stores.logo_url` e remove o
+  arquivo antigo do Storage (só se o logo anterior também tiver vindo de
+  um upload — uma URL externa não é tocada).
+  `storeLogoPublicUrl()` novo em `lib/constants.ts` (mesmo padrão de
+  `productImagePublicUrl`/`bannerImagePublicUrl`).
+- UI: campo de arquivo na seção "Logo" da página de detalhe da loja, com
+  preview do logo atual; o campo de texto "URL do logo" continua existindo
+  como alternativa pra apontar uma imagem já hospedada em outro lugar. A
+  seção de tema ganhou um `<select>` com os 3 presets de
+  `FONT_PRESETS` (fatia anterior).
+- Validado: **o upload de arquivo não dá pra testar no navegador embutido
+  desta sessão** (`<input type="file">` não é simulável por esse tooling —
+  só o Chrome externo tem essa capacidade). Em vez disso, validado a
+  pipeline inteira (`sharp` → upload → `stores.logo_url` → URL pública)
+  com um script Node standalone reproduzindo exatamente os mesmos passos
+  do código contra o Supabase local: resize/conversão OK, upload OK,
+  update do banco OK, URL pública respondeu `200`, `/loja` renderizou o
+  logo enviado. Testado também o bucket/RLS isoladamente via Storage API
+  antes disso. Arquivo e valor de teste revertidos depois. Typecheck/lint
+  de `apps/gestor` limpos.
+
 **Não feito ainda** (dos 4 steps do wizard):
 - Step 1 completo: domínio automatizado via Vercel Domains API (hoje só
   grava o valor no banco, não provisiona nada).
-- Step 2: upload de logo (Supabase Storage) e edição de `font_config`.
 - Step 3: bloqueado não por infra, mas por não ter nenhum flag real
   consumido no código ainda (ver acima).
 - Step 4: segue bloqueado por infra de secrets (ADR-0003) — nem começado.
@@ -915,6 +992,9 @@ efetivamente lido em algum caminho de código condicionado por tenant.
   real da Zelo) — ainda é processo manual, não fluxo no gestor.
 - CRUD de administradores de plataforma pela própria UI do gestor (hoje só
   via seed/SQL direto).
+- Upload de logo não foi validado com um `<input type="file">` real de
+  navegador nesta sessão (limitação do tooling, ver acima) — vale um teste
+  manual humano antes de confiar cegamente nisso em produção.
 
 #### Fase E — desenho (plano futuro, resto do wizard)
 

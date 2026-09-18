@@ -1,7 +1,13 @@
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
-import { getStore, updateStore, updateStoreBranding } from '@/modules/gestor/stores';
-import type { CatalogStoreTheme } from '@/modules/catalog/types';
+import {
+  getStore,
+  updateStore,
+  updateStoreBranding,
+  uploadStoreLogo,
+} from '@/modules/gestor/stores';
+import type { CatalogStoreTheme, CatalogStoreFontConfig } from '@/modules/catalog/types';
+import { FONT_PRESETS } from '@/modules/catalog/font-presets';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -34,6 +40,7 @@ export default async function LojaDetailPage({
 
   const store = result.data;
   const theme = (store.theme ?? {}) as CatalogStoreTheme;
+  const fontPreset = ((store.font_config as CatalogStoreFontConfig) ?? {}).preset ?? '';
 
   async function updateStoreAction(formData: FormData): Promise<void> {
     'use server';
@@ -68,8 +75,24 @@ export default async function LojaDetailPage({
     const patch = await updateStoreBranding(id, {
       logoUrl: get('logoUrl') || null,
       theme: nextTheme,
+      fontPreset: get('fontPreset') || undefined,
     });
 
+    if (!patch.ok) {
+      redirect(`/lojas/${id}?erro=${encodeURIComponent(patch.error.message)}`);
+    }
+    redirect(`/lojas/${id}?ok=1`);
+  }
+
+  async function uploadLogoAction(formData: FormData): Promise<void> {
+    'use server';
+
+    const file = formData.get('logoFile');
+    if (!(file instanceof File) || file.size === 0) {
+      redirect(`/lojas/${id}?erro=${encodeURIComponent('Escolha um arquivo de imagem.')}`);
+    }
+
+    const patch = await uploadStoreLogo(id, file);
     if (!patch.ok) {
       redirect(`/lojas/${id}?erro=${encodeURIComponent(patch.error.message)}`);
     }
@@ -139,22 +162,70 @@ export default async function LojaDetailPage({
         </button>
       </form>
 
+      <h2 className="mb-1 mt-8 text-lg font-bold tracking-tight">Logo</h2>
+      <p className="mb-4 text-sm text-muted-foreground">
+        JPEG, PNG ou WebP, até 5 MB — é recortado quadrado e convertido pra
+        WebP no servidor.
+      </p>
+
+      {store.logo_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={store.logo_url}
+          alt=""
+          className="mb-3 size-16 rounded-full border border-border object-cover"
+        />
+      ) : null}
+
+      <form action={uploadLogoAction} className="flex items-center gap-3">
+        <input
+          type="file"
+          name="logoFile"
+          accept="image/jpeg,image/png,image/webp"
+          required
+          className="flex-1 text-sm"
+        />
+        <button
+          type="submit"
+          className="flex h-10 shrink-0 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-white"
+        >
+          Enviar
+        </button>
+      </form>
+
       <h2 className="mb-1 mt-8 text-lg font-bold tracking-tight">
-        Marca (tema e logo)
+        Tema e tipografia
       </h2>
       <p className="mb-4 text-sm text-muted-foreground">
-        Sem upload ainda — logo é uma URL já hospedada em algum lugar. Cor é
-        qualquer valor CSS válido (ex.: <code>oklch(0.5 0.2 250)</code> ou{' '}
-        <code>#7a2e2e</code>); campo vazio volta pro valor padrão do app.
+        Cor é qualquer valor CSS válido (ex.: <code>oklch(0.5 0.2 250)</code>{' '}
+        ou <code>#7a2e2e</code>); campo vazio volta pro valor padrão do app.
+        URL do logo abaixo é só pra apontar pra uma imagem já hospedada em
+        outro lugar — pra fazer upload, use o formulário acima.
       </p>
 
       <form action={updateBrandingAction} className="space-y-3">
         <Field
-          label="URL do logo"
+          label="URL do logo (alternativa ao upload)"
           name="logoUrl"
           defaultValue={store.logo_url ?? ''}
           placeholder="https://…/logo.png"
         />
+        <div>
+          <Label className="mb-1.5 block text-xs font-semibold">
+            Tipografia
+          </Label>
+          <select
+            name="fontPreset"
+            defaultValue={fontPreset}
+            className="h-10 w-full rounded-md border border-border bg-card px-3 text-base outline-none focus:border-primary"
+          >
+            {FONT_PRESETS.map((preset) => (
+              <option key={preset.id} value={preset.id}>
+                {preset.label} — {preset.description}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           {THEME_FIELDS.map((field) => (
             <Field

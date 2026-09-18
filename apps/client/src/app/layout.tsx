@@ -1,29 +1,67 @@
 import type { Metadata, Viewport } from 'next';
-import { Fraunces, Geist, Geist_Mono } from 'next/font/google';
+import {
+  Caveat,
+  Fraunces,
+  Geist,
+  Geist_Mono,
+  Inter,
+  Nunito,
+  Playfair_Display,
+} from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import Providers from '@/components/Providers';
 import { getCachedPublicStore } from '@/modules/catalog/cached-catalog';
 import { buildThemeStyle } from '@/modules/catalog/theme-style';
+import { buildFontStyle } from '@/modules/catalog/font-style';
 import './globals.css';
 
-/** Display serif — títulos, preços, marca. */
+/** Display serif — títulos, preços, marca. Preset padrão ('zelo'). */
 const fraunces = Fraunces({
   subsets: ['latin'],
   variable: '--font-fraunces',
   display: 'swap',
 });
 
-/** Sans de corpo e UI. */
+/** Sans de corpo e UI. Preset padrão ('zelo'). */
 const geist = Geist({
   subsets: ['latin'],
   variable: '--font-geist',
   display: 'swap',
 });
 
-/** Mono — dados tabulares (totais, horários, códigos). */
+/** Mono — dados tabulares (totais, horários, códigos). Não varia por preset. */
 const geistMono = Geist_Mono({
   subsets: ['latin'],
   variable: '--font-geist-mono',
+  display: 'swap',
+});
+
+/**
+ * Fontes por tenant (ADR-0001, Fase D — `font-presets.ts`). Todas
+ * pré-importadas: `next/font/google` exige import estático, então não dá
+ * pra escolher a fonte em runtime — só qual variável fica ativa
+ * (`font-style.ts`). O download real do arquivo de fonte só acontece se o
+ * preset da loja realmente usar essa variável (comportamento padrão do
+ * navegador para `@font-face` não referenciado por nenhum elemento visível).
+ */
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-playfair',
+  display: 'swap',
+});
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+const caveat = Caveat({
+  subsets: ['latin'],
+  variable: '--font-caveat',
+  display: 'swap',
+});
+const nunito = Nunito({
+  subsets: ['latin'],
+  variable: '--font-nunito',
   display: 'swap',
 });
 
@@ -114,16 +152,18 @@ export default async function RootLayout({
 }>) {
   const store = await getCachedPublicStore();
   const themeStyle = buildThemeStyle(store.ok ? store.data?.theme : undefined);
+  const fontStyle = buildFontStyle(store.ok ? store.data?.fontConfig : undefined);
 
   return (
     <html
       lang="pt-BR"
-      className={`bg-background ${fraunces.variable} ${geist.variable} ${geistMono.variable}`}
+      className={`bg-background ${fraunces.variable} ${geist.variable} ${geistMono.variable} ${playfair.variable} ${inter.variable} ${caveat.variable} ${nunito.variable}`}
       // Chromium (e.g. Chrome autofill) may inject __gcrremoteframetoken before hydration.
       suppressHydrationWarning
     >
       <body className="font-sans antialiased" suppressHydrationWarning>
         {themeStyle && <style>{themeStyle}</style>}
+        {fontStyle && <style>{fontStyle}</style>}
         <Providers>{children}</Providers>
         <Analytics />
       </body>

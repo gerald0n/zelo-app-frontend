@@ -25,10 +25,8 @@ import { useShopExperience } from '@/contexts/ShopExperienceContext';
 import { cn } from '@/lib/utils';
 import { useCategoryQueryFilter } from '@/hooks/useCategoryQueryFilter';
 import { useCatalogStore } from '@/hooks/useStoreOpen';
-import {
-  useMenuFilterPersistence,
-  type Filter,
-} from '@/hooks/useMenuFilterPersistence';
+
+type Filter = 'Todos' | string;
 
 type Props = {
   categories: CatalogCategory[];
@@ -52,7 +50,7 @@ export default function HomeCatalog({
   pizzaSizes,
   pizzaAddons,
 }: Props) {
-  const [active, setActive] = useMenuFilterPersistence(categories);
+  const [active, setActive] = useState<Filter>('Todos');
   const [pizzaBuilderOpen, setPizzaBuilderOpen] = useState(false);
   const { data: storeData } = useCatalogStore();
   const storeName = storeData?.store?.name ?? 'Zelo Confeitaria';

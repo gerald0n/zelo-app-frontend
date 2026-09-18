@@ -135,6 +135,17 @@ export type CatalogStoreTheme = {
   caramelForeground?: string;
 };
 
+/**
+ * White label (ADR-0001, Fase D) — `next/font/google` exige import estático
+ * resolvido em build-time, então "fonte por tenant" não pode ser uma fonte
+ * arbitrária: é uma escolha entre um conjunto fixo pré-importado nos
+ * layouts (`FONT_PRESETS` em `font-presets.ts`). `preset` ausente/
+ * desconhecido = tipografia padrão da Zelo (Fraunces + Geist).
+ */
+export type CatalogStoreFontConfig = {
+  preset?: string;
+};
+
 export type CatalogStore = {
   id: string;
   name: string;
@@ -142,6 +153,7 @@ export type CatalogStore = {
   cnpj: string | null;
   /** `null`/`{}` = branding padrão (fallback estático da Zelo). */
   theme: CatalogStoreTheme;
+  fontConfig: CatalogStoreFontConfig;
   logoUrl: string | null;
   phoneE164: string;
   whatsappE164: string;

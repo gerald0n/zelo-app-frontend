@@ -1,9 +1,18 @@
 import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
-import { Fraunces, Geist, Geist_Mono } from 'next/font/google';
+import {
+  Caveat,
+  Fraunces,
+  Geist,
+  Geist_Mono,
+  Inter,
+  Nunito,
+  Playfair_Display,
+} from 'next/font/google';
 import AdminProviders from '@/components/AdminProviders';
 import { getCachedPublicStore } from '@/modules/catalog/cached-catalog';
 import { buildThemeStyle } from '@/modules/catalog/theme-style';
+import { buildFontStyle } from '@/modules/catalog/font-style';
 import { StoreBrandProvider } from '@/contexts/StoreBrandContext';
 import './globals.css';
 
@@ -34,6 +43,28 @@ const geist = Geist({
 const geistMono = Geist_Mono({
   subsets: ['latin'],
   variable: '--font-geist-mono',
+  display: 'swap',
+});
+
+/** Fontes por tenant (ADR-0001, Fase D — `font-presets.ts`), ver apps/client/layout.tsx. */
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-playfair',
+  display: 'swap',
+});
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+const caveat = Caveat({
+  subsets: ['latin'],
+  variable: '--font-caveat',
+  display: 'swap',
+});
+const nunito = Nunito({
+  subsets: ['latin'],
+  variable: '--font-nunito',
   display: 'swap',
 });
 
@@ -78,12 +109,13 @@ export default async function RootLayout({
   const nonce = (await headers()).get('x-nonce') ?? undefined;
   const store = await getCachedPublicStore();
   const themeStyle = buildThemeStyle(store.ok ? store.data?.theme : undefined);
+  const fontStyle = buildFontStyle(store.ok ? store.data?.fontConfig : undefined);
   const storeName = (store.ok ? store.data?.name : undefined) ?? 'Zelo Confeitaria';
 
   return (
     <html
       lang="pt-BR"
-      className={`bg-background ${fraunces.variable} ${geist.variable} ${geistMono.variable}`}
+      className={`bg-background ${fraunces.variable} ${geist.variable} ${geistMono.variable} ${playfair.variable} ${inter.variable} ${caveat.variable} ${nunito.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -97,6 +129,7 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }}
         />
         {themeStyle && <style>{themeStyle}</style>}
+        {fontStyle && <style>{fontStyle}</style>}
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
         <StoreBrandProvider name={storeName}>

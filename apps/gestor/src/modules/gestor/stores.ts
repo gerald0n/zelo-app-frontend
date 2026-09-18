@@ -1,7 +1,9 @@
 import 'server-only';
 
+import sharp from 'sharp';
 import { err, ok, type Result } from '@/lib/errors';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
+import { storeLogoPublicUrl } from '@/lib/constants';
 import { requirePlatformAdmin } from '@/modules/gestor/auth';
 import type { CatalogStoreTheme } from '@/modules/catalog/types';
 import type { Database } from '@/types/database';
@@ -283,15 +285,19 @@ const THEME_KEYS = [
 export type UpdateStoreBrandingInput = {
   logoUrl?: string | null;
   theme: CatalogStoreTheme;
+  fontPreset?: string;
 };
 
 /**
- * Step 2 do wizard (ADR-0001, Fase E): tema de cor + logo. Sem upload pro
- * Supabase Storage ainda — `logoUrl` é uma URL informada à mão (a mesma
- * forma como as fatias de Fase D foram validadas, gravando direto no
- * banco). Cada chave do tema é um valor CSS de cor (ex.: `oklch(0.5 0.2
- * 250)`), consumido por `buildThemeStyle()` nos dois apps de tenant — uma
- * chave vazia limpa o override e volta pro valor estático do CSS.
+ * Step 2 do wizard (ADR-0001, Fase E): tema de cor, logo e fonte. `logoUrl`
+ * é gravado tanto pelo upload (`uploadStoreLogo`, que faz o upload pro
+ * Storage e chama esta função com a URL pública resultante) quanto por uma
+ * URL externa informada à mão — os dois casos passam pelo mesmo campo de
+ * texto na UI. Cada chave do tema é um valor CSS de cor (ex.: `oklch(0.5
+ * 0.2 250)`), consumido por `buildThemeStyle()` nos dois apps de tenant —
+ * uma chave vazia limpa o override. `fontPreset` é um dos ids de
+ * `FONT_PRESETS` (`font-presets.ts`); preset desconhecido ou ausente cai
+ * no padrão.
  */
 export async function updateStoreBranding(
   id: string,
@@ -308,6 +314,9 @@ export async function updateStoreBranding(
 
   const admin = createAdminSupabaseClient();
   const patch: StoreUpdate = {
+    font_config: (input.fontPreset
+      ? { preset: input.fontPreset }
+      : {}) as Database['public']['Tables']['stores']['Update']['font_config'],
     theme: theme as Database['public']['Tables']['stores']['Update']['theme'],
   };
   if (input.logoUrl !== undefined) {
@@ -332,7 +341,97 @@ export async function updateStoreBranding(
     actorId: auth.data.id,
     action: 'store.branding_update',
     entityId: id,
-    metadata: { theme, logoUrl: patch.logo_url },
+    metadata: { theme, logoUrl: patch.logo_url, fontPreset: input.fontPreset ?? null },
+  });
+
+  return ok(data);
+}
+
+/**
+ * Upload de logo pro Storage (bucket `store-logos`, mesmo padrão de
+ * `uploadBannerImage` no admin): não confia no `Content-Type` do cliente,
+ * reencoda no servidor com `sharp` (recorta quadrado — o logo aparece em
+ * selo circular/quadrado no client/admin, `ZeloSeal.tsx`), converte pra
+ * WebP, envia, grava a URL pública em `stores.logo_url` e remove o arquivo
+ * antigo do Storage (se o logo anterior também veio de um upload, não de
+ * uma URL externa).
+ */
+export async function uploadStoreLogo(
+  id: string,
+  file: File,
+): Promise<Result<StoreDetail>> {
+  const auth = await requirePlatformAdmin();
+  if (!auth.ok) return auth;
+
+  const allowed = new Set(['image/jpeg', 'image/png', 'image/webp']);
+  if (!allowed.has(file.type)) {
+    return err('VALIDATION_ERROR', 'Use imagem JPEG, PNG ou WebP.');
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    return err('VALIDATION_ERROR', 'A imagem deve ter no máximo 5 MB.');
+  }
+
+  const current = await getStore(id);
+  if (!current.ok) return current;
+
+  const source = Buffer.from(await file.arrayBuffer());
+  let normalized: Buffer;
+  try {
+    const pipeline = sharp(source, { failOn: 'error' }).rotate();
+    const meta = await pipeline.metadata();
+    if (!meta.width || !meta.height) {
+      return err('VALIDATION_ERROR', 'Arquivo de imagem inválido.');
+    }
+    normalized = await pipeline
+      .resize(512, 512, { fit: 'cover' })
+      .webp({ quality: 88 })
+      .toBuffer();
+  } catch {
+    return err('VALIDATION_ERROR', 'Arquivo de imagem inválido.');
+  }
+
+  const admin = createAdminSupabaseClient();
+  const storagePath = `${id}/${crypto.randomUUID()}.webp`;
+  const { error: uploadError } = await admin.storage
+    .from('store-logos')
+    .upload(storagePath, normalized, {
+      contentType: 'image/webp',
+      upsert: false,
+    });
+  if (uploadError) {
+    return err('INTERNAL_ERROR', 'Não foi possível enviar a imagem.', {
+      cause: uploadError,
+    });
+  }
+
+  const publicUrl = storeLogoPublicUrl(storagePath);
+  const { data, error } = await admin
+    .from('stores')
+    .update({ logo_url: publicUrl })
+    .eq('id', id)
+    .select('*')
+    .maybeSingle();
+
+  if (error || !data) {
+    await admin.storage.from('store-logos').remove([storagePath]);
+    return err('INTERNAL_ERROR', 'Não foi possível salvar o logo.', {
+      cause: error,
+    });
+  }
+
+  const previousUrl = current.data.logo_url;
+  if (previousUrl?.includes('/storage/v1/object/public/store-logos/')) {
+    const previousPath = previousUrl.split('/storage/v1/object/public/store-logos/')[1];
+    if (previousPath) {
+      await admin.storage.from('store-logos').remove([previousPath]);
+    }
+  }
+
+  await writeGestorAuditLog({
+    actorId: auth.data.id,
+    action: 'store.logo_upload',
+    entityId: id,
+    metadata: { logoUrl: publicUrl },
   });
 
   return ok(data);
