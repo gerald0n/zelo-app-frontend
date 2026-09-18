@@ -16,6 +16,13 @@
       "autoPort": true
     },
     {
+      "name": "zelo-gestor",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@zelo/gestor", "dev"],
+      "port": 3002,
+      "autoPort": true
+    },
+    {
       "name": "zelo-tenant-a",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@zelo/client", "run", "dev", "--port", "3010", "--hostname", "zelo-a.127.0.0.1.nip.io"],

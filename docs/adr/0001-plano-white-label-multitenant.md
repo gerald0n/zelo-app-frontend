@@ -815,12 +815,85 @@ da Zelo.**
 - Provisionamento de tenant novo (criar `store`, domínio, tema default, features
   default) fica centralizado aqui — não é um script manual.
 
-#### Fase E — desenho (plano futuro, não parte do MVP)
+Status: **exceção registrada ao gate abaixo** — decisão explícita do dono do
+produto (conversa em 2026-09-18) de começar o CRUD mínimo de `stores` antes
+da validação com 1-2 clientes pagantes, para destravar o desenho dos steps 2
+(tema/logo) e 3 (feature flags) do wizard assim que essas fatias entrarem.
+Sem alterar a avaliação de risco original abaixo — o app ainda não expõe o
+step 4 (secrets), que continua bloqueado por infra de criptografia (ADR-0003).
 
-Status: desenho registrado para referência futura. **Não iniciar antes de ter
-1-2 clientes pagantes validados pelo processo manual da Fase 0/checklist de
-provisionamento.** Construir isso antes é automatizar um processo cujo valor
-ainda não foi comprovado.
+**Primeira fatia, feita e validada — `apps/gestor` existe, com CRUD mínimo
+de `stores`.**
+- App novo no monorepo (`apps/gestor`, porta 3002 em dev), espelhando a
+  estrutura do `apps/admin` (`tsconfig`/`next.config`/`eslint` quase
+  idênticos) mas **sem** resolução de tenant por hostname no `proxy.ts` —
+  `apps/gestor` não é servido por domínio de loja nenhuma, é a ferramenta
+  que gerencia as lojas. Reaproveita 100% da camada de dados já
+  compartilhada (`@zelo/shared`: `lib/supabase/*`, `lib/errors`, `lib/http`,
+  `config/env`, `config/security-headers`, `components/ui/*`) — nenhum
+  código novo nessa camada, só o app por cima.
+- **Auth sem tabela nova**: um "admin de plataforma" é só uma linha de
+  `admin_profiles` com `store_id = null`. Essa regra já existia —
+  `private.is_admin_of_store()` (Fase C,
+  `20260917120000_tenant_rls_admin_scoping.sql`) trata `store_id` nulo como
+  cross-tenant desde que foi escrita, "reservado pro futuro apps/gestor
+  multi-loja". `modules/gestor/auth.ts` (`requirePlatformAdmin()`) só
+  confirma essa mesma condição no servidor (perfil ativo E `store_id is
+  null`), espelhando `requireAdmin()` do `apps/admin` sem o pin em
+  `ADMIN_EMAIL` (que é Zelo-específico, não serve pra multi-tenant).
+  Login/logout via `POST`/`DELETE /api/v1/session`, mesmo padrão de cookies
+  HttpOnly do `apps/admin`.
+- **CRUD de `stores`**: listar (`/lojas`), criar (`/lojas/nova`) e editar
+  (`/lojas/[id]`) via Server Components + Server Actions (sem API REST
+  própria) — escopo mínimo do step 1 do wizard (nome, domínio, contato,
+  endereço, lat/lng), sem tema/logo/feature flags/integrações ainda.
+  `createStore`/`updateStore`/`getStore`/`listStores`
+  (`modules/gestor/stores.ts`) sempre chamam `requirePlatformAdmin()` antes
+  de tocar o banco, escrevem em `audit_logs` (mesma tabela global do admin,
+  sem o efeito colateral de invalidar cache de catálogo — criar um tenant
+  não é mudança de catálogo de um tenant existente) e usam
+  `createAdminSupabaseClient()` (service role), não a sessão do usuário —
+  mesmo padrão de `modules/admin/catalog/store.ts`.
+- **Deliberadamente fora do escopo desta fatia** (v1 mínimo, não
+  produção-pronta): sem captcha/rate-limit no login (ferramenta interna,
+  poucos usuários — falta antes de expor publicamente), sem Sentry, sem
+  CRUD de `admin_profiles` de plataforma pela própria UI (só via seed/SQL
+  por enquanto), sem confirmação de exclusão de loja (não há delete na UI).
+- Validado: typecheck e lint limpos. Navegador
+  (`http://localhost:3002`, seed local): login com
+  `gestor@zelo.local`/`gestor123` (perfil de plataforma criado via GoTrue
+  Admin API + insert em `admin_profiles` no Supabase local, já que não há
+  container Docker local nesta máquina — só um Supabase de dev
+  compartilhado; `seed.sql` também ganhou esse mesmo usuário para quem
+  rodar `db reset` puro) → lista mostra a Zelo real; criada uma loja de
+  teste completa (nome, domínio, endereço, lat/lng) → apareceu na lista e
+  no detalhe com todos os campos certos; editado o campo cidade → salvou e
+  refletiu (`getStore`/`updateStore` revalida via redirect); loja de teste
+  removida depois do teste.
+- `.claude/launch.json` ganhou a entrada `zelo-gestor` (porta 3002) e
+  `package.json` da raiz ganhou `dev:gestor`/`build:gestor`, mesmo padrão
+  dos outros apps.
+
+**Não feito ainda** (dos 4 steps do wizard, só o essencial do step 1 —
+nome/endereço/contato — existe; falta):
+- Step 1 completo: domínio automatizado via Vercel Domains API (hoje só
+  grava o valor no banco, não provisiona nada).
+- Step 2: upload de logo (Supabase Storage — hoje `logo_url` é só texto) e
+  edição de tema/`font_config` pela UI do gestor.
+- Step 3: toggle de feature flags (`stores.features`) pela UI.
+- Step 4: segue bloqueado por infra de secrets (ADR-0003) — nem começado.
+- Acesso de demo pra prospect (tenant fictício provisionado, sem dar login
+  real da Zelo) — ainda é processo manual, não fluxo no gestor.
+- CRUD de administradores de plataforma pela própria UI do gestor (hoje só
+  via seed/SQL direto).
+
+#### Fase E — desenho (plano futuro, resto do wizard)
+
+Status: desenho registrado para referência futura — cobre os steps 1
+(domínio automatizado)/2/3/4 do wizard, ainda não implementados (ver acima
+o que já existe). **Os steps 2 e 3 podem começar assim que priorizados**
+(o CRUD que os destrava já existe); o **step 4 continua bloqueado** até
+existir infra de secrets.
 
 **Wizard de criação de tenant (dentro do `apps/gestor`)**, em 4 steps:
 

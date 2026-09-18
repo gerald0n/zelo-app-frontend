@@ -5,9 +5,11 @@
   "scripts": {
     "dev:client": "pnpm --filter @zelo/client dev",
     "dev:admin": "pnpm --filter @zelo/admin dev",
+    "dev:gestor": "pnpm --filter @zelo/gestor dev",
     "build": "pnpm -r --filter=./apps/* build",
     "build:client": "pnpm --filter @zelo/client build",
     "build:admin": "pnpm --filter @zelo/admin build",
+    "build:gestor": "pnpm --filter @zelo/gestor build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r --if-present run test",

@@ -430,3 +430,74 @@ begin
   update public.pizza_addons set store_id = v_store_id where store_id is null;
 end $$;
 
+-- Admin de plataforma (apps/gestor, ADR-0001 Fase E): gestor@zelo.local /
+-- gestor123. `admin_profiles.store_id` fica null de propósito — é isso que
+-- `private.is_admin_of_store()` (Fase C) trata como cross-tenant. Inserido
+-- DEPOIS do backfill acima para não ser pego pelo `where store_id is null`.
+-- id fixo: f0000000-0000-4000-8000-000000000002
+insert into auth.users (
+  instance_id,
+  id,
+  aud,
+  role,
+  email,
+  encrypted_password,
+  email_confirmed_at,
+  raw_app_meta_data,
+  raw_user_meta_data,
+  created_at,
+  updated_at,
+  confirmation_token,
+  email_change,
+  email_change_token_new,
+  recovery_token
+) values (
+  '00000000-0000-0000-0000-000000000000',
+  'f0000000-0000-4000-8000-000000000002',
+  'authenticated',
+  'authenticated',
+  'gestor@zelo.local',
+  crypt('gestor123', gen_salt('bf')),
+  now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  '{"display_name":"Gestor Zelo Platform"}'::jsonb,
+  now(),
+  now(),
+  '',
+  '',
+  '',
+  ''
+);
+
+insert into auth.identities (
+  id,
+  user_id,
+  identity_data,
+  provider,
+  provider_id,
+  last_sign_in_at,
+  created_at,
+  updated_at
+) values (
+  'f0000000-0000-4000-8000-000000000002',
+  'f0000000-0000-4000-8000-000000000002',
+  jsonb_build_object(
+    'sub', 'f0000000-0000-4000-8000-000000000002',
+    'email', 'gestor@zelo.local',
+    'email_verified', true
+  ),
+  'email',
+  'f0000000-0000-4000-8000-000000000002',
+  now(),
+  now(),
+  now()
+);
+
+insert into public.admin_profiles (id, display_name, is_active, store_id)
+values (
+  'f0000000-0000-4000-8000-000000000002',
+  'Gestor Zelo Platform',
+  true,
+  null
+);
+
