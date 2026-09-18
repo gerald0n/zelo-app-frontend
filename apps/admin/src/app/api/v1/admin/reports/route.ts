@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { httpStatusFor } from '@/lib/errors';
 import {
   getOperationsReport,
-  type ReportPeriod,
+  type ReportRange,
 } from '@/modules/admin/reports';
 import { getFinancialReport } from '@/modules/admin/financial-report';
 import { getDashboardReport } from '@/modules/admin/dashboard-report';
@@ -10,10 +10,9 @@ import type { DashboardQuery } from '@/modules/admin/dashboard';
 
 export const dynamic = 'force-dynamic';
 
-const PERIODS: ReportPeriod[] = ['today', '7d', '30d'];
-
 function parseDashboardQuery(params: URLSearchParams): DashboardQuery | null {
   const from = params.get('from');
+  const to = params.get('to');
   const prevFrom = params.get('prevFrom');
   const prevTo = params.get('prevTo');
   const bucketFrom = params.get('bucketFrom');
@@ -22,6 +21,7 @@ function parseDashboardQuery(params: URLSearchParams): DashboardQuery | null {
 
   if (
     !from ||
+    !to ||
     !prevFrom ||
     !prevTo ||
     !bucketFrom ||
@@ -29,14 +29,31 @@ function parseDashboardQuery(params: URLSearchParams): DashboardQuery | null {
     !Number.isInteger(count) ||
     count < 1 ||
     count > 60 ||
-    [from, prevFrom, prevTo, bucketFrom].some((v) =>
+    [from, to, prevFrom, prevTo, bucketFrom].some((v) =>
       Number.isNaN(Date.parse(v)),
     )
   ) {
     return null;
   }
 
-  return { from, prevFrom, prevTo, bucketFrom, grain, count };
+  return { from, to, prevFrom, prevTo, bucketFrom, grain, count };
+}
+
+function parseReportRange(params: URLSearchParams): ReportRange | null {
+  const from = params.get('from');
+  const to = params.get('to');
+
+  if (
+    !from ||
+    !to ||
+    Number.isNaN(Date.parse(from)) ||
+    Number.isNaN(Date.parse(to)) ||
+    Date.parse(to) <= Date.parse(from)
+  ) {
+    return null;
+  }
+
+  return { from, to };
 }
 
 export async function GET(request: Request) {
@@ -63,15 +80,18 @@ export async function GET(request: Request) {
     return NextResponse.json(result.data);
   }
 
-  const raw = searchParams.get('period');
-  const period: ReportPeriod = PERIODS.includes(raw as ReportPeriod)
-    ? (raw as ReportPeriod)
-    : 'today';
+  const range = parseReportRange(searchParams);
+  if (!range) {
+    return NextResponse.json(
+      { error: { code: 'VALIDATION_ERROR', message: 'Parâmetros inválidos.' } },
+      { status: 400 },
+    );
+  }
 
   const result =
     kind === 'financial'
-      ? await getFinancialReport(period)
-      : await getOperationsReport(period);
+      ? await getFinancialReport(range)
+      : await getOperationsReport(range);
 
   if (!result.ok) {
     return NextResponse.json(
