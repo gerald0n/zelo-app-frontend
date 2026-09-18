@@ -44,12 +44,12 @@ export async function exportDashboardXlsx({
   operations,
   financial,
 }: DashboardExportInput): Promise<void> {
-  const XLSX = await import('xlsx');
+  const { default: ExcelJS } = await import('exceljs');
 
-  const wb = XLSX.utils.book_new();
+  const wb = new ExcelJS.Workbook();
   const inclusiveTo = new Date(Date.parse(range.to) - 1).toISOString();
 
-  const overviewSheet = XLSX.utils.aoa_to_sheet([
+  wb.addWorksheet('Visão geral').addRows([
     ['Relatório', 'Visão geral do ateliê'],
     ['Período', periodLabel],
     ['De', formatDate(range.from)],
@@ -73,21 +73,18 @@ export async function exportDashboardXlsx({
         : '',
     ],
   ]);
-  XLSX.utils.book_append_sheet(wb, overviewSheet, 'Visão geral');
 
-  const salesSheet = XLSX.utils.aoa_to_sheet([
+  wb.addWorksheet('Curva de vendas').addRows([
     ['Período', 'Faturamento (R$)', 'Pedidos'],
     ...dashboard.buckets.map((b) => [b.label, toReais(b.cents), b.count]),
   ]);
-  XLSX.utils.book_append_sheet(wb, salesSheet, 'Curva de vendas');
 
-  const topProductsSheet = XLSX.utils.aoa_to_sheet([
+  wb.addWorksheet('Mais vendidos').addRows([
     ['Produto', 'Quantidade'],
     ...dashboard.topProducts.map((p) => [p.name, p.quantity]),
   ]);
-  XLSX.utils.book_append_sheet(wb, topProductsSheet, 'Mais vendidos');
 
-  const cancellationsSheet = XLSX.utils.aoa_to_sheet([
+  wb.addWorksheet('Cancelamentos').addRows([
     ['Total de cancelamentos', operations.cancellations.total],
     ['Valor não faturado (R$)', toReais(operations.cancellations.valueCents)],
     [],
@@ -102,15 +99,13 @@ export async function exportDashboardXlsx({
       formatDateTime(o.cancelledAt),
     ]),
   ]);
-  XLSX.utils.book_append_sheet(wb, cancellationsSheet, 'Cancelamentos');
 
-  const productionSheet = XLSX.utils.aoa_to_sheet([
+  wb.addWorksheet('Produção').addRows([
     ['Total de itens', operations.production.totalItems],
     [],
     ['Produto', 'Quantidade'],
     ...operations.production.items.map((p) => [p.name, p.quantity]),
   ]);
-  XLSX.utils.book_append_sheet(wb, productionSheet, 'Produção');
 
   const byMethodRows = (
     Object.entries(financial.byMethod) as Array<
@@ -122,7 +117,7 @@ export async function exportDashboardXlsx({
     toReais(m.feeCents),
     m.count,
   ]);
-  const financialSheet = XLSX.utils.aoa_to_sheet([
+  wb.addWorksheet('Financeiro').addRows([
     ['Faturamento bruto (R$)', toReais(financial.gross.totalCents)],
     ['Pedidos', financial.gross.orderCount],
     ['Taxas totais (R$)', toReais(financial.fees.totalCents)],
@@ -135,10 +130,9 @@ export async function exportDashboardXlsx({
     ['Método', 'Bruto (R$)', 'Taxa (R$)', 'Pedidos'],
     ...byMethodRows,
   ]);
-  XLSX.utils.book_append_sheet(wb, financialSheet, 'Financeiro');
 
   if (financial.pixTransactions.length > 0) {
-    const pixSheet = XLSX.utils.aoa_to_sheet([
+    wb.addWorksheet('Pix').addRows([
       ['Pedido', 'Data', 'Bruto (R$)', 'Taxa (R$)', 'Líquido (R$)', 'Taxa estimada'],
       ...financial.pixTransactions.map((t) => [
         `#${t.orderNumber}`,
@@ -149,9 +143,18 @@ export async function exportDashboardXlsx({
         t.estimated ? 'Sim' : 'Não',
       ]),
     ]);
-    XLSX.utils.book_append_sheet(wb, pixSheet, 'Pix');
   }
 
-  const fileName = `visao-geral_${range.from.slice(0, 10)}_a_${inclusiveTo.slice(0, 10)}.xlsx`;
-  XLSX.writeFile(wb, fileName);
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `visao-geral_${range.from.slice(0, 10)}_a_${inclusiveTo.slice(0, 10)}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
