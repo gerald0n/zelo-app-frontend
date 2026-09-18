@@ -26,6 +26,7 @@ import {
 import { randomUUID } from '@/lib/random-id';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 import { cartItemsToOrderItems } from '@/modules/orders/cart-to-order-items';
+import { formatScheduleSummary } from '@/app/checkout/recebimento/recebimento-helpers';
 import {
   CouponField,
   type AppliedCoupon,
@@ -123,11 +124,11 @@ export default function RevisaoPage() {
     setError(null);
 
     const body = {
-      timing: checkout.scheduleType === 'now' ? 'immediate' : 'scheduled',
-      scheduledFor:
-        checkout.scheduleType === 'scheduled'
-          ? buildScheduledFor(checkout.scheduledDate, checkout.scheduledTime)
-          : undefined,
+      timing: 'scheduled' as const,
+      scheduledFor: buildScheduledFor(
+        checkout.scheduledDate,
+        checkout.scheduledTime,
+      ),
       deliveryMethod: checkout.deliveryType,
       paymentMethod: checkout.paymentMethod,
       needsChange:
@@ -260,10 +261,9 @@ export default function RevisaoPage() {
             <p className="text-sm leading-5 text-muted-foreground">
               {checkout.deliveryType === 'delivery'
                 ? 'Entrega'
-                : 'Retirada na loja'}{' '}
-              · {checkout.scheduleType === 'now' ? 'Agora' : 'Agendado'}
-              {checkout.scheduleType === 'scheduled' && checkout.scheduledDate
-                ? ` · ${checkout.scheduledDate}${checkout.scheduledTime ? ` às ${checkout.scheduledTime}` : ''}`
+                : 'Retirada na loja'}
+              {checkout.scheduledDate && checkout.scheduledTime
+                ? ` · ${formatScheduleSummary(checkout.scheduledDate, checkout.scheduledTime)}`
                 : null}
             </p>
             {checkout.deliveryType === 'delivery' && checkout.address ? (

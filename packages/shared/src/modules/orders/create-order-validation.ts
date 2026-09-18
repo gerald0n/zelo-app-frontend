@@ -12,15 +12,11 @@ import {
   listSatelliteProducts,
 } from '@/modules/catalog/satellite-repository';
 import {
-  canPlaceImmediateOrder,
   listAvailableScheduleDates,
   listAvailableScheduleTimes,
   resolveCartSchedulingRule,
 } from '@/modules/scheduling/schedule';
-import {
-  canPlaceImmediateSatelliteOrder,
-  isSatelliteSlotValid,
-} from '@/modules/scheduling/satellite-slots';
+import { isSatelliteSlotValid } from '@/modules/scheduling/satellite-slots';
 import type { CatalogStore, SatelliteLocation } from '@/modules/catalog/types';
 import type { CreateOrderBody } from '@/modules/orders/create-order-schema';
 
@@ -59,22 +55,6 @@ async function validateSatelliteScheduling(
         ? 'Um dos itens não está mais disponível na pronta entrega.'
         : 'Um dos itens não está disponível para esta unidade.',
     );
-  }
-
-  if (body.timing === 'immediate') {
-    if (body.deliveryMethod !== 'pickup') {
-      return err(
-        'VALIDATION_ERROR',
-        'Entrega imediata não disponível nesta unidade. Escolha um horário.',
-      );
-    }
-    if (!canPlaceImmediateSatelliteOrder(location)) {
-      return err(
-        'STORE_CLOSED',
-        'Unidade fechada agora. Escolha um horário para agendar.',
-      );
-    }
-    return ok({ scheduledFor: null });
   }
 
   if (!body.scheduledFor) {
@@ -119,22 +99,6 @@ export async function validateScheduling(
   );
   if (mixed) {
     return err('VALIDATION_ERROR', MIXED_CART_MESSAGE);
-  }
-
-  if (body.timing === 'immediate') {
-    if (!rule.allowSameDay) {
-      return err(
-        'VALIDATION_ERROR',
-        'Estes itens só podem ser agendados. Escolha uma data e horário.',
-      );
-    }
-    if (!canPlaceImmediateOrder(store)) {
-      return err(
-        'STORE_CLOSED',
-        'A loja está fechada. Escolha um horário para agendar.',
-      );
-    }
-    return ok({ scheduledFor: null });
   }
 
   if (!body.scheduledFor) {

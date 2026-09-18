@@ -15,6 +15,8 @@ export const adminKeys = {
   blackouts: () => [...adminKeys.all, 'blackouts'] as const,
   audit: () => [...adminKeys.all, 'audit'] as const,
   reports: (period: string) => [...adminKeys.all, 'reports', period] as const,
+  ordersReport: (filtersKey: string) =>
+    [...adminKeys.all, 'orders-report', filtersKey] as const,
   reviews: (tab: string) => [...adminKeys.all, 'reviews', tab] as const,
   productReviews: (tab: string) =>
     [...adminKeys.all, 'product-reviews', tab] as const,

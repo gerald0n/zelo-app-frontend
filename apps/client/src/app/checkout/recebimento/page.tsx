@@ -35,7 +35,6 @@ export default function RecebimentoPage() {
     checkout,
     setFulfillmentLocation,
     setSatelliteLocationId,
-    setScheduleType,
     setScheduledDate,
     setScheduledTime,
   } = useCheckout();
@@ -56,7 +55,6 @@ export default function RecebimentoPage() {
     [items],
   );
 
-  const isSatellite = checkout.fulfillmentLocation === 'sao_miguel';
   // Já estar vendo opções de São Miguel implica que a unidade está ativa (a
   // API responde 404 quando desativada) — só a resposta de Pereiro carrega a
   // flag explícita. `null` = ainda não sabemos (nada carregado), pra não
@@ -68,15 +66,6 @@ export default function RecebimentoPage() {
       : options.satelliteAvailable;
   const mixedCart = options?.scheduling.mixedCart ?? false;
   const mixedGroups = options?.scheduling.mixedGroups ?? [];
-  const storeOpen = options?.scheduling.storeOpen ?? false;
-  const allowSameDay = options?.scheduling.allowSameDay ?? true;
-  // Em São Miguel, "Agora" só existe pra retirada — entrega sempre exige um
-  // dos horários fixos.
-  const allowImmediate =
-    storeOpen &&
-    allowSameDay &&
-    !mixedCart &&
-    (!isSatellite || checkout.deliveryType === 'pickup');
 
   const { quoting, quoteError, quoteMessage, revalidateWithCoords } =
     useDeliveryQuote();
@@ -86,20 +75,9 @@ export default function RecebimentoPage() {
     if (data.fulfillmentLocation === 'sao_miguel') {
       setSatelliteLocationId(data.store.id);
     }
-    const canBeImmediate =
-      data.scheduling.storeOpen &&
-      data.scheduling.allowSameDay &&
-      !data.scheduling.mixedCart &&
-      (data.fulfillmentLocation !== 'sao_miguel' ||
-        checkout.deliveryType === 'pickup');
-    if (!canBeImmediate && checkout.scheduleType === 'now') {
-      setScheduleType('scheduled');
-    }
-    if (
-      checkout.scheduleType === 'scheduled' &&
-      !checkout.scheduledDate &&
-      data.scheduling.availableDates[0]
-    ) {
+    // Não existe mais um modo "imediato" separado — a agenda sempre exige
+    // dia + horário, então já entra com o primeiro dia disponível marcado.
+    if (!checkout.scheduledDate && data.scheduling.availableDates[0]) {
       setScheduledDate(data.scheduling.availableDates[0]);
     }
   });
@@ -175,12 +153,6 @@ export default function RecebimentoPage() {
     };
   }, [user]);
 
-  useEffect(() => {
-    if (!allowImmediate && checkout.scheduleType === 'now') {
-      setScheduleType('scheduled');
-    }
-  }, [allowImmediate, checkout.scheduleType, setScheduleType]);
-
   const availableDates = options?.scheduling.availableDates ?? [];
 
   // Grade de horários por intervalo — só existe pro motor de Pereiro. São
@@ -196,21 +168,17 @@ export default function RecebimentoPage() {
       : bucket.pickup;
   }, [options, checkout.scheduledDate, checkout.deliveryType]);
 
+  // Sem scheduledTime ainda (primeira carga) ou o valor escolhido saiu da
+  // grade (ex.: trocou de dia/entrega-retirada) — sempre cai de volta no
+  // primeiro horário disponível, que é o "mais cedo possível".
   useEffect(() => {
     if (
-      checkout.scheduleType === 'scheduled' &&
-      checkout.scheduledTime &&
       availableTimes.length > 0 &&
-      !availableTimes.includes(checkout.scheduledTime)
+      !availableTimes.includes(checkout.scheduledTime ?? '')
     ) {
-      setScheduledTime(availableTimes[0] ?? '');
+      setScheduledTime(availableTimes[0]);
     }
-  }, [
-    availableTimes,
-    checkout.scheduleType,
-    checkout.scheduledTime,
-    setScheduledTime,
-  ]);
+  }, [availableTimes, checkout.scheduledTime, setScheduledTime]);
 
   const deliveryReady =
     checkout.deliveryType === 'pickup' ||
@@ -218,10 +186,9 @@ export default function RecebimentoPage() {
       checkout.routeDistanceMeters != null &&
       checkout.locationConfirmed);
 
-  const scheduleReady =
-    checkout.scheduleType === 'now'
-      ? allowImmediate
-      : Boolean(checkout.scheduledDate && checkout.scheduledTime);
+  const scheduleReady = Boolean(
+    checkout.scheduledDate && checkout.scheduledTime,
+  );
 
   const isValid = deliveryReady && scheduleReady && !quoting && !mixedCart;
 
@@ -281,7 +248,6 @@ export default function RecebimentoPage() {
 
           {options && options.fulfillmentLocation === 'sao_miguel' ? (
             <SatelliteScheduleSection
-              allowImmediate={allowImmediate}
               availableDates={availableDates}
               pickupWindowByDate={options.scheduling.pickupWindowByDate}
               deliverySlotsByDate={options.scheduling.deliverySlotsByDate}
@@ -291,13 +257,6 @@ export default function RecebimentoPage() {
             />
           ) : (
             <ScheduleSection
-              allowImmediate={allowImmediate}
-              allowSameDay={allowSameDay}
-              hoursLabel={
-                options && options.fulfillmentLocation === 'pereiro'
-                  ? options.scheduling.hoursLabel
-                  : null
-              }
               availableDates={availableDates}
               availableTimes={availableTimes}
             />
