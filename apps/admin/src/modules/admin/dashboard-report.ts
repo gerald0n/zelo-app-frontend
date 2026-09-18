@@ -24,15 +24,23 @@ export async function getDashboardReport(
   const earliest =
     query.prevFrom < query.bucketFrom ? query.prevFrom : query.bucketFrom;
 
-  const [ordersRes, itemsRes] = await Promise.all([
+  const [ordersRes, itemsRes, distancesRes] = await Promise.all([
     admin
       .from('orders')
       .select('created_at, total_cents, status, delivery_method')
-      .gte('created_at', earliest),
+      .gte('created_at', earliest)
+      .lt('created_at', query.to),
     admin
       .from('order_items')
       .select('product_name, quantity, orders!inner(created_at, status)')
       .gte('orders.created_at', query.from)
+      .lt('orders.created_at', query.to)
+      .neq('orders.status', 'cancelled'),
+    admin
+      .from('order_addresses')
+      .select('route_distance_meters, orders!inner(created_at, status)')
+      .gte('orders.created_at', query.from)
+      .lt('orders.created_at', query.to)
       .neq('orders.status', 'cancelled'),
   ]);
 
@@ -50,6 +58,15 @@ export async function getDashboardReport(
       },
     );
   }
+  if (distancesRes.error) {
+    return err(
+      'INTERNAL_ERROR',
+      'Não foi possível carregar as distâncias de entrega.',
+      {
+        cause: distancesRes.error,
+      },
+    );
+  }
 
   return ok(
     aggregateDashboard(
@@ -63,6 +80,7 @@ export async function getDashboardReport(
         name: row.product_name,
         quantity: row.quantity,
       })),
+      (distancesRes.data ?? []).map((row) => row.route_distance_meters),
       query,
     ),
   );

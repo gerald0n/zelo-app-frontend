@@ -15,6 +15,7 @@ import type { AdminOrderListItem } from '@/modules/admin/types';
 import {
   PERIOD_LABEL,
   planDashboardQuery,
+  type CustomRange,
   type DashboardData,
   type DashboardPeriod,
   type DashboardReport,
@@ -25,28 +26,49 @@ import { TopProducts } from '@/app/_components/TopProducts';
 import { OperationsView } from '@/app/_components/OperationsView';
 import { FinancialView } from '@/app/_components/FinancialView';
 
-const PERIODS: DashboardPeriod[] = ['30d', '7d', 'today'];
+const PERIODS: DashboardPeriod[] = ['today', 'yesterday', '7d', '30d', 'custom'];
+
+function toDateInputValue(date: Date): string {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function defaultCustomRange(): CustomRange {
+  const today = toDateInputValue(new Date());
+  return { from: today, to: today };
+}
 
 export default function AdminDashboardPage() {
   const { isAuthenticated, ready } = useRequireAdmin();
   const [period, setPeriod] = useState<DashboardPeriod>('30d');
+  const [customRange, setCustomRange] = useState<CustomRange>(defaultCustomRange);
   const [detailOrderId, setDetailOrderId] = useState<string | null>(null);
 
   // Fronteiras calculadas no fuso do cliente (capturadas ao trocar de
   // período / montar). O servidor só agrega dentro delas.
-  const plan = useMemo(() => planDashboardQuery(period), [period]);
+  const plan = useMemo(
+    () => planDashboardQuery(period, period === 'custom' ? customRange : null),
+    [period, customRange],
+  );
+  const range = useMemo(
+    () => ({ from: plan.query.from, to: plan.query.to }),
+    [plan.query.from, plan.query.to],
+  );
 
   const dashboardQuery = useQuery({
     // Realtime invalida via `AdminRealtimeProvider` (prefixo `reports`) — o
-    // `period` no queryKey troca a query ao alternar, com placeholderData
+    // range no queryKey troca a query ao alternar, com placeholderData
     // segurando os dados anteriores até a nova chegar (sem flash).
-    queryKey: [...adminKeys.reports('dashboard'), period],
+    queryKey: [...adminKeys.reports('dashboard'), range.from, range.to],
     enabled: ready && isAuthenticated,
     placeholderData: keepPreviousData,
     queryFn: () => {
       const params = new URLSearchParams({
         kind: 'dashboard',
         from: plan.query.from,
+        to: plan.query.to,
         prevFrom: plan.query.prevFrom,
         prevTo: plan.query.prevTo,
         bucketFrom: plan.query.bucketFrom,
@@ -111,22 +133,47 @@ export default function AdminDashboardPage() {
             cancelamentos, produção e financeiro — em tempo real.
           </p>
         </div>
-        <div className="flex rounded-lg border border-border bg-card p-0.5">
-          {PERIODS.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => setPeriod(item)}
-              className={cn(
-                'rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
-                period === item
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {PERIOD_LABEL[item]}
-            </button>
-          ))}
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-wrap justify-end gap-0.5 rounded-lg border border-border bg-card p-0.5">
+            {PERIODS.map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setPeriod(item)}
+                className={cn(
+                  'rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
+                  period === item
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {PERIOD_LABEL[item]}
+              </button>
+            ))}
+          </div>
+          {period === 'custom' ? (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="date"
+                value={customRange.from}
+                max={customRange.to}
+                onChange={(e) =>
+                  setCustomRange((prev) => ({ ...prev, from: e.target.value }))
+                }
+                className="rounded-md border border-border bg-card px-2 py-1 text-xs"
+              />
+              <span className="text-xs text-muted-foreground">até</span>
+              <input
+                type="date"
+                value={customRange.to}
+                min={customRange.from}
+                onChange={(e) =>
+                  setCustomRange((prev) => ({ ...prev, to: e.target.value }))
+                }
+                className="rounded-md border border-border bg-card px-2 py-1 text-xs"
+              />
+            </div>
+          ) : null}
         </div>
       </header>
 
@@ -139,15 +186,18 @@ export default function AdminDashboardPage() {
           <DashboardStats data={data} activeCount={active.length} />
 
           <div className="grid gap-3 lg:grid-cols-[1.6fr_1fr]">
-            <SalesChart buckets={data.buckets} dense={period === '30d'} />
+            <SalesChart
+              buckets={data.buckets}
+              dense={plan.query.grain === 'day' && plan.query.count > 15}
+            />
             <TopProducts products={data.topProducts} />
           </div>
 
           <h2 className="font-serif text-base font-bold pt-1">Operação</h2>
-          <OperationsView period={period} onSelectOrder={setDetailOrderId} />
+          <OperationsView range={range} onSelectOrder={setDetailOrderId} />
 
           <h2 className="font-serif text-base font-bold pt-1">Financeiro</h2>
-          <FinancialView period={period} />
+          <FinancialView range={range} />
 
           <div className="flex items-center justify-between pt-1">
             <h2 className="font-serif text-base font-bold">Pedidos ativos</h2>

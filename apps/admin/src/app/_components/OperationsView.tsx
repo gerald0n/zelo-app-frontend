@@ -5,7 +5,7 @@ import { Ban, ChefHat, Loader2 } from 'lucide-react';
 import { apiJson } from '@/lib/api';
 import { adminKeys } from '@/lib/query-keys';
 import { formatCatalogPrice } from '@/modules/catalog/types';
-import type { OperationsReport, ReportPeriod } from '@/modules/admin/reports';
+import type { OperationsReport, ReportRange } from '@/modules/admin/reports';
 import { ReportBar } from '@/app/_components/ReportBar';
 
 function formatCancelledAt(iso: string): string {
@@ -18,17 +18,19 @@ function formatCancelledAt(iso: string): string {
 }
 
 export function OperationsView({
-  period,
+  range,
   onSelectOrder,
 }: {
-  period: ReportPeriod;
+  range: ReportRange;
   onSelectOrder: (orderId: string) => void;
 }) {
   const query = useQuery({
     // Realtime invalida via `AdminRealtimeProvider` — fora do queryKey.
-    queryKey: adminKeys.reports(`op-${period}`),
+    queryKey: adminKeys.reports(`op-${range.from}-${range.to}`),
     queryFn: () =>
-      apiJson<OperationsReport>(`/api/v1/admin/reports?period=${period}`),
+      apiJson<OperationsReport>(
+        `/api/v1/admin/reports?from=${encodeURIComponent(range.from)}&to=${encodeURIComponent(range.to)}`,
+      ),
   });
 
   const data = query.data;

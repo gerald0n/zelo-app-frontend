@@ -4,13 +4,14 @@ import { err, ok, type Result } from '@/lib/errors';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/modules/admin/auth';
 
-export type ReportPeriod = 'today' | '7d' | '30d';
+/** Range de instantes ISO `[from, to)`, calculado no fuso do cliente. */
+export type ReportRange = { from: string; to: string };
 
 const CANCELLATIONS_RECENT_LIMIT = 12;
 
 export type OperationsReport = {
-  period: ReportPeriod;
   from: string;
+  to: string;
   cancellations: {
     total: number;
     valueCents: number;
@@ -29,14 +30,6 @@ export type OperationsReport = {
   };
 };
 
-function rangeStart(period: ReportPeriod, now = new Date()): Date {
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
-  if (period === '7d') start.setDate(start.getDate() - 6);
-  if (period === '30d') start.setDate(start.getDate() - 29);
-  return start;
-}
-
 /** Agrupa motivos de cancelamento por texto (sem diferenciar maiúsculas). */
 function groupReasons(
   rows: Array<{ cancellation_reason: string | null }>,
@@ -54,25 +47,26 @@ function groupReasons(
 }
 
 export async function getOperationsReport(
-  period: ReportPeriod,
+  range: ReportRange,
 ): Promise<Result<OperationsReport>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
 
   const admin = createAdminSupabaseClient();
-  const from = rangeStart(period).toISOString();
 
   const [cancelled, items] = await Promise.all([
     admin
       .from('orders')
       .select('id, order_number, cancellation_reason, total_cents, cancelled_at')
       .eq('status', 'cancelled')
-      .gte('cancelled_at', from)
+      .gte('cancelled_at', range.from)
+      .lt('cancelled_at', range.to)
       .order('cancelled_at', { ascending: false }),
     admin
       .from('order_items')
       .select('product_name, quantity, orders!inner(status, created_at)')
-      .gte('orders.created_at', from)
+      .gte('orders.created_at', range.from)
+      .lt('orders.created_at', range.to)
       .neq('orders.status', 'cancelled'),
   ]);
 
@@ -100,8 +94,8 @@ export async function getOperationsReport(
     .sort((a, b) => b.quantity - a.quantity);
 
   return ok({
-    period,
-    from,
+    from: range.from,
+    to: range.to,
     cancellations: {
       total: cancelledRows.length,
       valueCents: cancelledRows.reduce((sum, row) => sum + row.total_cents, 0),
