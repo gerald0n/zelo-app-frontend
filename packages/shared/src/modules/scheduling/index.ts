@@ -1,10 +1,12 @@
 export {
   buildSchedulingSnapshot,
   canPlaceImmediateOrder,
+  firstAvailableDateForGroup,
   isInstantInBlackout,
   listAvailableScheduleDates,
   listAvailableScheduleTimes,
   resolveCartSchedulingRule,
+  type CartSchedulingGroup,
   type CartSchedulingResolution,
 } from '@/modules/scheduling/schedule';
 export {

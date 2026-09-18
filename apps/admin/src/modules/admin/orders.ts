@@ -11,7 +11,11 @@ import {
   formatAddress,
 } from '@/lib/admin/order-address';
 import { notifyOrderStatusChange } from '@/modules/notifications/send';
-import { canCustomerCancel, type OrderStatus } from '@/modules/orders/types';
+import {
+  canCustomerCancel,
+  canRescheduleOrder,
+  type OrderStatus,
+} from '@/modules/orders/types';
 import { mapReviewRow } from '@/modules/reviews/types';
 import type {
   AdminOrderDetail,
@@ -219,6 +223,10 @@ export async function getAdminOrder(
       createdAt: entry.created_at,
     })),
     canCancel: canCustomerCancel(data.status as OrderStatus),
+    canReschedule: canRescheduleOrder({
+      status: data.status as OrderStatus,
+      timing: data.timing,
+    }),
     review: mapReviewRow(data.order_reviews),
     canReview: false,
     customer: customer

@@ -15,6 +15,7 @@ import {
 import type { CatalogStore, SatelliteLocation } from '@/modules/catalog/types';
 import { nextAdminStatus, type AdminOrderDetail } from '@/modules/admin/types';
 import { useAdminRealtime } from '@/contexts/AdminRealtimeContext';
+import type { OrderRescheduleOptions } from '@/modules/orders/reschedule';
 
 /**
  * Carrega o pedido do admin e o mantém fresco (carga inicial + Realtime em
@@ -31,6 +32,11 @@ export function useAdminOrderDetail(id: string | null) {
   const [order, setOrder] = useState<AdminOrderDetail | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [rescheduleOptions, setRescheduleOptions] =
+    useState<OrderRescheduleOptions | null>(null);
+  const [rescheduleLoading, setRescheduleLoading] = useState(false);
+  const [rescheduleError, setRescheduleError] = useState<string | null>(null);
   const { version: realtimeVersion } = useAdminRealtime();
 
   // Spinner = já autenticado, mas ainda não temos o pedido DESTE id e sem erro.
@@ -183,6 +189,64 @@ export function useAdminOrderDetail(id: string | null) {
     }
   };
 
+  const openReschedule = async () => {
+    if (!order) return;
+    setRescheduleOpen(true);
+    setRescheduleError(null);
+    setRescheduleOptions(null);
+    setRescheduleLoading(true);
+    try {
+      const response = await fetch(`/api/v1/admin/orders/${id}/reschedule`, {
+        cache: 'no-store',
+      });
+      const json = await response.json();
+      if (!response.ok) {
+        setRescheduleError(
+          json?.error?.message ?? 'Não foi possível carregar os horários.',
+        );
+        return;
+      }
+      setRescheduleOptions(json.options as OrderRescheduleOptions);
+    } catch {
+      setRescheduleError('Falha de rede ao carregar horários.');
+    } finally {
+      setRescheduleLoading(false);
+    }
+  };
+
+  const closeReschedule = () => {
+    setRescheduleOpen(false);
+    setRescheduleOptions(null);
+    setRescheduleError(null);
+  };
+
+  const confirmReschedule = async (
+    scheduledDate: string,
+    scheduledTime: string,
+  ) => {
+    setRescheduleLoading(true);
+    setRescheduleError(null);
+    try {
+      const response = await fetch(`/api/v1/admin/orders/${id}/reschedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scheduledDate, scheduledTime }),
+      });
+      const json = await response.json();
+      if (!response.ok) {
+        setRescheduleError(json?.error?.message ?? 'Não foi possível reagendar.');
+        return;
+      }
+      setOrder(json.order as AdminOrderDetail);
+      void invalidateOrdersList();
+      closeReschedule();
+    } catch {
+      setRescheduleError('Falha de rede ao reagendar.');
+    } finally {
+      setRescheduleLoading(false);
+    }
+  };
+
   const reprintTicket = async () => {
     if (!order) return;
     const bytes = buildKitchenTicket(orderToKitchenTicket(order));
@@ -246,5 +310,12 @@ export function useAdminOrderDetail(id: string | null) {
     retryRefund,
     reprintTicket,
     reprintSlip,
+    rescheduleOpen,
+    rescheduleOptions,
+    rescheduleLoading,
+    rescheduleError,
+    openReschedule,
+    closeReschedule,
+    confirmReschedule,
   };
 }

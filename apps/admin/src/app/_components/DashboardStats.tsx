@@ -1,6 +1,7 @@
 import {
   ArrowDownRight,
   ArrowUpRight,
+  Bike,
   Clock,
   Receipt,
   TrendingUp,
@@ -11,6 +12,12 @@ import { cn } from '@/lib/cn';
 import type { DashboardData } from '@/modules/admin/dashboard';
 
 type Props = { data: DashboardData; activeCount: number };
+
+function formatDistance(meters: number): string {
+  return meters >= 1000
+    ? `${(meters / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} km`
+    : `${meters} m`;
+}
 
 /** Faixa de indicadores da visão geral. */
 export function DashboardStats({ data, activeCount }: Props) {
@@ -89,6 +96,26 @@ export function DashboardStats({ data, activeCount }: Props) {
         <p className="mt-2 font-serif text-2xl font-bold">{activeCount}</p>
         <p className="mt-0.5 text-2xs text-muted-foreground">
           Pedidos aguardando ação
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-3.5">
+        <div className="flex items-start justify-between">
+          <p className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Retirada & entrega
+          </p>
+          <Bike className="size-4 text-muted-foreground" />
+        </div>
+        <p className="mt-2 font-serif text-2xl font-bold">
+          {data.pickupCount}
+          <span className="text-sm font-medium text-muted-foreground"> / </span>
+          {data.deliveryCount}
+        </p>
+        <p className="mt-0.5 text-2xs text-muted-foreground">
+          balcão / entrega
+          {data.avgDistanceMeters !== null
+            ? ` · ${formatDistance(data.avgDistanceMeters)} em média`
+            : ''}
         </p>
       </div>
     </div>

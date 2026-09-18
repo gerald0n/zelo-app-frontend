@@ -76,6 +76,8 @@ export type CustomerOrder = {
   items: CustomerOrderItem[];
   history: CustomerOrderHistoryEntry[];
   canCancel: boolean;
+  /** Pedido agendado, em status que ainda permite escolher outro dia/horário. */
+  canReschedule: boolean;
   /** Avaliação já enviada para este pedido (em qualquer status de moderação). */
   review: CustomerOrderReview | null;
   /** Pedido entregue e ainda sem avaliação — mostra o convite. */
@@ -108,6 +110,17 @@ export type CustomerOrderListItem = Pick<
 };
 
 export const CUSTOMER_CANCELLABLE_STATUSES: OrderStatus[] = [
+  'received',
+  'confirmed',
+  'in_production',
+];
+
+/**
+ * Status em que ainda dá pra reagendar — mesmos em que o cliente já pode
+ * cancelar (uma vez em produção/pronto, mudar o horário não faz mais sentido).
+ * Vale tanto pro cliente quanto pro admin.
+ */
+export const RESCHEDULABLE_STATUSES: OrderStatus[] = [
   'received',
   'confirmed',
   'in_production',
@@ -149,6 +162,16 @@ export const STATUS_COLORS: Record<OrderStatus, string> = {
 
 export function canCustomerCancel(status: OrderStatus): boolean {
   return CUSTOMER_CANCELLABLE_STATUSES.includes(status);
+}
+
+export function canRescheduleOrder(order: {
+  status: OrderStatus;
+  timing: 'immediate' | 'scheduled';
+}): boolean {
+  return (
+    order.timing === 'scheduled' &&
+    RESCHEDULABLE_STATUSES.includes(order.status)
+  );
 }
 
 /**

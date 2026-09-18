@@ -3,13 +3,13 @@ import 'server-only';
 import { err, ok, type Result } from '@/lib/errors';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/modules/admin/auth';
-import type { ReportPeriod } from '@/modules/admin/reports';
+import type { ReportRange } from '@/modules/admin/reports';
 
 type Method = 'pix' | 'cash' | 'card' | 'pix_manual';
 
 export type FinancialReport = {
-  period: ReportPeriod;
   from: string;
+  to: string;
   /** bps usado pra estimar taxa onde não há o número real. */
   estimateBps: number;
   gross: { totalCents: number; orderCount: number };
@@ -30,14 +30,6 @@ export type FinancialReport = {
   }>;
 };
 
-function rangeStart(period: ReportPeriod, now = new Date()): Date {
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
-  if (period === '7d') start.setDate(start.getDate() - 6);
-  if (period === '30d') start.setDate(start.getDate() - 29);
-  return start;
-}
-
 type OrderRow = {
   order_number: number;
   created_at: string;
@@ -50,13 +42,12 @@ type OrderRow = {
 };
 
 export async function getFinancialReport(
-  period: ReportPeriod,
+  range: ReportRange,
 ): Promise<Result<FinancialReport>> {
   const auth = await requireAdmin();
   if (!auth.ok) return auth;
 
   const admin = createAdminSupabaseClient();
-  const from = rangeStart(period).toISOString();
 
   const [storeRes, ordersRes] = await Promise.all([
     admin
@@ -70,7 +61,8 @@ export async function getFinancialReport(
       .select(
         'order_number, created_at, payment_method, payment_status, status, total_cents, payment_fee_cents, payment_net_cents',
       )
-      .gte('created_at', from),
+      .gte('created_at', range.from)
+      .lt('created_at', range.to),
   ]);
 
   if (ordersRes.error) {
@@ -146,8 +138,8 @@ export async function getFinancialReport(
   );
 
   return ok({
-    period,
-    from,
+    from: range.from,
+    to: range.to,
     estimateBps,
     gross,
     fees,

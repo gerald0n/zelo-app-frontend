@@ -24,6 +24,11 @@ import { refundOrderPixPayment } from '@/modules/payments/order-pix-webhook';
 import type { CartItem } from '@/modules/carts/types';
 import { unitPriceWithAddons } from '@/modules/carts/types';
 import type { CatalogAddon } from '@/modules/catalog/types';
+import {
+  applyOrderReschedule,
+  getOrderRescheduleOptions,
+  type OrderRescheduleOptions,
+} from '@/modules/orders/reschedule';
 
 async function resolveIdentity(): Promise<Result<CustomerIdentity>> {
   const identity = await resolveCustomerForCheckout();
@@ -168,6 +173,54 @@ export async function cancelCustomerOrder(options: {
   const refreshed = await getCustomerOrder(options.orderId);
   if (!refreshed.ok) return refreshed;
   return ok({ order: refreshed.data, refund });
+}
+
+async function ensureOwnedOrder(orderId: string): Promise<Result<true>> {
+  const identity = await resolveIdentity();
+  if (!identity.ok) return identity;
+
+  const admin = createAdminSupabaseClient();
+  const { data, error } = await admin
+    .from('orders')
+    .select('customer_id')
+    .eq('id', orderId)
+    .maybeSingle();
+  if (error) {
+    return err('INTERNAL_ERROR', 'Não foi possível carregar o pedido.', {
+      cause: error,
+    });
+  }
+  if (!data || data.customer_id !== identity.data.id) {
+    return err('NOT_FOUND', 'Pedido não encontrado.');
+  }
+  return ok(true);
+}
+
+export async function getCustomerOrderRescheduleOptions(
+  orderId: string,
+): Promise<Result<OrderRescheduleOptions>> {
+  const owned = await ensureOwnedOrder(orderId);
+  if (!owned.ok) return owned;
+  return getOrderRescheduleOptions(orderId);
+}
+
+export async function rescheduleCustomerOrder(options: {
+  orderId: string;
+  scheduledDate: string;
+  scheduledTime: string;
+}): Promise<Result<CustomerOrder>> {
+  const owned = await ensureOwnedOrder(options.orderId);
+  if (!owned.ok) return owned;
+
+  const rescheduled = await applyOrderReschedule({
+    orderId: options.orderId,
+    actorType: 'customer',
+    scheduledDate: options.scheduledDate,
+    scheduledTime: options.scheduledTime,
+  });
+  if (!rescheduled.ok) return rescheduled;
+
+  return getCustomerOrder(options.orderId);
 }
 
 export type ReorderResult = {

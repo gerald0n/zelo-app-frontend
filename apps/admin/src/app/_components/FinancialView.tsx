@@ -7,7 +7,7 @@ import { ApiError, apiJson } from '@/lib/api';
 import { adminKeys } from '@/lib/query-keys';
 import { useAppDialog } from '@/contexts/AppDialogContext';
 import { formatCatalogPrice } from '@/modules/catalog/types';
-import type { ReportPeriod } from '@/modules/admin/reports';
+import type { ReportRange } from '@/modules/admin/reports';
 import type { FinancialReport } from '@/modules/admin/financial-report';
 
 type PixRefundSweepResult = {
@@ -51,17 +51,17 @@ function Line({
   );
 }
 
-export function FinancialView({ period }: { period: ReportPeriod }) {
+export function FinancialView({ range }: { range: ReportRange }) {
   const queryClient = useQueryClient();
   const { alert } = useAppDialog();
   const [sweeping, setSweeping] = useState(false);
 
   const query = useQuery({
     // Realtime invalida via `AdminRealtimeProvider` — fora do queryKey.
-    queryKey: adminKeys.reports(`fin-${period}`),
+    queryKey: adminKeys.reports(`fin-${range.from}-${range.to}`),
     queryFn: () =>
       apiJson<FinancialReport>(
-        `/api/v1/admin/reports?kind=financial&period=${period}`,
+        `/api/v1/admin/reports?kind=financial&from=${encodeURIComponent(range.from)}&to=${encodeURIComponent(range.to)}`,
       ),
   });
 

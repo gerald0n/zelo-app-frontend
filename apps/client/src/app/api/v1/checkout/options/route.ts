@@ -4,6 +4,7 @@ import { getPublicCatalog } from '@/modules/catalog/catalog-repository';
 import { getSatelliteLocation } from '@/modules/catalog/satellite-repository';
 import {
   buildSchedulingSnapshot,
+  firstAvailableDateForGroup,
   resolveCartSchedulingRule,
 } from '@/modules/scheduling/schedule';
 import { buildSatelliteSchedulingSnapshot } from '@/modules/scheduling/satellite-slots';
@@ -61,6 +62,7 @@ export async function POST(request: Request) {
       scheduling: {
         ...buildSatelliteSchedulingSnapshot(location),
         mixedCart: false,
+        mixedGroups: [],
         allowSameDay: true,
       },
     });
@@ -81,11 +83,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const { rule, mixed } = resolveCartSchedulingRule(
+  const { rule, mixed, groups } = resolveCartSchedulingRule(
     categories,
     products,
     productIds,
   );
+  const mixedGroups = mixed
+    ? groups.map((group) => ({
+        categoryNames: group.categoryNames,
+        firstAvailableDate: firstAvailableDateForGroup(store, group),
+      }))
+    : [];
 
   const satelliteLocationResult = await getSatelliteLocation();
   const satelliteAvailable =
@@ -114,6 +122,7 @@ export async function POST(request: Request) {
     scheduling: {
       ...buildSchedulingSnapshot(store, rule),
       mixedCart: mixed,
+      mixedGroups,
       allowSameDay: rule.allowSameDay,
       hoursLabel: getCatalogStoreHoursLabel(store),
     },

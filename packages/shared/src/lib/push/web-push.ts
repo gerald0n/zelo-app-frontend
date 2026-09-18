@@ -23,6 +23,11 @@ function ensureVapidConfigured() {
   return true;
 }
 
+export type PushAction = {
+  action: string;
+  title: string;
+};
+
 export type PushPayload = {
   title: string;
   body: string;
@@ -30,7 +35,9 @@ export type PushPayload = {
   badge?: string;
   url: string;
   orderId?: string;
+  requestId?: string;
   tag?: string;
+  actions?: PushAction[];
 };
 
 export type SendPushResult =
@@ -68,12 +75,14 @@ export async function sendWebPushNotification(options: {
         data: {
           url: options.payload.url,
           orderId: options.payload.orderId,
+          requestId: options.payload.requestId,
         },
         tag:
           options.payload.tag ??
           (options.payload.orderId
             ? `order-${options.payload.orderId}`
             : 'zelo-notification'),
+        actions: options.payload.actions,
       }),
     );
     return { ok: true };

@@ -18,6 +18,7 @@ import {
   History,
   Users,
   LifeBuoy,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { useAdmin } from '@/contexts/AdminContext';
 import { useAdminRealtime } from '@/contexts/AdminRealtimeContext';
@@ -54,6 +55,12 @@ const NAV = [
     label: 'Clientes',
     icon: Users,
     match: (p: string) => p.startsWith('/clientes'),
+  },
+  {
+    href: '/relatorios/pedidos',
+    label: 'Relatório detalhado',
+    icon: FileSpreadsheet,
+    match: (p: string) => p.startsWith('/relatorios'),
   },
   {
     href: '/catalogo',

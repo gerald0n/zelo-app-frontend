@@ -10,6 +10,7 @@ import { cn } from '@/lib/cn';
 import { useAdminOrderDetail } from '@/app/pedido/[id]/useAdminOrderDetail';
 import { OrderDetailMain } from '@/app/pedido/[id]/_components/OrderDetailMain';
 import { OrderDetailActions } from '@/app/pedido/[id]/_components/OrderDetailActions';
+import { RescheduleOrderDialog } from '@/app/pedido/[id]/_components/RescheduleOrderDialog';
 
 export default function AdminPedidoPage({
   params,
@@ -31,6 +32,13 @@ export default function AdminPedidoPage({
     retryRefund,
     reprintTicket,
     reprintSlip,
+    rescheduleOpen,
+    rescheduleOptions,
+    rescheduleLoading,
+    rescheduleError,
+    openReschedule,
+    closeReschedule,
+    confirmReschedule,
   } = useAdminOrderDetail(id);
 
   if (!ready || !isAuthenticated || loading) {
@@ -78,9 +86,20 @@ export default function AdminPedidoPage({
             onRetryRefund={() => void retryRefund()}
             onReprintTicket={() => void reprintTicket()}
             onReprintSlip={() => void reprintSlip()}
+            onReschedule={() => void openReschedule()}
           />
         </div>
       </div>
+      {rescheduleOpen ? (
+        <RescheduleOrderDialog
+          orderNumber={order.number}
+          options={rescheduleOptions}
+          loading={rescheduleLoading}
+          error={rescheduleError}
+          onClose={closeReschedule}
+          onConfirm={(date, time) => void confirmReschedule(date, time)}
+        />
+      ) : null}
     </div>
   );
 }
