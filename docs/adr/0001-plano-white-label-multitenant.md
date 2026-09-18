@@ -765,11 +765,34 @@ notificações, WhatsApp e Pix.**
   nesta fatia — só revisão de código + typecheck, consistente com a
   fatia 13 da Fase C (esses fluxos já não são testáveis neste ambiente).
 
+**Quarta fatia, feita e validada — fallback de logo deixa de ser a marca
+da Zelo.**
+- `ZeloSeal.tsx`: sem `logoUrl` (tenant novo sem logo próprio), cai direto
+  na inicial do nome sobre a cor primária — não tenta mais carregar
+  `public/brand/zelo-selo.png` como default. Só usa `<img>` quando há um
+  `logoUrl` de fato (do tenant), com o mesmo fallback pra inicial se a
+  imagem falhar ao carregar.
+- Isso exigia que a própria loja real da Zelo (produção e todos os seeds)
+  tivesse `logo_url` explícito — senão essa mudança faria a Zelo perder o
+  selo visualmente. Migration
+  `20260918120000_tenant_zelo_logo_url_backfill.sql` grava
+  `/brand/zelo-selo.png` em `stores.logo_url` só para o id fixo da Zelo
+  (`a0000000-...0001`) e só onde ainda for `null` (idempotente). Os três
+  seeds (`seed.sql`, `seed-operacional.sql`, `seed-operacional.prod.sql`)
+  também passaram a inserir esse valor, pra um reset/reseed do zero já
+  nascer com o selo certo — no seed de produção, de propósito **fora** do
+  `on conflict do update set`, pra não sobrescrever um logo que o admin já
+  tenha customizado numa eventual nova rodada do script.
+- Validado: consultado `stores.logo_url` via REST do Supabase local
+  (`http://192.168.200.206:54321`, projeto demo) — estava `null` antes
+  (confirmando que a fatia anterior já teria quebrado o selo da Zelo sem
+  esse backfill); aplicado o update, `/loja` renderizou o selo normalmente;
+  zerado `logo_url` de novo temporariamente (esperando expirar o cache de
+  60s) e confirmado visualmente que cai no avatar genérico "Z" sem tentar
+  a imagem fixa; restaurado o valor original depois do teste. Typecheck de
+  `apps/client` limpo.
+
 **Não feito ainda:**
-- Fallback do logo quando `logo_url` é nulo continua sendo o arquivo real
-  da Zelo (`zelo-selo.png`), não um selo genérico — pra um tenant sem logo
-  próprio ainda apareceria a marca da Zelo. Fica pra quando o critério de
-  saída (tenant fictício sem nenhuma referência à Zelo) for revisitado.
 - `apps/admin/src/app/configuracoes/_sections/PushNotificationPreview.tsx`
   ainda tem "Zelo" fixo (ver acima — pertence a WIP de outra sessão, fica
   pra quando aquela feature for reconciliada).
@@ -783,9 +806,9 @@ notificações, WhatsApp e Pix.**
   de custo/benefício em aberto, ver levantamento acima).
 - Critério de saída original ("um tenant fictício com marca diferente, sem
   nenhuma referência a 'Zelo' sobrevivendo") **quase cumprido**: tema,
-  metadata, logo, header/nav, UI de conta/notificações/pedidos, push,
-  WhatsApp e Pix já são dinâmicos; restam só o fallback de logo, a imagem
-  OG estática, fonte por tenant e o preview de push da outra sessão.
+  metadata, logo (com fallback genérico), header/nav, UI de conta/
+  notificações/pedidos, push, WhatsApp e Pix já são dinâmicos; restam só a
+  imagem OG estática, fonte por tenant e o preview de push da outra sessão.
 
 ### Fase E — App gestor
 - `apps/gestor`: CRUD de tenants, ativação de features, visão de uso/armazenamento.

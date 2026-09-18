@@ -20,7 +20,8 @@ insert into public.stores (
   id, name, phone_e164, whatsapp_e164, pix_copy_paste,
   address_line, city, state, postal_code,
   latitude, longitude,
-  free_delivery_radius_meters, max_delivery_radius_meters, fixed_delivery_fee_cents, timezone
+  free_delivery_radius_meters, max_delivery_radius_meters, fixed_delivery_fee_cents, timezone,
+  logo_url
 ) values (
   'a0000000-0000-4000-8000-000000000001',
   'Zelo Confeitaria',
@@ -36,7 +37,8 @@ insert into public.stores (
   1000,                    -- raio de entrega grátis (m)
   3000,                    -- raio máximo de entrega (m); acima disso, só retirada
   500,
-  'America/Fortaleza'
+  'America/Fortaleza',
+  '/brand/zelo-selo.png'
 )
 on conflict (id) do nothing;
 

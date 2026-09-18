@@ -5,13 +5,14 @@ import { cn } from '@/lib/cn';
 
 /**
  * Selo da marca — `logoUrl` do tenant (`stores.logo_url`, ADR-0001 Fase D)
- * quando a loja define um, senão o selo fixo da Zelo
- * (`public/brand/zelo-selo.png`).
+ * quando a loja define um. Sem `logoUrl`, não há mais fallback pro selo
+ * fixo da Zelo (`public/brand/zelo-selo.png`): cai direto na inicial do
+ * nome da loja serifada sobre a cor primária, pra um tenant sem logo
+ * próprio não herdar a marca da Zelo.
  *
- * Se a imagem não carregar (arquivo ainda não adicionado, `logo_url`
- * quebrado, rede etc.), cai na inicial do nome da loja serifada sobre a cor
- * primária — o mesmo desenho do ícone de fallback do PWA (que, para a Zelo,
- * é "Z").
+ * Se a imagem de um `logoUrl` presente não carregar (arquivo removido,
+ * `logo_url` quebrado, rede etc.), também cai nessa mesma inicial — o
+ * mesmo desenho do ícone de fallback do PWA.
  */
 export function ZeloSeal({
   className,
@@ -25,15 +26,14 @@ export function ZeloSeal({
   /** Classe do bloco de fallback (formato/raio). Default: mesmo `className`. */
   fallbackClassName?: string;
   letterClassName?: string;
-  /** `stores.logo_url` do tenant atual. `null`/ausente = selo fixo da Zelo. */
+  /** `stores.logo_url` do tenant atual. `null`/ausente = inicial do nome. */
   logoUrl?: string | null;
   alt?: string;
   fallbackLetter?: string;
 }) {
   const [failed, setFailed] = useState(false);
-  const src = logoUrl ?? '/brand/zelo-selo.png';
 
-  if (failed) {
+  if (!logoUrl || failed) {
     return (
       <div
         className={cn(
@@ -51,7 +51,7 @@ export function ZeloSeal({
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={src}
+      src={logoUrl}
       alt={alt}
       className={cn('shrink-0 object-contain', className)}
       onError={() => setFailed(true)}

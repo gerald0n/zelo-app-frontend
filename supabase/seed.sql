@@ -24,7 +24,8 @@ insert into public.stores (
   max_delivery_radius_meters,
   fixed_delivery_fee_cents,
   timezone,
-  domain
+  domain,
+  logo_url
 ) values (
   'a0000000-0000-4000-8000-000000000001',
   'Zelo Confeitaria',
@@ -44,7 +45,8 @@ insert into public.stores (
   -- domínio de teste local (não o real de produção) — exercita o caminho de
   -- match exato do resolver (Fase B) se você apontar esse host pra 127.0.0.1
   -- no /etc/hosts; acessar por "localhost" continua caindo no fallback.
-  'zelo.local.test'
+  'zelo.local.test',
+  '/brand/zelo-selo.png'
 );
 
 -- weekday: 0=domingo … 6=sábado
