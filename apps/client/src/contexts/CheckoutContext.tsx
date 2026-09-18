@@ -23,7 +23,6 @@ import {
   type DeliveryType,
   type FulfillmentLocation,
   type PaymentMethod,
-  type ScheduleType,
 } from '@/contexts/checkout-state';
 
 export type {
@@ -32,7 +31,6 @@ export type {
   DeliveryType,
   FulfillmentLocation,
   PaymentMethod,
-  ScheduleType,
 } from '@/contexts/checkout-state';
 
 type CheckoutContextType = {
@@ -43,7 +41,6 @@ type CheckoutContextType = {
   ) => void;
   setSatelliteLocationId: (id: string) => void;
   setDeliveryType: (t: DeliveryType) => void;
-  setScheduleType: (t: ScheduleType) => void;
   setScheduledDate: (d: string) => void;
   setScheduledTime: (t: string) => void;
   setAddress: (a: string) => void;
@@ -131,7 +128,6 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
           // Datas/horários/taxa de um local não valem pro outro.
           scheduledDate: undefined,
           scheduledTime: undefined,
-          scheduleType: 'now',
           addressDetails: emptyAddressFor(location),
           address: '',
           routeDistanceMeters: undefined,
@@ -164,10 +160,6 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
           }
         : { locationConfirmed: false }),
     }));
-  }, []);
-
-  const setScheduleType = useCallback((t: ScheduleType) => {
-    setCheckout((p) => ({ ...p, scheduleType: t }));
   }, []);
 
   const setScheduledDate = useCallback((d: string) => {
@@ -295,7 +287,6 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
       setFulfillmentLocation,
       setSatelliteLocationId,
       setDeliveryType,
-      setScheduleType,
       setScheduledDate,
       setScheduledTime,
       setAddress,
@@ -313,7 +304,6 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
       setFulfillmentLocation,
       setSatelliteLocationId,
       setDeliveryType,
-      setScheduleType,
       setScheduledDate,
       setScheduledTime,
       setAddress,
