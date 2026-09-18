@@ -138,11 +138,13 @@ export async function createOrderFromCheckout(options: {
 
   let pix: CreatedOrderPix | undefined;
   if (options.body.paymentMethod === 'pix') {
+    const storeForPix = await getPublicStore(storeId);
     const charge = await createOrderPixCharge({
       orderId: summary.data.id,
       orderNumber: summary.data.orderNumber,
       totalCents: summary.data.totalCents,
       customer: { id: identity.id },
+      storeName: storeForPix.ok ? (storeForPix.data?.name ?? undefined) : undefined,
     });
     if (!charge.ok) {
       // Sem cobrança não há como pagar: cancela o pedido recém-criado.

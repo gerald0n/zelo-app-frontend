@@ -14,6 +14,7 @@ import {
   revokePushSubscriptionByEndpoint,
 } from '@/modules/notifications/subscriptions';
 import { formatCatalogPrice } from '@/modules/catalog/types';
+import { getPublicStore } from '@/modules/catalog/store-repository';
 import {
   statusLabel,
   STATUS_COPY,
@@ -97,7 +98,7 @@ export async function notifyOrderStatusChange(options: {
     const admin = createAdminSupabaseClient();
     const { data: order, error } = await admin
       .from('orders')
-      .select('id, order_number, customer_id, status')
+      .select('id, order_number, customer_id, status, store_id')
       .eq('id', options.orderId)
       .maybeSingle();
 
@@ -117,11 +118,17 @@ export async function notifyOrderStatusChange(options: {
     );
     if (!subscriptions.length) return;
 
+    const storeResult = order.store_id
+      ? await getPublicStore(order.store_id)
+      : null;
+    const storeName =
+      (storeResult?.ok ? storeResult.data?.name : undefined) ?? 'Zelo';
+
     const number = options.orderNumber ?? order.order_number;
     const isDelivered = options.newStatus === 'delivered';
     const title = isDelivered
-      ? `Zelo · Como foi o pedido #${number}?`
-      : `Zelo · Pedido #${number}`;
+      ? `${storeName} · Como foi o pedido #${number}?`
+      : `${storeName} · Pedido #${number}`;
     const body = isDelivered
       ? 'Toque para avaliar em 10 segundos — a sua opinião ajuda muito.'
       : (STATUS_COPY[options.newStatus] ?? statusLabel(options.newStatus));

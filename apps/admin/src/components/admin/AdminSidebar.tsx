@@ -25,6 +25,7 @@ import { useNewOrder } from '@/contexts/AdminNewOrderContext';
 import { apiJson } from '@/lib/api';
 import { adminKeys } from '@/lib/query-keys';
 import { useAppDialog } from '@/contexts/AppDialogContext';
+import { useStoreBrandName } from '@/contexts/StoreBrandContext';
 import { useThemeToggle } from '@/hooks/useThemeToggle';
 import AdminStoreToggle from '@/components/admin/AdminStoreToggle';
 import { cn } from '@/lib/cn';
@@ -95,6 +96,7 @@ export default function AdminSidebar({ collapsed, onToggle }: Props) {
   const { open: openNewOrder } = useNewOrder();
   const { confirm } = useAppDialog();
   const { theme, toggle: toggleTheme } = useThemeToggle();
+  const storeBrandName = useStoreBrandName();
 
   const { data: pendingReviews } = useQuery({
     queryKey: adminKeys.reviewsPending(),
@@ -132,12 +134,12 @@ export default function AdminSidebar({ collapsed, onToggle }: Props) {
         )}
       >
         <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary font-serif text-lg font-bold text-primary-foreground">
-          Z
+          {storeBrandName.charAt(0).toUpperCase()}
         </span>
         {!collapsed ? (
           <div className="min-w-0 flex-1">
             <p className="truncate font-serif text-sm font-bold leading-tight">
-              Zelo Confeitaria
+              {storeBrandName}
             </p>
             <span className="mt-0.5 inline-flex items-center gap-1 text-2xs text-muted-foreground">
               <span

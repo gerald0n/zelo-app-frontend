@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+// Fallback do PWA servido offline pelo service worker: sem rede, não dá pra
+// buscar o nome da loja. Fica com "Zelo" fixo (ADR-0001, Fase D).
 export const metadata = {
   title: 'Offline · Zelo',
   description: 'Você está sem conexão.',

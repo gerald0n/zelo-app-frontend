@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { buildSupportWhatsappLink } from '@/lib/support-whatsapp';
+import { useCatalogStore } from '@/hooks/useStoreOpen';
 
 export default function Error({
   error,
@@ -11,6 +12,9 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const { data: storeData } = useCatalogStore();
+  const storeName = storeData?.store?.name ?? 'Zelo Confeitaria';
+
   useEffect(() => {
     void import('@sentry/nextjs').then((Sentry) =>
       Sentry.captureException(error),
@@ -28,7 +32,7 @@ export default function Error({
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center bg-background px-6 text-center">
       <p className="font-serif text-3xl font-semibold tracking-tight text-foreground">
-        Zelo
+        {storeName.split(' ')[0]}
       </p>
       <h1 className="mt-6 font-serif text-2xl font-semibold">
         Algo não carregou

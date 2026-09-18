@@ -24,8 +24,11 @@ import { useCart } from '@/contexts/CartContext';
 import { useShopExperience } from '@/contexts/ShopExperienceContext';
 import { cn } from '@/lib/utils';
 import { useCategoryQueryFilter } from '@/hooks/useCategoryQueryFilter';
-
-type Filter = 'Todos' | string;
+import { useCatalogStore } from '@/hooks/useStoreOpen';
+import {
+  useMenuFilterPersistence,
+  type Filter,
+} from '@/hooks/useMenuFilterPersistence';
 
 type Props = {
   categories: CatalogCategory[];
@@ -49,8 +52,10 @@ export default function HomeCatalog({
   pizzaSizes,
   pizzaAddons,
 }: Props) {
-  const [active, setActive] = useState<Filter>('Todos');
+  const [active, setActive] = useMenuFilterPersistence(categories);
   const [pizzaBuilderOpen, setPizzaBuilderOpen] = useState(false);
+  const { data: storeData } = useCatalogStore();
+  const storeName = storeData?.store?.name ?? 'Zelo Confeitaria';
 
   const pizzaFlavors = useMemo(
     () => products.filter((p) => p.productType === 'pizza_flavor'),
@@ -162,7 +167,7 @@ export default function HomeCatalog({
       <div className="mx-auto flex min-h-dvh w-full min-w-0 max-w-md flex-1 flex-col bg-background max-lg:min-h-full lg:max-w-none">
         <StoreHeader />
         <StoreStrip />
-        <MenuHeroCarousel banners={banners} />
+        <MenuHeroCarousel banners={banners} storeName={storeName} />
 
         <BestSellersSection
           items={bestSellers.items}
@@ -254,7 +259,10 @@ export default function HomeCatalog({
         </section>
 
         {active === 'Todos' ? (
-          <Testimonials testimonials={testimonials} />
+          <Testimonials
+            testimonials={testimonials}
+            storeName={storeName.split(' ')[0]}
+          />
         ) : null}
       </div>
 

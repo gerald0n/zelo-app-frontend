@@ -1,9 +1,13 @@
 import type { MetadataRoute } from 'next';
+import { getCachedPublicStore } from '@/modules/catalog/cached-catalog';
 
-export default function manifest(): MetadataRoute.Manifest {
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  const store = await getCachedPublicStore();
+  const storeName = (store.ok ? store.data?.name : undefined) ?? 'Zelo Confeitaria';
+
   return {
-    name: 'Zelo Confeitaria',
-    short_name: 'Zelo',
+    name: storeName,
+    short_name: storeName.split(' ')[0],
     description:
       'Cookies, pudins e salgados artesanais feitos com carinho em Pereiro, CE.',
     start_url: '/',

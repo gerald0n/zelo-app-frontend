@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { X, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { ADMIN_EMAIL, ADMIN_MIN_PASSWORD_LENGTH } from '@/config/admin';
 import { useAdmin } from '@/contexts/AdminContext';
+import { useStoreBrandName } from '@/contexts/StoreBrandContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function AdminLoginPage() {
   const router = useRouter();
   const { login } = useAdmin();
+  const storeBrandName = useStoreBrandName().split(' ')[0];
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   // Fica true no sucesso e não volta: mantém o botão em loading até o
@@ -88,7 +90,9 @@ export default function AdminLoginPage() {
 
       <div className="mx-auto my-auto w-full max-w-[420px]">
         <div className="mb-5 flex items-center gap-2">
-          <span className="text-2xl font-bold tracking-tight">Zelo</span>
+          <span className="text-2xl font-bold tracking-tight">
+            {storeBrandName}
+          </span>
           <Badge className="rounded-md px-2 py-1 text-2xs font-bold tracking-widest">
             ADMIN
           </Badge>

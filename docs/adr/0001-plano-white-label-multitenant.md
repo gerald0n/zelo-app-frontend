@@ -706,21 +706,86 @@ header/nav.**
   Typecheck de `apps/client` limpo (não mexeu em `apps/admin`/`packages/
   shared` nesta fatia).
 
+**Terceira fatia, feita e validada — strings "Zelo" restantes em UI,
+notificações, WhatsApp e Pix.**
+- Client (`apps/client`): `conta/page.tsx`, `conta/notificacoes/page.tsx`,
+  `pedido-recebido/page.tsx`, `acompanhamento/[id]/_components/
+  ReviewInvite.tsx`, `contexts/pwa-install/PwaInstallDialog.tsx`,
+  `components/Testimonials.tsx` (ganhou prop `storeName`, default `'Zelo'`),
+  `components/HomeCatalog.tsx` (passa `storeName` pro `Testimonials` e pro
+  `MenuHeroCarousel`), `components/MenuHeroCarousel.tsx` (o slide de
+  fallback "Celebre com a Zelo" virou função `fallbackSlides(storeName)`) —
+  todos Client Components sem dado de servidor, mesmo padrão da fatia
+  anterior: `useCatalogStore()` (react-query, hook já existente).
+- `not-found.tsx` e `manifest.ts` (client) viraram `async`, buscando a loja
+  via `getCachedPublicStore()` (Server Components/Route Handlers, têm acesso
+  a dado de servidor — não precisam do hook).
+- `global-error.tsx` (client): só suavizado o texto ("O app teve uma falha
+  inesperada"), deliberadamente **sem** fetch — é o crash boundary de
+  último recurso, teria que sobreviver mesmo se o próprio fetch da loja for
+  a causa da falha.
+- `error.tsx` (client, error boundary abaixo do layout): usa
+  `useCatalogStore()` normalmente — ao contrário do `global-error.tsx`, o
+  layout (e o fetch da loja) já rodou com sucesso antes desse boundary
+  poder disparar.
+- `offline/page.tsx` (client): mantido com "Zelo" fixo, comentário
+  explicando a exceção — é o fallback do PWA servido pelo service worker
+  sem rede, não dá pra buscar o nome da loja offline.
+- Admin (`apps/admin`): criado `contexts/StoreBrandContext.tsx` — Context
+  simples (`createContext<string>`) provido no `layout.tsx` (Server
+  Component, resolve `store.name` via `getCachedPublicStore()`) e consumido
+  por `useStoreBrandName()` em Client Components, incluindo a tela de login
+  (roda antes da autenticação, sem acesso a endpoint de loja autenticado).
+  Usado em `login/page.tsx`, `pedido/[id]/_components/OrderDetailMain.tsx`
+  ("Retirada na Zelo"), `components/admin/AdminSidebar.tsx` (badge com a
+  inicial + nome por extenso) e `components/admin/WhatsappNotifyButton.tsx`.
+- `apps/admin/src/app/configuracoes/_sections/PushNotificationPreview.tsx`
+  **deliberadamente não tocado** — arquivo pertencia a uma sessão paralela
+  desenvolvendo a feature de Push Template no mesmo diretório de trabalho
+  (`git status` mostrava `??`, não rastreado ainda).
+- Notificações e mensageria (`packages/shared`, módulos sem contexto de
+  request ativo — não dá pra usar `useCatalogStore()`/`headers()`):
+  `notifications/send.ts` (push de mudança de status), `notifications/
+  subscriptions.ts` (push de boas-vindas de ativação) e `payments/
+  order-pix-charge.ts` (descrição da cobrança Pix, criação e regeneração)
+  passaram a resolver `store_id` a partir da linha do pedido e chamar
+  `getPublicStore(storeId)` direto (sem cache — código de background, não
+  de request HTTP) em vez de depender de header/cache por request.
+  `orders/create-order.ts` busca a loja uma vez no fluxo de criação do
+  pedido e repassa `storeName` pro `createOrderPixCharge`.
+  `admin/whatsapp-notify.ts` ganhou `storeName?: string` em
+  `WhatsappOrderInfo`, com fallback `'Zelo'` quando ausente.
+- Validado: typecheck limpo em `packages/shared`, `apps/admin` e
+  `apps/client`. Navegador (`zelo-client`/`zelo-admin`, banco local com loja
+  `"Zelo Confeitaria"`): `/pagina-que-nao-existe` (not-found) mostra
+  título `"Página não encontrada · Zelo Confeitaria"` e "Zelo" no corpo;
+  `/manifest.webmanifest` retorna `name`/`short_name` corretos; `/login`
+  do admin mostra "Zelo" via `StoreBrandContext`. Fluxos que dependem de
+  infra externa (push, Pix, WhatsApp) não foram testados ponta a ponta
+  nesta fatia — só revisão de código + typecheck, consistente com a
+  fatia 13 da Fase C (esses fluxos já não são testáveis neste ambiente).
+
 **Não feito ainda:**
 - Fallback do logo quando `logo_url` é nulo continua sendo o arquivo real
   da Zelo (`zelo-selo.png`), não um selo genérico — pra um tenant sem logo
   próprio ainda apareceria a marca da Zelo. Fica pra quando o critério de
   saída (tenant fictício sem nenhuma referência à Zelo) for revisitado.
-- As ~35 strings "Zelo" visíveis restantes (metadata do admin além do
-  título, JSX de outras telas, notificações, WhatsApp, Pix — a lista
-  completa está no levantamento inicial acima).
+- `apps/admin/src/app/configuracoes/_sections/PushNotificationPreview.tsx`
+  ainda tem "Zelo" fixo (ver acima — pertence a WIP de outra sessão, fica
+  pra quando aquela feature for reconciliada).
+- Domínio sintético `@zeloconfeitaria.com.br` usado como e-mail de pagador
+  Pix quando o cliente não tem e-mail real (`order-pix-charge.ts`) — deixado
+  como está: é um placeholder técnico interno pro Mercado Pago, não
+  branding visível, e mudar pode ter implicação na conta MP.
 - Seleção de fonte por tenant (`font_config`, fica pra fatia própria dado o
   import estático do `next/font`).
 - `opengraph-image.tsx`/`twitter-image.tsx` dinâmicos por tenant (decisão
   de custo/benefício em aberto, ver levantamento acima).
 - Critério de saída original ("um tenant fictício com marca diferente, sem
-  nenhuma referência a 'Zelo' sobrevivendo") continua não cumprido — só o
-  tema de cor e o `<title>`/metadata estão dinâmicos.
+  nenhuma referência a 'Zelo' sobrevivendo") **quase cumprido**: tema,
+  metadata, logo, header/nav, UI de conta/notificações/pedidos, push,
+  WhatsApp e Pix já são dinâmicos; restam só o fallback de logo, a imagem
+  OG estática, fonte por tenant e o preview de push da outra sessão.
 
 ### Fase E — App gestor
 - `apps/gestor`: CRUD de tenants, ativação de features, visão de uso/armazenamento.

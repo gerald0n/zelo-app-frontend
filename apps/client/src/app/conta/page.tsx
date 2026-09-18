@@ -20,6 +20,7 @@ import { useAppDialog } from '@/contexts/AppDialogContext';
 import { Separator } from '@/components/ui/separator';
 import { shellNarrowClass } from '@/lib/layout';
 import { cn } from '@/lib/cn';
+import { useCatalogStore } from '@/hooks/useStoreOpen';
 
 type MenuItem = {
   icon: React.ElementType;
@@ -34,6 +35,8 @@ export default function ContaPage() {
   const { user, signOut } = useAuth();
   const { canOfferInstall, openInstallPrompt } = usePwaInstall();
   const { confirm } = useAppDialog();
+  const { data: storeData } = useCatalogStore();
+  const storeName = storeData?.store?.name ?? 'Zelo Confeitaria';
 
   const initials = user?.name
     ? user.name
@@ -102,7 +105,7 @@ export default function ContaPage() {
       : []),
     {
       icon: Info,
-      label: 'Informações da Zelo',
+      label: `Informações da ${storeName.split(' ')[0]}`,
       href: '/loja',
     },
     {
@@ -211,7 +214,7 @@ export default function ContaPage() {
         </div>
 
         <p className="mt-1 text-center text-2xs text-muted-foreground">
-          Zelo Confeitaria · v1.0.0
+          {storeName} · v1.0.0
         </p>
       </div>
     </div>

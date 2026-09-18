@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { PwaInstallMode } from '@/lib/pwa-install';
+import { useCatalogStore } from '@/hooks/useStoreOpen';
 
 type Props = {
   open: boolean;
@@ -44,6 +45,9 @@ export function PwaInstallDialog({
   onDismiss,
   onInstall,
 }: Props) {
+  const { data: storeData } = useCatalogStore();
+  const storeName = storeData?.store?.name ?? 'Zelo Confeitaria';
+
   if (!open) return null;
 
   // Assim que o navegador oferece a instalação nativa (`beforeinstallprompt`),
@@ -97,7 +101,7 @@ export function PwaInstallDialog({
               id="pwa-install-title"
               className="mt-0.5 font-serif text-xl font-semibold leading-tight text-foreground"
             >
-              Leve a Zelo na tela inicial
+              Leve a {storeName.split(' ')[0]} na tela inicial
             </h2>
           </div>
         </div>
@@ -106,7 +110,7 @@ export function PwaInstallDialog({
           id="pwa-install-desc"
           className="mt-3 text-sm leading-relaxed text-muted-foreground"
         >
-          A Zelo é um app web (PWA). Com o ícone na tela inicial, o cardápio abre
+          A {storeName.split(' ')[0]} é um app web (PWA). Com o ícone na tela inicial, o cardápio abre
           mais rápido — sem precisar da loja de apps.
         </p>
 

@@ -27,9 +27,11 @@ function Stars({ value }: { value: number }) {
 export function Testimonials({
   testimonials,
   className,
+  storeName = 'Zelo',
 }: {
   testimonials: PublicTestimonial[];
   className?: string;
+  storeName?: string;
 }) {
   if (testimonials.length === 0) return null;
 
@@ -42,7 +44,7 @@ export function Testimonials({
         id="testimonials-heading"
         className="font-serif text-lg font-semibold text-foreground"
       >
-        O que dizem sobre a Zelo
+        O que dizem sobre a {storeName}
       </h3>
       <ul className="mt-2.5 flex flex-col gap-2.5 lg:grid lg:grid-cols-2 lg:gap-3">
         {testimonials.map((t) => (

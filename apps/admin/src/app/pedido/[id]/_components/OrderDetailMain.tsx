@@ -7,6 +7,7 @@ import type { AdminOrderDetail } from '@/modules/admin/types';
 import { deliveryLocationLabel } from '@/lib/admin/order-address';
 import { paymentMethodLabel } from '@/lib/admin/payment-method-label';
 import { DeliveryLocationMeta } from '@/components/admin/DeliveryLocationMeta';
+import { useStoreBrandName } from '@/contexts/StoreBrandContext';
 
 function formatClock(iso: string) {
   return new Date(iso).toLocaleTimeString('pt-BR', {
@@ -23,6 +24,7 @@ const PIX_STATUS_LABEL: Record<string, string> = {
 };
 
 export function OrderDetailMain({ order }: { order: AdminOrderDetail }) {
+  const storeBrandName = useStoreBrandName();
   return (
     <div className="w-full space-y-3 px-0 lg:w-2/3 lg:pr-3">
       <section className="space-y-[13px] rounded-lg border border-border p-3.5">
@@ -70,7 +72,7 @@ export function OrderDetailMain({ order }: { order: AdminOrderDetail }) {
             <p className="mt-0.5 text-xs">
               {order.address
                 ? deliveryLocationLabel(order.address)
-                : 'Retirada na Zelo'}
+                : `Retirada na ${storeBrandName}`}
             </p>
             {order.address?.referencePoint ? (
               <p className="mt-0.5 text-2xs text-muted-foreground">

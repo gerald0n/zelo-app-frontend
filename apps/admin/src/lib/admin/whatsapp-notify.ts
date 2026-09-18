@@ -58,12 +58,17 @@ export type WhatsappOrderInfo = {
   id: string;
   customerName: string | null;
   phoneE164: string | null;
+  /** Nome da loja atual (ADR-0001, Fase D). Default: `'Zelo'`. */
+  storeName?: string;
 };
 
 function messageFor(order: WhatsappOrderInfo): string {
+  const storeName = order.storeName ?? 'Zelo';
+  const storeFirstName = storeName.split(' ')[0];
+
   if (COMPLETION_STATUSES.includes(order.status)) {
     return (
-      'Muito obrigado pelo seu pedido na Zelo Confeitaria! Esperamos que ' +
+      `Muito obrigado pelo seu pedido na ${storeName}! Esperamos que ` +
       'aproveite cada pedaço. Saiba que pode sempre contar conosco para ' +
       'adoçar os seus momentos. Seu feedback também é super importante ' +
       'para nós, então, não deixe de dizer o que achou. 🧡'
@@ -73,7 +78,7 @@ function messageFor(order: WhatsappOrderInfo): string {
   if (order.status === 'ready_for_pickup') {
     const name = firstName(order.customerName);
     const greeting = name ? `Oi, ${name}! ` : 'Oi! ';
-    return `${greeting}Seu pedido ${order.number} da Zelo está pronto para retirada. Te esperamos! 🧡`;
+    return `${greeting}Seu pedido ${order.number} da ${storeFirstName} está pronto para retirada. Te esperamos! 🧡`;
   }
 
   return (

@@ -1,14 +1,22 @@
 import Link from 'next/link';
+import { getCachedPublicStore } from '@/modules/catalog/cached-catalog';
 
-export const metadata = {
-  title: 'Página não encontrada · Zelo',
-};
+export async function generateMetadata() {
+  const store = await getCachedPublicStore();
+  const storeName = store.ok ? store.data?.name : undefined;
+  return {
+    title: `Página não encontrada · ${storeName ?? 'Zelo'}`,
+  };
+}
 
-export default function NotFound() {
+export default async function NotFound() {
+  const store = await getCachedPublicStore();
+  const storeName = (store.ok ? store.data?.name : undefined) ?? 'Zelo';
+
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center bg-background px-6 text-center">
       <p className="font-serif text-3xl font-semibold tracking-tight text-foreground">
-        Zelo
+        {storeName.split(' ')[0]}
       </p>
       <p className="mt-6 font-mono text-2xs uppercase tracking-[0.2em] text-muted-foreground">
         Erro 404

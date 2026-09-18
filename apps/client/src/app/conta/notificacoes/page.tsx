@@ -11,6 +11,7 @@ import {
   unsubscribeFromPush,
 } from '@/modules/notifications/client';
 import { cn } from '@/lib/cn';
+import { useCatalogStore } from '@/hooks/useStoreOpen';
 import {
   checkoutDesktopContainerClass,
   pageBodyPadClass,
@@ -37,6 +38,8 @@ function uiStateFor(current: PushSubscriptionState): PushUiState {
 export default function NotificacoesPage() {
   const { notify } = useShopExperience();
   const [state, setState] = useState<PushUiState>('loading');
+  const { data: storeData } = useCatalogStore();
+  const storeName = storeData?.store?.name ?? 'Zelo Confeitaria';
 
   const refresh = async () => {
     setState(uiStateFor(await getPushSubscriptionState()));
@@ -120,7 +123,7 @@ export default function NotificacoesPage() {
                   : state === 'denied'
                     ? 'O navegador bloqueou as notificações. Libere em Ajustes para ativar de novo.'
                     : state === 'unsupported'
-                      ? 'Este navegador não suporta notificações push. No iPhone, adicione a Zelo à tela inicial.'
+                      ? `Este navegador não suporta notificações push. No iPhone, adicione a ${storeName.split(' ')[0]} à tela inicial.`
                       : 'Desativadas neste aparelho.'}
             </p>
 

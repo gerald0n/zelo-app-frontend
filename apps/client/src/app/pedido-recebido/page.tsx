@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { Bell, CheckCircle2, Wrench, ShoppingBag, Bike, Home } from 'lucide-react';
 import { subscribeToPush } from '@/modules/notifications/client';
+import { useCatalogStore } from '@/hooks/useStoreOpen';
 
 const STEPS = [
   { id: 'received', label: 'Recebido', icon: CheckCircle2 },
@@ -15,6 +16,8 @@ const STEPS = [
 ];
 
 function PedidoRecebidoContent() {
+  const { data: storeData } = useCatalogStore();
+  const storeName = storeData?.store?.name ?? 'Zelo Confeitaria';
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
   const orderNumber = searchParams.get('orderNumber');
@@ -65,7 +68,7 @@ function PedidoRecebidoContent() {
         Pedido {displayNumber} recebido!
       </h1>
       <p className="mb-5 text-center text-sm leading-5 text-muted-foreground">
-        A Zelo está analisando seu pedido. Você será notificado assim que ele
+        A {storeName} está analisando seu pedido. Você será notificado assim que ele
         entrar em produção.
       </p>
 

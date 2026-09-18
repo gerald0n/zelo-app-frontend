@@ -4,6 +4,7 @@ import { Fraunces, Geist, Geist_Mono } from 'next/font/google';
 import AdminProviders from '@/components/AdminProviders';
 import { getCachedPublicStore } from '@/modules/catalog/cached-catalog';
 import { buildThemeStyle } from '@/modules/catalog/theme-style';
+import { StoreBrandProvider } from '@/contexts/StoreBrandContext';
 import './globals.css';
 
 /**
@@ -77,6 +78,7 @@ export default async function RootLayout({
   const nonce = (await headers()).get('x-nonce') ?? undefined;
   const store = await getCachedPublicStore();
   const themeStyle = buildThemeStyle(store.ok ? store.data?.theme : undefined);
+  const storeName = (store.ok ? store.data?.name : undefined) ?? 'Zelo Confeitaria';
 
   return (
     <html
@@ -97,7 +99,9 @@ export default async function RootLayout({
         {themeStyle && <style>{themeStyle}</style>}
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
-        <AdminProviders>{children}</AdminProviders>
+        <StoreBrandProvider name={storeName}>
+          <AdminProviders>{children}</AdminProviders>
+        </StoreBrandProvider>
       </body>
     </html>
   );

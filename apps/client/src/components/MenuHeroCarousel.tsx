@@ -17,23 +17,25 @@ type Slide = {
 };
 
 /** Sem banner cadastrado (Configurações → Marketing), cai nesses 3 slides fixos. */
-const FALLBACK_SLIDES: Slide[] = [
-  {
-    id: 'feito',
-    eyebrow: 'Feito com carinho',
-    title: 'Doces artesanais para o seu momento',
-  },
-  {
-    id: 'fresquinho',
-    eyebrow: 'Fresquinho todo dia',
-    title: 'Sabores que chegam quentinhos até você',
-  },
-  {
-    id: 'encomendas',
-    eyebrow: 'Encomendas especiais',
-    title: 'Celebre com a Zelo Confeitaria',
-  },
-];
+function fallbackSlides(storeName: string): Slide[] {
+  return [
+    {
+      id: 'feito',
+      eyebrow: 'Feito com carinho',
+      title: 'Doces artesanais para o seu momento',
+    },
+    {
+      id: 'fresquinho',
+      eyebrow: 'Fresquinho todo dia',
+      title: 'Sabores que chegam quentinhos até você',
+    },
+    {
+      id: 'encomendas',
+      eyebrow: 'Encomendas especiais',
+      title: `Celebre com a ${storeName}`,
+    },
+  ];
+}
 
 /** Banner cadastrado no admin: só imagem + link, sem texto sobreposto — a
  * imagem já deve trazer toda a informação. */
@@ -47,10 +49,13 @@ function bannersToSlides(banners: CatalogBanner[]): Slide[] {
 
 export default function MenuHeroCarousel({
   banners = [],
+  storeName = 'Zelo Confeitaria',
 }: {
   banners?: CatalogBanner[];
+  storeName?: string;
 }) {
-  const slides = banners.length > 0 ? bannersToSlides(banners) : FALLBACK_SLIDES;
+  const slides =
+    banners.length > 0 ? bannersToSlides(banners) : fallbackSlides(storeName);
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const scrollerRef = useRef<HTMLDivElement>(null);

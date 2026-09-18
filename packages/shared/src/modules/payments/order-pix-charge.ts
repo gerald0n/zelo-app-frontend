@@ -5,6 +5,7 @@ import { logger } from '@/lib/logger';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { resolveCustomerForCheckout } from '@/modules/orders/customer';
 import { createPixCharge } from '@/modules/payments/mercadopago';
+import { getPublicStore } from '@/modules/catalog/store-repository';
 
 /**
  * E-mail do pagador exigido pela Orders API. O cliente se identifica no app do
@@ -86,12 +87,13 @@ export async function createOrderPixCharge(input: {
   orderNumber: number;
   totalCents: number;
   customer: { id: string; email?: string | null };
+  storeName?: string;
 }): Promise<Result<OrderPixCharge>> {
   const charge = await createPixCharge({
     orderId: input.orderId,
     amountCents: input.totalCents,
     payerEmail: payerEmailFor(input.customer),
-    description: `Pedido #${input.orderNumber} — Zelo`,
+    description: `Pedido #${input.orderNumber} — ${input.storeName ?? 'Zelo'}`,
     attempt: 1,
   });
   if (!charge.ok) return charge;
@@ -112,10 +114,11 @@ type OwnedOrderRow = {
   pix_qr_code_base64: string | null;
   pix_ticket_url: string | null;
   pix_expires_at: string | null;
+  store_id: string | null;
 };
 
 const OWNED_ORDER_SELECT =
-  'id, order_number, total_cents, status, payment_method, payment_status, mp_order_id, pix_attempt, pix_qr_code, pix_qr_code_base64, pix_ticket_url, pix_expires_at';
+  'id, order_number, total_cents, status, payment_method, payment_status, mp_order_id, pix_attempt, pix_qr_code, pix_qr_code_base64, pix_ticket_url, pix_expires_at, store_id';
 
 /** Carrega um pedido garantindo que ele pertence ao cliente autenticado. */
 async function loadOwnedOrder(orderId: string): Promise<Result<OwnedOrderRow>> {
@@ -219,12 +222,16 @@ export async function regenerateOrderPixCharge(
     return ok(viewFromRow(row));
   }
 
+  const storeResult = row.store_id ? await getPublicStore(row.store_id) : null;
+  const storeName =
+    (storeResult?.ok ? storeResult.data?.name : undefined) ?? 'Zelo';
+
   const attempt = row.pix_attempt + 1;
   const charge = await createPixCharge({
     orderId: row.id,
     amountCents: row.total_cents,
     payerEmail: `cliente+${orderId}@zeloconfeitaria.com.br`,
-    description: `Pedido #${row.order_number} — Zelo`,
+    description: `Pedido #${row.order_number} — ${storeName}`,
     attempt,
   });
   if (!charge.ok) return charge;

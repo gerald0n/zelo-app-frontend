@@ -34,7 +34,7 @@ export default function GlobalError({
         }}
       >
         <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
-          A Zelo teve uma falha inesperada
+          O app teve uma falha inesperada
         </h1>
         <p style={{ maxWidth: '24rem', fontSize: '0.875rem', opacity: 0.75 }}>
           Recarregue a página. Se continuar, tente de novo em alguns minutos.

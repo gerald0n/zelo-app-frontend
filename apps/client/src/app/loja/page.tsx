@@ -132,7 +132,11 @@ export default async function LojaPage() {
           Fale conosco pelo WhatsApp
         </a>
 
-        <Testimonials testimonials={testimonials} className="px-0 pb-2" />
+        <Testimonials
+          testimonials={testimonials}
+          className="px-0 pb-2"
+          storeName={store.name.split(' ')[0]}
+        />
       </div>
     </div>
   );

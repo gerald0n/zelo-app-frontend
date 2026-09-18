@@ -5,6 +5,7 @@ import { Loader2, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { pagePrimaryButtonClass } from '@/lib/layout';
 import { useShopExperience } from '@/contexts/ShopExperienceContext';
+import { useCatalogStore } from '@/hooks/useStoreOpen';
 import type { CustomerOrder } from '@/modules/orders/types';
 import { REVIEW_COMMENT_MAX } from '@/modules/reviews/types';
 
@@ -64,6 +65,8 @@ function useOrderProducts(order: CustomerOrder) {
 
 export function ReviewInvite({ order, autoFocus, onSubmitted }: Props) {
   const { notify } = useShopExperience();
+  const { data: storeData } = useCatalogStore();
+  const storeName = storeData?.store?.name ?? 'Zelo Confeitaria';
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -145,7 +148,7 @@ export function ReviewInvite({ order, autoFocus, onSubmitted }: Props) {
         Como foi o seu pedido?
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Sua opinião ajuda a Zelo e outros clientes.
+        Sua opinião ajuda a {storeName} e outros clientes.
       </p>
 
       <div className="mt-3">

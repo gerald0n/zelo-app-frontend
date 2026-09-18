@@ -10,6 +10,7 @@ import {
   ensureCustomerRecord,
   resolveCustomerForCheckout,
 } from '@/modules/orders/customer';
+import { getCachedPublicStore } from '@/modules/catalog/cached-catalog';
 import type {
   PushSubscriptionInput,
   StoredPushSubscription,
@@ -28,7 +29,10 @@ import type {
  * assinatura nova era a mais afetada, já que não havia nenhum outro I/O
  * pendente na invocação segurando o processo vivo.
  */
-function sendActivationWelcomePush(input: PushSubscriptionInput): void {
+function sendActivationWelcomePush(
+  input: PushSubscriptionInput,
+  storeName: string,
+): void {
   if (!hasWebPushConfig()) return;
 
   after(() =>
@@ -37,7 +41,7 @@ function sendActivationWelcomePush(input: PushSubscriptionInput): void {
       p256dh: input.keys.p256dh,
       auth: input.keys.auth,
       payload: {
-        title: 'Zelo · Notificações ativadas 🎉',
+        title: `${storeName} · Notificações ativadas 🎉`,
         body: 'Agora você recebe avisos por aqui sobre o andamento dos seus pedidos.',
         url: '/conta/notificacoes',
         tag: 'push-welcome',
@@ -58,6 +62,10 @@ export async function upsertPushSubscription(
 
   const ensured = await ensureCustomerRecord(identityResult.data);
   if (!ensured.ok) return ensured;
+
+  const storeResult = await getCachedPublicStore();
+  const storeName =
+    (storeResult.ok ? storeResult.data?.name : undefined) ?? 'Zelo';
 
   const admin = createAdminSupabaseClient();
   const now = new Date().toISOString();
@@ -103,7 +111,7 @@ export async function upsertPushSubscription(
     // reaproveitado pelo navegador ao assinar de novo) também conta como
     // "acabou de ativar" — só o refresh silencioso de `last_seen_at` numa
     // assinatura já ativa (`revoked_at` já nulo) não deve reenviar.
-    if (existing.revoked_at) sendActivationWelcomePush(input);
+    if (existing.revoked_at) sendActivationWelcomePush(input, storeName);
 
     return ok({ id: existing.id });
   }
@@ -130,7 +138,7 @@ export async function upsertPushSubscription(
     });
   }
 
-  sendActivationWelcomePush(input);
+  sendActivationWelcomePush(input, storeName);
 
   return ok({ id: data.id });
 }

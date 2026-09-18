@@ -6,6 +6,7 @@ import {
   type WhatsappOrderInfo,
 } from '@/lib/admin/whatsapp-notify';
 import { cn } from '@/lib/cn';
+import { useStoreBrandName } from '@/contexts/StoreBrandContext';
 
 type Props = WhatsappOrderInfo & {
   /** `compact` cabe na fileira de ações do card do quadro. */
@@ -22,7 +23,8 @@ export default function WhatsappNotifyButton({
   className,
   ...order
 }: Props) {
-  const href = buildOrderWhatsappLink(order);
+  const storeName = useStoreBrandName();
+  const href = buildOrderWhatsappLink({ ...order, storeName: order.storeName ?? storeName });
   if (!href) return null;
 
   return (
