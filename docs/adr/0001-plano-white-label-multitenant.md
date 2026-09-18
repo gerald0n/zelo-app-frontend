@@ -1035,6 +1035,91 @@ de terceiros). Em vez disso, o wizard — ou, até ele existir, o checklist manu
 da Fase 0 — provisiona um tenant de demonstração com dados fictícios, e é esse
 login que o prospect recebe.
 
+## Preparação de deploy
+
+Status: em andamento. Decisão do dono do produto (2026-09-18): produção hoje
+está estável, sem previsão de novas features/correções — então a estratégia é
+trazer as atualizações de `develop` pra dentro desta branch (não o inverso),
+priorizando o comportamento da `develop` em qualquer conflito (ela reflete o
+que está em produção), mergear o resultado só em `develop` quando validado, e
+testar tudo em ambiente de preview — produção só recebe isso depois de tudo
+verificado, sem prazo definido.
+
+**Primeira fatia, feita e validada — merge de `develop` pra dentro de
+`feat/tenant-store-id`.**
+- `git merge origin/develop`: 18 commits desta branch vs. 15 de `develop`
+  desde que divergiram. Zero conflito textual — o merge automático do git
+  resolveu tudo sozinho —, mas "sem marcador de conflito" não é o mesmo que
+  "correto"; duas revisões manuais pegaram problemas reais que o git não
+  detectaria:
+  1. **Colisão de timestamp de migration**: `develop` trouxe
+     `20260917150000_manual_order_coupon_support.sql`, com o mesmo
+     timestamp exato de `20260917150000_tenant_customer_identity_decouple.sql`
+     desta branch — duas migrations diferentes reivindicando a mesma
+     "versão" no tracking do Supabase (chave primária da tabela de
+     histórico). Renomeada a minha pra `20260917150001` (um segundo
+     depois, mesma posição relativa, zero mudança de comportamento).
+  2. **`database.ts` desatualizado**: o merge textual do arquivo gerado
+     manteve o retorno de `reschedule_order` (RPC nova da `develop`) sem
+     o campo `store_id` — porque a versão da `develop` foi gerada antes da
+     minha coluna existir, e o merge por linha não tem como saber disso.
+     Corrigido regenerando o arquivo inteiro a partir do banco já com as
+     migrations das duas branches aplicadas, em vez de confiar no merge
+     textual de um arquivo gerado.
+  3. **Falha real de isolamento entre lojas em `private.reschedule_order`**
+     (a função de reagendamento, nova na `develop`): como essa função
+     nasceu numa branch sem RLS/identidade por tenant, ficou com duas
+     lacunas — (a) admin: checava só `private.is_admin()` (qualquer admin
+     de qualquer loja), não `private.is_admin_of_store(v_order.store_id)`;
+     (b) cliente: comparava `orders.customer_id` direto com `auth.uid()`,
+     mas desde a fatia de identidade por tenant essas colunas não são mais
+     a mesma coisa (`customers.id` é o perfil por loja;
+     `customers.user_id`/`auth.uid()` é a identidade de login
+     compartilhada) — na prática, nenhum cliente real conseguiria
+     reagendar o próprio pedido. **Não era um bug já em produção**: as
+     duas mudanças nasceram em branches diferentes e só se encontraram
+     nesta reconciliação. Corrigido com uma migration nova,
+     `20260918140000_reschedule_order_store_scoped.sql` (`create or
+     replace function`, sem tocar no arquivo original da `develop` —
+     preserva o histórico exato do que já rodou lá), usando
+     `private.is_admin_of_store()`/`private.current_customer_id()`, mesmo
+     padrão de toda a Fase C.
+  4. Conferido manualmente (sem bug) que `create_manual_order` já estava
+     reconciliado de antemão: uma fatia anterior desta mesma Fase C
+     (`20260917160000_manual_order_coupon_support_store_scoped.sql`) já
+     antecipou exatamente essa colisão (cupom em `create_manual_order`
+     chegando por duas branches) e escreveu a versão unificada.
+- Dependência nova da `develop` (`exceljs`, export de relatório em xlsx)
+  instalada via `pnpm install` — já estava declarada no `package.json`
+  mergeado, só faltava `pnpm install`.
+- Validado: typecheck e lint limpos nos 4 pacotes (`shared`, `client`,
+  `admin`, `gestor`) depois do merge + fixes. Migrations reconciliadas no
+  Supabase de dev compartilhado (bookkeeping corrigido via `migration
+  repair`, novas migrations da `develop` aplicadas com `db push
+  --include-all`, fix do reagendamento aplicado por cima). Commit de merge
+  preservado (não squash), pra poder reverter com um único `git revert -m
+  1` se `develop` ficar instável depois do merge final pra lá.
+
+**Plano de teste de não-regressão** (antes de considerar isso pronto pra virar
+PR): os três fluxos que dependem de infra externa nunca foram testados sob o
+novo modelo de tenant (fatia 13 da Fase C só cobriu checkout com pedido real).
+
+| Fluxo | O que testar | Como | Critério de sucesso |
+|---|---|---|---|
+| Agendamento | Criar pedido agendado por categoria, respeitando antecedência mínima por horário, **e reagendar** (feature nova da `develop`, cliente e admin) | Manual, pelo preview | Pedido criado/reagendado com `scheduled_for` correto; admin de uma loja não consegue reagendar pedido de outra |
+| Pix automático | Gerar cobrança, pagar via sandbox do Mercado Pago, confirmar webhook, conferir reconciliação | Manual, MCP do Mercado Pago em modo sandbox | Webhook atualiza `payment_status`; `store_id` do pedido bate com o tenant certo |
+| Impressão térmica | Emitir comanda via WebUSB num pedido criado no preview | Manual, impressora física pareada | Comanda imprime certo; fila (térmica off) não mistura tenants |
+| Regressão geral do `create_order`/relatórios/export | Checkout completo repetido (dinheiro/cartão/pix) + exportar relatório detalhado (feature nova da `develop`, `orders-report-export.ts`) em xlsx | Manual, preview | Nenhum erro 500; `orders.store_id` sempre correto; export não vaza pedido de outra loja |
+
+**Não feito ainda:**
+- Rodar o plano de teste acima (escrito, não executado).
+- Abrir o PR `feat/tenant-store-id` → `develop` (só depois do plano acima).
+- Deploy de `apps/gestor` (projeto Vercel novo, domínio, env vars) — decidido
+  que entra neste ciclo, mas ainda não provisionado.
+- Nenhuma migration desta branch foi aplicada em produção — só no Supabase de
+  dev compartilhado. Continua valendo o lembrete de checar `supabase
+  migration list --linked` antes de qualquer deploy real.
+
 ## Sistema de feature flags por tenant
 
 Guardar como `stores.features jsonb` (chave → `{ enabled: boolean, config?: {...} }`).
