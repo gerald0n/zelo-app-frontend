@@ -1,8 +1,20 @@
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
-import { getStore, updateStore } from '@/modules/gestor/stores';
+import { getStore, updateStore, updateStoreBranding } from '@/modules/gestor/stores';
+import type { CatalogStoreTheme } from '@/modules/catalog/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
+const THEME_FIELDS: Array<{ key: keyof CatalogStoreTheme; label: string }> = [
+  { key: 'primary', label: 'Primária' },
+  { key: 'primaryForeground', label: 'Primária (texto)' },
+  { key: 'secondary', label: 'Secundária' },
+  { key: 'secondaryForeground', label: 'Secundária (texto)' },
+  { key: 'accent', label: 'Destaque' },
+  { key: 'accentForeground', label: 'Destaque (texto)' },
+  { key: 'caramel', label: 'Caramelo' },
+  { key: 'caramelForeground', label: 'Caramelo (texto)' },
+];
 
 export default async function LojaDetailPage({
   params,
@@ -21,6 +33,7 @@ export default async function LojaDetailPage({
   }
 
   const store = result.data;
+  const theme = (store.theme ?? {}) as CatalogStoreTheme;
 
   async function updateStoreAction(formData: FormData): Promise<void> {
     'use server';
@@ -35,6 +48,26 @@ export default async function LojaDetailPage({
       city: get('city'),
       state: get('state'),
       postalCode: get('postalCode') || null,
+    });
+
+    if (!patch.ok) {
+      redirect(`/lojas/${id}?erro=${encodeURIComponent(patch.error.message)}`);
+    }
+    redirect(`/lojas/${id}?ok=1`);
+  }
+
+  async function updateBrandingAction(formData: FormData): Promise<void> {
+    'use server';
+
+    const get = (key: string) => (formData.get(key) as string | null) ?? '';
+    const nextTheme: CatalogStoreTheme = {};
+    for (const field of THEME_FIELDS) {
+      nextTheme[field.key] = get(`theme.${field.key}`);
+    }
+
+    const patch = await updateStoreBranding(id, {
+      logoUrl: get('logoUrl') || null,
+      theme: nextTheme,
     });
 
     if (!patch.ok) {
@@ -103,6 +136,42 @@ export default async function LojaDetailPage({
           className="mt-2 flex h-11 w-full items-center justify-center rounded-md bg-primary text-sm font-semibold text-white"
         >
           Salvar
+        </button>
+      </form>
+
+      <h2 className="mb-1 mt-8 text-lg font-bold tracking-tight">
+        Marca (tema e logo)
+      </h2>
+      <p className="mb-4 text-sm text-muted-foreground">
+        Sem upload ainda — logo é uma URL já hospedada em algum lugar. Cor é
+        qualquer valor CSS válido (ex.: <code>oklch(0.5 0.2 250)</code> ou{' '}
+        <code>#7a2e2e</code>); campo vazio volta pro valor padrão do app.
+      </p>
+
+      <form action={updateBrandingAction} className="space-y-3">
+        <Field
+          label="URL do logo"
+          name="logoUrl"
+          defaultValue={store.logo_url ?? ''}
+          placeholder="https://…/logo.png"
+        />
+        <div className="grid grid-cols-2 gap-3">
+          {THEME_FIELDS.map((field) => (
+            <Field
+              key={field.key}
+              label={field.label}
+              name={`theme.${field.key}`}
+              defaultValue={theme[field.key] ?? ''}
+              placeholder="oklch(0.5 0.2 250)"
+            />
+          ))}
+        </div>
+
+        <button
+          type="submit"
+          className="mt-2 flex h-11 w-full items-center justify-center rounded-md bg-primary text-sm font-semibold text-white"
+        >
+          Salvar marca
         </button>
       </form>
     </div>

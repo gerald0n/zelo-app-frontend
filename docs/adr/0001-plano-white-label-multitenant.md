@@ -874,13 +874,42 @@ de `stores`.**
   `package.json` da raiz ganhou `dev:gestor`/`build:gestor`, mesmo padrão
   dos outros apps.
 
-**Não feito ainda** (dos 4 steps do wizard, só o essencial do step 1 —
-nome/endereço/contato — existe; falta):
+**Segunda fatia, feita e validada — step 2 do wizard (tema + logo).**
+- `modules/gestor/stores.ts` ganhou `updateStoreBranding()`: grava
+  `stores.logo_url` e as 8 chaves de `stores.theme` (as mesmas que
+  `buildThemeStyle()` já lê nos apps de tenant desde a Fase D — nenhum
+  formato novo). Uma chave de tema vazia no formulário limpa o override
+  (não grava string vazia) e volta pro valor estático do CSS.
+- UI: seção "Marca (tema e logo)" na página de detalhe da loja
+  (`/lojas/[id]`), campos de texto livre (cor é qualquer valor CSS válido —
+  `oklch(...)`, hex etc.) — sem color picker, sem preview ao vivo.
+- **De propósito fora desta fatia**: upload de logo pro Supabase Storage
+  (`logoUrl` continua sendo uma URL informada à mão, mesma limitação já
+  registrada) e edição de `font_config` (a Fase D já registrou que fonte
+  por tenant precisa de fatia própria, dado o import estático do
+  `next/font`).
+- Validado: typecheck/lint limpos. Navegador: gravado `theme.primary =
+  "oklch(0.55 0.2 260)"` pela UI do gestor → confirmado no banco via REST;
+  revertido pro estado original (`theme = {}`) depois do teste — não
+  validado visualmente no `apps/client` nesta fatia (a fatia 1 da Fase D já
+  provou que `buildThemeStyle()` aplica o `theme` gravado; aqui só a
+  gravação pela nova UI era o que faltava confirmar).
+
+**Step 3 (feature flags) deliberadamente NÃO iniciado**: `stores.features`
+não tem nenhum consumidor no código hoje — nenhuma rota, componente ou
+módulo lê essa coluna (a tabela "Flags levantados nesta conversa" mais
+abaixo neste documento é uma lista de candidatos, não flags implementados).
+Construir um toggle de UI pra um campo que nada lê seria um formulário que
+mente sobre ter efeito. Isso só faz sentido depois que pelo menos um flag
+real (ex.: `carousel_home`, que já tem UI de config no admin) for
+efetivamente lido em algum caminho de código condicionado por tenant.
+
+**Não feito ainda** (dos 4 steps do wizard):
 - Step 1 completo: domínio automatizado via Vercel Domains API (hoje só
   grava o valor no banco, não provisiona nada).
-- Step 2: upload de logo (Supabase Storage — hoje `logo_url` é só texto) e
-  edição de tema/`font_config` pela UI do gestor.
-- Step 3: toggle de feature flags (`stores.features`) pela UI.
+- Step 2: upload de logo (Supabase Storage) e edição de `font_config`.
+- Step 3: bloqueado não por infra, mas por não ter nenhum flag real
+  consumido no código ainda (ver acima).
 - Step 4: segue bloqueado por infra de secrets (ADR-0003) — nem começado.
 - Acesso de demo pra prospect (tenant fictício provisionado, sem dar login
   real da Zelo) — ainda é processo manual, não fluxo no gestor.

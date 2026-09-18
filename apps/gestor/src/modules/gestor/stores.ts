@@ -3,6 +3,7 @@ import 'server-only';
 import { err, ok, type Result } from '@/lib/errors';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { requirePlatformAdmin } from '@/modules/gestor/auth';
+import type { CatalogStoreTheme } from '@/modules/catalog/types';
 import type { Database } from '@/types/database';
 
 type StoreRow = Database['public']['Tables']['stores']['Row'];
@@ -263,6 +264,75 @@ export async function updateStore(
     action: 'store.update',
     entityId: id,
     metadata: patch,
+  });
+
+  return ok(data);
+}
+
+const THEME_KEYS = [
+  'primary',
+  'primaryForeground',
+  'secondary',
+  'secondaryForeground',
+  'accent',
+  'accentForeground',
+  'caramel',
+  'caramelForeground',
+] as const satisfies readonly (keyof CatalogStoreTheme)[];
+
+export type UpdateStoreBrandingInput = {
+  logoUrl?: string | null;
+  theme: CatalogStoreTheme;
+};
+
+/**
+ * Step 2 do wizard (ADR-0001, Fase E): tema de cor + logo. Sem upload pro
+ * Supabase Storage ainda — `logoUrl` é uma URL informada à mão (a mesma
+ * forma como as fatias de Fase D foram validadas, gravando direto no
+ * banco). Cada chave do tema é um valor CSS de cor (ex.: `oklch(0.5 0.2
+ * 250)`), consumido por `buildThemeStyle()` nos dois apps de tenant — uma
+ * chave vazia limpa o override e volta pro valor estático do CSS.
+ */
+export async function updateStoreBranding(
+  id: string,
+  input: UpdateStoreBrandingInput,
+): Promise<Result<StoreDetail>> {
+  const auth = await requirePlatformAdmin();
+  if (!auth.ok) return auth;
+
+  const theme: CatalogStoreTheme = {};
+  for (const key of THEME_KEYS) {
+    const value = input.theme[key]?.trim();
+    if (value) theme[key] = value;
+  }
+
+  const admin = createAdminSupabaseClient();
+  const patch: StoreUpdate = {
+    theme: theme as Database['public']['Tables']['stores']['Update']['theme'],
+  };
+  if (input.logoUrl !== undefined) {
+    patch.logo_url = input.logoUrl?.trim() || null;
+  }
+
+  const { data, error } = await admin
+    .from('stores')
+    .update(patch)
+    .eq('id', id)
+    .select('*')
+    .maybeSingle();
+
+  if (error) {
+    return err('INTERNAL_ERROR', 'Não foi possível atualizar a marca.', {
+      cause: error,
+    });
+  }
+  if (!data) return err('NOT_FOUND', 'Loja não encontrada.');
+
+  await writeGestorAuditLog({
+    actorId: auth.data.id,
+    action: 'store.branding_update',
+    entityId: id,
+    metadata: { theme, logoUrl: patch.logo_url },
   });
 
   return ok(data);
