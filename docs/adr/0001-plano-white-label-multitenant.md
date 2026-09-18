@@ -1111,9 +1111,52 @@ novo modelo de tenant (fatia 13 da Fase C só cobriu checkout com pedido real).
 | Impressão térmica | Emitir comanda via WebUSB num pedido criado no preview | Manual, impressora física pareada | Comanda imprime certo; fila (térmica off) não mistura tenants |
 | Regressão geral do `create_order`/relatórios/export | Checkout completo repetido (dinheiro/cartão/pix) + exportar relatório detalhado (feature nova da `develop`, `orders-report-export.ts`) em xlsx | Manual, preview | Nenhum erro 500; `orders.store_id` sempre correto; export não vaza pedido de outra loja |
 
+**Execução do plano de teste (2026-09-18) — feita localmente (dev server +
+Supabase de dev compartilhado, não Vercel preview ainda).**
+- **Agendamento + reagendamento**: fluxo completo pelo navegador — login OTP
+  real (cliente novo), agendamento de retirada, pagamento em dinheiro,
+  `Fazer pedido` → pedido `#1007` criado com sucesso (`create_order`
+  funcionando sob o schema mergeado). Reagendado pelo **cliente**
+  (`/reagendar-pedido`, valida o fix de `private.current_customer_id()`) e
+  depois pelo **admin** (modal do kanban, valida
+  `private.is_admin_of_store()`) — os dois caminhos funcionaram e
+  persistiram o novo horário corretamente. **Não testado**: um admin de
+  outra loja tentando reagendar (exigiria montar um segundo tenant de novo,
+  como nas fatias 11/13) — a função usa a mesma `is_admin_of_store()` já
+  testada em dezenas de outras tabelas, então o risco residual é baixo,
+  mas fica registrado como não coberto por teste direto.
+- **Regressão geral**: avançado o pedido `#1007` de "recebido" →
+  "confirmado" (transição de status via admin, RLS ok) e depois cancelado
+  com motivo (fluxo de cancelamento, RLS ok). Board do kanban refletiu cada
+  mudança corretamente.
+- **Relatório detalhado + export**: `/relatorios/pedidos` (rota nova da
+  `develop`) carregou e filtrou certo (só o pedido do tenant atual);
+  `Exportar .xlsx` retornou `200 OK` — confirma que a dependência `exceljs`
+  (instalada durante a reconciliação) funciona em runtime, não só no
+  typecheck.
+- **Pix automático — bloqueado, não testável neste ambiente**:
+  `MERCADOPAGO_ACCESS_TOKEN` está comentado no `.env.local` local (Pix
+  automático desligado de propósito em dev). Mesmo habilitando, o webhook
+  do Mercado Pago precisa de uma URL pública pra entregar a notificação —
+  `localhost` não é alcançável de fora. Testar isso de verdade exige um
+  túnel (ex.: ngrok) ou, mais realista, esperar o deploy de preview na
+  Vercel (que já tem URL pública) e rodar o teste lá.
+- **Impressão térmica — bloqueado, não testável neste ambiente**: depende
+  de hardware físico (impressora pareada via WebUSB) que não existe neste
+  ambiente de execução. Só testável por um humano com a impressora em mãos.
+
 **Não feito ainda:**
-- Rodar o plano de teste acima (escrito, não executado).
-- Abrir o PR `feat/tenant-store-id` → `develop` (só depois do plano acima).
+- Pix automático e impressão térmica seguem sem teste de verdade — dependem
+  de ambiente com URL pública (Pix) ou hardware físico (impressora). Ambos
+  precisam ser testados manualmente antes do merge final pra `develop`, ou
+  pelo menos antes de considerar o critério de saída "sem cross-talk entre
+  tenants" cumprido pros três fluxos externos.
+- Teste direto de isolamento entre lojas em `reschedule_order` (admin de
+  uma loja tentando mexer no pedido de outra) — coberto só por revisão de
+  código + reuso de função já testada, não por teste ao vivo.
+- Abrir o PR `feat/tenant-store-id` → `develop` (só depois do Pix/
+  impressora serem testados, ou de uma decisão consciente de aceitar esse
+  risco residual).
 - Deploy de `apps/gestor` (projeto Vercel novo, domínio, env vars) — decidido
   que entra neste ciclo, mas ainda não provisionado.
 - Nenhuma migration desta branch foi aplicada em produção — só no Supabase de
