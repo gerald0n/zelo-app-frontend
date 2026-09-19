@@ -80,7 +80,9 @@ export function ProductListRow({
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold">{product.name}</p>
         <p className="text-2xs text-muted-foreground">
-          {product.categoryName} · {formatCatalogPrice(product.priceCents)}
+          {product.categoryName} ·{' '}
+          {product.productType === 'pizza_flavor' ? 'A partir de ' : ''}
+          {formatCatalogPrice(product.priceCents)}
           {product.stockQuantity != null ? (
             <>
               {' · '}

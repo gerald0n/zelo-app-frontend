@@ -139,7 +139,11 @@ export function ProductGridCard({
 
         <div className="mt-auto flex items-end justify-between pt-2">
           <div>
-            <p className="text-2xs text-muted-foreground">Preço unitário</p>
+            <p className="text-2xs text-muted-foreground">
+              {product.productType === 'pizza_flavor'
+                ? 'A partir de'
+                : 'Preço unitário'}
+            </p>
             <p className="font-serif text-base font-bold">
               {formatCatalogPrice(product.priceCents)}
             </p>

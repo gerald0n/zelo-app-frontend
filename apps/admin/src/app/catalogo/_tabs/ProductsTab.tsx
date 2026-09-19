@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useCatalogPrices } from './useCatalogPrices';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAppDialog } from '@/contexts/AppDialogContext';
@@ -69,13 +70,14 @@ function matchesStatus(product: AdminProduct, status: ProductStatusFilter) {
 
 export function ProductsTab({
   categories,
-  products,
+  products: rawProducts,
   addons,
   satelliteLocations,
   pizzaSizes,
   invalidateCatalog,
   onError,
 }: Props) {
+  const products = useCatalogPrices(rawProducts, pizzaSizes);
   const { confirm } = useAppDialog();
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [query, setQuery] = useState('');
@@ -93,8 +95,7 @@ export function ProductsTab({
     defaultValues: emptyProductForm(''),
   });
 
-  // Deriva o produto em edição da lista atual (não guarda um snapshot) — assim a
-  // galeria de fotos no modal reflete as mutações de imagem sem estado stale.
+  // Deriva da lista atual para refletir atualizações da galeria no modal.
   const editingProduct = useMemo(
     () => products.find((product) => product.id === editingProductId) ?? null,
     [products, editingProductId],
@@ -113,6 +114,7 @@ export function ProductsTab({
     uploadPreviewImageMutation,
     deletePreviewImageMutation,
   } = useProductMutations({
+    pizzaSizes,
     editingProduct,
     invalidateCatalog,
     onError,

@@ -11,8 +11,10 @@ import {
   type CatalogRollback,
 } from '@/lib/admin/catalog-cache';
 import type { AdminProduct } from '@/modules/admin/types';
+import { catalogProductPrice } from '@/lib/admin/product-price';
 
 type Options = {
+  pizzaSizes: Array<{ id: string; isActive: boolean }>;
   editingProduct: AdminProduct | null;
   invalidateCatalog: () => Promise<void>;
   onError: (message: string) => void;
@@ -22,6 +24,7 @@ type Options = {
 
 /** Mutations do catálogo de produtos: salvar, alternar campo, lote e upload. */
 export function useProductMutations({
+  pizzaSizes,
   editingProduct,
   invalidateCatalog,
   onError,
@@ -36,7 +39,19 @@ export function useProductMutations({
         categoryId: values.categoryId,
         name: values.name,
         description: values.description || null,
-        priceCents: reaisToCents(values.priceReais),
+        priceCents: catalogProductPrice(
+          {
+            productType: values.productType,
+            priceCents: reaisToCents(values.priceReais),
+            pizzaSizePrices: Object.entries(values.pizzaSizePricesReais).map(
+              ([sizeId, price]) => ({
+                sizeId,
+                priceCents: reaisToCents(price),
+              }),
+            ),
+          },
+          pizzaSizes,
+        ),
         sortOrder: values.sortOrder,
         isActive: values.isActive,
         isAvailable: values.isAvailable,
