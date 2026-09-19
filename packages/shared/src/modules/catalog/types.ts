@@ -130,6 +130,7 @@ export type CatalogStore = {
   postalCode: string | null;
   latitude: number;
   longitude: number;
+  /** Nome legado no banco; hoje delimita a faixa de taxa reduzida. */
   freeDeliveryRadiusMeters: number;
   fixedDeliveryFeeCents: number;
   /** Raio máximo de entrega (m, linha reta); além dele, só retirada. */
@@ -188,6 +189,7 @@ export type SatelliteLocation = {
   postalCode: string | null;
   latitude: number;
   longitude: number;
+  /** Nome legado no banco; hoje delimita a faixa de taxa reduzida. */
   freeDeliveryRadiusMeters: number;
   fixedDeliveryFeeCents: number;
   maxDeliveryRadiusMeters: number;

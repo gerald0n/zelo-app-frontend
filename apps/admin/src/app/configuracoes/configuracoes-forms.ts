@@ -32,7 +32,8 @@ export const storeSchema = z
     if (value.maxDeliveryRadiusMeters < value.freeDeliveryRadiusMeters) {
       ctx.addIssue({
         code: 'custom',
-        message: 'O raio máximo deve ser maior ou igual ao raio grátis.',
+        message:
+          'O raio máximo deve ser maior ou igual ao raio da taxa reduzida.',
         path: ['maxDeliveryRadiusMeters'],
       });
     }

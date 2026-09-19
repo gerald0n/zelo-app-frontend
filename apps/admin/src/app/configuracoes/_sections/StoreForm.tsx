@@ -38,7 +38,7 @@ const FIELDS: Array<[keyof StoreFormValues, string]> = [
   ['postalCode', 'CEP'],
   ['latitude', 'Latitude (GPS)'],
   ['longitude', 'Longitude (GPS)'],
-  ['freeDeliveryRadiusMeters', 'Raio de entrega grátis (m)'],
+  ['freeDeliveryRadiusMeters', 'Raio da taxa reduzida de R$ 3 (m)'],
   ['maxDeliveryRadiusMeters', 'Raio máximo de entrega (m)'],
   ['fixedDeliveryFeeReais', 'Taxa de entrega fixa (R$)'],
   ['paymentFeeEstimatePercent', 'Taxa de pagamento estimada (%)'],

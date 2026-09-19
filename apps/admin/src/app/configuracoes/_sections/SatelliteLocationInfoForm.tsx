@@ -22,7 +22,7 @@ const FIELDS: Array<[keyof SatelliteLocationForm, string]> = [
   ['postalCode', 'CEP'],
   ['latitude', 'Latitude (GPS)'],
   ['longitude', 'Longitude (GPS)'],
-  ['freeDeliveryRadiusMeters', 'Raio de entrega grátis (m)'],
+  ['freeDeliveryRadiusMeters', 'Raio da taxa reduzida de R$ 3 (m)'],
   ['maxDeliveryRadiusMeters', 'Raio máximo de entrega (m)'],
   ['fixedDeliveryFeeReais', 'Taxa de entrega fixa (R$)'],
   ['minLeadMinutes', 'Antecedência mínima (min)'],
@@ -34,7 +34,11 @@ type Props = {
   onSubmit: (values: SatelliteLocationForm) => void;
 };
 
-export function SatelliteLocationInfoForm({ form, isPending, onSubmit }: Props) {
+export function SatelliteLocationInfoForm({
+  form,
+  isPending,
+  onSubmit,
+}: Props) {
   const isActive = form.watch('isActive');
 
   return (
@@ -59,7 +63,9 @@ export function SatelliteLocationInfoForm({ form, isPending, onSubmit }: Props) 
             type="checkbox"
             className="sr-only"
             checked={isActive}
-            onChange={(event) => form.setValue('isActive', event.target.checked)}
+            onChange={(event) =>
+              form.setValue('isActive', event.target.checked)
+            }
           />
           <span
             className={`relative h-5 w-9 rounded-full transition-colors ${

@@ -77,7 +77,7 @@ const FIELD_LABELS: Record<string, string> = {
   latitude: 'latitude',
   longitude: 'longitude',
   fixed_delivery_fee_cents: 'taxa de entrega',
-  free_delivery_radius_meters: 'raio de entrega grátis',
+  free_delivery_radius_meters: 'raio da taxa reduzida',
   max_delivery_radius_meters: 'raio máximo de entrega',
   payment_fee_estimate_bps: 'estimativa de taxa de pagamento',
   accepts_pix: 'aceita Pix',
@@ -153,7 +153,8 @@ export function auditDetail(log: AdminAuditLog): string | null {
     const devices = typeof meta.devices === 'number' ? meta.devices : null;
     const parts: string[] = [];
     if (title) parts.push(`“${title}”`);
-    if (sent != null && devices != null) parts.push(`${sent}/${devices} entregues`);
+    if (sent != null && devices != null)
+      parts.push(`${sent}/${devices} entregues`);
     return parts.length ? parts.join(' · ') : null;
   }
 

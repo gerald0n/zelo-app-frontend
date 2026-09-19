@@ -20,7 +20,7 @@ Sucesso significa: menos tempo de atendimento manual, menos erros operacionais, 
 
 ## Positioning
 
-Não é um marketplace nem um app genérico de delivery. É o sistema **próprio** de uma confeitaria específica, modelado em cima das regras reais dela: entrega definida por **raio em linha reta** a partir da loja (faixa grátis, faixa de taxa fixa, fora do raio só retirada — nunca progressiva), **agendamento derivado por categoria** (cada categoria tem sua antecedência e seus horários — ex.: cookies no mesmo dia, pudins só a partir de 17h com um dia de antecedência), **Pix com confirmação automática via Mercado Pago**, catálogo sem variações configuráveis (cada sabor/composição é um produto próprio). O diferencial é a fidelidade a essas regras de negócio e a transparência total de valores e prazos antes da confirmação — não escala para "qualquer loja".
+Não é um marketplace nem um app genérico de delivery. É o sistema **próprio** de uma confeitaria específica, modelado em cima das regras reais dela: entrega definida por **raio em linha reta** a partir da loja (R$ 3,00 até 1 km, R$ 5,00 acima de 1 km e, fora do raio de atendimento, só retirada), **agendamento derivado por categoria** (cada categoria tem sua antecedência e seus horários — ex.: cookies no mesmo dia, pudins só a partir de 17h com um dia de antecedência), **Pix com confirmação automática via Mercado Pago**, catálogo sem variações configuráveis (cada sabor/composição é um produto próprio). O diferencial é a fidelidade a essas regras de negócio e a transparência total de valores e prazos antes da confirmação — não escala para "qualquer loja".
 
 ## Operating Context
 

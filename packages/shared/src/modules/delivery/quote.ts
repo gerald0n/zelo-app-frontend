@@ -9,9 +9,7 @@ import { geocodeAddressOsm } from '@/modules/delivery/osm';
 import { haversineDistanceMeters } from '@/modules/delivery/geo';
 
 export type DeliveryQuoteSource =
-  | 'google_maps'
-  | 'openstreetmap'
-  | 'local_fallback';
+  'google_maps' | 'openstreetmap' | 'local_fallback';
 
 export type DeliveryAddressInput = {
   street: string;
@@ -52,6 +50,7 @@ export type DeliveryQuote = {
 export type StoreOrigin = {
   latitude: number;
   longitude: number;
+  /** Nome legado no banco; hoje delimita a faixa de taxa reduzida. */
   freeDeliveryRadiusMeters: number;
   fixedDeliveryFeeCents: number;
   maxDeliveryRadiusMeters: number;
@@ -60,7 +59,10 @@ export type StoreOrigin = {
   state: string;
 };
 
-function composeAddress(input: DeliveryAddressInput, store: StoreOrigin): string {
+function composeAddress(
+  input: DeliveryAddressInput,
+  store: StoreOrigin,
+): string {
   const parts = [
     input.street,
     input.number,
@@ -88,7 +90,10 @@ function composeStreetAddress(input: DeliveryAddressInput): string {
  * isso o Google resolve "Centro" como a cidade grande mais próxima (ex.:
  * Sobral, ~250 km a noroeste de Pereiro).
  */
-function geocodeComponents(input: DeliveryAddressInput, store: StoreOrigin): string {
+function geocodeComponents(
+  input: DeliveryAddressInput,
+  store: StoreOrigin,
+): string {
   const locality = input.city ?? store.city;
   const area = input.state ?? store.state;
   return `locality:${locality}|administrative_area:${area}|country:BR`;

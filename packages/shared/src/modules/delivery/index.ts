@@ -1,4 +1,7 @@
-export { calcDeliveryFeeCents } from '@/modules/delivery/fee';
+export {
+  calcDeliveryFeeCents,
+  NEARBY_DELIVERY_FEE_CENTS,
+} from '@/modules/delivery/fee';
 export {
   PEREIRO_URBAN_NEIGHBORHOODS,
   findPereiroNeighborhood,

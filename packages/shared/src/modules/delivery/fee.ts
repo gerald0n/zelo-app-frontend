@@ -1,8 +1,12 @@
+export const NEARBY_DELIVERY_FEE_CENTS = 300;
+
 export function calcDeliveryFeeCents(
   distanceMeters: number,
-  freeRadiusMeters = 1000,
+  nearbyRadiusMeters = 1000,
   fixedFeeCents = 500,
 ): number {
   if (distanceMeters < 0) return fixedFeeCents;
-  return distanceMeters <= freeRadiusMeters ? 0 : fixedFeeCents;
+  return distanceMeters <= nearbyRadiusMeters
+    ? NEARBY_DELIVERY_FEE_CENTS
+    : fixedFeeCents;
 }

@@ -61,16 +61,18 @@ export async function updateAdminSatelliteLocation(input: {
   ) {
     return err(
       'VALIDATION_ERROR',
-      'O raio máximo deve ser maior ou igual ao raio grátis.',
+      'O raio máximo deve ser maior ou igual ao raio da taxa reduzida.',
     );
   }
 
   const patch: SatelliteLocationUpdate = {};
   if (input.name !== undefined) patch.name = input.name.trim();
-  if (input.addressLine !== undefined) patch.address_line = input.addressLine.trim();
+  if (input.addressLine !== undefined)
+    patch.address_line = input.addressLine.trim();
   if (input.city !== undefined) patch.city = input.city.trim();
   if (input.state !== undefined) patch.state = input.state.trim().toUpperCase();
-  if (input.postalCode !== undefined) patch.postal_code = input.postalCode?.trim() || null;
+  if (input.postalCode !== undefined)
+    patch.postal_code = input.postalCode?.trim() || null;
   if (input.latitude !== undefined) patch.latitude = input.latitude;
   if (input.longitude !== undefined) patch.longitude = input.longitude;
   if (input.freeDeliveryRadiusMeters !== undefined) {
@@ -128,10 +130,7 @@ export async function replaceAdminSatelliteHours(
   }
   const weekdays = new Set(hours.map((hour) => hour.weekday));
   if (weekdays.size !== 7) {
-    return err(
-      'VALIDATION_ERROR',
-      'Cada dia da semana deve aparecer uma vez.',
-    );
+    return err('VALIDATION_ERROR', 'Cada dia da semana deve aparecer uma vez.');
   }
   for (const hour of hours) {
     if (hour.weekday < 0 || hour.weekday > 6) {
@@ -216,7 +215,10 @@ export async function replaceAdminSatelliteDeliverySlots(
     if (!HHMM.test(slot.startsAt)) {
       return err('VALIDATION_ERROR', 'Horário inválido.');
     }
-    if (slot.endsAt && (!HHMM.test(slot.endsAt) || slot.endsAt <= slot.startsAt)) {
+    if (
+      slot.endsAt &&
+      (!HHMM.test(slot.endsAt) || slot.endsAt <= slot.startsAt)
+    ) {
       return err(
         'VALIDATION_ERROR',
         'O fim do horário deve ser após o início.',

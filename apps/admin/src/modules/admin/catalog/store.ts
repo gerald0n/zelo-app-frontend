@@ -72,7 +72,7 @@ export async function updateAdminStore(input: {
   if (nextMaxRadius < nextFreeRadius) {
     return err(
       'VALIDATION_ERROR',
-      'O raio máximo de entrega deve ser maior ou igual ao raio grátis.',
+      'O raio máximo deve ser maior ou igual ao raio da taxa reduzida.',
     );
   }
 

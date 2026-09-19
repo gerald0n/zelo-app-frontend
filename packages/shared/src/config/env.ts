@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+export function normalizeOptionalEnvValue(
+  value: string | undefined,
+): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : undefined;
+}
+
 const appEnvSchema = z.enum(['local', 'preview', 'production']);
 
 const envSchema = z.object({
@@ -42,34 +50,59 @@ const envSchema = z.object({
 export type AppEnv = z.infer<typeof appEnvSchema>;
 
 const parsed = envSchema.safeParse({
-  APP_ENV: process.env.APP_ENV,
-  NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
-  NODE_ENV: process.env.NODE_ENV,
-  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  SUPABASE_URL: process.env.SUPABASE_URL,
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+  APP_ENV: normalizeOptionalEnvValue(process.env.APP_ENV) ?? 'local',
+  NEXT_PUBLIC_APP_ENV: normalizeOptionalEnvValue(process.env.NEXT_PUBLIC_APP_ENV),
+  NODE_ENV: normalizeOptionalEnvValue(process.env.NODE_ENV) ?? 'development',
+  NEXT_PUBLIC_SUPABASE_URL: normalizeOptionalEnvValue(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+  ),
+  SUPABASE_URL: normalizeOptionalEnvValue(process.env.SUPABASE_URL),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: normalizeOptionalEnvValue(
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  ),
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: normalizeOptionalEnvValue(
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
-  NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  SENTRY_DSN: process.env.SENTRY_DSN,
-  TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
-  TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
-  TWILIO_VERIFY_SERVICE_SID: process.env.TWILIO_VERIFY_SERVICE_SID,
-  TWILIO_VERIFY_SMS_SERVICE_SID: process.env.TWILIO_VERIFY_SMS_SERVICE_SID,
-  GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY,
-  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
-  NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-  VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
-  VAPID_SUBJECT: process.env.VAPID_SUBJECT,
-  NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
-  TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
-  MERCADOPAGO_ACCESS_TOKEN: process.env.MERCADOPAGO_ACCESS_TOKEN,
-  MERCADOPAGO_WEBHOOK_SECRET: process.env.MERCADOPAGO_WEBHOOK_SECRET,
-  CRON_SECRET: process.env.CRON_SECRET,
-  OTP_HASH_SECRET: process.env.OTP_HASH_SECRET,
-  CATALOG_REVALIDATE_SECRET: process.env.CATALOG_REVALIDATE_SECRET,
-  CLIENT_APP_ORIGIN: process.env.CLIENT_APP_ORIGIN,
+  ),
+  SUPABASE_SERVICE_ROLE_KEY: normalizeOptionalEnvValue(
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+  ),
+  NEXT_PUBLIC_SENTRY_DSN: normalizeOptionalEnvValue(process.env.NEXT_PUBLIC_SENTRY_DSN),
+  SENTRY_DSN: normalizeOptionalEnvValue(process.env.SENTRY_DSN),
+  TWILIO_ACCOUNT_SID: normalizeOptionalEnvValue(process.env.TWILIO_ACCOUNT_SID),
+  TWILIO_AUTH_TOKEN: normalizeOptionalEnvValue(process.env.TWILIO_AUTH_TOKEN),
+  TWILIO_VERIFY_SERVICE_SID: normalizeOptionalEnvValue(
+    process.env.TWILIO_VERIFY_SERVICE_SID,
+  ),
+  TWILIO_VERIFY_SMS_SERVICE_SID: normalizeOptionalEnvValue(
+    process.env.TWILIO_VERIFY_SMS_SERVICE_SID,
+  ),
+  GOOGLE_MAPS_API_KEY: normalizeOptionalEnvValue(process.env.GOOGLE_MAPS_API_KEY),
+  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: normalizeOptionalEnvValue(
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
+  ),
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: normalizeOptionalEnvValue(
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+  ),
+  VAPID_PRIVATE_KEY: normalizeOptionalEnvValue(process.env.VAPID_PRIVATE_KEY),
+  VAPID_SUBJECT: normalizeOptionalEnvValue(process.env.VAPID_SUBJECT),
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: normalizeOptionalEnvValue(
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+  ),
+  TURNSTILE_SECRET_KEY: normalizeOptionalEnvValue(
+    process.env.TURNSTILE_SECRET_KEY,
+  ),
+  MERCADOPAGO_ACCESS_TOKEN: normalizeOptionalEnvValue(
+    process.env.MERCADOPAGO_ACCESS_TOKEN,
+  ),
+  MERCADOPAGO_WEBHOOK_SECRET: normalizeOptionalEnvValue(
+    process.env.MERCADOPAGO_WEBHOOK_SECRET,
+  ),
+  CRON_SECRET: normalizeOptionalEnvValue(process.env.CRON_SECRET),
+  OTP_HASH_SECRET: normalizeOptionalEnvValue(process.env.OTP_HASH_SECRET),
+  CATALOG_REVALIDATE_SECRET: normalizeOptionalEnvValue(
+    process.env.CATALOG_REVALIDATE_SECRET,
+  ),
+  CLIENT_APP_ORIGIN: normalizeOptionalEnvValue(process.env.CLIENT_APP_ORIGIN),
 });
 
 if (!parsed.success) {

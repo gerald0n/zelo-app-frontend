@@ -33,7 +33,7 @@ insert into public.stores (
   '63460-000',             -- <<<PREENCHA>>> CEP
   -6.048527,               -- pin no Google Maps (R. Cap. Bandeira, Pereiro-CE)
   -38.461176,              -- pin no Google Maps
-  1000,                    -- raio de entrega grátis (m)
+  1000,                    -- raio da taxa reduzida de R$ 3,00 (m)
   3000,                    -- raio máximo de entrega (m); acima disso, só retirada
   500,
   'America/Fortaleza'

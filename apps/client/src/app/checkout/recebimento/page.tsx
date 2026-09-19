@@ -263,7 +263,11 @@ export default function RecebimentoPage() {
           )}
 
           <p className="mt-2 text-base font-semibold">Como?</p>
-          <DeliveryMethodToggle freeDeliveryRadiusMeters={options?.store.freeDeliveryRadiusMeters ?? null} />
+          <DeliveryMethodToggle
+            nearbyDeliveryRadiusMeters={
+              options?.store.freeDeliveryRadiusMeters ?? null
+            }
+          />
 
           {checkout.deliveryType === 'pickup' && options ? (
             <div className="rounded-md bg-muted p-3 text-sm leading-5 text-muted-foreground">

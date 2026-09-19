@@ -5,13 +5,14 @@ import { useCheckout } from '@/contexts/CheckoutContext';
 import { formatCatalogPrice } from '@/modules/catalog/types';
 import { formatRadius } from '@/app/checkout/recebimento/recebimento-helpers';
 import { cn } from '@/lib/cn';
+import { NEARBY_DELIVERY_FEE_CENTS } from '@/modules/delivery';
 
 type Props = {
-  freeDeliveryRadiusMeters: number | null;
+  nearbyDeliveryRadiusMeters: number | null;
 };
 
 /** Botões "Entrega"/"Retirada" com o resumo de taxa/raio de cada opção. */
-export function DeliveryMethodToggle({ freeDeliveryRadiusMeters }: Props) {
+export function DeliveryMethodToggle({ nearbyDeliveryRadiusMeters }: Props) {
   const { checkout, setDeliveryType } = useCheckout();
   const deliveryFee =
     checkout.deliveryType === 'delivery' ? checkout.deliveryFeeCents : 0;
@@ -65,9 +66,9 @@ export function DeliveryMethodToggle({ freeDeliveryRadiusMeters }: Props) {
                 ? deliveryFee === 0
                   ? 'Grátis'
                   : formatCatalogPrice(deliveryFee)
-                : freeDeliveryRadiusMeters != null
-                  ? `Grátis até ${formatRadius(freeDeliveryRadiusMeters)}`
-                  : 'Grátis por perto'
+                : nearbyDeliveryRadiusMeters != null
+                  ? `${formatCatalogPrice(NEARBY_DELIVERY_FEE_CENTS)} até ${formatRadius(nearbyDeliveryRadiusMeters)}`
+                  : `A partir de ${formatCatalogPrice(NEARBY_DELIVERY_FEE_CENTS)}`
               : 'Grátis'}
           </span>
         </button>
